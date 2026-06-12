@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Data;
@@ -101,6 +102,51 @@ public sealed class GoogleWorkspaceSetupServiceTests
         }
     }
 
+    [Fact]
+    public async Task EnsureStandardDriveFoldersCreatesReusableOrganizationStructureAsync()
+    {
+        using (TestDbContextFactory dbContextFactory = createWorkspaceProvisioningDbContextFactory())
+        {
+            FakeDriveService driveService = new FakeDriveService();
+            GoogleWorkspaceSetupService workspaceSetupService = new GoogleWorkspaceSetupService(dbContextFactory, driveService);
+
+            ServiceResultOfT<GoogleWorkspaceResourceSetupSummary> firstResult = await workspaceSetupService.EnsureStandardDriveFoldersAsync(CancellationToken.None);
+            ServiceResultOfT<GoogleWorkspaceResourceSetupSummary> secondResult = await workspaceSetupService.EnsureStandardDriveFoldersAsync(CancellationToken.None);
+
+            Assert.True(firstResult.IsSuccess, firstResult.ErrorMessage);
+            Assert.True(secondResult.IsSuccess, secondResult.ErrorMessage);
+            GoogleWorkspaceResourceSetupSummary firstSummary = getWorkspaceSetupResultValue(firstResult);
+            GoogleWorkspaceResourceSetupSummary secondSummary = getWorkspaceSetupResultValue(secondResult);
+            Assert.Equal(14, firstSummary.CreatedCount);
+            Assert.Equal(0, firstSummary.ReusedCount);
+            Assert.Equal(11, firstSummary.AssignedCount);
+            Assert.Equal(0, secondSummary.CreatedCount);
+            Assert.Equal(14, secondSummary.ReusedCount);
+            Assert.Equal(0, secondSummary.AssignedCount);
+            using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+            {
+                GlobalSetting setting = dbContext.GlobalSettings.Single();
+                Team systemAdministrationTeam = dbContext.Teams.Single(team => team.TeamKey == OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_KEY);
+                Team managementTeam = dbContext.Teams.Single(team => team.TeamKey == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY);
+                Team planningTeam = dbContext.Teams.Single(team => team.TeamKey == "Planning");
+                Team operationTeam = dbContext.Teams.Single(team => team.TeamKey == "Operation");
+                Assert.Equal("Organization Hub", await getDriveItemNameAsync(driveService, getRequiredID(setting.OfficialRootFolderID)));
+                Assert.Equal("외부 공유 자료", await getDriveItemNameAsync(driveService, getRequiredID(setting.PublicFolderID)));
+                Assert.Equal("공통 자료", await getDriveItemNameAsync(driveService, getRequiredID(setting.CommonFolderID)));
+                Assert.Equal("책임자 자료", await getDriveItemNameAsync(driveService, getRequiredID(setting.ResponsibleResourcesFolderID)));
+                Assert.Equal("업무 지원 자료", await getDriveItemNameAsync(driveService, getRequiredID(setting.WorkResourcesFolderID)));
+                Assert.Equal("관리팀 자료", await getDriveItemNameAsync(driveService, getRequiredID(managementTeam.MaterialsFolderID)));
+                Assert.Equal("관리팀 결재 완료 자료", await getDriveItemNameAsync(driveService, getRequiredID(managementTeam.ApprovedFolderID)));
+                Assert.Equal("자료", await getDriveItemNameAsync(driveService, getRequiredID(planningTeam.MaterialsFolderID)));
+                Assert.Equal("결재 완료 자료", await getDriveItemNameAsync(driveService, getRequiredID(planningTeam.ApprovedFolderID)));
+                Assert.Equal("자료", await getDriveItemNameAsync(driveService, getRequiredID(operationTeam.MaterialsFolderID)));
+                Assert.Equal("결재 완료 자료", await getDriveItemNameAsync(driveService, getRequiredID(operationTeam.ApprovedFolderID)));
+                Assert.True(string.IsNullOrWhiteSpace(systemAdministrationTeam.MaterialsFolderID));
+                Assert.True(string.IsNullOrWhiteSpace(systemAdministrationTeam.ApprovedFolderID));
+            }
+        }
+    }
+
     private static TestDbContextFactory createConfiguredDbContextFactory()
     {
         TestDbContextFactory dbContextFactory = new TestDbContextFactory();
@@ -117,6 +163,24 @@ public sealed class GoogleWorkspaceSetupServiceTests
             dbContext.GlobalSettings.Add(setting);
             dbContext.Teams.Add(createTeam(1, "Planning", "기획팀", "planning-materials-folder", "planning-approved-folder", EActivationState.Active));
             dbContext.Teams.Add(createTeam(2, "Safety", "안전관리팀", "safety-materials-folder", "safety-approved-folder", EActivationState.Inactive));
+            dbContext.SaveChanges();
+        }
+
+        return dbContextFactory;
+    }
+
+    private static TestDbContextFactory createWorkspaceProvisioningDbContextFactory()
+    {
+        TestDbContextFactory dbContextFactory = new TestDbContextFactory();
+        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+        {
+            GlobalSetting setting = new GlobalSetting();
+            setting.ID = 1;
+            dbContext.GlobalSettings.Add(setting);
+            dbContext.Teams.Add(createTeam(1, OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_KEY, OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_DISPLAY_NAME, string.Empty, string.Empty, EActivationState.Active));
+            dbContext.Teams.Add(createTeam(2, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME, string.Empty, string.Empty, EActivationState.Active));
+            dbContext.Teams.Add(createTeam(3, "Planning", "기획팀", string.Empty, string.Empty, EActivationState.Active));
+            dbContext.Teams.Add(createTeam(4, "Operation", "운영팀", string.Empty, string.Empty, EActivationState.Active));
             dbContext.SaveChanges();
         }
 
@@ -222,6 +286,26 @@ public sealed class GoogleWorkspaceSetupServiceTests
         }
 
         return result.ValueOrNull;
+    }
+
+    private static GoogleWorkspaceResourceSetupSummary getWorkspaceSetupResultValue(ServiceResultOfT<GoogleWorkspaceResourceSetupSummary> result)
+    {
+        if (result.ValueOrNull == null)
+        {
+            throw new InvalidOperationException("Expected a result value.");
+        }
+
+        return result.ValueOrNull;
+    }
+
+    private static string getRequiredID(string? idOrNull)
+    {
+        if (string.IsNullOrWhiteSpace(idOrNull))
+        {
+            throw new InvalidOperationException("Expected a configured ID.");
+        }
+
+        return idOrNull;
     }
 
     private static async Task<string> getDriveItemNameAsync(FakeDriveService driveService, string itemID)

@@ -49,7 +49,7 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
             addCalendarScopeItem(items, connectionOrNull);
             addTasksScopeItem(items, connectionOrNull);
             GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.ID).FirstOrDefaultAsync(cancellationToken);
-            List<Team> teams = await dbContext.Teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName).ToListAsync(cancellationToken);
+            List<Team> teams = await getWorkspaceTeamsAsync(dbContext, cancellationToken);
             if (settingOrNull == null)
             {
                 addItem(items, "설정", "시스템 설정", STATUS_ERROR, "시스템 설정 행이 없습니다.");
@@ -133,6 +133,15 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
             await addFolderItemAsync(items, "팀 Drive", team.DisplayName + " 자료", team.MaterialsFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
             await addFolderItemAsync(items, "팀 Drive", team.DisplayName + " " + OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME, team.ApprovedFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
         }
+    }
+
+    private async Task<List<Team>> getWorkspaceTeamsAsync(OrganizationHubDbContext dbContext, CancellationToken cancellationToken)
+    {
+        return await dbContext.Teams
+            .Where(team => team.IsActive && team.TeamKey != OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_KEY)
+            .OrderBy(team => team.SortOrder)
+            .ThenBy(team => team.DisplayName)
+            .ToListAsync(cancellationToken);
     }
 
     private async Task addFolderItemAsync(List<GoogleHealthCheckItem> items, string area, string name, string? folderIDOrNull, string officialRootFolderID, EGoogleHealthFolderCheckKind folderCheckKind, CancellationToken cancellationToken)

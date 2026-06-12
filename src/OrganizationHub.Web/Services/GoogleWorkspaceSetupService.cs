@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Apis.Calendar.v3;
 using Google.Apis.Http;
 using Google.Apis.Services;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,10 @@ using OrganizationHub.Web.Data;
 using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using GoogleCalendarApi = Google.Apis.Calendar.v3.CalendarService;
+using GoogleCalendarData = Google.Apis.Calendar.v3.Data.Calendar;
+using GoogleCalendarListData = Google.Apis.Calendar.v3.Data.CalendarList;
+using GoogleCalendarListEntryData = Google.Apis.Calendar.v3.Data.CalendarListEntry;
 using GoogleTaskListData = Google.Apis.Tasks.v1.Data.TaskList;
 using GoogleTaskListsData = Google.Apis.Tasks.v1.Data.TaskLists;
 using GoogleTasksApi = Google.Apis.Tasks.v1.TasksService;
@@ -22,7 +27,10 @@ namespace OrganizationHub.Web.Services;
 public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 {
     private const string GOOGLE_DRIVE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
+    private const string DRIVE_FOLDER_CACHE_PREFIX = "OrganizationHub:GoogleWorkspace:DriveFolders:";
+    private const string CALENDAR_LIST_CACHE_KEY = "OrganizationHub:GoogleWorkspace:Calendars";
     private const string TASK_LIST_CACHE_KEY = "OrganizationHub:GoogleWorkspace:TaskLists";
+    private static readonly string[] CALENDAR_SCOPES = new[] { GoogleCalendarApi.Scope.Calendar };
     private static readonly string[] TASK_SCOPES = new[] { GoogleTasksApi.Scope.Tasks };
 
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;
@@ -61,7 +69,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<Team> teams = await dbContext.Teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName).ToListAsync(cancellationToken);
+            List<Team> teams = await getWorkspaceTeamsAsync(dbContext, cancellationToken);
             foreach (Team team in teams)
             {
                 options.Add(createFolderAssignmentOption("TeamMaterials:" + team.ID.ToString(System.Globalization.CultureInfo.InvariantCulture), team.DisplayName + " 자료", EGoogleFolderAssignmentKind.TeamMaterials, team.ID));
@@ -80,7 +88,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<Team> teams = await dbContext.Teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName).ToListAsync(cancellationToken);
+            List<Team> teams = await getWorkspaceTeamsAsync(dbContext, cancellationToken);
             foreach (Team team in teams)
             {
                 options.Add(createCalendarAssignmentOption("Team:" + team.ID.ToString(System.Globalization.CultureInfo.InvariantCulture), team.DisplayName + " 캘린더", EGoogleCalendarAssignmentKind.Team, team.ID));
@@ -98,7 +106,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<Team> teams = await dbContext.Teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName).ToListAsync(cancellationToken);
+            List<Team> teams = await getWorkspaceTeamsAsync(dbContext, cancellationToken);
             foreach (Team team in teams)
             {
                 options.Add(createTaskListAssignmentOption("Team:" + team.ID.ToString(System.Globalization.CultureInfo.InvariantCulture), team.DisplayName + " 할 일 목록", EGoogleTaskListAssignmentKind.Team, team.ID));
@@ -106,6 +114,98 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
         }
 
         return options;
+    }
+
+    public async Task<ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>> EnsureStandardDriveFoldersAsync(CancellationToken cancellationToken)
+    {
+        GoogleWorkspaceResourceSetupSummary summary = new GoogleWorkspaceResourceSetupSummary();
+        List<string> failureMessages = new List<string>();
+        try
+        {
+            await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+            {
+                GlobalSetting setting = await getGlobalSettingAsync(dbContext, cancellationToken);
+                DriveFileItem officialRoot = await getOrCreateDriveFolderAsync("root", OrganizationHubProduct.NAME, summary, cancellationToken);
+                assignIfChanged(setting.OfficialRootFolderID, officialRoot.ID, value => setting.OfficialRootFolderID = value, summary);
+                DriveFileItem publicFolder = await getOrCreateDriveFolderAsync(officialRoot.ID, OrganizationHubWorkspaceDefaults.PUBLIC_FOLDER_NAME, summary, cancellationToken);
+                assignIfChanged(setting.PublicFolderID, publicFolder.ID, value => setting.PublicFolderID = value, summary);
+                DriveFileItem commonFolder = await getOrCreateDriveFolderAsync(officialRoot.ID, OrganizationHubWorkspaceDefaults.COMMON_FOLDER_NAME, summary, cancellationToken);
+                assignIfChanged(setting.CommonFolderID, commonFolder.ID, value => setting.CommonFolderID = value, summary);
+                DriveFileItem responsibleResourcesFolder = await getOrCreateDriveFolderAsync(officialRoot.ID, OrganizationHubWorkspaceDefaults.RESPONSIBLE_RESOURCES_FOLDER_NAME, summary, cancellationToken);
+                assignIfChanged(setting.ResponsibleResourcesFolderID, responsibleResourcesFolder.ID, value => setting.ResponsibleResourcesFolderID = value, summary);
+                DriveFileItem workResourcesFolder = await getOrCreateDriveFolderAsync(officialRoot.ID, OrganizationHubWorkspaceDefaults.WORK_RESOURCES_FOLDER_NAME, summary, cancellationToken);
+                assignIfChanged(setting.WorkResourcesFolderID, workResourcesFolder.ID, value => setting.WorkResourcesFolderID = value, summary);
+                DriveFileItem teamRootFolder = await getOrCreateDriveFolderAsync(officialRoot.ID, OrganizationHubWorkspaceDefaults.TEAM_ROOT_FOLDER_NAME, summary, cancellationToken);
+                List<Team> teams = await getWorkspaceTeamsAsync(dbContext, cancellationToken);
+                foreach (Team team in teams)
+                {
+                    await ensureTeamDriveFoldersAsync(team, officialRoot.ID, teamRootFolder.ID, summary, cancellationToken);
+                }
+
+                await dbContext.SaveChangesAsync(cancellationToken);
+                clearDriveFolderCaches(officialRoot.ID, teamRootFolder.ID);
+            }
+        }
+        catch (Exception exception)
+        {
+            failureMessages.Add("기본 Drive 구조를 준비하지 못했습니다. " + exception.Message);
+        }
+
+        if (failureMessages.Count > 0)
+        {
+            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("Drive 폴더", failureMessages));
+        }
+
+        return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Succeed(summary);
+    }
+
+    public async Task<ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>> EnsureStandardCalendarsAsync(CancellationToken cancellationToken)
+    {
+        if (mCredentialFactoryOrNull == null || mOptionsOrNull == null)
+        {
+            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail("Google Calendar 생성 서비스를 사용할 수 없습니다.");
+        }
+
+        GoogleWorkspaceResourceSetupSummary summary = new GoogleWorkspaceResourceSetupSummary();
+        List<string> failureMessages = new List<string>();
+        try
+        {
+            GoogleCalendarApi calendarService = await createCalendarServiceAsync(cancellationToken);
+            List<GoogleCalendarData> googleCalendars = await listGoogleCalendarsAsync(calendarService, cancellationToken);
+            IReadOnlyList<GoogleCalendarAssignmentOption> options = await GetCalendarAssignmentOptionsAsync(cancellationToken);
+            foreach (GoogleCalendarAssignmentOption option in options)
+            {
+                string standardName = getStandardCalendarName(option);
+                GoogleCalendarData calendar = await getOrCreateGoogleCalendarAsync(calendarService, googleCalendars, standardName, summary, cancellationToken);
+                if (string.IsNullOrWhiteSpace(calendar.Id))
+                {
+                    failureMessages.Add(standardName + " 캘린더 ID를 받지 못했습니다.");
+                    continue;
+                }
+
+                ServiceResult assignResult = await AssignCalendarAsync(option.TargetKey, calendar.Id, cancellationToken);
+                if (assignResult.IsSuccess)
+                {
+                    summary.AssignedCount = summary.AssignedCount + 1;
+                    continue;
+                }
+
+                failureMessages.Add(standardName + " 캘린더를 저장하지 못했습니다. " + assignResult.ErrorMessage);
+            }
+
+            clearCalendarListCache();
+        }
+        catch (Exception exception)
+        {
+            failureMessages.Add(createGoogleCalendarSetupErrorMessage(exception));
+        }
+
+        if (failureMessages.Count > 0)
+        {
+            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("Calendar", failureMessages));
+        }
+
+        return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Succeed(summary);
     }
 
     public async Task<ServiceResultOfT<GoogleDriveFolderNameSyncSummary>> ApplyStandardDriveFolderNamesAsync(CancellationToken cancellationToken)
@@ -120,7 +220,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
             await applyFolderNameIfConfiguredAsync(setting.CommonFolderID, OrganizationHubWorkspaceDefaults.COMMON_FOLDER_NAME, summary, failureMessages, appliedFolderIDs, cancellationToken);
             await applyFolderNameIfConfiguredAsync(setting.ResponsibleResourcesFolderID, OrganizationHubWorkspaceDefaults.RESPONSIBLE_RESOURCES_FOLDER_NAME, summary, failureMessages, appliedFolderIDs, cancellationToken);
             await applyFolderNameIfConfiguredAsync(setting.WorkResourcesFolderID, OrganizationHubWorkspaceDefaults.WORK_RESOURCES_FOLDER_NAME, summary, failureMessages, appliedFolderIDs, cancellationToken);
-            List<Team> teams = await dbContext.Teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName).ToListAsync(cancellationToken);
+            List<Team> teams = await getWorkspaceTeamsAsync(dbContext, cancellationToken);
             await applyTeamFolderNamesAsync(setting, teams, summary, failureMessages, appliedFolderIDs, cancellationToken);
         }
 
@@ -399,6 +499,60 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
         }
     }
 
+    private async Task<List<Team>> getWorkspaceTeamsAsync(OrganizationHubDbContext dbContext, CancellationToken cancellationToken)
+    {
+        return await dbContext.Teams
+            .Where(team => team.IsActive && team.TeamKey != OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_KEY)
+            .OrderBy(team => team.SortOrder)
+            .ThenBy(team => team.DisplayName)
+            .ToListAsync(cancellationToken);
+    }
+
+    private async Task ensureTeamDriveFoldersAsync(Team team, string officialRootFolderID, string teamRootFolderID, GoogleWorkspaceResourceSetupSummary summary, CancellationToken cancellationToken)
+    {
+        if (team.TeamKey == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY)
+        {
+            DriveFileItem managementFolder = await getOrCreateDriveFolderAsync(officialRootFolderID, OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME, summary, cancellationToken);
+            assignIfChanged(team.MaterialsFolderID, managementFolder.ID, value => team.MaterialsFolderID = value, summary);
+            DriveFileItem managementApprovedFolder = await getOrCreateDriveFolderAsync(officialRootFolderID, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " " + OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME, summary, cancellationToken);
+            assignIfChanged(team.ApprovedFolderID, managementApprovedFolder.ID, value => team.ApprovedFolderID = value, summary);
+            return;
+        }
+
+        DriveFileItem teamFolder = await getOrCreateDriveFolderAsync(teamRootFolderID, team.DisplayName, summary, cancellationToken);
+        DriveFileItem materialsFolder = await getOrCreateDriveFolderAsync(teamFolder.ID, OrganizationHubWorkspaceDefaults.TEAM_MATERIALS_FOLDER_NAME, summary, cancellationToken);
+        assignIfChanged(team.MaterialsFolderID, materialsFolder.ID, value => team.MaterialsFolderID = value, summary);
+        DriveFileItem approvedFolder = await getOrCreateDriveFolderAsync(teamFolder.ID, OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME, summary, cancellationToken);
+        assignIfChanged(team.ApprovedFolderID, approvedFolder.ID, value => team.ApprovedFolderID = value, summary);
+    }
+
+    private async Task<DriveFileItem> getOrCreateDriveFolderAsync(string parentFolderID, string folderName, GoogleWorkspaceResourceSetupSummary summary, CancellationToken cancellationToken)
+    {
+        summary.TargetCount = summary.TargetCount + 1;
+        IReadOnlyList<DriveFileItem> files = await mDriveService.ListFilesAsync(parentFolderID, cancellationToken);
+        DriveFileItem? existingFolderOrNull = files.FirstOrDefault(file => file.IsFolder && file.Name == folderName);
+        if (existingFolderOrNull != null)
+        {
+            summary.ReusedCount = summary.ReusedCount + 1;
+            return existingFolderOrNull;
+        }
+
+        DriveFileItem createdFolder = await mDriveService.CreateFolderAsync(parentFolderID, folderName, cancellationToken);
+        summary.CreatedCount = summary.CreatedCount + 1;
+        return createdFolder;
+    }
+
+    private void assignIfChanged(string? currentValueOrNull, string nextValue, Action<string> assignAction, GoogleWorkspaceResourceSetupSummary summary)
+    {
+        if (string.Equals(getNullAsEmpty(currentValueOrNull), nextValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        assignAction(nextValue);
+        summary.AssignedCount = summary.AssignedCount + 1;
+    }
+
     private async Task<DriveFileMetadata?> getOrCreateTeamParentFolderAsync(string teamRootFolderID, string teamDisplayName, GoogleDriveFolderNameSyncSummary summary, List<string> failureMessages, HashSet<string> appliedFolderIDs, CancellationToken cancellationToken)
     {
         DriveFileMetadata? childFolderOrNull = await getChildFolderByNameOrNullAsync(teamRootFolderID, teamDisplayName, cancellationToken);
@@ -610,6 +764,134 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
         return option;
     }
 
+    private async Task<GoogleCalendarApi> createCalendarServiceAsync(CancellationToken cancellationToken)
+    {
+        if (mCredentialFactoryOrNull == null || mOptionsOrNull == null)
+        {
+            throw new InvalidOperationException("Google Calendar 생성 서비스를 사용할 수 없습니다.");
+        }
+
+        IConfigurableHttpClientInitializer credential = await mCredentialFactoryOrNull.CreateHttpClientInitializerAsync(CALENDAR_SCOPES, cancellationToken);
+        BaseClientService.Initializer initializer = new BaseClientService.Initializer();
+        initializer.HttpClientInitializer = credential;
+        initializer.ApplicationName = mOptionsOrNull.ApplicationName;
+        return new GoogleCalendarApi(initializer);
+    }
+
+    private async Task<List<GoogleCalendarData>> listGoogleCalendarsAsync(GoogleCalendarApi calendarService, CancellationToken cancellationToken)
+    {
+        List<GoogleCalendarData> calendars = new List<GoogleCalendarData>();
+        string pageToken = string.Empty;
+        do
+        {
+            CalendarListResource.ListRequest request = calendarService.CalendarList.List();
+            request.MaxResults = 250;
+            request.PageToken = string.IsNullOrWhiteSpace(pageToken) ? null : pageToken;
+            request.Fields = "items(id,summary),nextPageToken";
+            GoogleCalendarListData response = await request.ExecuteAsync(cancellationToken);
+            if (response.Items != null)
+            {
+                foreach (GoogleCalendarListEntryData calendarEntry in response.Items)
+                {
+                    GoogleCalendarData calendar = new GoogleCalendarData();
+                    calendar.Id = getNullAsEmpty(calendarEntry.Id);
+                    calendar.Summary = getNullAsEmpty(calendarEntry.Summary);
+                    calendars.Add(calendar);
+                }
+            }
+
+            pageToken = getNullAsEmpty(response.NextPageToken);
+        }
+        while (string.IsNullOrWhiteSpace(pageToken) == false);
+
+        return calendars;
+    }
+
+    private async Task<GoogleCalendarData> getOrCreateGoogleCalendarAsync(GoogleCalendarApi calendarService, List<GoogleCalendarData> googleCalendars, string standardName, GoogleWorkspaceResourceSetupSummary summary, CancellationToken cancellationToken)
+    {
+        summary.TargetCount = summary.TargetCount + 1;
+        GoogleCalendarData? existingCalendarOrNull = googleCalendars.FirstOrDefault(calendar => calendar.Summary == standardName);
+        if (existingCalendarOrNull != null)
+        {
+            summary.ReusedCount = summary.ReusedCount + 1;
+            return existingCalendarOrNull;
+        }
+
+        GoogleCalendarData newCalendar = new GoogleCalendarData();
+        newCalendar.Summary = standardName;
+        newCalendar.TimeZone = getCalendarTimeZoneID();
+        CalendarsResource.InsertRequest request = calendarService.Calendars.Insert(newCalendar);
+        GoogleCalendarData createdCalendar = await request.ExecuteAsync(cancellationToken);
+        googleCalendars.Add(createdCalendar);
+        summary.CreatedCount = summary.CreatedCount + 1;
+        return createdCalendar;
+    }
+
+    private string getStandardCalendarName(GoogleCalendarAssignmentOption option)
+    {
+        if (option.CalendarAssignmentKind == EGoogleCalendarAssignmentKind.Organization)
+        {
+            return OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME;
+        }
+
+        if (option.CalendarAssignmentKind == EGoogleCalendarAssignmentKind.Leader)
+        {
+            return OrganizationHubWorkspaceDefaults.RESPONSIBLE_CALENDAR_NAME;
+        }
+
+        string displayName = option.DisplayName;
+        if (displayName.EndsWith(" 캘린더", StringComparison.Ordinal))
+        {
+            displayName = displayName.Substring(0, displayName.Length - " 캘린더".Length);
+        }
+
+        return displayName;
+    }
+
+    private string getCalendarTimeZoneID()
+    {
+        if (mOptionsOrNull == null || string.IsNullOrWhiteSpace(mOptionsOrNull.CalendarTimeZone))
+        {
+            return "Asia/Seoul";
+        }
+
+        return mOptionsOrNull.CalendarTimeZone;
+    }
+
+    private void clearCalendarListCache()
+    {
+        if (mMemoryCacheOrNull == null)
+        {
+            return;
+        }
+
+        mMemoryCacheOrNull.Remove(CALENDAR_LIST_CACHE_KEY);
+    }
+
+    private void clearDriveFolderCaches(params string[] folderIDs)
+    {
+        if (mMemoryCacheOrNull == null)
+        {
+            return;
+        }
+
+        mMemoryCacheOrNull.Remove(DRIVE_FOLDER_CACHE_PREFIX + "root");
+        foreach (string folderID in folderIDs)
+        {
+            if (string.IsNullOrWhiteSpace(folderID))
+            {
+                continue;
+            }
+
+            mMemoryCacheOrNull.Remove(DRIVE_FOLDER_CACHE_PREFIX + folderID);
+        }
+    }
+
+    private string createGoogleCalendarSetupErrorMessage(Exception exception)
+    {
+        return GoogleApiExceptionMessageFormatter.CreateGoogleCalendarMessage(exception, "표준 캘린더를 만들지 못했습니다.");
+    }
+
     private async Task<GoogleTasksApi> createTasksServiceAsync(CancellationToken cancellationToken)
     {
         if (mCredentialFactoryOrNull == null || mOptionsOrNull == null)
@@ -701,13 +983,25 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
     private string createGoogleTasksSetupErrorMessage(Exception exception)
     {
-        return GoogleApiExceptionMessageFormatter.CreateGoogleTasksMessage(exception, "표준 할 일 목록을 만들지 못했습니다.");
+        return GoogleApiExceptionMessageFormatter.CreateGoogleTasksMessage(exception, "기본 할 일 목록을 만들지 못했습니다.");
     }
 
     private string createTaskListSetupFailureMessage(IReadOnlyList<string> failureMessages)
     {
         List<string> visibleMessages = failureMessages.Take(3).ToList();
         string message = "일부 할 일 목록을 저장하지 못했습니다. " + string.Join(" / ", visibleMessages);
+        if (failureMessages.Count > visibleMessages.Count)
+        {
+            message = message + " 외 " + (failureMessages.Count - visibleMessages.Count).ToString(System.Globalization.CultureInfo.InvariantCulture) + "건";
+        }
+
+        return message;
+    }
+
+    private string createResourceSetupFailureMessage(string resourceName, IReadOnlyList<string> failureMessages)
+    {
+        List<string> visibleMessages = failureMessages.Take(3).ToList();
+        string message = "일부 " + resourceName + " 리소스를 준비하지 못했습니다. " + string.Join(" / ", visibleMessages);
         if (failureMessages.Count > visibleMessages.Count)
         {
             message = message + " 외 " + (failureMessages.Count - visibleMessages.Count).ToString(System.Globalization.CultureInfo.InvariantCulture) + "건";

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Models;
@@ -36,8 +37,12 @@ public sealed class FakeDriveService : IDriveService
 
     public Task<IReadOnlyList<DriveFileItem>> ListFilesAsync(string folderID, CancellationToken cancellationToken)
     {
-        IReadOnlyList<DriveFileItem> files = new List<DriveFileItem>();
-        return Task.FromResult(files);
+        List<DriveFileItem> files = mMetadataByFileID.Values
+            .Where(metadata => metadata.ParentFolderIDs.Count > 0 && metadata.ParentFolderIDs[0] == folderID)
+            .Select(createDriveFileItem)
+            .OrderBy(file => file.Name)
+            .ToList();
+        return Task.FromResult<IReadOnlyList<DriveFileItem>>(files);
     }
 
     public Task<IReadOnlyList<DriveFileItem>> SearchFilesAsync(string folderID, string keyword, CancellationToken cancellationToken)
@@ -110,7 +115,7 @@ public sealed class FakeDriveService : IDriveService
 
     public Task<DriveFileItem> CreateFolderAsync(string parentFolderID, string folderName, CancellationToken cancellationToken)
     {
-        string folderID = "folder-" + folderName;
+        string folderID = createFolderID(parentFolderID, folderName);
         List<string> ancestorFolderIDs = new List<string>();
         ancestorFolderIDs.Add(parentFolderID);
         IReadOnlySet<string>? parentAncestorFolderIDsOrNull;
@@ -159,5 +164,34 @@ public sealed class FakeDriveService : IDriveService
         MemoryStream contentStream = new MemoryStream();
         FileDownloadResult downloadResult = new FileDownloadResult(contentStream, fileID + ".pdf", "application/pdf");
         return Task.FromResult(downloadResult);
+    }
+
+    private DriveFileItem createDriveFileItem(DriveFileMetadata metadata)
+    {
+        DriveFileItem driveFileItem = new DriveFileItem();
+        driveFileItem.ID = metadata.ID;
+        driveFileItem.Name = metadata.Name;
+        driveFileItem.MimeType = metadata.MimeType;
+        driveFileItem.IsFolder = metadata.MimeType == "application/vnd.google-apps.folder";
+        return driveFileItem;
+    }
+
+    private string createFolderID(string parentFolderID, string folderName)
+    {
+        string folderID = "folder-" + folderName;
+        if (mMetadataByFileID.ContainsKey(folderID) == false)
+        {
+            return folderID;
+        }
+
+        folderID = "folder-" + parentFolderID + "-" + folderName;
+        int suffix = 2;
+        while (mMetadataByFileID.ContainsKey(folderID))
+        {
+            folderID = "folder-" + parentFolderID + "-" + folderName + "-" + suffix.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            suffix = suffix + 1;
+        }
+
+        return folderID;
     }
 }

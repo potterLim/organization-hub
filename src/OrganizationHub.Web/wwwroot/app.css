@@ -1225,13 +1225,13 @@ h1:focus {
 }
 
 .hub-permission-row {
-    align-items: center;
+    align-items: stretch;
     background: rgba(255, 255, 255, .66);
     border: 1px solid rgba(78, 104, 145, .12);
     border-radius: 14px;
     display: grid;
-    gap: 14px;
-    grid-template-columns: minmax(220px, 1fr) minmax(420px, 1.35fr);
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
     min-width: 0;
     padding: 12px;
 }
@@ -1252,7 +1252,7 @@ h1:focus {
     align-items: center;
     display: grid;
     gap: 10px;
-    grid-template-columns: 92px minmax(150px, .8fr) minmax(150px, .8fr);
+    grid-template-columns: 88px minmax(150px, 1fr) minmax(150px, 1fr);
     min-width: 0;
 }
 
@@ -1390,6 +1390,14 @@ h1:focus {
 
 .hub-google-panel-heading .mud-button-root {
     flex: 0 0 auto;
+}
+
+.hub-google-panel-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
 }
 
 .hub-google-panel-heading .mud-typography-h6 {
@@ -3871,6 +3879,12 @@ h1:focus {
     }
 
     .hub-google-panel-heading .mud-button-root {
+        width: 100%;
+    }
+
+    .hub-google-panel-actions {
+        align-items: stretch;
+        flex-direction: column;
         width: 100%;
     }
 

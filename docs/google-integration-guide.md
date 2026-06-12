@@ -6,7 +6,7 @@ Organization Hub는 하나의 운영 Google 계정을 연결해 Drive, Calendar,
 
 Google Cloud에서 OAuth Client ID와 Client Secret을 만들고 앱 환경 변수 또는 secret 저장소에 설정합니다.
 
-OAuth 동의 화면의 앱 이름은 제품명과 같은 `Organization Hub`로 설정합니다. 예전 제품명이나 내부 프로젝트명이 남아 있으면 사용자가 Google 승인 화면에서 잘못된 제품으로 인식할 수 있습니다.
+OAuth 동의 화면의 앱 이름은 제품명과 같은 `Organization Hub`로 설정합니다.
 
 Google Cloud Console의 OAuth 클라이언트에는 Organization Hub 관리 화면에 표시되는 `OAuth 콜백 URI`를 승인된 리디렉션 URI로 등록합니다. 로컬 개발 기본 주소는 다음과 같습니다.
 
@@ -46,11 +46,15 @@ http://127.0.0.1:5156/admin/google/callback
 - 각 팀 자료
 - 각 팀 결재 완료 자료
 
+기본 폴더 만들기 기능은 연결된 Google 계정의 My Drive 아래에 `Organization Hub` 루트를 만들고, 공통 자료, 관리팀 자료, 팀별 자료, 책임자 자료, 업무 지원 자료를 표준 구조로 생성하거나 재사용한 뒤 설정에 연결합니다.
+
 공식 루트가 지정되면 다른 자료 폴더는 공식 루트 아래에 있어야 합니다. 폴더를 새로 만들거나 바꾼 뒤에는 권한이 다른 사용자로 실제 조회와 업로드 가능 여부를 확인합니다.
 
 ## Calendar와 Tasks 매핑
 
 조직 공용, 책임자, 팀별 Calendar와 Tasks 목록을 연결할 수 있습니다. 실제 조회와 수정 가능 여부는 사용자의 직책 권한으로 결정됩니다.
+
+기본 Calendar 만들기 기능은 조직 공용, 책임자, 팀별 Calendar를 만들거나 재사용한 뒤 설정에 연결합니다.
 
 기본 할 일 목록 만들기 기능은 연결된 Google 계정에서 필요한 Tasks 목록을 만들고 설정에 연결합니다.
 
