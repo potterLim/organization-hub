@@ -1,0 +1,171 @@
+@inherits OrganizationHubComponentBase
+@inject INavigationMenuService NavigationMenuService
+
+<MudNavMenu Dense="true" Class="hub-nav-menu">
+    @if (mIsLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-2" />
+    }
+    else
+    {
+        @for (int index = 0; index < mVisibleMenuItems.Count; index++)
+        {
+            NavigationMenuItem menuItem = mVisibleMenuItems[index];
+            if (shouldShowSectionLabel(index))
+            {
+                @if (index > 0)
+                {
+                    <MudDivider Class="hub-nav-divider" />
+                }
+                @if (shouldRenderSectionLabel(menuItem))
+                {
+                    <div class="hub-nav-section-label">@getSectionTitle(menuItem)</div>
+                }
+            }
+
+            <MudNavLink Href="@menuItem.Href" Icon="@getIcon(menuItem.IconKey)" Match="NavLinkMatch.Prefix">@menuItem.DisplayName</MudNavLink>
+        }
+    }
+</MudNavMenu>
+
+@code
+{
+    private List<NavigationMenuItem> mVisibleMenuItems = new List<NavigationMenuItem>();
+    private bool mIsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession == false || CurrentUserSessionOrNull == null)
+        {
+            mIsLoading = false;
+            return;
+        }
+
+        IReadOnlyList<NavigationMenuItem> visibleMenuItems = await NavigationMenuService.GetVisibleMenuItemsAsync(CurrentUserSessionOrNull, CancellationToken.None);
+        mVisibleMenuItems = visibleMenuItems.ToList();
+        mIsLoading = false;
+    }
+
+    private bool shouldShowSectionLabel(int index)
+    {
+        if (index == 0)
+        {
+            return true;
+        }
+
+        NavigationMenuItem previousMenuItem = mVisibleMenuItems[index - 1];
+        NavigationMenuItem currentMenuItem = mVisibleMenuItems[index];
+        return getSectionTitle(previousMenuItem) != getSectionTitle(currentMenuItem);
+    }
+
+    private bool shouldRenderSectionLabel(NavigationMenuItem menuItem)
+    {
+        return getSectionTitle(menuItem) != "기본";
+    }
+
+    private string getSectionTitle(NavigationMenuItem menuItem)
+    {
+        switch (menuItem.MenuKey)
+        {
+            case "Dashboard":
+                return "기본";
+            case "Calendar":
+            case "Todos":
+            case "WorkGuidelines":
+            case "WorkResources":
+                return "운영";
+            case "Materials":
+            case "ManagementFiles":
+            case "Common":
+            case "Public":
+            case "Upload":
+            case "ResponsibleResources":
+                return "자료실";
+            case "ApprovalRequest":
+            case "ApprovalInbox":
+            case "ApprovalHistory":
+            case "ApprovedFiles":
+                return "결재";
+            default:
+                break;
+        }
+
+        switch (menuItem.AccessLevel)
+        {
+            case EMenuAccessLevel.Authenticated:
+                return "자료실";
+            case EMenuAccessLevel.TeamMember:
+                return "자료실";
+            case EMenuAccessLevel.TeamLeader:
+                return "자료실";
+            case EMenuAccessLevel.ManagementManager:
+                return "관리";
+            case EMenuAccessLevel.Management:
+                return "관리";
+            case EMenuAccessLevel.Admin:
+                return "관리";
+            default:
+                return "메뉴";
+        }
+    }
+
+    private string getIcon(string iconKey)
+    {
+        switch (iconKey)
+        {
+            case "Dashboard":
+                return Icons.Material.Filled.Dashboard;
+            case "PictureAsPdf":
+                return Icons.Material.Filled.PictureAsPdf;
+            case "Folder":
+                return Icons.Material.Filled.Folder;
+            case "Business":
+                return Icons.Material.Filled.Business;
+            case "Groups":
+                return Icons.Material.Filled.Groups;
+            case "Public":
+                return Icons.Material.Filled.Public;
+            case "UploadFile":
+                return Icons.Material.Filled.UploadFile;
+            case "CalendarMonth":
+                return Icons.Material.Filled.CalendarMonth;
+            case "TaskAlt":
+                return Icons.Material.Filled.TaskAlt;
+            case "SupervisorAccount":
+                return Icons.Material.Filled.SupervisorAccount;
+            case "Rule":
+                return Icons.Material.Filled.Rule;
+            case "EventAvailable":
+                return Icons.Material.Filled.EventAvailable;
+            case "Inventory2":
+                return Icons.Material.Filled.Inventory2;
+            case "ManageAccounts":
+                return Icons.Material.Filled.ManageAccounts;
+            case "Groups2":
+                return Icons.Material.Filled.Groups2;
+            case "AdminPanelSettings":
+                return Icons.Material.Filled.AdminPanelSettings;
+            case "AccountTree":
+                return Icons.Material.Filled.AccountTree;
+            case "Settings":
+                return Icons.Material.Filled.Settings;
+            case "History":
+                return Icons.Material.Filled.History;
+            case "CloudSync":
+                return Icons.Material.Filled.CloudSync;
+            case "Menu":
+                return Icons.Material.Filled.Menu;
+            case "Approval":
+                return Icons.Material.Filled.Approval;
+            case "FactCheck":
+                return Icons.Material.Filled.FactCheck;
+            case "HistoryEdu":
+                return Icons.Material.Filled.HistoryEdu;
+            case "Verified":
+                return Icons.Material.Filled.Verified;
+            default:
+                return Icons.Material.Filled.RadioButtonUnchecked;
+        }
+    }
+}

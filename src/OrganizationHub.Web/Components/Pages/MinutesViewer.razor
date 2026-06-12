@@ -1,0 +1,119 @@
+@page "/files/{FileID}/viewer"
+@attribute [Authorize]
+@inherits OrganizationHubComponentBase
+@implements IAsyncDisposable
+@inject IDriveService DriveService
+@inject IPermissionService PermissionService
+@inject IJSRuntime JavaScriptRuntime
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("PDF 보기")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">@mFileName</h1>
+        <div class="hub-page-description">문서 보기</div>
+    </div>
+    <div class="hub-page-actions">
+        <MudTooltip Text="다운로드">
+            <MudIconButton Href="@("/files/" + FileID + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" aria-label="다운로드" />
+        </MudTooltip>
+    </div>
+</div>
+
+@if (mIsLoading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else if (string.IsNullOrWhiteSpace(mErrorMessage) == false)
+{
+    <MudAlert Severity="Severity.Warning">@mErrorMessage</MudAlert>
+}
+else
+{
+    <section class="hub-document-viewer-shell">
+        @if (string.IsNullOrWhiteSpace(mViewerErrorMessage) == false)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mb-4">@mViewerErrorMessage</MudAlert>
+        }
+        <div @ref="mViewerElement" class="hub-pdfjs-viewer"></div>
+    </section>
+}
+
+@code
+{
+    [Parameter]
+    public string FileID { get; set; } = string.Empty;
+
+    private ElementReference mViewerElement;
+    private IJSObjectReference? mViewerModuleOrNull;
+    private string mFileName = "PDF 문서";
+    private string mErrorMessage = string.Empty;
+    private string mViewerErrorMessage = string.Empty;
+    private bool mIsLoading = true;
+    private bool mIsViewerRendered;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession == false || CurrentUserSessionOrNull == null)
+        {
+            mErrorMessage = "로그인이 필요합니다.";
+            mIsLoading = false;
+            return;
+        }
+
+        bool canReadFile = await PermissionService.CanReadFileAsync(CurrentUserSessionOrNull, FileID, CancellationToken.None);
+        if (canReadFile == false)
+        {
+            mErrorMessage = "이 PDF를 볼 권한이 없습니다.";
+            mIsLoading = false;
+            return;
+        }
+
+        DriveFileMetadata? metadataOrNull = await DriveService.GetFileOrNullAsync(FileID, CancellationToken.None);
+        if (metadataOrNull != null && string.IsNullOrWhiteSpace(metadataOrNull.Name) == false)
+        {
+            mFileName = metadataOrNull.Name;
+        }
+
+        mIsLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (mIsLoading || string.IsNullOrWhiteSpace(mErrorMessage) == false || mIsViewerRendered)
+        {
+            return;
+        }
+
+        try
+        {
+            mViewerModuleOrNull = await JavaScriptRuntime.InvokeAsync<IJSObjectReference>("import", "/js/organizationHubPdfViewer.js");
+            await mViewerModuleOrNull.InvokeVoidAsync("renderPdf", mViewerElement, "/files/" + Uri.EscapeDataString(FileID) + "/stream");
+            mIsViewerRendered = true;
+        }
+        catch
+        {
+            mViewerErrorMessage = "PDF를 불러오지 못했습니다. 잠시 후 다시 시도하거나 파일을 다운로드해 확인해 주세요.";
+            mIsViewerRendered = true;
+            StateHasChanged();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (mViewerModuleOrNull != null)
+            {
+                await mViewerModuleOrNull.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+}

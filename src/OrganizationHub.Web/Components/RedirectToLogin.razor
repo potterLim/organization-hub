@@ -1,0 +1,17 @@
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@code
+{
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authenticationState.User.Identity != null && authenticationState.User.Identity.IsAuthenticated)
+        {
+            NavigationManager.NavigateTo("/access-denied", true);
+            return;
+        }
+
+        NavigationManager.NavigateTo("/login", true);
+    }
+}

@@ -1,0 +1,12 @@
+@page "/management-files"
+@attribute [Authorize(Policy = OrganizationHubPolicies.MANAGEMENT_ACCESS)]
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle(OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME)</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">@OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME</h1>
+    </div>
+</div>
+
+<DriveFileBrowser FolderKind="EDriveFolderKind.TeamMaterials" ManagementTeamOnly="true" ShowTeam="false" ShowPreview="true" EnableSearch="true" SearchPlaceholder="관리팀 자료 검색" RootFolderLabel="@OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME" EmptyMessage="관리팀 자료가 없습니다." ErrorMessagePrefix="관리팀 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." />

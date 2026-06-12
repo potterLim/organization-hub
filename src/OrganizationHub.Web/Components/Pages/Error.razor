@@ -1,0 +1,38 @@
+@page "/Error"
+@using System.Diagnostics
+@using Microsoft.AspNetCore.Http
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("오류")</PageTitle>
+
+<MudPaper Class="hub-card pa-4">
+    <MudText Typo="Typo.h4">요청을 처리하는 중 오류가 발생했습니다.</MudText>
+    @if (mHasRequestID)
+    {
+        <MudText Typo="Typo.body2" Class="hub-muted">Request ID: @mRequestID</MudText>
+    }
+</MudPaper>
+
+@code
+{
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string mRequestID = string.Empty;
+    private bool mHasRequestID;
+
+    protected override void OnInitialized()
+    {
+        if (Activity.Current != null && string.IsNullOrWhiteSpace(Activity.Current.Id) == false)
+        {
+            mRequestID = Activity.Current.Id;
+            mHasRequestID = true;
+            return;
+        }
+
+        if (HttpContext != null && string.IsNullOrWhiteSpace(HttpContext.TraceIdentifier) == false)
+        {
+            mRequestID = HttpContext.TraceIdentifier;
+            mHasRequestID = true;
+        }
+    }
+}

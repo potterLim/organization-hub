@@ -1,0 +1,49 @@
+@inherits OrganizationHubComponentBase
+@implements IDisposable
+@inject INavigationMenuService NavigationMenuService
+@inject NavigationManager NavigationManager
+
+@code
+{
+    private bool mIsDisposed;
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += handleLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await checkCurrentRouteAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        mIsDisposed = true;
+        NavigationManager.LocationChanged -= handleLocationChanged;
+    }
+
+    private void handleLocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        _ = InvokeAsync(checkCurrentRouteAsync);
+    }
+
+    private async Task checkCurrentRouteAsync()
+    {
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession == false || CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        Uri currentUri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        bool canAccessPath = await NavigationMenuService.CanAccessPathAsync(CurrentUserSessionOrNull, currentUri.AbsolutePath, CancellationToken.None);
+        if (canAccessPath == false && mIsDisposed == false)
+        {
+            NavigationManager.NavigateTo("/access-denied");
+        }
+    }
+}

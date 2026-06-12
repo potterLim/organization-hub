@@ -1,0 +1,160 @@
+@page "/admin/teams"
+@attribute [Authorize(Policy = OrganizationHubPolicies.ORGANIZATION_MANAGE)]
+@inject ITeamManagementService TeamManagementService
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("팀 관리")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">팀 관리</h1>
+        <div class="hub-page-description">팀 이름, 표시 순서, 자료 위치와 일정/할 일 연결을 관리합니다.</div>
+    </div>
+</div>
+
+@if (string.IsNullOrWhiteSpace(mMessage) == false)
+{
+    <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
+}
+
+<MudGrid Spacing="6" Class="hub-management-grid hub-admin-page-grid">
+    <MudItem xs="12" lg="5" xl="4">
+        <MudPaper Class="hub-card hub-form-card pa-4">
+            <div class="hub-admin-form-heading">
+                <MudText Typo="Typo.h6">@mFormTitle</MudText>
+                <span>@(mFormModel.ID == 0 ? "새 팀" : "수정 중")</span>
+            </div>
+            <MudTextField @bind-Value="mFormModel.TeamKey" Label="팀 키" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <MudTextField @bind-Value="mFormModel.DisplayName" Label="표시 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <MudNumericField T="int" @bind-Value="mFormModel.SortOrder" Label="표시 순서" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <SettingIdField @bind-Value="mFormModel.MaterialsFolderID" Label="팀 자료 폴더 ID" />
+            <SettingIdField @bind-Value="mFormModel.ApprovedFolderID" Label="결재 완료 자료 폴더 ID" />
+            <SettingIdField @bind-Value="mFormModel.CalendarID" Label="캘린더 ID" />
+            <SettingIdField @bind-Value="mFormModel.TaskListID" Label="할 일 목록 ID" />
+            <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="활성 상태" Color="Color.Primary" />
+            <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveTeamAsync" Class="hub-primary-action-button">저장</MudButton>
+                @if (mFormModel.ID != 0)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="clearForm">새 팀</MudButton>
+                }
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" lg="7" xl="8">
+        <MudPaper Class="hub-card hub-list-card pa-4">
+            <MudText Typo="Typo.h6">팀 목록</MudText>
+            <MudTable Items="mTeams" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
+                <HeaderContent>
+                    <MudTh>순서</MudTh>
+                    <MudTh>팀 키</MudTh>
+                    <MudTh>표시 이름</MudTh>
+                    <MudTh>사용자</MudTh>
+                    <MudTh>상태</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate Context="team">
+                    <MudTd DataLabel="순서">@team.SortOrder</MudTd>
+                    <MudTd DataLabel="팀 키">@team.TeamKey</MudTd>
+                    <MudTd DataLabel="표시 이름">@team.DisplayName</MudTd>
+                    <MudTd DataLabel="사용자">@team.UserAccounts.Count</MudTd>
+                    <MudTd DataLabel="상태"><span class="@(team.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(team.IsActive ? "활성" : "비활성")</span></MudTd>
+                    <MudTd DataLabel="작업" Class="hub-action-cell">
+                        <div class="hub-table-actions">
+                            <MudTooltip Text="팀 수정">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editTeam(team))" aria-label="팀 수정" />
+                            </MudTooltip>
+                            <MudTooltip Text="@(team.IsActive ? "팀 비활성화" : "팀 활성화")">
+                                <MudIconButton Icon="@(team.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => toggleTeamActiveAsync(team))" aria-label="@(team.IsActive ? "팀 비활성화" : "팀 활성화")" />
+                            </MudTooltip>
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code
+{
+    private List<Team> mTeams = new List<Team>();
+    private TeamFormModel mFormModel = new TeamFormModel();
+    private string mFormTitle = "새 팀";
+    private string mMessage = string.Empty;
+    private Severity mMessageSeverity = Severity.Info;
+
+    protected override async Task OnInitializedAsync()
+    {
+        clearForm();
+        await loadDataAsync();
+    }
+
+    private async Task loadDataAsync()
+    {
+        IReadOnlyList<Team> teams = await TeamManagementService.GetTeamsAsync(CancellationToken.None);
+        mTeams = teams.ToList();
+    }
+
+    private async Task saveTeamAsync()
+    {
+        ServiceResult result = mFormModel.ID == 0 ? await TeamManagementService.CreateTeamAsync(mFormModel, CancellationToken.None) : await TeamManagementService.UpdateTeamAsync(mFormModel, CancellationToken.None);
+        showResult(result, "팀 정보가 저장되었습니다.");
+        if (result.IsSuccess)
+        {
+            clearForm();
+            await loadDataAsync();
+        }
+    }
+
+    private void editTeam(Team team)
+    {
+        mFormModel = new TeamFormModel();
+        mFormModel.ID = team.ID;
+        mFormModel.TeamKey = team.TeamKey;
+        mFormModel.DisplayName = team.DisplayName;
+        mFormModel.IsActive = team.IsActive;
+        mFormModel.SortOrder = team.SortOrder;
+        mFormModel.MaterialsFolderID = getNullAsEmpty(team.MaterialsFolderID);
+        mFormModel.ApprovedFolderID = getNullAsEmpty(team.ApprovedFolderID);
+        mFormModel.CalendarID = getNullAsEmpty(team.CalendarID);
+        mFormModel.TaskListID = getNullAsEmpty(team.TaskListID);
+        mFormTitle = "팀 수정";
+    }
+
+    private async Task toggleTeamActiveAsync(Team team)
+    {
+        ServiceResult result = team.IsActive ? await TeamManagementService.DeactivateTeamAsync(team.ID, CancellationToken.None) : await TeamManagementService.ActivateTeamAsync(team.ID, CancellationToken.None);
+        showResult(result, "팀 상태가 변경되었습니다.");
+        await loadDataAsync();
+    }
+
+    private void clearForm()
+    {
+        mFormModel = new TeamFormModel();
+        mFormModel.IsActive = true;
+        mFormModel.SortOrder = 100;
+        mFormTitle = "새 팀";
+    }
+
+    private void showResult(ServiceResult result, string successMessage)
+    {
+        if (result.IsSuccess)
+        {
+            mMessage = successMessage;
+            mMessageSeverity = Severity.Success;
+            return;
+        }
+
+        mMessage = result.ErrorMessage;
+        mMessageSeverity = Severity.Error;
+    }
+
+    private string getNullAsEmpty(string? valueOrNull)
+    {
+        if (valueOrNull == null)
+        {
+            return string.Empty;
+        }
+
+        return valueOrNull;
+    }
+}

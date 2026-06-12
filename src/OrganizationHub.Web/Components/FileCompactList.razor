@@ -1,0 +1,179 @@
+<div class="hub-file-compact-list">
+    @foreach (DriveFileItem file in Files)
+    {
+        <div class="hub-file-compact-row">
+            <div class="hub-file-compact-main">
+                @if (canOpenFolder(file))
+                {
+                    <button type="button" class="hub-file-inline-name hub-file-folder-link" @onclick="@(() => openFolderAsync(file))" aria-label="@("폴더 열기: " + file.Name)">
+                        <MudIcon Icon="@getFileIcon(file)" Size="Size.Small" Class="@getFileIconClass(file)" />
+                        <MudText Typo="Typo.body2" Class="hub-file-compact-name">@file.Name</MudText>
+                    </button>
+                }
+                else
+                {
+                    <div class="hub-file-inline-name">
+                        <MudIcon Icon="@getFileIcon(file)" Size="Size.Small" Class="@getFileIconClass(file)" />
+                        @renderCompactFileName(file)
+                    </div>
+                }
+                <div class="hub-file-compact-meta">
+                    @if (ShowTeam)
+                    {
+                        <span>@getTeamName(file)</span>
+                    }
+                    <span>@formatDate(file.ModifiedTime)</span>
+                    @if (file.IsFolder == false && string.IsNullOrWhiteSpace(file.UploadedByDisplayName) == false)
+                    {
+                        <span>@UploadedByLabel @file.UploadedByDisplayName</span>
+                    }
+                </div>
+            </div>
+            <div class="hub-table-actions hub-file-compact-actions">
+                @if (file.IsFolder)
+                {
+                    <MudTooltip Text="폴더 열기">
+                        <MudIconButton Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" Size="Size.Small" Disabled="@(FolderOpened.HasDelegate == false)" OnClick="@(() => openFolderAsync(file))" aria-label="폴더 열기" />
+                    </MudTooltip>
+                }
+                else if (ShowPreview && file.CanPreviewInSite)
+                {
+                    <MudTooltip Text="PDF 보기">
+                        <MudIconButton Href="@("/files/" + file.ID + "/viewer")" Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" Size="Size.Small" aria-label="PDF 보기" />
+                    </MudTooltip>
+                }
+                @if (file.IsFolder == false)
+                {
+                    <MudTooltip Text="다운로드">
+                        <MudIconButton Href="@("/files/" + file.ID + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
+                    </MudTooltip>
+                    @if (CanDelete)
+                    {
+                        <MudTooltip Text="삭제">
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => requestDeleteAsync(file))" aria-label="삭제" />
+                        </MudTooltip>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code
+{
+    [Parameter]
+    public IReadOnlyList<DriveFileItem> Files { get; set; } = new List<DriveFileItem>();
+
+    [Parameter]
+    public bool ShowTeam { get; set; } = true;
+
+    [Parameter]
+    public bool ShowPreview { get; set; }
+
+    [Parameter]
+    public string UploadedByLabel { get; set; } = "올린 사람";
+
+    [Parameter]
+    public EventCallback<DriveFileItem> FolderOpened { get; set; }
+
+    [Parameter]
+    public bool CanDelete { get; set; }
+
+    [Parameter]
+    public EventCallback<DriveFileItem> DeleteRequested { get; set; }
+
+    private async Task openFolderAsync(DriveFileItem file)
+    {
+        if (file.IsFolder == false || FolderOpened.HasDelegate == false)
+        {
+            return;
+        }
+
+        await FolderOpened.InvokeAsync(file);
+    }
+
+    private bool canOpenFolder(DriveFileItem file)
+    {
+        if (file.IsFolder == false)
+        {
+            return false;
+        }
+
+        return FolderOpened.HasDelegate;
+    }
+
+    private RenderFragment renderCompactFileName(DriveFileItem file)
+    {
+        if (canPreviewFile(file))
+        {
+            return @<MudLink Href="@getViewerHref(file)" Class="hub-file-compact-name hub-file-preview-link">@file.Name</MudLink>;
+        }
+
+        return @<MudText Typo="Typo.body2" Class="hub-file-compact-name">@file.Name</MudText>;
+    }
+
+    private bool canPreviewFile(DriveFileItem file)
+    {
+        return file.IsFolder == false && ShowPreview && file.CanPreviewInSite;
+    }
+
+    private string getViewerHref(DriveFileItem file)
+    {
+        return "/files/" + file.ID + "/viewer";
+    }
+
+    private async Task requestDeleteAsync(DriveFileItem file)
+    {
+        if (CanDelete == false || DeleteRequested.HasDelegate == false)
+        {
+            return;
+        }
+
+        await DeleteRequested.InvokeAsync(file);
+    }
+
+    private string formatDate(DateTime? dateTimeOrNull)
+    {
+        if (dateTimeOrNull.HasValue == false)
+        {
+            return "-";
+        }
+
+        return dateTimeOrNull.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private string getFileIcon(DriveFileItem file)
+    {
+        if (file.IsFolder)
+        {
+            return Icons.Material.Filled.Folder;
+        }
+
+        if (file.MimeType == "application/pdf")
+        {
+            return Icons.Material.Filled.PictureAsPdf;
+        }
+
+        return Icons.Material.Filled.InsertDriveFile;
+    }
+
+    private string getFileIconClass(DriveFileItem file)
+    {
+        if (file.IsFolder)
+        {
+            return "hub-file-icon hub-file-folder-icon";
+        }
+
+        return "hub-file-icon";
+    }
+
+    private string getTeamName(DriveFileItem file)
+    {
+        if (string.IsNullOrWhiteSpace(file.TeamName))
+        {
+            return "분류 없음";
+        }
+
+        return file.TeamName;
+    }
+}

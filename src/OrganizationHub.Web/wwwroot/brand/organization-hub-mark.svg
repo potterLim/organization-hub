@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Organization Hub">
+  <defs>
+    <linearGradient id="organizationHubMarkGradient" x1="9" y1="8" x2="55" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#216bff" />
+      <stop offset="1" stop-color="#3db5ff" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#organizationHubMarkGradient)" />
+  <path d="M32 19v26M19 32h26M22.6 22.6l18.8 18.8M41.4 22.6 22.6 41.4" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" opacity=".68" />
+  <circle cx="32" cy="15" r="7" fill="#ffffff" opacity=".95" />
+  <circle cx="49" cy="32" r="7" fill="#ffffff" opacity=".95" />
+  <circle cx="32" cy="49" r="7" fill="#ffffff" opacity=".95" />
+  <circle cx="15" cy="32" r="7" fill="#ffffff" opacity=".95" />
+  <path d="M32 23.5 41 28.75v10.5L32 44.5 23 39.25v-10.5L32 23.5Z" fill="#ffffff" opacity=".16" />
+  <path d="M32 23.5 41 28.75v10.5L32 44.5 23 39.25v-10.5L32 23.5Z" fill="none" stroke="#ffffff" stroke-linejoin="round" stroke-width="4" opacity=".96" />
+</svg>

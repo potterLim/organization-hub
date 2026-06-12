@@ -1,0 +1,49 @@
+<div class="@getStateClass()">
+    <MudIcon Icon="@Icon" Size="Size.Medium" />
+    <div class="hub-empty-copy">
+        <div class="hub-empty-title">@Title</div>
+        @if (string.IsNullOrWhiteSpace(Description) == false)
+        {
+            <div class="hub-empty-description">@Description</div>
+        }
+    </div>
+    @if (string.IsNullOrWhiteSpace(ActionLabel) == false && Action.HasDelegate)
+    {
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@ActionIcon" OnClick="Action">@ActionLabel</MudButton>
+    }
+</div>
+
+@code
+{
+    [Parameter]
+    public string Icon { get; set; } = Icons.Material.Filled.Info;
+
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Description { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ActionLabel { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ActionIcon { get; set; } = Icons.Material.Filled.Refresh;
+
+    [Parameter]
+    public EventCallback Action { get; set; }
+
+    [Parameter]
+    public string Class { get; set; } = string.Empty;
+
+    private string getStateClass()
+    {
+        string baseClass = "hub-empty hub-empty-state";
+        if (string.IsNullOrWhiteSpace(Class))
+        {
+            return baseClass;
+        }
+
+        return baseClass + " " + Class;
+    }
+}

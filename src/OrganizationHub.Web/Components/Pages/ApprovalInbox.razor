@@ -1,0 +1,225 @@
+@page "/approvals/inbox"
+@attribute [Authorize]
+@inherits OrganizationHubComponentBase
+@inject IApprovalService ApprovalService
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("내 결재함")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">내 결재함</h1>
+    </div>
+</div>
+
+@if (string.IsNullOrWhiteSpace(mMessage) == false)
+{
+    <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
+}
+
+@if (mIsLoading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else if (mPendingApprovals.Count == 0)
+{
+    <div class="hub-empty hub-empty-state">
+        <MudIcon Icon="@Icons.Material.Filled.FactCheck" Size="Size.Medium" />
+        <span>처리할 결재가 없습니다.</span>
+    </div>
+}
+else
+{
+    <div class="hub-approval-list">
+        @foreach (ApprovalRequestItem approvalRequest in mPendingApprovals)
+        {
+            <MudPaper Class="hub-card hub-approval-card pa-4">
+                <div class="hub-approval-card-head">
+                    <div>
+                        <MudText Typo="Typo.h6">@approvalRequest.Title</MudText>
+                        <MudText Typo="Typo.body2" Class="hub-muted">@approvalRequest.TeamName · @approvalRequest.RequesterDisplayName · @formatDate(approvalRequest.RequestedAt)</MudText>
+                    </div>
+                    <span class="hub-status-pill hub-status-active">@approvalRequest.CurrentStepNumber.ToString(CultureInfo.InvariantCulture)차 결재</span>
+                </div>
+                <div class="hub-approval-file-row">
+                    <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" />
+                    <span>@approvalRequest.FileName</span>
+                    <MudTooltip Text="다운로드">
+                        <MudIconButton Href="@("/files/" + approvalRequest.FileID + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
+                    </MudTooltip>
+                </div>
+                @if (canChangeNextApprover(approvalRequest))
+                {
+                    <MudSelect T="int" Label="다음 결재권자" Value="@getNextApproverValue(approvalRequest.ID)" ValueChanged="@((int value) => setNextApproverValue(approvalRequest.ID, value))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-approval-select">
+                        @foreach (ApprovalUserOption userOption in mApproverOptions)
+                        {
+                            <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+                <MudTextField Value="@getCommentValue(approvalRequest.ID)" ValueChanged="@((string value) => setCommentValue(approvalRequest.ID, value))" Label="코멘트" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <div class="hub-approval-steps">
+                    @foreach (ApprovalStepItem step in approvalRequest.Steps)
+                    {
+                        <span class="@getStepClass(step)">@step.StepNumber.ToString(CultureInfo.InvariantCulture)차 @step.ApproverDisplayName</span>
+                    }
+                </div>
+                <MudStack Row="true" Spacing="2" Class="hub-form-actions mt-3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="@(() => approveRequestAsync(approvalRequest))">승인</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Cancel" OnClick="@(() => rejectRequestAsync(approvalRequest))">반려</MudButton>
+                </MudStack>
+            </MudPaper>
+        }
+    </div>
+}
+
+@code
+{
+    private List<ApprovalRequestItem> mPendingApprovals = new List<ApprovalRequestItem>();
+    private List<ApprovalUserOption> mApproverOptions = new List<ApprovalUserOption>();
+    private Dictionary<int, string> mCommentsByApprovalID = new Dictionary<int, string>();
+    private Dictionary<int, int> mNextApproverUserIDByApprovalID = new Dictionary<int, int>();
+    private string mMessage = string.Empty;
+    private Severity mMessageSeverity = Severity.Info;
+    private bool mIsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession == false || CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        ApprovalCreateContext createContext = await ApprovalService.GetCreateContextAsync(CurrentUserSessionOrNull, CancellationToken.None);
+        mApproverOptions = createContext.ApproverOptions.ToList();
+        await loadDataAsync();
+        mIsLoading = false;
+    }
+
+    private async Task loadDataAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        IReadOnlyList<ApprovalRequestItem> pendingApprovals = await ApprovalService.GetPendingApprovalsAsync(CurrentUserSessionOrNull, CancellationToken.None);
+        mPendingApprovals = pendingApprovals.ToList();
+        foreach (ApprovalRequestItem approvalRequest in mPendingApprovals)
+        {
+            if (mCommentsByApprovalID.ContainsKey(approvalRequest.ID) == false)
+            {
+                mCommentsByApprovalID[approvalRequest.ID] = string.Empty;
+            }
+
+            if (mNextApproverUserIDByApprovalID.ContainsKey(approvalRequest.ID) == false)
+            {
+                ApprovalStepItem? nextStepOrNull = approvalRequest.Steps.FirstOrDefault(step => step.StepNumber == approvalRequest.CurrentStepNumber + 1);
+                if (nextStepOrNull != null)
+                {
+                    mNextApproverUserIDByApprovalID[approvalRequest.ID] = nextStepOrNull.ApproverUserID;
+                }
+            }
+        }
+    }
+
+    private async Task approveRequestAsync(ApprovalRequestItem approvalRequest)
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        ServiceResult result = await ApprovalService.ApproveRequestAsync(CurrentUserSessionOrNull, approvalRequest.ID, getNextApproverValue(approvalRequest.ID), getCommentValue(approvalRequest.ID), CancellationToken.None);
+        showResult(result, "승인되었습니다.");
+        if (result.IsSuccess)
+        {
+            await loadDataAsync();
+        }
+    }
+
+    private async Task rejectRequestAsync(ApprovalRequestItem approvalRequest)
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        ServiceResult result = await ApprovalService.RejectRequestAsync(CurrentUserSessionOrNull, approvalRequest.ID, getCommentValue(approvalRequest.ID), CancellationToken.None);
+        showResult(result, "반려되었습니다.");
+        if (result.IsSuccess)
+        {
+            await loadDataAsync();
+        }
+    }
+
+    private bool canChangeNextApprover(ApprovalRequestItem approvalRequest)
+    {
+        return approvalRequest.CurrentStepNumber + 1 < approvalRequest.StepCount;
+    }
+
+    private string getCommentValue(int approvalRequestID)
+    {
+        string? commentOrNull;
+        if (mCommentsByApprovalID.TryGetValue(approvalRequestID, out commentOrNull))
+        {
+            return commentOrNull;
+        }
+
+        return string.Empty;
+    }
+
+    private void setCommentValue(int approvalRequestID, string comment)
+    {
+        mCommentsByApprovalID[approvalRequestID] = comment;
+    }
+
+    private int getNextApproverValue(int approvalRequestID)
+    {
+        int nextApproverUserID;
+        if (mNextApproverUserIDByApprovalID.TryGetValue(approvalRequestID, out nextApproverUserID))
+        {
+            return nextApproverUserID;
+        }
+
+        return 0;
+    }
+
+    private void setNextApproverValue(int approvalRequestID, int nextApproverUserID)
+    {
+        mNextApproverUserIDByApprovalID[approvalRequestID] = nextApproverUserID;
+    }
+
+    private void showResult(ServiceResult result, string successMessage)
+    {
+        if (result.IsSuccess)
+        {
+            mMessage = successMessage;
+            mMessageSeverity = Severity.Success;
+            return;
+        }
+
+        mMessage = result.ErrorMessage;
+        mMessageSeverity = Severity.Error;
+    }
+
+    private string getStepClass(ApprovalStepItem step)
+    {
+        if (step.Status == EApprovalStepStatus.Approved)
+        {
+            return "hub-status-pill hub-status-active";
+        }
+
+        if (step.Status == EApprovalStepStatus.Rejected)
+        {
+            return "hub-status-pill hub-status-inactive";
+        }
+
+        return "hub-status-pill";
+    }
+
+    private string formatDate(DateTime dateTime)
+    {
+        return dateTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+    }
+}

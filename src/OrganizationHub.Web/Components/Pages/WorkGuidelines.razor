@@ -1,0 +1,56 @@
+@page "/work-guidelines"
+@attribute [Authorize]
+@inject ITeamManagementService TeamManagementService
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("업무 기준")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">업무 기준</h1>
+    </div>
+    @if (string.IsNullOrWhiteSpace(mWorkGuidelineFileID) == false)
+    {
+        <MudButton Href="@("/files/" + mWorkGuidelineFileID + "/download")" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download">업무 기준 다운로드</MudButton>
+    }
+</div>
+
+<div class="hub-rule-grid">
+    <MudPaper Class="hub-card pa-4">
+        <MudText Typo="Typo.h6">파일명 규칙</MudText>
+        <ul class="hub-rule-list">
+            <li>날짜_팀명_문서주제 형식을 사용합니다.</li>
+            <li>예: 2026-05-21_운영팀_주간계획.pdf</li>
+            <li>예: 2026-05-22_인사팀_온보딩체크리스트.pdf</li>
+            <li>예: 2026-05-23_재무팀_예산검토안.pdf</li>
+        </ul>
+    </MudPaper>
+    <MudPaper Class="hub-card pa-4">
+        <MudText Typo="Typo.h6">폴더 관리 기준</MudText>
+        <ul class="hub-rule-list">
+            <li>루트 폴더 구조는 관리자 화면에서만 정리합니다.</li>
+            <li>각 팀은 자기 팀 폴더 안에서만 자료를 관리합니다.</li>
+            <li>일반 자료는 팀 자료 안의 적절한 하위 폴더에 올립니다.</li>
+        </ul>
+    </MudPaper>
+    <MudPaper Class="hub-card pa-4">
+        <MudText Typo="Typo.h6">파일 올리기 규칙</MudText>
+        <ul class="hub-rule-list">
+            <li>중복 파일 올리기를 피합니다.</li>
+            <li>팀 문서 안의 회의록 폴더에는 PDF만 올립니다.</li>
+            <li>수정본은 파일명에 v2, v3 등을 붙입니다.</li>
+            <li>최종본은 파일명에 Final을 붙입니다.</li>
+            <li>개인 정보가 포함된 파일은 외부 공유 자료 폴더에 올리지 않습니다.</li>
+        </ul>
+    </MudPaper>
+</div>
+
+@code
+{
+    private string mWorkGuidelineFileID = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        GlobalSettingFormModel setting = await TeamManagementService.GetGlobalSettingAsync(CancellationToken.None);
+        mWorkGuidelineFileID = setting.WorkGuidelineFileID;
+    }
+}

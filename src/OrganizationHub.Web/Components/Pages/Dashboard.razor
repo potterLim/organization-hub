@@ -1,0 +1,479 @@
+@page "/"
+@page "/dashboard"
+@attribute [Authorize]
+@inherits OrganizationHubComponentBase
+@inject IDriveBrowserService DriveBrowserService
+@inject ICalendarService CalendarService
+@inject IApprovalService ApprovalService
+@inject ITeamManagementService TeamManagementService
+@inject IPermissionService PermissionService
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("홈")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">홈</h1>
+    </div>
+    <MudStack Row="true" Spacing="2" Class="hub-page-actions">
+        @if (mCanCreateApprovalRequest)
+        {
+            <MudButton Href="/approvals/request" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Approval">결재 요청</MudButton>
+        }
+        @if (mCanUploadFiles)
+        {
+            <MudButton Href="/upload" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.UploadFile">파일 올리기</MudButton>
+        }
+    </MudStack>
+</div>
+
+@if (shouldShowPendingApprovalsCard())
+{
+    <MudPaper Class="hub-card hub-dashboard-priority-card pa-4">
+        <div class="hub-dashboard-card-head">
+            <MudText Typo="Typo.h6">내 결재 대기</MudText>
+            <MudButton Href="/approvals/inbox" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
+        </div>
+        @if (mIsLoadingPendingApprovals)
+        {
+            @renderDashboardSkeleton(3)
+        }
+        else if (string.IsNullOrWhiteSpace(mPendingApprovalsErrorMessage) == false)
+        {
+            <div class="hub-dashboard-card-error">
+                <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
+                <span>@mPendingApprovalsErrorMessage</span>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadPendingApprovalsAsync">다시 시도</MudButton>
+            </div>
+        }
+        else
+        {
+            <div class="hub-dashboard-approval-list">
+                @foreach (ApprovalRequestItem approvalRequest in mPendingApprovals)
+                {
+                    <div class="hub-dashboard-approval-row">
+                        <div>
+                            <MudText Typo="Typo.body1" Class="hub-dashboard-approval-title">@approvalRequest.Title</MudText>
+                            <MudText Typo="Typo.caption" Class="hub-muted">@approvalRequest.RequesterDisplayName · @formatDate(approvalRequest.RequestedAt)</MudText>
+                        </div>
+                        <span class="hub-status-pill hub-status-active">@approvalRequest.CurrentStepNumber.ToString(CultureInfo.InvariantCulture)차 결재</span>
+                    </div>
+                }
+            </div>
+        }
+    </MudPaper>
+}
+
+<MudGrid Spacing="5" Class="hub-dashboard-grid">
+    <MudItem xs="12" lg="6">
+        <MudPaper Class="hub-card pa-4">
+            <div class="hub-dashboard-card-head">
+                <MudText Typo="Typo.h6">이번 주 일정</MudText>
+                <MudButton Href="/calendar" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
+            </div>
+            @if (mIsLoadingWeekEvents)
+            {
+                @renderDashboardSkeleton(4)
+            }
+            else if (string.IsNullOrWhiteSpace(mWeekEventsErrorMessage) == false)
+            {
+                <div class="hub-dashboard-card-error">
+                    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
+                    <span>@mWeekEventsErrorMessage</span>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadWeekEventsAsync">다시 시도</MudButton>
+                </div>
+            }
+            else if (mWeekEvents.Count == 0)
+            {
+                <div class="hub-empty">이번 주 일정이 없습니다.</div>
+            }
+            else
+            {
+                <div class="hub-dashboard-event-list">
+                    @foreach (CalendarEventItem calendarEvent in mWeekEvents)
+                    {
+                        <div class="hub-dashboard-event-row">
+                            <MudText Typo="Typo.body2">@calendarEvent.Summary</MudText>
+                            <MudText Typo="Typo.caption" Class="hub-muted">@formatDashboardEventMeta(calendarEvent)</MudText>
+                        </div>
+                    }
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" lg="6">
+        <MudPaper Class="hub-card pa-4">
+            <div class="hub-dashboard-card-head">
+                <MudText Typo="Typo.h6">최근 팀 자료</MudText>
+                <MudButton Href="/materials" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
+            </div>
+            @if (mIsLoadingRecentMaterials)
+            {
+                @renderDashboardSkeleton(4)
+            }
+            else if (string.IsNullOrWhiteSpace(mRecentMaterialsErrorMessage) == false)
+            {
+                <div class="hub-dashboard-card-error">
+                    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
+                    <span>@mRecentMaterialsErrorMessage</span>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadRecentMaterialsAsync">다시 시도</MudButton>
+                </div>
+            }
+            else
+            {
+                <div class="hub-dashboard-recent-desktop">
+                    @renderRecentMaterials(mRecentMaterials)
+                </div>
+                <div class="hub-dashboard-recent-mobile">
+                    @renderRecentMaterials(getMobileRecentMaterials())
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code
+{
+    private List<DriveFileItem> mRecentMaterials = new List<DriveFileItem>();
+    private List<CalendarEventItem> mWeekEvents = new List<CalendarEventItem>();
+    private List<ApprovalRequestItem> mPendingApprovals = new List<ApprovalRequestItem>();
+    private string mPendingApprovalsErrorMessage = string.Empty;
+    private string mWeekEventsErrorMessage = string.Empty;
+    private string mRecentMaterialsErrorMessage = string.Empty;
+    private bool mIsLoadingPendingApprovals = true;
+    private bool mIsLoadingWeekEvents = true;
+    private bool mIsLoadingRecentMaterials = true;
+    private bool mShowCalendarAuthor;
+    private bool mCanCreateApprovalRequest;
+    private bool mCanUploadFiles;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession == false || CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        await loadQuickActionPermissionsAsync();
+        _ = loadDashboardSectionsAsync();
+    }
+
+    private async Task loadQuickActionPermissionsAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            mCanCreateApprovalRequest = false;
+            mCanUploadFiles = false;
+            return;
+        }
+
+        try
+        {
+            ApprovalCreateContext approvalCreateContext = await ApprovalService.GetCreateContextAsync(CurrentUserSessionOrNull, CancellationToken.None);
+            mCanCreateApprovalRequest = approvalCreateContext.CanCreateRequest;
+        }
+        catch
+        {
+            mCanCreateApprovalRequest = false;
+        }
+
+        try
+        {
+            IReadOnlyList<DriveFolderReference> uploadableFolders = await PermissionService.GetUploadableDriveFoldersAsync(CurrentUserSessionOrNull, CancellationToken.None);
+            mCanUploadFiles = uploadableFolders.Count > 0;
+        }
+        catch
+        {
+            mCanUploadFiles = false;
+        }
+    }
+
+    private async Task loadDashboardSectionsAsync()
+    {
+        Task dashboardSettingsTask = loadDashboardSettingsAsync();
+        Task pendingApprovalsTask = loadPendingApprovalsAsync();
+        Task weekEventsTask = loadWeekEventsAsync();
+        Task recentMaterialsTask = loadRecentMaterialsAsync();
+        await Task.WhenAll(dashboardSettingsTask, pendingApprovalsTask, weekEventsTask, recentMaterialsTask);
+    }
+
+    private async Task loadDashboardSettingsAsync()
+    {
+        try
+        {
+            GlobalSettingFormModel globalSetting = await TeamManagementService.GetGlobalSettingAsync(CancellationToken.None);
+            mShowCalendarAuthor = globalSetting.ShowCalendarAuthor;
+        }
+        catch
+        {
+            mShowCalendarAuthor = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task loadPendingApprovalsAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            mIsLoadingPendingApprovals = false;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        mIsLoadingPendingApprovals = true;
+        mPendingApprovalsErrorMessage = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            IReadOnlyList<ApprovalRequestItem> pendingApprovals = await ApprovalService.GetPendingApprovalsAsync(CurrentUserSessionOrNull, CancellationToken.None);
+            mPendingApprovals = pendingApprovals.Take(3).ToList();
+        }
+        catch
+        {
+            mPendingApprovals = new List<ApprovalRequestItem>();
+            mPendingApprovalsErrorMessage = "결재 대기 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+        }
+
+        mIsLoadingPendingApprovals = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task loadWeekEventsAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            mIsLoadingWeekEvents = false;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        mIsLoadingWeekEvents = true;
+        mWeekEventsErrorMessage = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            DateTime today = DateTime.Today;
+            DateTime weekStart = CalendarWeekUtility.GetStartOfWeek(today);
+            DateTime weekEnd = CalendarWeekUtility.GetEndOfWeek(today);
+            IReadOnlyList<CalendarEventItem> events = await CalendarService.GetAggregateEventsAsync(CurrentUserSessionOrNull, weekStart, weekEnd, CancellationToken.None);
+            mWeekEvents = events.Take(6).ToList();
+        }
+        catch
+        {
+            mWeekEvents = new List<CalendarEventItem>();
+            mWeekEventsErrorMessage = "이번 주 일정을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+        }
+
+        mIsLoadingWeekEvents = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task loadRecentMaterialsAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            mIsLoadingRecentMaterials = false;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        mIsLoadingRecentMaterials = true;
+        mRecentMaterialsErrorMessage = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            IReadOnlyList<DriveFileItem> recentMaterials = await DriveBrowserService.GetRecentUploadedFilesAsync(CurrentUserSessionOrNull, EDriveFolderKind.TeamMaterials, 5, EManagementTeamFilter.ExcludeManagementTeam, CancellationToken.None);
+            mRecentMaterials = recentMaterials.ToList();
+        }
+        catch
+        {
+            mRecentMaterials = new List<DriveFileItem>();
+            mRecentMaterialsErrorMessage = "최근 팀 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+        }
+
+        mIsLoadingRecentMaterials = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private bool shouldShowPendingApprovalsCard()
+    {
+        return mIsLoadingPendingApprovals || string.IsNullOrWhiteSpace(mPendingApprovalsErrorMessage) == false || mPendingApprovals.Count > 0;
+    }
+
+    private RenderFragment renderDashboardSkeleton(int rowCount)
+    {
+        return @<div class="hub-dashboard-skeleton-list">
+            @for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+            {
+                <div class="hub-dashboard-skeleton-row">
+                    <span class="hub-dashboard-skeleton-line"></span>
+                    <span class="hub-dashboard-skeleton-line hub-dashboard-skeleton-line-short"></span>
+                </div>
+            }
+        </div>;
+    }
+
+    private string formatEventTime(CalendarEventItem calendarEvent)
+    {
+        if (calendarEvent.Start.HasValue == false)
+        {
+            return "시간 미정";
+        }
+
+        if (calendarEvent.IsAllDay)
+        {
+            return calendarEvent.Start.Value.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 종일";
+        }
+
+        string startText = calendarEvent.Start.Value.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+        if (calendarEvent.End.HasValue == false)
+        {
+            return startText;
+        }
+
+        return startText + " - " + calendarEvent.End.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private string formatDashboardEventMeta(CalendarEventItem calendarEvent)
+    {
+        List<string> metadataParts = new List<string>();
+        if (shouldShowTeamNames())
+        {
+            metadataParts.Add(calendarEvent.CalendarName);
+        }
+
+        if (shouldShowCalendarAuthor(calendarEvent))
+        {
+            metadataParts.Add("작성자: " + calendarEvent.CreatedByDisplayName);
+        }
+
+        metadataParts.Add(formatEventTime(calendarEvent));
+        return string.Join(" · ", metadataParts);
+    }
+
+    private bool shouldShowTeamNames()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return false;
+        }
+
+        return CurrentUserSessionOrNull.IsManagementRole();
+    }
+
+    private bool shouldShowCalendarAuthor(CalendarEventItem calendarEvent)
+    {
+        return mShowCalendarAuthor && string.IsNullOrWhiteSpace(calendarEvent.CreatedByDisplayName) == false;
+    }
+
+    private IReadOnlyList<DriveFileItem> getMobileRecentMaterials()
+    {
+        return mRecentMaterials.Take(3).ToList();
+    }
+
+    private RenderFragment renderRecentMaterials(IReadOnlyList<DriveFileItem> files)
+    {
+        return @<div class="hub-dashboard-material-list">
+            @if (files.Count == 0)
+            {
+                <div class="hub-empty hub-empty-state">
+                    <MudIcon Icon="@Icons.Material.Filled.FolderOff" Size="Size.Medium" />
+                    <span>최근 팀 자료가 없습니다.</span>
+                </div>
+            }
+            else
+            {
+                @foreach (DriveFileItem file in files)
+                {
+                    <div class="hub-dashboard-material-row">
+                        <div class="hub-dashboard-material-title-row">
+                            <div class="hub-dashboard-material-title-main">
+                                <MudIcon Icon="@getFileIcon(file)" Size="Size.Small" Class="hub-file-icon" />
+                                <MudText Typo="Typo.body2" Class="hub-dashboard-material-name">@file.Name</MudText>
+                            </div>
+                            <div class="hub-table-actions hub-dashboard-material-actions">
+                                @if (file.CanPreviewInSite)
+                                {
+                                    <MudTooltip Text="PDF 보기">
+                                        <MudIconButton Href="@("/files/" + file.ID + "/viewer")" Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" Size="Size.Small" aria-label="PDF 보기" />
+                                    </MudTooltip>
+                                }
+                                <MudTooltip Text="다운로드">
+                                    <MudIconButton Href="@("/files/" + file.ID + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
+                                </MudTooltip>
+                            </div>
+                        </div>
+                        <div class="hub-dashboard-material-meta-row">
+                            <div class="hub-dashboard-material-location">
+                                <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" Class="hub-dashboard-material-folder-icon" />
+                                <span class="hub-dashboard-material-path">@getRecentMaterialPath(file)</span>
+                                <span class="hub-dashboard-material-date">@getRecentMaterialUpdatedText(file)</span>
+                            </div>
+                            @if (string.IsNullOrWhiteSpace(file.UploadedByDisplayName) == false)
+                            {
+                                <div class="hub-dashboard-material-uploader">@getRecentMaterialUploaderText(file)</div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>;
+    }
+
+    private string getRecentMaterialPath(DriveFileItem file)
+    {
+        string folderName = file.FolderDisplayName.Trim();
+        if (string.IsNullOrWhiteSpace(folderName) == false)
+        {
+            return folderName;
+        }
+
+        return getRecentMaterialTeamName(file);
+    }
+
+    private string getRecentMaterialUpdatedText(DriveFileItem file)
+    {
+        if (file.UploadedAt.HasValue)
+        {
+            return "업로드: " + file.UploadedAt.Value.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+        }
+
+        if (file.ModifiedTime.HasValue == false)
+        {
+            return "수정일 없음";
+        }
+
+        return "수정일: " + file.ModifiedTime.Value.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private string getRecentMaterialUploaderText(DriveFileItem file)
+    {
+        return "올린 사람: " + file.UploadedByDisplayName.Trim();
+    }
+
+    private string getRecentMaterialTeamName(DriveFileItem file)
+    {
+        if (string.IsNullOrWhiteSpace(file.TeamName))
+        {
+            return "분류 없음";
+        }
+
+        return file.TeamName.Trim();
+    }
+
+    private string getFileIcon(DriveFileItem file)
+    {
+        if (file.MimeType == "application/pdf")
+        {
+            return Icons.Material.Filled.PictureAsPdf;
+        }
+
+        return Icons.Material.Filled.InsertDriveFile;
+    }
+
+    private string formatDate(DateTime dateTime)
+    {
+        return dateTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+    }
+}

@@ -1,0 +1,467 @@
+@inherits OrganizationHubComponentBase
+@implements IAsyncDisposable
+@inject IDriveBrowserService DriveBrowserService
+@inject IDriveService DriveService
+@inject IPermissionService PermissionService
+@inject IChangeVersionService ChangeVersionService
+@inject IJSRuntime JavaScriptRuntime
+
+<div @ref="mRefreshScopeElement">
+    @if (mIsLoadingRoots)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (string.IsNullOrWhiteSpace(mRootErrorMessage) == false)
+    {
+        <ResourceStateMessage Icon="@Icons.Material.Filled.CloudOff" Title="@mRootErrorMessage" Description="자료 위치를 다시 불러올 수 있습니다." ActionLabel="다시 시도" Action="loadRootFoldersAsync" Class="hub-browser-state" />
+    }
+    else if (mRootFolders.Count == 0)
+    {
+        <ResourceStateMessage Icon="@Icons.Material.Filled.FolderOff" Title="@EmptyMessage" Description="표시할 수 있는 자료 위치가 아직 설정되지 않았습니다." Class="hub-browser-state" />
+    }
+    else
+    {
+        <div class="hub-drive-browser">
+            <div class="hub-browser-toolbar">
+                @if (mRootFolders.Count > 1)
+                {
+                    <MudSelect T="string" Label="@RootFolderLabel" Value="mSelectedRootFolderID" ValueChanged="handleRootFolderChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
+                        @foreach (DriveFolderReference folder in mRootFolders)
+                        {
+                            <MudSelectItem T="string" Value="@folder.FolderID">@folder.DisplayName</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+                else
+                {
+                    <div class="hub-browser-root-pill">
+                        <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" />
+                        <span>@getSelectedRootDisplayName()</span>
+                    </div>
+                }
+                @if (EnableSearch)
+                {
+                    <div class="hub-browser-search">
+                        <MudTextField @bind-Value="mKeyword" Placeholder="@SearchPlaceholder" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+                        <MudTooltip Text="검색">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Medium" OnClick="loadCurrentFolderAsync" aria-label="검색" />
+                        </MudTooltip>
+                        @if (string.IsNullOrWhiteSpace(mKeyword) == false)
+                        {
+                            <MudTooltip Text="검색어 지우기">
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" Size="Size.Medium" OnClick="clearSearchAsync" aria-label="검색어 지우기" />
+                            </MudTooltip>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="hub-browser-location">
+                <div class="hub-browser-breadcrumbs" aria-label="현재 폴더 위치">
+                    @for (int index = 0; index < mFolderPath.Count; index++)
+                    {
+                        int pathIndex = index;
+                        DriveFolderPathItem pathItem = mFolderPath[index];
+                        @if (index > 0)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="hub-browser-breadcrumb-separator" />
+                        }
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Disabled="@(index == mFolderPath.Count - 1)" OnClick="@(() => navigateToPathAsync(pathIndex))">@pathItem.Name</MudButton>
+                    }
+                </div>
+                <div class="hub-browser-location-actions">
+                    <div class="hub-browser-count">@getCountSummary()</div>
+                    <MudTooltip Text="새로고침">
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Size="Size.Small" OnClick="loadCurrentFolderAsync" Disabled="mIsLoadingFiles" aria-label="새로고침" />
+                    </MudTooltip>
+                </div>
+            </div>
+            @if (mIsLoadingFiles)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+            }
+            else if (string.IsNullOrWhiteSpace(mFileErrorMessage) == false)
+            {
+                <ResourceStateMessage Icon="@Icons.Material.Filled.SyncProblem" Title="@mFileErrorMessage" Description="이 목록만 다시 불러올 수 있습니다." ActionLabel="다시 시도" Action="loadCurrentFolderAsync" Class="hub-browser-state" />
+            }
+            else
+            {
+                @if (mDeleteCandidateOrNull != null)
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mb-3">
+                        <div class="hub-delete-confirm">
+                            <span>@mDeleteCandidateOrNull.Name 파일을 삭제할까요?</span>
+                            <MudStack Row="true" Spacing="2">
+                                <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="deleteSelectedFileAsync" Disabled="mIsDeleting">삭제</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="cancelDelete" Disabled="mIsDeleting">취소</MudButton>
+                            </MudStack>
+                        </div>
+                    </MudAlert>
+                }
+                <FileTable Files="mFiles" ShowTeam="@ShowTeam" ShowPreview="@ShowPreview" UploadedByLabel="@UploadedByLabel" EmptyMessage="@getFileEmptyMessage()" FolderOpened="openFolderAsync" CanDelete="@mCanDeleteFiles" DeleteRequested="requestDelete" />
+            }
+        </div>
+    }
+</div>
+
+@code
+{
+    [Parameter]
+    public EDriveFolderKind FolderKind { get; set; }
+
+    [Parameter]
+    public bool ShowTeam { get; set; } = true;
+
+    [Parameter]
+    public bool ShowPreview { get; set; }
+
+    [Parameter]
+    public bool EnableSearch { get; set; }
+
+    [Parameter]
+    public bool ManagementTeamOnly { get; set; }
+
+    [Parameter]
+    public bool ExcludeManagementTeam { get; set; }
+
+    [Parameter]
+    public string EmptyMessage { get; set; } = "표시할 파일이 없습니다.";
+
+    [Parameter]
+    public string UploadedByLabel { get; set; } = "올린 사람";
+
+    [Parameter]
+    public string SearchPlaceholder { get; set; } = "파일명 검색";
+
+    [Parameter]
+    public string RootFolderLabel { get; set; } = "폴더 선택";
+
+    [Parameter]
+    public string ErrorMessagePrefix { get; set; } = "자료를 불러오지 못했습니다.";
+
+    private List<DriveFolderReference> mRootFolders = new List<DriveFolderReference>();
+    private List<DriveFolderPathItem> mFolderPath = new List<DriveFolderPathItem>();
+    private List<DriveFileItem> mFiles = new List<DriveFileItem>();
+    private string mSelectedRootFolderID = string.Empty;
+    private string mKeyword = string.Empty;
+    private string mRootErrorMessage = string.Empty;
+    private string mFileErrorMessage = string.Empty;
+    private DriveFileItem? mDeleteCandidateOrNull;
+    private ElementReference mRefreshScopeElement;
+    private ChangeVersionSnapshot mLoadedChangeSnapshot = new ChangeVersionSnapshot();
+    private IJSObjectReference? mRefreshModuleOrNull;
+    private DotNetObjectReference<DriveFileBrowser>? mRefreshDotNetReferenceOrNull;
+    private bool mIsLoadingRoots;
+    private bool mIsLoadingFiles;
+    private bool mCanDeleteFiles;
+    private bool mIsDeleting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession)
+        {
+            await loadRootFoldersAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender == false)
+        {
+            return;
+        }
+
+        mRefreshModuleOrNull = await JavaScriptRuntime.InvokeAsync<IJSObjectReference>("import", "/js/organizationHubChangeRefresh.js");
+        mRefreshDotNetReferenceOrNull = DotNetObjectReference.Create(this);
+        await mRefreshModuleOrNull.InvokeVoidAsync("initializeChangeRefresh", mRefreshScopeElement, mRefreshDotNetReferenceOrNull);
+    }
+
+    private async Task loadRootFoldersAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        mIsLoadingRoots = true;
+        mRootErrorMessage = string.Empty;
+        try
+        {
+            IReadOnlyList<DriveFolderReference> folders = await DriveBrowserService.GetReadableFoldersAsync(CurrentUserSessionOrNull, FolderKind, CancellationToken.None);
+            mRootFolders = filterRootFolders(folders).ToList();
+            if (mRootFolders.Count > 0)
+            {
+                mSelectedRootFolderID = mRootFolders[0].FolderID;
+                resetPath(mRootFolders[0]);
+                await loadCurrentFolderAsync();
+            }
+        }
+        catch
+        {
+            mRootErrorMessage = ErrorMessagePrefix;
+        }
+
+        mIsLoadingRoots = false;
+    }
+
+    private async Task loadCurrentFolderAsync()
+    {
+        if (CurrentUserSessionOrNull == null || string.IsNullOrWhiteSpace(mSelectedRootFolderID))
+        {
+            return;
+        }
+
+        mIsLoadingFiles = true;
+        mFileErrorMessage = string.Empty;
+        try
+        {
+            IReadOnlyList<string> changeVersionKeys = getChangeVersionKeys();
+            ChangeVersionReadResult<IReadOnlyList<DriveFileItem>> readResult = await ChangeVersionService.ReadWithStableSnapshotAsync(
+                changeVersionKeys,
+                cancellationToken => DriveBrowserService.GetFolderFilesAsync(CurrentUserSessionOrNull, FolderKind, mSelectedRootFolderID, getCurrentFolderID(), mKeyword, cancellationToken),
+                CancellationToken.None);
+            mFiles = readResult.Value.ToList();
+            DriveFolderReference? currentRootFolderOrNull = getCurrentRootFolderOrNull();
+            mCanDeleteFiles = currentRootFolderOrNull != null && PermissionService.DecideDeleteInsideRoot(CurrentUserSessionOrNull, currentRootFolderOrNull).IsAllowed;
+            mDeleteCandidateOrNull = null;
+            recordLoadedChangeSnapshot(readResult.Snapshot);
+        }
+        catch
+        {
+            mFileErrorMessage = ErrorMessagePrefix;
+        }
+
+        mIsLoadingFiles = false;
+    }
+
+    private async Task handleRootFolderChangedAsync(string folderID)
+    {
+        mSelectedRootFolderID = folderID;
+        mKeyword = string.Empty;
+        DriveFolderReference? selectedFolderOrNull = mRootFolders.FirstOrDefault(folder => folder.FolderID == folderID);
+        if (selectedFolderOrNull != null)
+        {
+            resetPath(selectedFolderOrNull);
+        }
+
+        await loadCurrentFolderAsync();
+    }
+
+    private async Task openFolderAsync(DriveFileItem folder)
+    {
+        if (folder.IsFolder == false)
+        {
+            return;
+        }
+
+        DriveFolderPathItem pathItem = new DriveFolderPathItem();
+        pathItem.ID = folder.ID;
+        pathItem.Name = folder.Name;
+        mFolderPath.Add(pathItem);
+        mKeyword = string.Empty;
+        await loadCurrentFolderAsync();
+    }
+
+    private async Task navigateToPathAsync(int index)
+    {
+        if (index < 0 || index >= mFolderPath.Count)
+        {
+            return;
+        }
+
+        mFolderPath = mFolderPath.Take(index + 1).ToList();
+        mKeyword = string.Empty;
+        await loadCurrentFolderAsync();
+    }
+
+    private async Task clearSearchAsync()
+    {
+        mKeyword = string.Empty;
+        await loadCurrentFolderAsync();
+    }
+
+    private void requestDelete(DriveFileItem file)
+    {
+        if (file.IsFolder || mCanDeleteFiles == false)
+        {
+            return;
+        }
+
+        mDeleteCandidateOrNull = file;
+    }
+
+    private void cancelDelete()
+    {
+        if (mIsDeleting)
+        {
+            return;
+        }
+
+        mDeleteCandidateOrNull = null;
+    }
+
+    private async Task deleteSelectedFileAsync()
+    {
+        if (CurrentUserSessionOrNull == null || mDeleteCandidateOrNull == null)
+        {
+            return;
+        }
+
+        DriveFileItem deleteCandidate = mDeleteCandidateOrNull;
+        mIsDeleting = true;
+        mFileErrorMessage = string.Empty;
+        try
+        {
+            PermissionDecision deleteDecision = await PermissionService.DecideDeleteInFolderAsync(CurrentUserSessionOrNull, getCurrentFolderID(), CancellationToken.None);
+            if (deleteDecision.IsAllowed == false)
+            {
+                mFileErrorMessage = deleteDecision.Reason;
+                return;
+            }
+
+            await DriveService.DeleteDriveItemAsync(deleteCandidate.ID, CancellationToken.None);
+            DriveBrowserService.SuppressRecentUploadMerge(deleteCandidate.ID);
+            DriveBrowserService.InvalidateRecentFiles(getCurrentFolderID());
+            mDeleteCandidateOrNull = null;
+            await loadCurrentFolderAsync();
+        }
+        catch
+        {
+            mFileErrorMessage = "파일을 삭제하지 못했습니다. 파일은 아직 남아 있습니다. 잠시 후 다시 시도해 주세요.";
+        }
+        finally
+        {
+            mIsDeleting = false;
+        }
+    }
+
+    [JSInvokable("CheckForExternalChanges")]
+    public async Task CheckForExternalChangesAsync()
+    {
+        if (mIsLoadingRoots || mIsLoadingFiles || CurrentUserSessionOrNull == null || string.IsNullOrWhiteSpace(mSelectedRootFolderID))
+        {
+            return;
+        }
+
+        if (ChangeVersionService.HasChanged(mLoadedChangeSnapshot) == false)
+        {
+            return;
+        }
+
+        await loadCurrentFolderAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void recordLoadedChangeSnapshot(ChangeVersionSnapshot? loadedSnapshotOrNull = null)
+    {
+        if (loadedSnapshotOrNull == null)
+        {
+            mLoadedChangeSnapshot = ChangeVersionService.GetSnapshot(getChangeVersionKeys());
+            return;
+        }
+
+        mLoadedChangeSnapshot = loadedSnapshotOrNull;
+    }
+
+    private IReadOnlyList<string> getChangeVersionKeys()
+    {
+        List<string> keys = new List<string>();
+        keys.Add(ChangeVersionKeys.CreateDriveFolderKey(getCurrentFolderID()));
+        return keys;
+    }
+
+    private void resetPath(DriveFolderReference rootFolder)
+    {
+        DriveFolderPathItem pathItem = new DriveFolderPathItem();
+        pathItem.ID = rootFolder.FolderID;
+        pathItem.Name = rootFolder.DisplayName;
+        mFolderPath = new List<DriveFolderPathItem>();
+        mFolderPath.Add(pathItem);
+    }
+
+    private string getCurrentFolderID()
+    {
+        if (mFolderPath.Count == 0)
+        {
+            return mSelectedRootFolderID;
+        }
+
+        return mFolderPath[mFolderPath.Count - 1].ID;
+    }
+
+    private DriveFolderReference? getCurrentRootFolderOrNull()
+    {
+        return mRootFolders.FirstOrDefault(folder => folder.FolderID == mSelectedRootFolderID);
+    }
+
+    private IEnumerable<DriveFolderReference> filterRootFolders(IReadOnlyList<DriveFolderReference> folders)
+    {
+        if (ManagementTeamOnly)
+        {
+            return folders.Where(folder => folder.IsManagementTeam);
+        }
+
+        if (ExcludeManagementTeam)
+        {
+            return folders.Where(folder => folder.IsManagementTeam == false);
+        }
+
+        return folders;
+    }
+
+    private string getSelectedRootDisplayName()
+    {
+        DriveFolderReference? rootFolderOrNull = mRootFolders.FirstOrDefault(folder => folder.FolderID == mSelectedRootFolderID);
+        if (rootFolderOrNull == null)
+        {
+            return RootFolderLabel;
+        }
+
+        return rootFolderOrNull.DisplayName;
+    }
+
+    private string getCountSummary()
+    {
+        int folderCount = mFiles.Count(file => file.IsFolder);
+        int fileCount = mFiles.Count - folderCount;
+        return "폴더 " + folderCount.ToString(CultureInfo.InvariantCulture) + "개 · 파일 " + fileCount.ToString(CultureInfo.InvariantCulture) + "개";
+    }
+
+    private string getFileEmptyMessage()
+    {
+        if (string.IsNullOrWhiteSpace(mKeyword) == false)
+        {
+            return "검색 결과가 없습니다.";
+        }
+
+        if (mFolderPath.Count > 1)
+        {
+            return "이 폴더에는 아직 자료가 없습니다.";
+        }
+
+        return EmptyMessage;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (mRefreshModuleOrNull != null)
+            {
+                await mRefreshModuleOrNull.InvokeVoidAsync("disposeChangeRefresh", mRefreshScopeElement);
+                await mRefreshModuleOrNull.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
+        if (mRefreshDotNetReferenceOrNull != null)
+        {
+            mRefreshDotNetReferenceOrNull.Dispose();
+        }
+    }
+}

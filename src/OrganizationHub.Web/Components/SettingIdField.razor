@@ -1,0 +1,58 @@
+@inject IJSRuntime JavaScriptRuntime
+@inject ISnackbar Snackbar
+
+<div class="hub-setting-id-field">
+    <MudTextField T="string" Value="@Value" ValueChanged="ValueChanged" Label="@Label" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+    <div class="hub-setting-id-tools">
+        <code class="@(string.IsNullOrWhiteSpace(Value) ? "hub-setting-id-preview hub-setting-id-preview-empty" : "hub-setting-id-preview")">@getDisplayValue()</code>
+        <MudTooltip Text="값 복사">
+            <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Color="Color.Primary" Size="Size.Small" Disabled="@(string.IsNullOrWhiteSpace(Value))" OnClick="copyValueAsync" aria-label="값 복사" />
+        </MudTooltip>
+    </div>
+</div>
+
+@code
+{
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    private async Task copyValueAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Value))
+        {
+            Snackbar.Add(Label + " 값이 비어 있습니다.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            await JavaScriptRuntime.InvokeVoidAsync("navigator.clipboard.writeText", Value);
+            Snackbar.Add(Label + " 값을 복사했습니다.", Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("브라우저가 복사를 허용하지 않았습니다.", Severity.Error);
+        }
+    }
+
+    private string getDisplayValue()
+    {
+        if (string.IsNullOrWhiteSpace(Value))
+        {
+            return "값 없음";
+        }
+
+        if (Value.Length <= 24)
+        {
+            return Value;
+        }
+
+        return Value.Substring(0, 12) + "..." + Value.Substring(Value.Length - 8);
+    }
+}

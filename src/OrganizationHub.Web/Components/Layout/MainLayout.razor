@@ -1,0 +1,106 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="mTheme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Color="Color.Transparent" Class="@getAppbarClass()">
+        <div class="hub-topbar-shell">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Primary" OnClick="toggleDrawer" Class="hub-menu-button" aria-label="좌측 메뉴 열기" />
+            <a class="hub-brand-lockup" href="/dashboard" aria-label="@OrganizationHubProduct.FormatPageTitle("홈")">
+                <div class="hub-brand-mark" aria-hidden="true">
+                    <img src="brand/organization-hub-mark.svg" alt="" />
+                </div>
+                <div>
+                    <div class="hub-brand-title">@OrganizationHubProduct.NAME</div>
+                </div>
+            </a>
+            <MudSpacer />
+            <AuthorizeView>
+                <Authorized Context="authorizedContext">
+                    <div class="hub-session-pill">@getDisplayName(authorizedContext.User)</div>
+                    <form method="post" action="/account/logout">
+                        <AntiforgeryToken />
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Logout" Class="hub-logout-button-wide">로그아웃</MudButton>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Logout" Class="hub-logout-button-compact" aria-label="로그아웃"></MudButton>
+                    </form>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+    </MudAppBar>
+    <MudDrawer @bind-Open="mIsDrawerOpen" Elevation="0" Variant="DrawerVariant.Responsive" Class="hub-drawer">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Class="hub-main">
+        <MudContainer MaxWidth="MaxWidth.False" Class="hub-container">
+            <MenuRouteGuard />
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui" data-nosnippet>
+    처리 중 오류가 발생했습니다.
+    <a href="." class="reload">새로고침</a>
+    <span class="dismiss">x</span>
+</div>
+
+@code
+{
+    private bool mIsDrawerOpen = true;
+    private MudTheme mTheme = new MudTheme
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#216BFF",
+            Secondary = "#14966D",
+            Background = "#EEF3FB",
+            Surface = "#FFFFFF",
+            AppbarBackground = "rgba(255, 255, 255, 0)",
+            DrawerBackground = "rgba(255, 255, 255, 0)",
+            DrawerText = "#1B2B46",
+            TextPrimary = "#10203A",
+            TextSecondary = "#51627F",
+            Divider = "rgba(78, 104, 145, 0.16)"
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "20px"
+        },
+        Typography = new Typography
+        {
+            Default = new DefaultTypography
+            {
+                FontFamily = new[] { "-apple-system", "BlinkMacSystemFont", "SF Pro Display", "Segoe UI Variable", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "sans-serif" }
+            }
+        }
+    };
+
+    private void toggleDrawer()
+    {
+        mIsDrawerOpen = !mIsDrawerOpen;
+    }
+
+    private string getAppbarClass()
+    {
+        if (mIsDrawerOpen)
+        {
+            return "hub-appbar hub-appbar-drawer-open";
+        }
+
+        return "hub-appbar";
+    }
+
+    private string getDisplayName(ClaimsPrincipal principal)
+    {
+        Claim? displayNameClaimOrNull = principal.FindFirst(OrganizationHubClaimTypes.DISPLAY_NAME);
+        if (displayNameClaimOrNull == null)
+        {
+            return string.Empty;
+        }
+
+        return displayNameClaimOrNull.Value;
+    }
+}

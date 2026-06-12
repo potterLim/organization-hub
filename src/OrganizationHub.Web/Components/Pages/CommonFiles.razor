@@ -1,0 +1,12 @@
+@page "/common"
+@attribute [Authorize]
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("공통 자료")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">공통 자료</h1>
+    </div>
+</div>
+
+<DriveFileBrowser FolderKind="EDriveFolderKind.Common" ShowTeam="false" ShowPreview="true" EnableSearch="true" SearchPlaceholder="공통 자료 검색" EmptyMessage="공통 자료가 없습니다." ErrorMessagePrefix="공통 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." />

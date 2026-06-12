@@ -1,0 +1,18 @@
+.hub-nav-menu {
+    min-width: 0;
+    padding: 10px 0 0;
+    width: 100%;
+}
+
+.hub-nav-section-label {
+    color: rgba(76, 93, 122, .72);
+    font-size: 10.5px;
+    font-weight: 900;
+    line-height: 1.2;
+    margin: 12px 10px 6px;
+}
+
+.hub-nav-divider {
+    border-color: rgba(78, 104, 145, .14);
+    margin: 10px 8px 8px;
+}

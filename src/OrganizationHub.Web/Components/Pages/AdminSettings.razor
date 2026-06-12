@@ -1,0 +1,90 @@
+@page "/admin/settings"
+@attribute [Authorize(Policy = OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE)]
+@inject ITeamManagementService TeamManagementService
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("시스템 설정")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">시스템 설정</h1>
+        <div class="hub-page-description">자료 위치, 일정, 할 일, 공지 연결값을 한곳에서 관리합니다.</div>
+    </div>
+</div>
+
+@if (string.IsNullOrWhiteSpace(mMessage) == false)
+{
+    <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
+}
+
+<MudPaper Class="hub-card hub-form-card hub-settings-card pa-4">
+    <MudGrid Spacing="3" Class="hub-settings-grid">
+        <MudItem xs="12" md="6">
+            <SettingIdField @bind-Value="mFormModel.OfficialRootFolderID" Label="공식 루트 폴더 ID" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <SettingIdField @bind-Value="mFormModel.PublicFolderID" Label="외부 공유 자료 폴더 ID" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <SettingIdField @bind-Value="mFormModel.CommonFolderID" Label="공통 자료 폴더 ID" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <SettingIdField @bind-Value="mFormModel.ResponsibleResourcesFolderID" Label="책임자 자료 폴더 ID" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <SettingIdField @bind-Value="mFormModel.WorkResourcesFolderID" Label="업무 지원 자료 폴더 ID" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <SettingIdField @bind-Value="mFormModel.OrganizationCalendarID" Label="조직 공용 캘린더 ID" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <SettingIdField @bind-Value="mFormModel.ResponsibleCalendarID" Label="책임자 캘린더 ID" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <SettingIdField @bind-Value="mFormModel.OrganizationTaskListID" Label="조직 공용 할 일 목록 ID" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <SettingIdField @bind-Value="mFormModel.ResponsibleTaskListID" Label="책임자 할 일 목록 ID" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <SettingIdField @bind-Value="mFormModel.NoticeFileID" Label="공지 파일 ID" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <SettingIdField @bind-Value="mFormModel.WorkGuidelineFileID" Label="업무 기준 파일 ID" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudSwitch T="bool" @bind-Value="mFormModel.ShowTodoAuthor" Label="할 일 작성자 표시" Color="Color.Primary" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudSwitch T="bool" @bind-Value="mFormModel.ShowCalendarAuthor" Label="일정 작성자 표시" Color="Color.Primary" />
+        </MudItem>
+    </MudGrid>
+    <div class="hub-submit-row">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveSettingAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
+    </div>
+</MudPaper>
+
+@code
+{
+    private GlobalSettingFormModel mFormModel = new GlobalSettingFormModel();
+    private string mMessage = string.Empty;
+    private Severity mMessageSeverity = Severity.Info;
+
+    protected override async Task OnInitializedAsync()
+    {
+        mFormModel = await TeamManagementService.GetGlobalSettingAsync(CancellationToken.None);
+    }
+
+    private async Task saveSettingAsync()
+    {
+        ServiceResult result = await TeamManagementService.UpdateGlobalSettingAsync(mFormModel, CancellationToken.None);
+        if (result.IsSuccess)
+        {
+            mMessage = "시스템 설정이 저장되었습니다.";
+            mMessageSeverity = Severity.Success;
+            return;
+        }
+
+        mMessage = result.ErrorMessage;
+        mMessageSeverity = Severity.Error;
+    }
+}

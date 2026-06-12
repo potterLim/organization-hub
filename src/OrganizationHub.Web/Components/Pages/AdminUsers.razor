@@ -1,0 +1,409 @@
+@page "/admin/users"
+@attribute [Authorize(Policy = OrganizationHubPolicies.USERS_MANAGE)]
+@inherits OrganizationHubComponentBase
+@inject IUserManagementService UserManagementService
+@inject ITeamManagementService TeamManagementService
+@inject IPositionManagementService PositionManagementService
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("사용자 관리")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">사용자 관리</h1>
+        <div class="hub-page-description">사용자의 소속, 권한, 로그인 가능 상태를 관리합니다.</div>
+    </div>
+</div>
+
+@if (string.IsNullOrWhiteSpace(mMessage) == false)
+{
+    <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
+}
+
+<MudGrid Spacing="6" Class="hub-management-grid hub-admin-page-grid">
+    <MudItem xs="12" lg="5" xl="4">
+        <MudPaper Class="hub-card hub-form-card pa-4">
+            <div class="hub-admin-form-heading">
+                <MudText Typo="Typo.h6">@mFormTitle</MudText>
+                <span>@(mFormModel.ID == 0 ? "새 계정" : "수정 중")</span>
+            </div>
+            <MudTextField @bind-Value="mFormModel.Username" Label="아이디" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <MudTextField @bind-Value="mFormModel.DisplayName" Label="표시 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            @if (mFormModel.ID == 0)
+            {
+                <MudTextField @bind-Value="mFormModel.Password" Label="초기 비밀번호" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password" Immediate="true" />
+            }
+            @if (mCanManageSystemAdmins)
+            {
+                <MudSwitch T="bool" @bind-Value="mIsSystemAdmin" Label="시스템 관리자" Color="Color.Warning" />
+            }
+            @if (mIsSystemAdmin == false)
+            {
+                <MudSelect T="int?" Label="팀" Value="mFormModel.TeamID" ValueChanged="handleTeamChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (Team team in getSelectableTeams())
+                    {
+                        <MudSelectItem T="int?" Value="@team.ID">@team.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="int?" Label="직책" Value="mFormModel.PositionID" ValueChanged="handlePositionChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(getSelectablePositions().Count == 0)">
+                    @foreach (OrganizationPosition position in getSelectablePositions())
+                    {
+                        <MudSelectItem T="int?" Value="@position.ID">@position.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                @if (getSelectablePositions().Count == 0)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Warning">이 팀에는 배정 가능한 활성 직책이 없습니다.</MudText>
+                }
+            }
+            <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="활성 상태" Color="Color.Primary" />
+            <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveUserAsync" Class="hub-primary-action-button">저장</MudButton>
+                @if (mFormModel.ID != 0)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="clearForm">새 사용자</MudButton>
+                }
+            </MudStack>
+            @if (mFormModel.ID != 0)
+            {
+                <MudDivider Class="my-4" />
+                <MudTextField @bind-Value="mResetPassword" Label="새 비밀번호" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password" Immediate="true" />
+                <div class="hub-submit-row">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="resetPasswordAsync" Class="hub-primary-action-button">비밀번호 초기화</MudButton>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" lg="7" xl="8">
+        <MudPaper Class="hub-card hub-list-card pa-4">
+            <MudText Typo="Typo.h6">사용자 목록</MudText>
+            <MudTable Items="mUsers" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
+                <HeaderContent>
+                    <MudTh>아이디</MudTh>
+                    <MudTh>표시 이름</MudTh>
+                    <MudTh>소속</MudTh>
+                    <MudTh>직책</MudTh>
+                    <MudTh>상태</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate Context="user">
+                    <MudTd DataLabel="아이디">@user.Username</MudTd>
+                    <MudTd DataLabel="표시 이름">@user.DisplayName</MudTd>
+                    <MudTd DataLabel="소속">@getAffiliationName(user)</MudTd>
+                    <MudTd DataLabel="직책">@getPositionName(user)</MudTd>
+                    <MudTd DataLabel="상태"><span class="@(user.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(user.IsActive ? "활성" : "비활성")</span></MudTd>
+                    <MudTd DataLabel="작업" Class="hub-action-cell">
+                        <div class="hub-table-actions">
+                            @if (canManageUser(user))
+                            {
+                                <MudTooltip Text="사용자 수정">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editUser(user))" aria-label="사용자 수정" />
+                                </MudTooltip>
+                                <MudTooltip Text="@(user.IsActive ? "사용자 비활성화" : "사용자 활성화")">
+                                    <MudIconButton Icon="@(user.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => toggleUserActiveAsync(user))" aria-label="@(user.IsActive ? "사용자 비활성화" : "사용자 활성화")" />
+                                </MudTooltip>
+                            }
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code
+{
+    private List<UserAccount> mUsers = new List<UserAccount>();
+    private List<Team> mTeams = new List<Team>();
+    private List<OrganizationPosition> mPositions = new List<OrganizationPosition>();
+    private UserAccountFormModel mFormModel = new UserAccountFormModel();
+    private string mFormTitle = "새 사용자";
+    private string mResetPassword = string.Empty;
+    private string mMessage = string.Empty;
+    private Severity mMessageSeverity = Severity.Info;
+    private bool mIsSystemAdmin;
+    private bool mCanManageSystemAdmins;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession == false || CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        mCanManageSystemAdmins = UserPermissionPolicy.CanManageSystemAdministratorAccounts(CurrentUserSessionOrNull.Role);
+        clearForm();
+        await loadDataAsync();
+    }
+
+    private async Task loadDataAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        IReadOnlyList<UserAccount> users = await UserManagementService.GetUsersAsync(CurrentUserSessionOrNull, CancellationToken.None);
+        IReadOnlyList<Team> teams = await TeamManagementService.GetTeamsAsync(CancellationToken.None);
+        IReadOnlyList<OrganizationPosition> positions = await PositionManagementService.GetPositionsAsync(CancellationToken.None);
+        mUsers = users.ToList();
+        mTeams = teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName).ToList();
+        mPositions = positions.Where(position => position.IsActive).OrderBy(position => position.Team == null ? 0 : position.Team.SortOrder).ThenBy(position => position.SortOrder).ThenBy(position => position.Name).ToList();
+        ensureDefaultTeamSelection();
+    }
+
+    private async Task saveUserAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        syncFormRoleAndTeam();
+        ServiceResult result = mFormModel.ID == 0 ? await UserManagementService.CreateUserAsync(CurrentUserSessionOrNull, mFormModel, CancellationToken.None) : await UserManagementService.UpdateUserAsync(CurrentUserSessionOrNull, mFormModel, CancellationToken.None);
+        showResult(result, "사용자 정보가 저장되었습니다.");
+        if (result.IsSuccess)
+        {
+            clearForm();
+            await loadDataAsync();
+        }
+    }
+
+    private void editUser(UserAccount userAccount)
+    {
+        if (canManageUser(userAccount) == false)
+        {
+            return;
+        }
+
+        mFormModel = new UserAccountFormModel();
+        mFormModel.ID = userAccount.ID;
+        mFormModel.Username = userAccount.Username;
+        mFormModel.DisplayName = userAccount.DisplayName;
+        mFormModel.Role = userAccount.Role;
+        mFormModel.TeamID = userAccount.TeamID;
+        mFormModel.PositionID = userAccount.PositionID;
+        mFormModel.IsActive = userAccount.IsActive;
+        mapRoleToFormFields(userAccount.Role);
+        ensureDefaultTeamSelection();
+        ensureDefaultPositionSelection();
+        mFormTitle = "사용자 수정";
+        mResetPassword = string.Empty;
+    }
+
+    private async Task toggleUserActiveAsync(UserAccount userAccount)
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        ServiceResult result = userAccount.IsActive ? await UserManagementService.DeactivateUserAsync(CurrentUserSessionOrNull, userAccount.ID, CancellationToken.None) : await UserManagementService.ActivateUserAsync(CurrentUserSessionOrNull, userAccount.ID, CancellationToken.None);
+        showResult(result, "사용자 상태가 변경되었습니다.");
+        await loadDataAsync();
+    }
+
+    private async Task resetPasswordAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        ServiceResult result = await UserManagementService.ResetPasswordAsync(CurrentUserSessionOrNull, mFormModel.ID, mResetPassword, CancellationToken.None);
+        showResult(result, "비밀번호가 초기화되었습니다.");
+        if (result.IsSuccess)
+        {
+            mResetPassword = string.Empty;
+        }
+    }
+
+    private void clearForm()
+    {
+        mFormModel = new UserAccountFormModel();
+        mFormModel.Role = EUserRole.TeamUser;
+        mFormModel.IsActive = true;
+        mIsSystemAdmin = false;
+        ensureDefaultTeamSelection();
+        ensureDefaultPositionSelection();
+        mFormTitle = "새 사용자";
+        mResetPassword = string.Empty;
+    }
+
+    private Task handleTeamChangedAsync(int? teamIDOrNull)
+    {
+        mFormModel.TeamID = teamIDOrNull;
+        ensureDefaultPositionSelection();
+        return Task.CompletedTask;
+    }
+
+    private Task handlePositionChangedAsync(int? positionIDOrNull)
+    {
+        mFormModel.PositionID = positionIDOrNull;
+        return Task.CompletedTask;
+    }
+
+    private void mapRoleToFormFields(EUserRole role)
+    {
+        mIsSystemAdmin = role == EUserRole.Admin;
+        if (mIsSystemAdmin)
+        {
+            mFormModel.TeamID = getAdministrationTeamIDOrNull();
+            return;
+        }
+
+        ensureDefaultTeamSelection();
+    }
+
+    private void syncFormRoleAndTeam()
+    {
+        if (mCanManageSystemAdmins == false)
+        {
+            mIsSystemAdmin = false;
+        }
+
+        if (mIsSystemAdmin)
+        {
+            mFormModel.Role = EUserRole.Admin;
+            mFormModel.TeamID = getAdministrationTeamIDOrNull();
+            mFormModel.PositionID = null;
+            return;
+        }
+
+        ensureDefaultTeamSelection();
+        ensureDefaultPositionSelection();
+        mFormModel.Role = getDefaultOrganizationMemberRole();
+    }
+
+    private void ensureDefaultTeamSelection()
+    {
+        if (mIsSystemAdmin)
+        {
+            return;
+        }
+
+        bool selectedTeamIsAvailable = mFormModel.TeamID.HasValue && mTeams.Any(team => team.ID == mFormModel.TeamID.Value);
+        if (selectedTeamIsAvailable)
+        {
+            ensureDefaultPositionSelection();
+            return;
+        }
+
+        Team? firstTeamOrNull = getSelectableTeams().FirstOrDefault();
+        mFormModel.TeamID = firstTeamOrNull?.ID;
+        ensureDefaultPositionSelection();
+    }
+
+    private void showResult(ServiceResult result, string successMessage)
+    {
+        if (result.IsSuccess)
+        {
+            mMessage = successMessage;
+            mMessageSeverity = Severity.Success;
+            return;
+        }
+
+        mMessage = result.ErrorMessage;
+        mMessageSeverity = Severity.Error;
+    }
+
+    private string getAffiliationName(UserAccount userAccount)
+    {
+        if (userAccount.Role == EUserRole.Admin)
+        {
+            return "시스템";
+        }
+
+        if (UserRoleUtility.GetAffiliation(userAccount.Role) == EUserAffiliation.Management)
+        {
+            return OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME;
+        }
+
+        if (userAccount.Team == null)
+        {
+            return "팀";
+        }
+
+        return userAccount.Team.DisplayName;
+    }
+
+    private string getPositionName(UserAccount userAccount)
+    {
+        if (userAccount.Position != null)
+        {
+            return userAccount.Position.Name;
+        }
+
+        return UserRoleUtility.GetDisplayName(userAccount.Role);
+    }
+
+    private bool isSystemAdministrationTeam(Team team)
+    {
+        return team.TeamKey.Equals(OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_KEY, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private IReadOnlyList<Team> getSelectableTeams()
+    {
+        return mTeams.Where(team => isSystemAdministrationTeam(team) == false).ToList();
+    }
+
+    private IReadOnlyList<OrganizationPosition> getSelectablePositions()
+    {
+        if (mFormModel.TeamID.HasValue == false)
+        {
+            return new List<OrganizationPosition>();
+        }
+
+        List<OrganizationPosition> positions = mPositions
+            .Where(position => position.TeamID == mFormModel.TeamID.Value && position.IsSystemAdministrator == false)
+            .OrderBy(position => position.SortOrder)
+            .ThenBy(position => position.Name)
+            .ToList();
+        return positions;
+    }
+
+    private int? getAdministrationTeamIDOrNull()
+    {
+        Team? administrationTeamOrNull = mTeams.FirstOrDefault(team => isSystemAdministrationTeam(team));
+        if (administrationTeamOrNull == null)
+        {
+            return null;
+        }
+
+        return administrationTeamOrNull.ID;
+    }
+
+    private void ensureDefaultPositionSelection()
+    {
+        if (mIsSystemAdmin)
+        {
+            mFormModel.PositionID = null;
+            return;
+        }
+
+        IReadOnlyList<OrganizationPosition> selectablePositions = getSelectablePositions();
+        bool selectedPositionIsAvailable = mFormModel.PositionID.HasValue && selectablePositions.Any(position => position.ID == mFormModel.PositionID.Value);
+        if (selectedPositionIsAvailable)
+        {
+            return;
+        }
+
+        OrganizationPosition? firstPositionOrNull = selectablePositions.FirstOrDefault();
+        mFormModel.PositionID = firstPositionOrNull?.ID;
+    }
+
+    private EUserRole getDefaultOrganizationMemberRole()
+    {
+        return EUserRole.TeamUser;
+    }
+
+    private bool canManageUser(UserAccount userAccount)
+    {
+        if (userAccount.Role == EUserRole.Admin)
+        {
+            return mCanManageSystemAdmins;
+        }
+
+        return true;
+    }
+}

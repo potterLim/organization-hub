@@ -1,0 +1,12 @@
+@page "/responsible-resources"
+@attribute [Authorize(Policy = OrganizationHubPolicies.LEADER_ACCESS)]
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("책임자 자료")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">책임자 자료</h1>
+    </div>
+</div>
+
+<DriveFileBrowser FolderKind="EDriveFolderKind.ResponsibleResources" ShowTeam="false" ShowPreview="true" EnableSearch="true" SearchPlaceholder="책임자 자료 검색" RootFolderLabel="책임자 자료" EmptyMessage="책임자 자료가 없습니다." ErrorMessagePrefix="책임자 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." />

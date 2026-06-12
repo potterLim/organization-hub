@@ -1,0 +1,148 @@
+@page "/approvals/history"
+@attribute [Authorize]
+@inherits OrganizationHubComponentBase
+@inject IApprovalService ApprovalService
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("결재 기록")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">결재 기록</h1>
+    </div>
+</div>
+
+@if (mIsLoading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else if (mApprovalHistory.Count == 0)
+{
+    <div class="hub-empty hub-empty-state">
+        <MudIcon Icon="@Icons.Material.Filled.HistoryEdu" Size="Size.Medium" />
+        <span>표시할 결재 기록이 없습니다.</span>
+    </div>
+}
+else
+{
+    <div class="hub-approval-list">
+        @foreach (ApprovalRequestItem approvalRequest in mApprovalHistory)
+        {
+            <MudPaper Class="hub-card hub-approval-card pa-4">
+                <div class="hub-approval-card-head">
+                    <div>
+                        <MudText Typo="Typo.h6">@approvalRequest.Title</MudText>
+                        <MudText Typo="Typo.body2" Class="hub-muted">@approvalRequest.RequesterDisplayName · @formatDate(approvalRequest.RequestedAt)</MudText>
+                    </div>
+                    <span class="@getStatusClass(approvalRequest)">@getStatusText(approvalRequest)</span>
+                </div>
+                <div class="hub-approval-file-row">
+                    <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" />
+                    <span>@approvalRequest.FileName</span>
+                    <MudTooltip Text="다운로드">
+                        <MudIconButton Href="@("/files/" + approvalRequest.GetDownloadFileID() + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
+                    </MudTooltip>
+                </div>
+                <div class="hub-approval-steps">
+                    @foreach (ApprovalStepItem step in approvalRequest.Steps)
+                    {
+                        <span class="@getStepClass(step)">@step.StepNumber.ToString(CultureInfo.InvariantCulture)차 @step.ApproverDisplayName</span>
+                    }
+                </div>
+                <MudExpansionPanels Elevation="0" Class="hub-approval-log-panel">
+                    <MudExpansionPanel Text="기록">
+                        @foreach (ApprovalAuditLogItem auditLog in approvalRequest.AuditLogs)
+                        {
+                            <div class="hub-approval-log-row">
+                                <span>@formatDate(auditLog.CreatedAt)</span>
+                                <span>@auditLog.ActorDisplayName</span>
+                                <span>@getAuditActionText(auditLog)</span>
+                                @if (string.IsNullOrWhiteSpace(auditLog.Comment) == false)
+                                {
+                                    <span>@auditLog.Comment</span>
+                                }
+                            </div>
+                        }
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            </MudPaper>
+        }
+    </div>
+}
+
+@code
+{
+    private List<ApprovalRequestItem> mApprovalHistory = new List<ApprovalRequestItem>();
+    private bool mIsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession == false || CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        IReadOnlyList<ApprovalRequestItem> approvalHistory = await ApprovalService.GetRelatedHistoryAsync(CurrentUserSessionOrNull, CancellationToken.None);
+        mApprovalHistory = approvalHistory.ToList();
+        mIsLoading = false;
+    }
+
+    private string getStatusText(ApprovalRequestItem approvalRequest)
+    {
+        if (approvalRequest.Status == EApprovalRequestStatus.Approved)
+        {
+            return "완료";
+        }
+
+        return "반려";
+    }
+
+    private string getStatusClass(ApprovalRequestItem approvalRequest)
+    {
+        if (approvalRequest.Status == EApprovalRequestStatus.Approved)
+        {
+            return "hub-status-pill hub-status-active";
+        }
+
+        return "hub-status-pill hub-status-inactive";
+    }
+
+    private string getStepClass(ApprovalStepItem step)
+    {
+        if (step.Status == EApprovalStepStatus.Approved)
+        {
+            return "hub-status-pill hub-status-active";
+        }
+
+        if (step.Status == EApprovalStepStatus.Rejected)
+        {
+            return "hub-status-pill hub-status-inactive";
+        }
+
+        return "hub-status-pill";
+    }
+
+    private string getAuditActionText(ApprovalAuditLogItem auditLog)
+    {
+        switch (auditLog.Action)
+        {
+            case EApprovalAuditAction.Submitted:
+                return "요청";
+            case EApprovalAuditAction.Approved:
+                return "승인";
+            case EApprovalAuditAction.Rejected:
+                return "반려";
+            case EApprovalAuditAction.ApproverChanged:
+                return auditLog.PreviousApproverDisplayName + " → " + auditLog.NewApproverDisplayName;
+            case EApprovalAuditAction.Completed:
+                return "최종 완료";
+            default:
+                return "기록";
+        }
+    }
+
+    private string formatDate(DateTime dateTime)
+    {
+        return dateTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+    }
+}

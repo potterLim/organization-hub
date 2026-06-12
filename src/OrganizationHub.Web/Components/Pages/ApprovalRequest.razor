@@ -1,0 +1,937 @@
+@page "/approvals/request"
+@attribute [Authorize]
+@inherits OrganizationHubComponentBase
+@inject IApprovalService ApprovalService
+@inject IDriveBrowserService DriveBrowserService
+@inject IPermissionService PermissionService
+@inject IDriveService DriveService
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("결재 요청")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">결재 요청</h1>
+    </div>
+</div>
+
+@if (string.IsNullOrWhiteSpace(mMessage) == false)
+{
+    <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
+}
+
+@if (mIsLoading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else if (mCreateContext.CanCreateRequest == false)
+{
+    <ResourceStateMessage Icon="@Icons.Material.Filled.Lock" Title="@mCreateContext.BlockReason" />
+}
+else
+{
+    <MudGrid Spacing="5" Class="hub-approval-grid">
+        <MudItem xs="12" lg="8">
+            <MudPaper Class="hub-card pa-4">
+                <MudText Typo="Typo.h6">결재할 파일</MudText>
+                <div class="hub-browser-toolbar">
+                    <MudSelect T="string" Label="자료 위치" Value="mFormModel.SourceFolderID" ValueChanged="handleSourceFolderChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
+                        @foreach (DriveFolderReference folder in mCreateContext.SourceFolders)
+                        {
+                            <MudSelectItem T="string" Value="@folder.FolderID">@folder.DisplayName</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <div class="hub-browser-search">
+                        <MudTextField @bind-Value="mKeyword" Placeholder="파일명 검색" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
+                        <MudTooltip Text="검색">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Medium" OnClick="loadFilesAsync" aria-label="검색" />
+                        </MudTooltip>
+                    </div>
+                </div>
+                <div class="hub-browser-location">
+                    <div class="hub-browser-breadcrumbs" aria-label="현재 폴더 위치">
+                        @for (int index = 0; index < mSourceFolderPath.Count; index++)
+                        {
+                            int pathIndex = index;
+                            DriveFolderPathItem pathItem = mSourceFolderPath[index];
+                            @if (index > 0)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="hub-browser-breadcrumb-separator" />
+                            }
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Disabled="@(index == mSourceFolderPath.Count - 1)" OnClick="@(() => navigateSourceToPathAsync(pathIndex))">@pathItem.Name</MudButton>
+                        }
+                    </div>
+                    <div class="hub-browser-count">@getFileCountText()</div>
+                </div>
+                @if (mIsLoadingFiles)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                }
+                else if (string.IsNullOrWhiteSpace(mFileLoadErrorMessage) == false)
+                {
+                    <ResourceStateMessage Icon="@Icons.Material.Filled.SyncProblem" Title="@mFileLoadErrorMessage" ActionLabel="다시 시도" Action="loadFilesAsync" />
+                }
+                else if (mFiles.Count == 0)
+                {
+                    <ResourceStateMessage Icon="@Icons.Material.Filled.FolderOff" Title="@getFileEmptyMessage()" />
+                }
+                else
+                {
+                    <div class="hub-file-desktop-table">
+                        <MudTable Items="mFiles" Dense="true" Hover="true" Elevation="0" Class="hub-file-table">
+                            <HeaderContent>
+                                <MudTh>파일명</MudTh>
+                                <MudTh>수정일</MudTh>
+                                <MudTh></MudTh>
+                            </HeaderContent>
+                            <RowTemplate Context="file">
+                                <MudTd DataLabel="파일명" Class="hub-file-name">
+                                    <div class="hub-file-name-cell">
+                                        <MudIcon Icon="@getFileIcon(file)" Size="Size.Small" Class="hub-file-icon" />
+                                        <MudText Typo="Typo.body2">@file.Name</MudText>
+                                    </div>
+                                </MudTd>
+                                <MudTd DataLabel="수정일">@formatDate(file.ModifiedTime)</MudTd>
+                                <MudTd DataLabel="작업" Class="hub-action-cell">
+                                    @if (file.IsFolder)
+                                    {
+                                        <MudTooltip Text="폴더 열기">
+                                            <MudIconButton Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" Size="Size.Small" OnClick="@(() => openSourceFolderAsync(file))" aria-label="폴더 열기" />
+                                        </MudTooltip>
+                                    }
+                                    else
+                                    {
+                                        <MudTooltip Text="선택">
+                                            <MudIconButton Icon="@(mFormModel.FileID == file.ID ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)" Color="Color.Primary" Size="Size.Small" OnClick="@(() => selectFile(file))" aria-label="선택" />
+                                        </MudTooltip>
+                                    }
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </div>
+                    <div class="hub-file-mobile-list">
+                        @foreach (DriveFileItem file in mFiles)
+                        {
+                            <div class="hub-file-compact-row">
+                                <div class="hub-file-compact-main">
+                                    <div class="hub-file-inline-name">
+                                        <MudIcon Icon="@getFileIcon(file)" Size="Size.Small" Class="hub-file-icon" />
+                                        <MudText Typo="Typo.body2" Class="hub-file-compact-name">@file.Name</MudText>
+                                    </div>
+                                    <div class="hub-file-compact-meta">
+                                        <span>@formatDate(file.ModifiedTime)</span>
+                                    </div>
+                                </div>
+                                <div class="hub-file-compact-actions">
+                                    @if (file.IsFolder)
+                                    {
+                                        <MudTooltip Text="폴더 열기">
+                                            <MudIconButton Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" Size="Size.Small" OnClick="@(() => openSourceFolderAsync(file))" aria-label="폴더 열기" />
+                                        </MudTooltip>
+                                    }
+                                    else
+                                    {
+                                        <MudTooltip Text="선택">
+                                            <MudIconButton Icon="@(mFormModel.FileID == file.ID ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)" Color="Color.Primary" Size="Size.Small" OnClick="@(() => selectFile(file))" aria-label="선택" />
+                                        </MudTooltip>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </MudPaper>
+            <MudPaper Class="hub-card hub-form-card pa-4 mt-4">
+                <MudText Typo="Typo.h6">승인본 저장 위치</MudText>
+                <MudSelect T="string" Label="보관 영역" Value="mSelectedDestinationRootFolderID" ValueChanged="handleDestinationRootChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
+                    @foreach (DriveFolderReference folder in mCreateContext.DestinationFolders)
+                    {
+                        <MudSelectItem T="string" Value="@folder.FolderID">@folder.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
+                <div class="hub-browser-location">
+                    <div class="hub-browser-breadcrumbs" aria-label="승인본 저장 위치">
+                        @for (int index = 0; index < mDestinationFolderPath.Count; index++)
+                        {
+                            int pathIndex = index;
+                            DriveFolderPathItem pathItem = mDestinationFolderPath[index];
+                            @if (index > 0)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="hub-browser-breadcrumb-separator" />
+                            }
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Disabled="@(index == mDestinationFolderPath.Count - 1)" OnClick="@(() => navigateDestinationToPathAsync(pathIndex))">@pathItem.Name</MudButton>
+                        }
+                    </div>
+                    <div class="hub-browser-count">저장 위치</div>
+                </div>
+                <div class="hub-folder-actionbar">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.CreateNewFolder" OnClick="toggleDestinationFolderCreate" Class="hub-folder-create-toggle">새 폴더</MudButton>
+                </div>
+                @if (mIsDestinationFolderCreateOpen)
+                {
+                    <div class="hub-folder-create-panel">
+                        <MudTextField @bind-Value="mNewDestinationFolderName" Label="폴더 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-folder-create-input" />
+                        <div class="hub-folder-create-actions">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@mIsCreatingDestinationFolder" OnClick="createDestinationFolderAsync">만들기</MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="closeDestinationFolderCreate">취소</MudButton>
+                        </div>
+                    </div>
+                }
+                @if (mIsLoadingDestinationFolders)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                }
+                else if (string.IsNullOrWhiteSpace(mDestinationFolderLoadErrorMessage) == false)
+                {
+                    <ResourceStateMessage Icon="@Icons.Material.Filled.SyncProblem" Title="@mDestinationFolderLoadErrorMessage" ActionLabel="다시 시도" Action="loadDestinationFoldersAsync" />
+                }
+                else if (mDestinationFoldersInCurrentFolder.Count > 0)
+                {
+                    <div class="hub-folder-tile-list">
+                        @foreach (DriveFileItem folder in mDestinationFoldersInCurrentFolder)
+                        {
+                            <button type="button" class="hub-folder-tile" @onclick="@(() => openDestinationFolderAsync(folder))">
+                                <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" />
+                                <span>@folder.Name</span>
+                            </button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <ResourceStateMessage Icon="@Icons.Material.Filled.FolderOpen"
+                                          Title="하위 폴더가 없습니다."
+                                          Description="현재 위치에 승인본이 저장됩니다." />
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" lg="4">
+            <MudStack Spacing="4">
+                <MudPaper Class="hub-card hub-form-card hub-approval-line-card pa-4">
+                    <MudText Typo="Typo.h6">결재선</MudText>
+                    <MudTextField T="string" Value="@mFormModel.Title" ValueChanged="handleTitleChangedAsync" Label="제목" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudSelect T="int" Label="결재 단계" Value="mFormModel.StepCount" ValueChanged="handleStepCountChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (int stepCount in mCreateContext.AvailableStepCounts)
+                        {
+                            <MudSelectItem T="int" Value="@stepCount">@(stepCount)단계</MudSelectItem>
+                        }
+                    </MudSelect>
+                    @if (mFormModel.StepCount >= 2)
+                    {
+                        <MudSelect @key="@("first-" + mFormModel.StepCount)" T="int" Label="1차 결재권자" Value="mFormModel.FirstApproverUserID" ValueChanged="handleFirstApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            @foreach (ApprovalUserOption userOption in getFirstApproverOptions())
+                            {
+                                <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
+                            }
+                        </MudSelect>
+                    }
+                    @if (mFormModel.StepCount == 3)
+                    {
+                        <MudSelect @key="@("second-" + mFormModel.StepCount)" T="int" Label="2차 결재권자" Value="mFormModel.SecondApproverUserID" ValueChanged="handleSecondApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            @foreach (ApprovalUserOption userOption in getSecondApproverOptions())
+                            {
+                                <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
+                            }
+                        </MudSelect>
+                    }
+                    @if (mCreateContext.FinalApproverOptions.Count == 1)
+                    {
+                        <MudTextField Value="@mCreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="최종 결재권자" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
+                    }
+                    else
+                    {
+                        <MudSelect @key="@("final-" + mFormModel.StepCount)" T="int" Label="최종 결재권자" Value="mFormModel.FinalApproverUserID" ValueChanged="handleFinalApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            @foreach (ApprovalUserOption userOption in getFinalApproverOptions())
+                            {
+                                <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
+                            }
+                        </MudSelect>
+                    }
+                    <div class="hub-submit-row">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Approval" Disabled="@(mIsSubmitting || string.IsNullOrWhiteSpace(mFormModel.FileID))" OnClick="submitRequestAsync" Class="hub-primary-action-button hub-approval-submit-button">결재 요청</MudButton>
+                    </div>
+                    @if (string.IsNullOrWhiteSpace(mFormModel.FileID))
+                    {
+                        <MudText Typo="Typo.caption" Class="hub-muted hub-approval-submit-hint">결재할 파일을 선택해 주세요.</MudText>
+                    }
+                </MudPaper>
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+}
+
+@code
+{
+    private ApprovalCreateContext mCreateContext = new ApprovalCreateContext();
+    private ApprovalRequestFormModel mFormModel = new ApprovalRequestFormModel();
+    private List<DriveFolderPathItem> mSourceFolderPath = new List<DriveFolderPathItem>();
+    private List<DriveFolderPathItem> mDestinationFolderPath = new List<DriveFolderPathItem>();
+    private List<DriveFileItem> mFiles = new List<DriveFileItem>();
+    private List<DriveFileItem> mDestinationFoldersInCurrentFolder = new List<DriveFileItem>();
+    private string mSelectedDestinationRootFolderID = string.Empty;
+    private string mNewDestinationFolderName = string.Empty;
+    private string mKeyword = string.Empty;
+    private string mMessage = string.Empty;
+    private string mFileLoadErrorMessage = string.Empty;
+    private string mDestinationFolderLoadErrorMessage = string.Empty;
+    private Severity mMessageSeverity = Severity.Info;
+    private bool mIsLoading = true;
+    private bool mIsLoadingFiles;
+    private bool mIsLoadingDestinationFolders;
+    private bool mIsCreatingDestinationFolder;
+    private bool mIsSubmitting;
+    private bool mHasCustomTitle;
+    private int mLastDefaultFirstApproverUserID;
+    private int mLastDefaultSecondApproverUserID;
+    private int mLastDefaultFinalApproverUserID;
+    private bool mIsDestinationFolderCreateOpen;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession == false || CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        mCreateContext = await ApprovalService.GetCreateContextAsync(CurrentUserSessionOrNull, CancellationToken.None);
+        initializeDefaults();
+        if (mCreateContext.SourceFolders.Count > 0)
+        {
+            await loadFilesAsync();
+        }
+
+        if (mCreateContext.DestinationFolders.Count > 0)
+        {
+            await loadDestinationFoldersAsync();
+        }
+
+        mIsLoading = false;
+    }
+
+    private void initializeDefaults()
+    {
+        if (mCreateContext.SourceFolders.Count > 0)
+        {
+            mFormModel.SourceFolderID = mCreateContext.SourceFolders[0].FolderID;
+            resetSourcePath(mCreateContext.SourceFolders[0]);
+        }
+
+        if (mCreateContext.DestinationFolders.Count > 0)
+        {
+            mSelectedDestinationRootFolderID = mCreateContext.DestinationFolders[0].FolderID;
+            resetDestinationPath(mCreateContext.DestinationFolders[0]);
+        }
+
+        if (mCreateContext.AvailableStepCounts.Count > 0)
+        {
+            mFormModel.StepCount = mCreateContext.AvailableStepCounts[0];
+        }
+
+        applyDefaultApproversForStepCount();
+    }
+
+    private async Task handleSourceFolderChangedAsync(string folderID)
+    {
+        mFormModel.SourceFolderID = folderID;
+        mFormModel.FileID = string.Empty;
+        if (mHasCustomTitle == false)
+        {
+            mFormModel.Title = string.Empty;
+        }
+
+        mKeyword = string.Empty;
+        DriveFolderReference? folderOrNull = getSelectedSourceFolderOrNull();
+        if (folderOrNull != null)
+        {
+            resetSourcePath(folderOrNull);
+        }
+
+        await loadFilesAsync();
+    }
+
+    private async Task handleDestinationRootChangedAsync(string folderID)
+    {
+        mSelectedDestinationRootFolderID = folderID;
+        DriveFolderReference? folderOrNull = getSelectedDestinationRootFolderOrNull();
+        if (folderOrNull != null)
+        {
+            resetDestinationPath(folderOrNull);
+        }
+
+        await loadDestinationFoldersAsync();
+    }
+
+    private Task handleStepCountChangedAsync(int stepCount)
+    {
+        mFormModel.StepCount = stepCount;
+        applyDefaultApproversForStepCount();
+        return Task.CompletedTask;
+    }
+
+    private Task handleFirstApproverChangedAsync(int userID)
+    {
+        mFormModel.FirstApproverUserID = userID;
+        if (mFormModel.StepCount == 3 && mFormModel.SecondApproverUserID == userID)
+        {
+            mFormModel.SecondApproverUserID = getDefaultSecondApproverIDExcluding(mFormModel.FirstApproverUserID, mFormModel.FinalApproverUserID);
+            mLastDefaultSecondApproverUserID = mFormModel.SecondApproverUserID;
+        }
+
+        if (mFormModel.FinalApproverUserID == userID)
+        {
+            mFormModel.FinalApproverUserID = getDefaultFinalApproverIDExcluding(mFormModel.FirstApproverUserID, mFormModel.SecondApproverUserID);
+            mLastDefaultFinalApproverUserID = mFormModel.FinalApproverUserID;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task handleSecondApproverChangedAsync(int userID)
+    {
+        mFormModel.SecondApproverUserID = userID;
+        if (mFormModel.FirstApproverUserID == userID)
+        {
+            mFormModel.FirstApproverUserID = getDefaultFirstApproverIDExcluding(mFormModel.SecondApproverUserID, mFormModel.FinalApproverUserID);
+            mLastDefaultFirstApproverUserID = mFormModel.FirstApproverUserID;
+        }
+
+        if (mFormModel.FinalApproverUserID == userID)
+        {
+            mFormModel.FinalApproverUserID = getDefaultFinalApproverIDExcluding(mFormModel.FirstApproverUserID, mFormModel.SecondApproverUserID);
+            mLastDefaultFinalApproverUserID = mFormModel.FinalApproverUserID;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task handleFinalApproverChangedAsync(int userID)
+    {
+        mFormModel.FinalApproverUserID = userID;
+        if (mFormModel.FirstApproverUserID == userID)
+        {
+            mFormModel.FirstApproverUserID = getDefaultFirstApproverIDExcluding(mFormModel.SecondApproverUserID, mFormModel.FinalApproverUserID);
+            mLastDefaultFirstApproverUserID = mFormModel.FirstApproverUserID;
+        }
+
+        if (mFormModel.StepCount == 3 && mFormModel.SecondApproverUserID == userID)
+        {
+            mFormModel.SecondApproverUserID = getDefaultSecondApproverIDExcluding(mFormModel.FirstApproverUserID, mFormModel.FinalApproverUserID);
+            mLastDefaultSecondApproverUserID = mFormModel.SecondApproverUserID;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task handleTitleChangedAsync(string title)
+    {
+        mFormModel.Title = title;
+        mHasCustomTitle = true;
+        return Task.CompletedTask;
+    }
+
+    private void applyDefaultApproversForStepCount()
+    {
+        if (mFormModel.StepCount < 2)
+        {
+            mFormModel.FirstApproverUserID = 0;
+            mLastDefaultFirstApproverUserID = 0;
+        }
+
+        if (mFormModel.StepCount < 3)
+        {
+            mFormModel.SecondApproverUserID = 0;
+            mLastDefaultSecondApproverUserID = 0;
+        }
+
+        if (mFormModel.StepCount >= 2 && shouldApplyDefaultApprover(mFormModel.FirstApproverUserID, mLastDefaultFirstApproverUserID, mFormModel.SecondApproverUserID, mFormModel.FinalApproverUserID))
+        {
+            mFormModel.FirstApproverUserID = getDefaultFirstApproverIDExcluding(mFormModel.SecondApproverUserID, mFormModel.FinalApproverUserID);
+            mLastDefaultFirstApproverUserID = mFormModel.FirstApproverUserID;
+        }
+
+        if (mFormModel.StepCount == 3 && shouldApplyDefaultApprover(mFormModel.SecondApproverUserID, mLastDefaultSecondApproverUserID, mFormModel.FirstApproverUserID, mFormModel.FinalApproverUserID))
+        {
+            mFormModel.SecondApproverUserID = getDefaultSecondApproverIDExcluding(mFormModel.FirstApproverUserID, mFormModel.FinalApproverUserID);
+            mLastDefaultSecondApproverUserID = mFormModel.SecondApproverUserID;
+        }
+
+        if (shouldApplyDefaultFinalApprover(mFormModel.FinalApproverUserID, mLastDefaultFinalApproverUserID, mFormModel.FirstApproverUserID, mFormModel.SecondApproverUserID))
+        {
+            mFormModel.FinalApproverUserID = getDefaultFinalApproverIDExcluding(mFormModel.FirstApproverUserID, mFormModel.SecondApproverUserID);
+            mLastDefaultFinalApproverUserID = mFormModel.FinalApproverUserID;
+        }
+    }
+
+    private IReadOnlyList<ApprovalUserOption> getFirstApproverOptions()
+    {
+        return getApproverOptionsExcludingExcept(mFormModel.FirstApproverUserID, mFormModel.SecondApproverUserID, mFormModel.FinalApproverUserID);
+    }
+
+    private IReadOnlyList<ApprovalUserOption> getSecondApproverOptions()
+    {
+        return getApproverOptionsExcludingExcept(mFormModel.SecondApproverUserID, mFormModel.FirstApproverUserID, mFormModel.FinalApproverUserID);
+    }
+
+    private IReadOnlyList<ApprovalUserOption> getFinalApproverOptions()
+    {
+        return getFinalApproverOptionsExcludingExcept(mFormModel.FinalApproverUserID, mFormModel.FirstApproverUserID, mFormModel.SecondApproverUserID);
+    }
+
+    private IReadOnlyList<ApprovalUserOption> getApproverOptionsExcludingExcept(int currentUserID, params int[] excludedUserIDs)
+    {
+        HashSet<int> excludedIDs = excludedUserIDs.Where(userID => userID > 0 && userID != currentUserID).ToHashSet();
+        return mCreateContext.ApproverOptions.Where(userOption => excludedIDs.Contains(userOption.UserID) == false).ToList();
+    }
+
+    private IReadOnlyList<ApprovalUserOption> getFinalApproverOptionsExcludingExcept(int currentUserID, params int[] excludedUserIDs)
+    {
+        HashSet<int> excludedIDs = excludedUserIDs.Where(userID => userID > 0 && userID != currentUserID).ToHashSet();
+        return mCreateContext.FinalApproverOptions.Where(userOption => excludedIDs.Contains(userOption.UserID) == false).ToList();
+    }
+
+    private int getFirstApproverIDExcluding(params int[] excludedUserIDs)
+    {
+        HashSet<int> excludedIDs = excludedUserIDs.Where(userID => userID > 0).ToHashSet();
+        ApprovalUserOption? approverOptionOrNull = mCreateContext.ApproverOptions.FirstOrDefault(userOption => excludedIDs.Contains(userOption.UserID) == false);
+        if (approverOptionOrNull == null)
+        {
+            return 0;
+        }
+
+        return approverOptionOrNull.UserID;
+    }
+
+    private int getFirstFinalApproverIDExcluding(params int[] excludedUserIDs)
+    {
+        HashSet<int> excludedIDs = excludedUserIDs.Where(userID => userID > 0).ToHashSet();
+        ApprovalUserOption? finalApproverOptionOrNull = mCreateContext.FinalApproverOptions.FirstOrDefault(userOption => excludedIDs.Contains(userOption.UserID) == false);
+        if (finalApproverOptionOrNull == null)
+        {
+            return 0;
+        }
+
+        return finalApproverOptionOrNull.UserID;
+    }
+
+    private int getDefaultFirstApproverIDExcluding(params int[] excludedUserIDs)
+    {
+        ApprovalDefaultLineOption? defaultLineOrNull = getDefaultLineOrNull();
+        int preferredUserID = defaultLineOrNull == null ? 0 : defaultLineOrNull.FirstApproverUserID;
+        return getPreferredApproverIDExcluding(preferredUserID, excludedUserIDs);
+    }
+
+    private int getDefaultSecondApproverIDExcluding(params int[] excludedUserIDs)
+    {
+        ApprovalDefaultLineOption? defaultLineOrNull = getDefaultLineOrNull();
+        int preferredUserID = defaultLineOrNull == null ? 0 : defaultLineOrNull.SecondApproverUserID;
+        return getPreferredApproverIDExcluding(preferredUserID, excludedUserIDs);
+    }
+
+    private int getDefaultFinalApproverIDExcluding(params int[] excludedUserIDs)
+    {
+        ApprovalDefaultLineOption? defaultLineOrNull = getDefaultLineOrNull();
+        int preferredUserID = defaultLineOrNull == null ? 0 : defaultLineOrNull.FinalApproverUserID;
+        return getPreferredFinalApproverIDExcluding(preferredUserID, excludedUserIDs);
+    }
+
+    private int getPreferredApproverIDExcluding(int preferredUserID, params int[] excludedUserIDs)
+    {
+        HashSet<int> excludedIDs = excludedUserIDs.Where(userID => userID > 0).ToHashSet();
+        if (preferredUserID > 0 && excludedIDs.Contains(preferredUserID) == false && isApproverOptionSelected(preferredUserID))
+        {
+            return preferredUserID;
+        }
+
+        return getFirstApproverIDExcluding(excludedUserIDs);
+    }
+
+    private int getPreferredFinalApproverIDExcluding(int preferredUserID, params int[] excludedUserIDs)
+    {
+        HashSet<int> excludedIDs = excludedUserIDs.Where(userID => userID > 0).ToHashSet();
+        if (preferredUserID > 0 && excludedIDs.Contains(preferredUserID) == false && isFinalApproverOptionSelected(preferredUserID))
+        {
+            return preferredUserID;
+        }
+
+        return getFirstFinalApproverIDExcluding(excludedUserIDs);
+    }
+
+    private ApprovalDefaultLineOption? getDefaultLineOrNull()
+    {
+        return mCreateContext.DefaultLineOptions.FirstOrDefault(defaultLine => defaultLine.StepCount == mFormModel.StepCount);
+    }
+
+    private bool shouldApplyDefaultApprover(int selectedUserID, int lastDefaultUserID, params int[] excludedUserIDs)
+    {
+        if (selectedUserID <= 0 || isApproverOptionSelected(selectedUserID) == false)
+        {
+            return true;
+        }
+
+        if (excludedUserIDs.Any(userID => userID > 0 && userID == selectedUserID))
+        {
+            return true;
+        }
+
+        return selectedUserID == lastDefaultUserID;
+    }
+
+    private bool shouldApplyDefaultFinalApprover(int selectedUserID, int lastDefaultUserID, params int[] excludedUserIDs)
+    {
+        if (selectedUserID <= 0 || isFinalApproverOptionSelected(selectedUserID) == false)
+        {
+            return true;
+        }
+
+        if (excludedUserIDs.Any(userID => userID > 0 && userID == selectedUserID))
+        {
+            return true;
+        }
+
+        return selectedUserID == lastDefaultUserID;
+    }
+
+    private bool isApproverOptionSelected(int userID)
+    {
+        return userID > 0 && mCreateContext.ApproverOptions.Any(userOption => userOption.UserID == userID);
+    }
+
+    private bool isFinalApproverOptionSelected(int userID)
+    {
+        return userID > 0 && mCreateContext.FinalApproverOptions.Any(userOption => userOption.UserID == userID);
+    }
+
+    private async Task loadFilesAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        DriveFolderReference? sourceFolderOrNull = getSelectedSourceFolderOrNull();
+        if (sourceFolderOrNull == null)
+        {
+            return;
+        }
+
+        mIsLoadingFiles = true;
+        mFileLoadErrorMessage = string.Empty;
+        try
+        {
+            IReadOnlyList<DriveFileItem> files = await DriveBrowserService.GetFolderFilesAsync(CurrentUserSessionOrNull, sourceFolderOrNull.FolderKind, sourceFolderOrNull.FolderID, getCurrentSourceFolderID(), mKeyword, CancellationToken.None);
+            mFiles = files.ToList();
+        }
+        catch
+        {
+            mFiles = new List<DriveFileItem>();
+            mFileLoadErrorMessage = "결재할 파일을 불러오지 못했습니다.";
+        }
+        finally
+        {
+            mIsLoadingFiles = false;
+        }
+    }
+
+    private async Task loadDestinationFoldersAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        DriveFolderReference? destinationFolderOrNull = getSelectedDestinationRootFolderOrNull();
+        if (destinationFolderOrNull == null)
+        {
+            return;
+        }
+
+        mIsLoadingDestinationFolders = true;
+        mDestinationFolderLoadErrorMessage = string.Empty;
+        try
+        {
+            IReadOnlyList<DriveFileItem> files = await DriveBrowserService.GetFolderFilesAsync(CurrentUserSessionOrNull, destinationFolderOrNull.FolderKind, destinationFolderOrNull.FolderID, getCurrentDestinationFolderID(), string.Empty, CancellationToken.None);
+            mDestinationFoldersInCurrentFolder = files.Where(file => file.IsFolder).OrderBy(file => file.Name).ToList();
+        }
+        catch
+        {
+            mDestinationFoldersInCurrentFolder = new List<DriveFileItem>();
+            mDestinationFolderLoadErrorMessage = "저장 위치를 불러오지 못했습니다.";
+        }
+        finally
+        {
+            mIsLoadingDestinationFolders = false;
+        }
+    }
+
+    private async Task openSourceFolderAsync(DriveFileItem file)
+    {
+        if (file.IsFolder == false)
+        {
+            return;
+        }
+
+        DriveFolderPathItem pathItem = new DriveFolderPathItem();
+        pathItem.ID = file.ID;
+        pathItem.Name = file.Name;
+        mSourceFolderPath.Add(pathItem);
+        mKeyword = string.Empty;
+        await loadFilesAsync();
+    }
+
+    private async Task openDestinationFolderAsync(DriveFileItem file)
+    {
+        if (file.IsFolder == false)
+        {
+            return;
+        }
+
+        DriveFolderPathItem pathItem = new DriveFolderPathItem();
+        pathItem.ID = file.ID;
+        pathItem.Name = file.Name;
+        mDestinationFolderPath.Add(pathItem);
+        mFormModel.DestinationFolderID = file.ID;
+        await loadDestinationFoldersAsync();
+    }
+
+    private async Task navigateSourceToPathAsync(int index)
+    {
+        if (index < 0 || index >= mSourceFolderPath.Count)
+        {
+            return;
+        }
+
+        mSourceFolderPath = mSourceFolderPath.Take(index + 1).ToList();
+        mKeyword = string.Empty;
+        await loadFilesAsync();
+    }
+
+    private async Task navigateDestinationToPathAsync(int index)
+    {
+        if (index < 0 || index >= mDestinationFolderPath.Count)
+        {
+            return;
+        }
+
+        mDestinationFolderPath = mDestinationFolderPath.Take(index + 1).ToList();
+        mFormModel.DestinationFolderID = getCurrentDestinationFolderID();
+        await loadDestinationFoldersAsync();
+    }
+
+    private async Task createDestinationFolderAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        string folderName = getValidFolderNameOrEmpty(mNewDestinationFolderName);
+        if (string.IsNullOrWhiteSpace(folderName))
+        {
+            mMessage = "새 폴더 이름을 입력해 주세요.";
+            mMessageSeverity = Severity.Warning;
+            return;
+        }
+
+        PermissionDecision createDecision = await PermissionService.DecideStoreApprovedFileToFolderAsync(CurrentUserSessionOrNull, getCurrentDestinationFolderID(), CancellationToken.None);
+        if (createDecision.IsAllowed == false)
+        {
+            mMessage = createDecision.Reason;
+            mMessageSeverity = Severity.Error;
+            return;
+        }
+
+        mIsCreatingDestinationFolder = true;
+        try
+        {
+            DriveFileItem createdFolder = await DriveService.CreateFolderAsync(getCurrentDestinationFolderID(), folderName, CancellationToken.None);
+            mNewDestinationFolderName = string.Empty;
+            mIsDestinationFolderCreateOpen = false;
+            await loadDestinationFoldersAsync();
+            await openDestinationFolderAsync(createdFolder);
+            mMessage = "새 폴더를 만들었습니다.";
+            mMessageSeverity = Severity.Success;
+        }
+        catch
+        {
+            mMessage = "폴더를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.";
+            mMessageSeverity = Severity.Error;
+        }
+
+        mIsCreatingDestinationFolder = false;
+    }
+
+    private void toggleDestinationFolderCreate()
+    {
+        mIsDestinationFolderCreateOpen = mIsDestinationFolderCreateOpen == false;
+        if (mIsDestinationFolderCreateOpen == false)
+        {
+            mNewDestinationFolderName = string.Empty;
+        }
+    }
+
+    private void closeDestinationFolderCreate()
+    {
+        mIsDestinationFolderCreateOpen = false;
+        mNewDestinationFolderName = string.Empty;
+    }
+
+    private void selectFile(DriveFileItem file)
+    {
+        mFormModel.FileID = file.ID;
+        if (mHasCustomTitle == false || string.IsNullOrWhiteSpace(mFormModel.Title))
+        {
+            mFormModel.Title = createDefaultRequestTitle(file);
+            mHasCustomTitle = false;
+        }
+    }
+
+    private async Task submitRequestAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        mFormModel.DestinationFolderID = getCurrentDestinationFolderID();
+        mIsSubmitting = true;
+        ServiceResult result = await ApprovalService.SubmitRequestAsync(CurrentUserSessionOrNull, mFormModel, CancellationToken.None);
+        mIsSubmitting = false;
+        if (result.IsSuccess)
+        {
+            mMessage = "결재 요청이 등록되었습니다.";
+            mMessageSeverity = Severity.Success;
+            mFormModel = new ApprovalRequestFormModel();
+            mHasCustomTitle = false;
+            initializeDefaults();
+            await loadFilesAsync();
+            await loadDestinationFoldersAsync();
+            return;
+        }
+
+        mMessage = result.ErrorMessage;
+        mMessageSeverity = Severity.Error;
+    }
+
+    private DriveFolderReference? getSelectedSourceFolderOrNull()
+    {
+        return mCreateContext.SourceFolders.FirstOrDefault(folder => folder.FolderID == mFormModel.SourceFolderID);
+    }
+
+    private DriveFolderReference? getSelectedDestinationRootFolderOrNull()
+    {
+        return mCreateContext.DestinationFolders.FirstOrDefault(folder => folder.FolderID == mSelectedDestinationRootFolderID);
+    }
+
+    private void resetSourcePath(DriveFolderReference folder)
+    {
+        DriveFolderPathItem pathItem = new DriveFolderPathItem();
+        pathItem.ID = folder.FolderID;
+        pathItem.Name = folder.DisplayName;
+        mSourceFolderPath = new List<DriveFolderPathItem>();
+        mSourceFolderPath.Add(pathItem);
+    }
+
+    private void resetDestinationPath(DriveFolderReference folder)
+    {
+        DriveFolderPathItem pathItem = new DriveFolderPathItem();
+        pathItem.ID = folder.FolderID;
+        pathItem.Name = folder.DisplayName;
+        mDestinationFolderPath = new List<DriveFolderPathItem>();
+        mDestinationFolderPath.Add(pathItem);
+        mFormModel.DestinationFolderID = folder.FolderID;
+    }
+
+    private string getCurrentSourceFolderID()
+    {
+        if (mSourceFolderPath.Count == 0)
+        {
+            return mFormModel.SourceFolderID;
+        }
+
+        return mSourceFolderPath[mSourceFolderPath.Count - 1].ID;
+    }
+
+    private string getCurrentDestinationFolderID()
+    {
+        if (mDestinationFolderPath.Count == 0)
+        {
+            return mSelectedDestinationRootFolderID;
+        }
+
+        return mDestinationFolderPath[mDestinationFolderPath.Count - 1].ID;
+    }
+
+    private string getValidFolderNameOrEmpty(string folderName)
+    {
+        if (string.IsNullOrWhiteSpace(folderName))
+        {
+            return string.Empty;
+        }
+
+        string trimmedName = folderName.Trim();
+        if (trimmedName.Length > 80)
+        {
+            return string.Empty;
+        }
+
+        if (trimmedName.Contains("/") || trimmedName.Contains("\\"))
+        {
+            return string.Empty;
+        }
+
+        return trimmedName;
+    }
+
+    private string getFileCountText()
+    {
+        int folderCount = mFiles.Count(file => file.IsFolder);
+        int fileCount = mFiles.Count - folderCount;
+        return "폴더 " + folderCount.ToString(CultureInfo.InvariantCulture) + "개 · 파일 " + fileCount.ToString(CultureInfo.InvariantCulture) + "개";
+    }
+
+    private string getFileEmptyMessage()
+    {
+        if (string.IsNullOrWhiteSpace(mKeyword) == false)
+        {
+            return "검색 결과가 없습니다.";
+        }
+
+        return "결재 요청할 파일이 없습니다.";
+    }
+
+    private string formatDate(DateTime? dateTimeOrNull)
+    {
+        if (dateTimeOrNull.HasValue == false)
+        {
+            return "-";
+        }
+
+        return dateTimeOrNull.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private string createDefaultRequestTitle(DriveFileItem file)
+    {
+        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file.Name);
+        if (string.IsNullOrWhiteSpace(fileNameWithoutExtension))
+        {
+            fileNameWithoutExtension = file.Name;
+        }
+
+        return fileNameWithoutExtension + " 결재 요청";
+    }
+
+    private string getFileIcon(DriveFileItem file)
+    {
+        if (file.IsFolder)
+        {
+            return Icons.Material.Filled.Folder;
+        }
+
+        if (file.MimeType == "application/pdf")
+        {
+            return Icons.Material.Filled.PictureAsPdf;
+        }
+
+        return Icons.Material.Filled.InsertDriveFile;
+    }
+}

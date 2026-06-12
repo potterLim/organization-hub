@@ -1,0 +1,151 @@
+@page "/admin/calendar-audit"
+@attribute [Authorize(Policy = OrganizationHubPolicies.CALENDAR_AUDIT_READ)]
+@inherits OrganizationHubComponentBase
+@inject ICalendarEventDeletionAuditLogService CalendarEventDeletionAuditLogService
+
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("일정 삭제 기록")</PageTitle>
+
+<div class="hub-page-header">
+    <div>
+        <h1 class="hub-page-title">일정 삭제 기록</h1>
+    </div>
+    <MudStack Row="true" Spacing="2" Class="hub-page-actions">
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="loadAuditLogsAsync" StartIcon="@Icons.Material.Filled.Refresh">새로고침</MudButton>
+    </MudStack>
+</div>
+
+<MudPaper Class="hub-card pa-4">
+    @if (mIsLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (mAuditLogs.Count == 0)
+    {
+        <div class="hub-empty hub-empty-state">
+            <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Medium" />
+            <span>삭제된 일정 기록이 없습니다.</span>
+        </div>
+    }
+    else
+    {
+        <MudTable Items="mAuditLogs" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table hub-calendar-audit-table">
+            <HeaderContent>
+                <MudTh>삭제 시각</MudTh>
+                <MudTh>일정</MudTh>
+                <MudTh>캘린더</MudTh>
+                <MudTh>일시</MudTh>
+                <MudTh>삭제자</MudTh>
+                <MudTh>상태</MudTh>
+            </HeaderContent>
+            <RowTemplate Context="auditLog">
+                <MudTd DataLabel="삭제 시각">@formatDeletedAt(auditLog.DeletedAt)</MudTd>
+                <MudTd DataLabel="일정" Class="hub-audit-main-cell">
+                    <div class="hub-audit-title">@auditLog.EventSummary</div>
+                    @if (string.IsNullOrWhiteSpace(auditLog.EventLocation) == false)
+                    {
+                        <div class="hub-audit-subtitle">@auditLog.EventLocation</div>
+                    }
+                </MudTd>
+                <MudTd DataLabel="캘린더">@auditLog.CalendarName</MudTd>
+                <MudTd DataLabel="일시">@formatEventTime(auditLog)</MudTd>
+                <MudTd DataLabel="삭제자">
+                    <div class="hub-audit-title">@auditLog.DeletedByDisplayName</div>
+                    <div class="hub-audit-subtitle">@formatRole(auditLog.DeletedByRole)</div>
+                </MudTd>
+                <MudTd DataLabel="상태">
+                    <span class="@getStatusClass(auditLog.Status)" title="@auditLog.ErrorMessage">@getStatusText(auditLog.Status)</span>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
+
+@code
+{
+    private List<CalendarEventDeletionAuditLogItem> mAuditLogs = new List<CalendarEventDeletionAuditLogItem>();
+    private bool mIsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession == false || CurrentUserSessionOrNull == null)
+        {
+            mIsLoading = false;
+            return;
+        }
+
+        await loadAuditLogsAsync();
+    }
+
+    private async Task loadAuditLogsAsync()
+    {
+        UserSession? currentUserSessionOrNull = CurrentUserSessionOrNull;
+        if (currentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        mIsLoading = true;
+        UserSession currentUserSession = currentUserSessionOrNull;
+        IReadOnlyList<CalendarEventDeletionAuditLogItem> auditLogs = await CalendarEventDeletionAuditLogService.GetRecentDeletedEventsAsync(currentUserSession, 100, CancellationToken.None);
+        mAuditLogs = auditLogs.ToList();
+        mIsLoading = false;
+    }
+
+    private string formatDeletedAt(DateTime deletedAt)
+    {
+        return deletedAt.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private string formatEventTime(CalendarEventDeletionAuditLogItem auditLog)
+    {
+        if (auditLog.EventStart.HasValue == false)
+        {
+            return "시간 미정";
+        }
+
+        if (auditLog.IsAllDay)
+        {
+            return auditLog.EventStart.Value.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 종일";
+        }
+
+        string startText = auditLog.EventStart.Value.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+        if (auditLog.EventEnd.HasValue == false)
+        {
+            return startText;
+        }
+
+        return startText + " - " + auditLog.EventEnd.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private string formatRole(EUserRole role)
+    {
+        return UserRoleUtility.GetDisplayName(role);
+    }
+
+    private string getStatusClass(ECalendarEventDeletionAuditStatus status)
+    {
+        switch (status)
+        {
+            case ECalendarEventDeletionAuditStatus.Succeeded:
+                return "hub-status-pill hub-status-succeeded";
+            case ECalendarEventDeletionAuditStatus.Failed:
+                return "hub-status-pill hub-status-failed";
+            default:
+                return "hub-status-pill hub-status-pending";
+        }
+    }
+
+    private string getStatusText(ECalendarEventDeletionAuditStatus status)
+    {
+        switch (status)
+        {
+            case ECalendarEventDeletionAuditStatus.Succeeded:
+                return "삭제됨";
+            case ECalendarEventDeletionAuditStatus.Failed:
+                return "실패";
+            default:
+                return "처리 중";
+        }
+    }
+}
