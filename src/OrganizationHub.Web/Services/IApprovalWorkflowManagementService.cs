@@ -1,0 +1,17 @@
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Models;
+
+namespace OrganizationHub.Web.Services;
+
+public interface IApprovalWorkflowManagementService
+{
+    Task<IReadOnlyList<ApprovalWorkflow>> GetWorkflowsAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyList<UserAccount>> GetApproverUsersAsync(CancellationToken cancellationToken);
+    Task<ServiceResult> CreateWorkflowAsync(ApprovalWorkflowFormModel formModel, CancellationToken cancellationToken);
+    Task<ServiceResult> UpdateWorkflowAsync(ApprovalWorkflowFormModel formModel, CancellationToken cancellationToken);
+    Task<ServiceResult> ActivateWorkflowAsync(int workflowID, CancellationToken cancellationToken);
+    Task<ServiceResult> DeactivateWorkflowAsync(int workflowID, CancellationToken cancellationToken);
+}
