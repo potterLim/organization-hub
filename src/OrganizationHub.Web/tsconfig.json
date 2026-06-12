@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noImplicitAny": true,
+    "noEmitOnError": true,
+    "newLine": "crlf",
+    "rootDir": "ClientScripts",
+    "outDir": "wwwroot/js",
+    "sourceMap": true,
+    "removeComments": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "ClientScripts/**/*.ts"
+  ],
+  "exclude": [
+    "bin",
+    "obj",
+    "wwwroot/js",
+    "wwwroot/vendor"
+  ]
+}

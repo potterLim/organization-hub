@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <UserSecretsId>organization-hub-web</UserSecretsId>
+    <TypeScriptCompileBlocked>false</TypeScriptCompileBlocked>
+    <TypeScriptOutDir>wwwroot/js</TypeScriptOutDir>
+    <TypeScriptModuleKind>ES2022</TypeScriptModuleKind>
+    <TypeScriptTarget>ES2022</TypeScriptTarget>
+    <TypeScriptNoImplicitAny>true</TypeScriptNoImplicitAny>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <NodePath Condition="'$(NodePath)' == '' AND Exists('$(VSINSTALLDIR)MSBuild\Microsoft\VisualStudio\NodeJs\node.exe')">$(VSINSTALLDIR)MSBuild\Microsoft\VisualStudio\NodeJs</NodePath>
+    <NodePath Condition="'$(NodePath)' == '' AND Exists('$(ProgramFiles)\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VisualStudio\NodeJs\node.exe')">$(ProgramFiles)\Microsoft Visual Studio\18\Community\MSBuild\Microsoft\VisualStudio\NodeJs</NodePath>
+    <NodePath Condition="'$(NodePath)' == '' AND Exists('$(ProgramFiles)\Microsoft Visual Studio\18\Professional\MSBuild\Microsoft\VisualStudio\NodeJs\node.exe')">$(ProgramFiles)\Microsoft Visual Studio\18\Professional\MSBuild\Microsoft\VisualStudio\NodeJs</NodePath>
+    <NodePath Condition="'$(NodePath)' == '' AND Exists('$(ProgramFiles)\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VisualStudio\NodeJs\node.exe')">$(ProgramFiles)\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VisualStudio\NodeJs</NodePath>
+    <NodePath Condition="'$(NodePath)' == '' AND Exists('$(ProgramFiles)\Microsoft Visual Studio\18\BuildTools\MSBuild\Microsoft\VisualStudio\NodeJs\node.exe')">$(ProgramFiles)\Microsoft Visual Studio\18\BuildTools\MSBuild\Microsoft\VisualStudio\NodeJs</NodePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Calendar.v3" Version="1.74.0.4073" />
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.74.0.4135" />
+    <PackageReference Include="Google.Apis.Tasks.v1" Version="1.74.0.3958" />
+    <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="5.9.3" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
+    <PackageReference Include="MudBlazor" Version="9.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <TypeScriptCompile Include="ClientScripts\**\*.ts" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
+</Project>

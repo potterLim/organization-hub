@@ -1,0 +1,34 @@
+services:
+  organization-hub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__OrganizationHub: Data Source=/app/Data/organizationhub.db;Cache=Shared;Default Timeout=30
+      OrganizationHub__SeedUsername: ${ORGANIZATION_HUB_SEED_USERNAME}
+      OrganizationHub__SeedPassword: ${ORGANIZATION_HUB_SEED_PASSWORD}
+      OrganizationHub__SeedDisplayName: ${ORGANIZATION_HUB_SEED_DISPLAY_NAME:-Organization Hub Admin}
+      GoogleApi__ApplicationName: Organization Hub
+      GoogleApi__OAuthClientID: ${GOOGLE_OAUTH_CLIENT_ID}
+      GoogleApi__OAuthClientSecret: ${GOOGLE_OAUTH_CLIENT_SECRET}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - organizationhub-data:/app/Data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  organizationhub-data:

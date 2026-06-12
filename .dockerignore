@@ -1,0 +1,87 @@
+# Git metadata
+.git
+.gitignore
+.github
+
+# IDE and editor state
+.vs
+.vscode
+.idea
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+*.code-workspace
+
+# Build output
+**/bin
+**/obj
+artifacts
+publish
+
+# Runtime data and local logs
+/Data
+/logs
+**/DataProtectionKeys
+*.log
+*.tlog
+organizationhub.run.*.log
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Secrets and environment-specific configuration
+/secrets
+**/secrets
+appsettings.Production.json
+appsettings.Staging.json
+appsettings.Local.json
+appsettings.*.Local.json
+*.Development.json.user
+*.secrets.json
+google-credentials.json
+*.google-credentials.json
+client_secret*.json
+*client-secret*.json
+*oauth-client*.json
+token.json
+tokens.json
+
+# Node and frontend caches
+node_modules
+**/node_modules
+.npm
+.pnpm-store
+dist
+
+# Test and browser automation output
+TestResults
+test-results
+coverage
+playwright-report
+*.trx
+*.coverage
+*.coveragexml
+
+# Local documents, screenshots, and exports
+*.docx
+*.docm
+*.xlsx
+*.xlsm
+*.pptx
+*.pptm
+*.pdf
+~$*
+screenshots
+captures
+qa-screenshots
+
+# Operating system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN
+.DS_Store
