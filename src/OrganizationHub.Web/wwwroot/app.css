@@ -1198,6 +1198,46 @@ h1:focus {
     overflow: visible;
 }
 
+.hub-position-selection-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(180px, .85fr) minmax(220px, 1.15fr);
+    margin-bottom: 14px;
+}
+
+.hub-position-selection-summary {
+    align-items: center;
+    background: rgba(33, 107, 255, .06);
+    border: 1px solid rgba(33, 107, 255, .12);
+    border-radius: 14px;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    min-width: 0;
+    padding: 12px 14px;
+}
+
+.hub-position-selection-title {
+    color: var(--hub-text-strong);
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.hub-position-switch-row {
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.hub-position-switch-row .mud-input-control {
+    flex: 0 1 auto;
+    margin-bottom: 0 !important;
+    min-width: 0;
+    width: auto;
+}
+
 .hub-permission-editor {
     display: grid;
     gap: 16px;
@@ -1252,8 +1292,9 @@ h1:focus {
     align-items: center;
     display: grid;
     gap: 10px;
-    grid-template-columns: 88px minmax(150px, 1fr) minmax(150px, 1fr);
+    grid-template-columns: minmax(92px, max-content) minmax(160px, 1fr) minmax(160px, 1fr);
     min-width: 0;
+    width: 100%;
 }
 
 .hub-permission-controls .mud-input-control {
@@ -1263,6 +1304,10 @@ h1:focus {
 .hub-permission-allow {
     justify-self: start;
     margin: 0 !important;
+    white-space: nowrap;
+}
+
+.hub-permission-allow .mud-checkbox-content {
     white-space: nowrap;
 }
 
@@ -1621,7 +1666,13 @@ h1:focus {
 }
 
 .hub-menu-table td {
+    line-height: 1.45;
+    max-width: none;
+    overflow: visible;
     padding: 6px 14px !important;
+    text-overflow: clip;
+    white-space: normal;
+    word-break: keep-all;
 }
 
 .hub-menu-table .mud-button-root,
@@ -2395,58 +2446,6 @@ h1:focus {
     position: absolute;
     top: .65em;
     width: 5px;
-}
-
-.hub-leader-grid .hub-card {
-    min-height: 100%;
-}
-
-.hub-leader-list {
-    display: grid;
-    gap: 12px;
-}
-
-.hub-leader-item {
-    align-items: flex-start;
-    background: rgba(255, 255, 255, .52);
-    border: 1px solid rgba(78, 104, 145, .1);
-    border-radius: 16px;
-    display: grid;
-    gap: 12px;
-    grid-template-columns: auto minmax(0, 1fr);
-    padding: 14px;
-}
-
-.hub-leader-item .mud-typography-body2,
-.hub-leader-rule .mud-typography-subtitle2 {
-    color: var(--hub-text-strong);
-    font-weight: 850;
-    line-height: 1.35;
-}
-
-.hub-leader-scope {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.hub-leader-scope span {
-    background: var(--hub-brand-soft);
-    border: 1px solid rgba(33, 107, 255, .16);
-    border-radius: 999px;
-    color: var(--hub-brand-deep);
-    font-size: 12px;
-    font-weight: 900;
-    line-height: 1;
-    padding: 10px 12px;
-}
-
-.hub-leader-rule {
-    background: rgba(255, 255, 255, .5);
-    border: 1px solid rgba(78, 104, 145, .1);
-    border-radius: 16px;
-    min-height: 116px;
-    padding: 16px;
 }
 
 .hub-todo-shell {
@@ -3379,6 +3378,10 @@ h1:focus {
     .hub-admin-section-heading {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .hub-position-selection-grid {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .hub-permission-row {

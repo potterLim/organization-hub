@@ -9,15 +9,15 @@ public static class MenuAccessLevelUtility
         switch (accessLevel)
         {
             case EMenuAccessLevel.Authenticated:
-                return "로그인 사용자";
+                return "로그인한 모든 사용자";
             case EMenuAccessLevel.TeamMember:
-                return "팀 구성원 이상";
+                return "선택한 팀의 구성원";
             case EMenuAccessLevel.TeamLeader:
-                return "책임자 이상";
+                return "선택한 팀의 책임자 이상";
             case EMenuAccessLevel.ManagementManager:
-                return "운영 관리자 이상";
+                return "관리팀 책임자 이상";
             case EMenuAccessLevel.Management:
-                return "조직 관리 역할";
+                return "관리팀 전체";
             case EMenuAccessLevel.Admin:
                 return "시스템 관리자";
             default:

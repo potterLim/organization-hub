@@ -7,7 +7,7 @@ Organization Hub는 팀 이름, 팀별 직책, 자료 위치, 일정, 할 일, �
 1. 초기 시스템 관리자 계정으로 로그인합니다.
 2. `/admin/google`에서 운영 Google 계정을 연결합니다.
 3. `/admin/teams`에서 실제 조직의 팀을 만듭니다.
-4. `/admin/positions`에서 팀별 직책과 권한 범위를 만듭니다.
+4. `/admin/positions`에서 팀별 직책을 만들고 직책별 권한 범위를 설정합니다.
 5. `/admin/users`에서 사용자를 만들고 팀과 직책을 배정합니다.
 6. `/admin/google` 또는 `/admin/settings`에서 Drive 폴더, 캘린더, 할 일 목록을 매핑합니다.
 7. `/admin/approval-workflows`에서 결재 경로를 설정합니다.

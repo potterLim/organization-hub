@@ -16,6 +16,8 @@ namespace OrganizationHub.Web.Data;
 
 public sealed class OrganizationHubDataSeeder
 {
+    private const string PREVIOUS_SEED_ADMINISTRATOR_DISPLAY_NAME = "Organization Hub Admin";
+
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;
     private readonly IPasswordHashService mPasswordHashService;
     private readonly OrganizationHubOptions mOptions;
@@ -57,6 +59,7 @@ public sealed class OrganizationHubDataSeeder
             await attachOrganizationAdministratorUsersToSystemAdministrationTeamAsync(dbContext, systemAdministrationTeam, cancellationToken);
             await attachManagementUsersToManagementTeamAsync(dbContext, managementTeam, cancellationToken);
             await attachAdministratorsToSystemAdministratorPositionAsync(dbContext, administratorPosition, cancellationToken);
+            await upgradeDefaultAdministratorDisplayNamesAsync(dbContext, cancellationToken);
             await seedNavigationMenusAsync(dbContext, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
@@ -213,6 +216,23 @@ public sealed class OrganizationHubDataSeeder
         }
     }
 
+    private async Task upgradeDefaultAdministratorDisplayNamesAsync(OrganizationHubDbContext dbContext, CancellationToken cancellationToken)
+    {
+        string configuredDisplayName = getConfiguredSeedDisplayName();
+        if (configuredDisplayName == PREVIOUS_SEED_ADMINISTRATOR_DISPLAY_NAME)
+        {
+            return;
+        }
+
+        List<UserAccount> administratorUsers = await dbContext.UserAccounts.Where(user =>
+            user.Role == EUserRole.Admin &&
+            user.DisplayName == PREVIOUS_SEED_ADMINISTRATOR_DISPLAY_NAME).ToListAsync(cancellationToken);
+        foreach (UserAccount userAccount in administratorUsers)
+        {
+            userAccount.DisplayName = configuredDisplayName;
+        }
+    }
+
     private Team createTeam(string teamKey, string displayName, int sortOrder)
     {
         Team team = new Team();
@@ -281,11 +301,11 @@ public sealed class OrganizationHubDataSeeder
         menuItems.Add(createMenuItem("ApprovedFiles", "결재 완료 자료", "/approved-files", "Verified", 230, EMenuAccessLevel.TeamMember, EActivationState.Active, EMenuTeamVisibility.AllTeams, ENavigationMenuLockState.Editable));
         menuItems.Add(createMenuItem("AdminUsers", "사용자 관리", "/admin/users", "ManageAccounts", 300, EMenuAccessLevel.ManagementManager, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Editable));
         menuItems.Add(createMenuItem("AdminTeams", "팀 관리", "/admin/teams", "Groups2", 310, EMenuAccessLevel.Admin, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Editable));
-        menuItems.Add(createMenuItem("AdminPositions", "직책/권한 관리", "/admin/positions", "AdminPanelSettings", 320, EMenuAccessLevel.Admin, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Locked));
-        menuItems.Add(createMenuItem("AdminApprovalWorkflows", "결재 경로 관리", "/admin/approval-workflows", "AccountTree", 330, EMenuAccessLevel.Admin, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Locked));
-        menuItems.Add(createMenuItem("AdminSettings", "시스템 설정", "/admin/settings", "Settings", 340, EMenuAccessLevel.Admin, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Editable));
-        menuItems.Add(createMenuItem("AdminMenus", "메뉴 관리", "/admin/menus", "Menu", 350, EMenuAccessLevel.Admin, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Locked));
-        menuItems.Add(createMenuItem("AdminGoogle", "Google 연결", "/admin/google", "CloudSync", 360, EMenuAccessLevel.Admin, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Locked));
+        menuItems.Add(createMenuItem("AdminPositions", "직책과 권한 설정", "/admin/positions", "AdminPanelSettings", 320, EMenuAccessLevel.Admin, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Locked));
+        menuItems.Add(createMenuItem("AdminApprovalWorkflows", "결재 경로 설정", "/admin/approval-workflows", "AccountTree", 330, EMenuAccessLevel.Admin, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Locked));
+        menuItems.Add(createMenuItem("AdminSettings", "기본 설정", "/admin/settings", "Settings", 340, EMenuAccessLevel.Admin, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Editable));
+        menuItems.Add(createMenuItem("AdminMenus", "메뉴 보이기 설정", "/admin/menus", "Menu", 350, EMenuAccessLevel.Admin, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Locked));
+        menuItems.Add(createMenuItem("AdminGoogle", "Google 연결 설정", "/admin/google", "CloudSync", 360, EMenuAccessLevel.Admin, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Locked));
         menuItems.Add(createMenuItem("AdminCalendarAudit", "일정 삭제 기록", "/admin/calendar-audit", "History", 370, EMenuAccessLevel.ManagementManager, EActivationState.Active, EMenuTeamVisibility.SelectedTeams, ENavigationMenuLockState.Editable));
         return menuItems;
     }
@@ -321,7 +341,7 @@ public sealed class OrganizationHubDataSeeder
     {
         foreach (NavigationMenuItem existingMenuItem in existingMenuItems)
         {
-            if (existingMenuItem.MenuKey == "Minutes" || existingMenuItem.MenuKey == "Archive")
+            if (NavigationMenuRetirementPolicy.IsRetired(existingMenuItem.MenuKey, existingMenuItem.Href))
             {
                 existingMenuItem.IsActive = false;
             }
@@ -503,17 +523,17 @@ public sealed class OrganizationHubDataSeeder
             case "AdminTeams":
                 return displayName == "팀";
             case "AdminPositions":
-                return displayName == "직책" || displayName == "권한";
+                return displayName == "직책" || displayName == "권한" || displayName == "직책/권한 관리";
             case "AdminApprovalWorkflows":
-                return displayName == "결재선" || displayName == "결재 경로";
+                return displayName == "결재선" || displayName == "결재 경로" || displayName == "결재 경로 관리";
             case "AdminSettings":
-                return displayName == "설정" || displayName == "전역 설정";
+                return displayName == "설정" || displayName == "전역 설정" || displayName == "시스템 설정";
             case "AdminCalendarAudit":
                 return displayName == "일정 기록" || displayName == "삭제 일정 기록";
             case "AdminGoogle":
-                return displayName == "Google";
+                return displayName == "Google" || displayName == "Google 연결";
             case "AdminMenus":
-                return displayName == "메뉴";
+                return displayName == "메뉴" || displayName == "메뉴 관리";
             default:
                 return false;
         }
@@ -565,7 +585,7 @@ public sealed class OrganizationHubDataSeeder
     {
         if (string.IsNullOrWhiteSpace(mOptions.SeedDisplayName))
         {
-            return "Organization Hub Admin";
+            return "Organization Hub 관리자";
         }
 
         return mOptions.SeedDisplayName;

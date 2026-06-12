@@ -63,7 +63,7 @@ http://127.0.0.1:5156/admin/google/callback
 Google 연결 진단은 다음을 확인합니다.
 
 - OAuth 연결 상태
-- 필요한 scope 포함 여부
+- 필요한 Google 승인 범위 포함 여부
 - Drive 폴더 존재 여부
 - 폴더가 공식 루트 아래에 있는지
 - Calendar ID가 연결 계정에 존재하는지

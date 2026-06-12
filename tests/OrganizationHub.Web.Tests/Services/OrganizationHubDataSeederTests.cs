@@ -63,6 +63,73 @@ public sealed class OrganizationHubDataSeederTests
         }
     }
 
+    [Fact]
+    public async Task ExistingDatabaseDeactivatesLegacyMenusAndUpdatesDefaultAdministratorNameAsync()
+    {
+        string databasePath = Path.Combine(Path.GetTempPath(), "organizationhub-seed-upgrade-" + Path.GetRandomFileName() + ".db");
+        try
+        {
+            DbContextOptionsBuilder<OrganizationHubDbContext> optionsBuilder = new DbContextOptionsBuilder<OrganizationHubDbContext>();
+            optionsBuilder.UseSqlite("Data Source=" + databasePath + ";Cache=Shared;Default Timeout=30;Pooling=False");
+            DbContextFactory dbContextFactory = new DbContextFactory(optionsBuilder.Options);
+            OrganizationHubOptions options = new OrganizationHubOptions();
+            options.SeedUsername = "admin";
+            options.SeedPassword = "ChangeMe!2026";
+            options.SeedDisplayName = "Organization Hub 관리자";
+            OrganizationHubDataSeeder seeder = new OrganizationHubDataSeeder(dbContextFactory, new FakePasswordHashService(), Options.Create(options), new FakeWebHostEnvironment());
+
+            await seeder.SeedAsync(CancellationToken.None);
+            await using (OrganizationHubDbContext dbContext = await dbContextFactory.CreateDbContextAsync(CancellationToken.None))
+            {
+                UserAccount administrator = await dbContext.UserAccounts.SingleAsync(user => user.Username == "admin");
+                administrator.DisplayName = "Organization Hub Admin";
+                dbContext.NavigationMenuItems.Add(createLegacyMenuItem("Rules", "Retired menu A", "/rules", 45));
+                dbContext.NavigationMenuItems.Add(createLegacyMenuItem("OnSite", "Retired menu B", "/on-site", 46));
+                dbContext.NavigationMenuItems.Add(createLegacyMenuItem("Leaders", "Retired menu C", "/leaders", 47));
+                await dbContext.SaveChangesAsync();
+            }
+
+            await seeder.SeedAsync(CancellationToken.None);
+
+            await using (OrganizationHubDbContext dbContext = await dbContextFactory.CreateDbContextAsync(CancellationToken.None))
+            {
+                UserAccount administrator = await dbContext.UserAccounts.SingleAsync(user => user.Username == "admin");
+                Assert.Equal("Organization Hub 관리자", administrator.DisplayName);
+
+                List<NavigationMenuItem> legacyMenus = await dbContext.NavigationMenuItems.Where(menuItem =>
+                    menuItem.Href == "/rules" ||
+                    menuItem.Href == "/on-site" ||
+                    menuItem.Href == "/leaders").ToListAsync();
+                Assert.All(legacyMenus, menuItem => Assert.False(menuItem.IsActive));
+            }
+        }
+        finally
+        {
+            if (File.Exists(databasePath))
+            {
+                Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                File.Delete(databasePath);
+            }
+            deleteIfExists(databasePath + "-shm");
+            deleteIfExists(databasePath + "-wal");
+        }
+    }
+
+    private static NavigationMenuItem createLegacyMenuItem(string menuKey, string displayName, string href, int sortOrder)
+    {
+        NavigationMenuItem menuItem = new NavigationMenuItem();
+        menuItem.MenuKey = menuKey;
+        menuItem.DisplayName = displayName;
+        menuItem.Href = href;
+        menuItem.IconKey = "Folder";
+        menuItem.SortOrder = sortOrder;
+        menuItem.AccessLevel = EMenuAccessLevel.Authenticated;
+        menuItem.IsActive = true;
+        menuItem.IsVisibleToAllTeams = true;
+        menuItem.IsLocked = false;
+        return menuItem;
+    }
+
     private static void deleteIfExists(string path)
     {
         if (File.Exists(path))

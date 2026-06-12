@@ -10,7 +10,7 @@ services:
       ConnectionStrings__OrganizationHub: Data Source=/app/Data/organizationhub.db;Cache=Shared;Default Timeout=30
       OrganizationHub__SeedUsername: ${ORGANIZATION_HUB_SEED_USERNAME}
       OrganizationHub__SeedPassword: ${ORGANIZATION_HUB_SEED_PASSWORD}
-      OrganizationHub__SeedDisplayName: ${ORGANIZATION_HUB_SEED_DISPLAY_NAME:-Organization Hub Admin}
+      OrganizationHub__SeedDisplayName: ${ORGANIZATION_HUB_SEED_DISPLAY_NAME:-Organization Hub 관리자}
       GoogleApi__ApplicationName: Organization Hub
       GoogleApi__OAuthClientID: ${GOOGLE_OAUTH_CLIENT_ID}
       GoogleApi__OAuthClientSecret: ${GOOGLE_OAUTH_CLIENT_SECRET}

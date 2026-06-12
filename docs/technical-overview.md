@@ -20,7 +20,7 @@ src/OrganizationHub.Web
 
 ## 데이터
 
-운영 메타데이터는 SQLite와 EF Core Migration으로 관리합니다.
+운영에 필요한 설정과 기록은 SQLite와 EF Core Migration으로 관리합니다.
 
 주요 데이터는 다음과 같습니다.
 
@@ -55,7 +55,7 @@ Google 연동은 서비스 계층에서 캡슐화합니다.
 - `GoogleWorkspaceSetupService`
 - `GoogleHealthCheckService`
 
-운영자는 Google 연결 화면의 진단 결과를 기준으로 OAuth scope, 폴더 위치, Calendar ID, Tasks 목록 ID를 확인합니다.
+운영자는 Google 연결 화면의 진단 결과를 기준으로 Google 승인 범위, 폴더 위치, Calendar ID, Tasks 목록 ID를 확인합니다.
 
 ## 캐시와 변경 감지
 

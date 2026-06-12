@@ -140,6 +140,31 @@ public sealed class NavigationMenuServiceTests
     }
 
     [Fact]
+    public async Task ManageableMenuItemsExcludeRetiredDefaultMenusAsync()
+    {
+        using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
+        {
+            using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+            {
+                dbContext.NavigationMenuItems.Add(createMenuItem("Dashboard", "홈", "/dashboard", EMenuAccessLevel.Authenticated, 10));
+                dbContext.NavigationMenuItems.Add(createMenuItem("Rules", "Retired menu A", "/rules", EMenuAccessLevel.Authenticated, 20));
+                dbContext.NavigationMenuItems.Add(createMenuItem("OnSite", "Retired menu B", "/on-site", EMenuAccessLevel.Authenticated, 30));
+                dbContext.NavigationMenuItems.Add(createMenuItem("Leaders", "Retired menu C", "/leaders", EMenuAccessLevel.TeamLeader, 40));
+                dbContext.SaveChanges();
+            }
+
+            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory);
+
+            IReadOnlyList<NavigationMenuItem> menuItems = await navigationMenuService.GetManageableMenuItemsAsync(CancellationToken.None);
+
+            Assert.Contains(menuItems, menuItem => menuItem.MenuKey == "Dashboard");
+            Assert.DoesNotContain(menuItems, menuItem => menuItem.Href == "/rules");
+            Assert.DoesNotContain(menuItems, menuItem => menuItem.Href == "/on-site");
+            Assert.DoesNotContain(menuItems, menuItem => menuItem.Href == "/leaders");
+        }
+    }
+
+    [Fact]
     public async Task ConfiguredPermissionUserReceivesOnlyGrantedMenusAsync()
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())

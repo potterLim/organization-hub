@@ -30,8 +30,13 @@ public sealed class NavigationMenuService : INavigationMenuService
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<NavigationMenuItem> menuItems = await dbContext.NavigationMenuItems.Include(menuItem => menuItem.TeamPermissions).ThenInclude(menuPermission => menuPermission.Team).Where(menuItem => menuItem.MenuKey != "Minutes" && menuItem.MenuKey != "Archive").OrderBy(menuItem => menuItem.SortOrder).ThenBy(menuItem => menuItem.DisplayName).ToListAsync(cancellationToken);
-            return menuItems;
+            List<NavigationMenuItem> menuItems = await dbContext.NavigationMenuItems.Include(menuItem => menuItem.TeamPermissions).ThenInclude(menuPermission => menuPermission.Team).ToListAsync(cancellationToken);
+            List<NavigationMenuItem> manageableMenuItems = menuItems
+                .Where(menuItem => NavigationMenuRetirementPolicy.IsRetired(menuItem.MenuKey, menuItem.Href) == false)
+                .OrderBy(menuItem => menuItem.SortOrder)
+                .ThenBy(menuItem => menuItem.DisplayName)
+                .ToList();
+            return manageableMenuItems;
         }
     }
 

@@ -6,6 +6,6 @@ public sealed class OrganizationHubOptions
     public long MaximumUploadBytes { get; set; } = 20971520;
     public string SeedUsername { get; set; } = string.Empty;
     public string SeedPassword { get; set; } = string.Empty;
-    public string SeedDisplayName { get; set; } = "Organization Hub Admin";
+    public string SeedDisplayName { get; set; } = "Organization Hub 관리자";
 }
 

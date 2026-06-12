@@ -3,12 +3,12 @@
 @inject IPositionManagementService PositionManagementService
 @inject ITeamManagementService TeamManagementService
 
-<PageTitle>@OrganizationHubProduct.FormatPageTitle("직책/권한 관리")</PageTitle>
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("직책과 권한 설정")</PageTitle>
 
 <div class="hub-page-header">
     <div>
-        <h1 class="hub-page-title">직책/권한 관리</h1>
-        <div class="hub-page-description">팀별 직책 이름과 자료, 일정, 할 일, 결재, 관리 권한의 범위를 설정합니다.</div>
+        <h1 class="hub-page-title">직책과 권한 설정</h1>
+        <div class="hub-page-description">팀에서 사용할 직책을 만들고, 만든 직책을 선택해 자료, 일정, 할 일, 결재, 관리 권한을 정합니다.</div>
     </div>
 </div>
 
@@ -27,29 +27,30 @@ else
         <MudItem xs="12" lg="5" xl="4">
             <MudPaper Class="hub-card hub-form-card pa-4">
                 <div class="hub-admin-form-heading">
-                    <MudText Typo="Typo.h6">@mFormTitle</MudText>
-                    <span>@(mFormModel.ID == 0 ? "새 직책" : "수정 중")</span>
+                    <MudText Typo="Typo.h6">직책 만들기</MudText>
+                    <span>새 직책</span>
                 </div>
-                <MudSelect T="int" Label="팀" Value="mFormModel.TeamID" ValueChanged="setTeamID" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <div class="hub-form-hint">팀에서 사용할 직책 이름을 먼저 만듭니다. 만든 직책은 오른쪽에서 선택해 권한을 정합니다.</div>
+                <MudSelect T="int" Label="팀" Value="mNewPositionFormModel.TeamID" ValueChanged="setNewPositionTeamID" Variant="Variant.Outlined" Margin="Margin.Dense">
                     @foreach (Team team in mActiveTeams)
                     {
                         <MudSelectItem T="int" Value="@team.ID">@team.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
-                <MudTextField @bind-Value="mFormModel.Name" Label="직책 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-                <MudTextField @bind-Value="mFormModel.Description" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Immediate="true" />
-                <MudNumericField T="int" @bind-Value="mFormModel.SortOrder" Label="표시 순서" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-                <MudStack Row="true" Spacing="3" Class="mt-2">
-                    <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="활성" Color="Color.Primary" Disabled="@mFormModel.IsSystemAdministrator" />
-                    <MudSwitch T="bool" @bind-Value="mFormModel.IsSystemAdministrator" Label="시스템 관리자" Color="Color.Warning" />
+                <MudTextField @bind-Value="mNewPositionFormModel.Name" Label="새 직책 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                <MudTextField @bind-Value="mNewPositionFormModel.Description" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Immediate="true" />
+                <MudNumericField T="int" @bind-Value="mNewPositionFormModel.SortOrder" Label="목록 표시 순서" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                <MudStack Row="true" Spacing="3" Class="hub-position-switch-row mt-2">
+                    <MudSwitch T="bool" @bind-Value="mNewPositionFormModel.IsActive" Label="바로 사용" Color="Color.Primary" />
+                    <MudSwitch T="bool" @bind-Value="mNewPositionFormModel.IsSystemAdministrator" Label="시스템 관리자 직책" Color="Color.Warning" />
                 </MudStack>
+                @if (mNewPositionFormModel.IsSystemAdministrator)
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mt-2">모든 설정을 관리하는 직책을 만들 때만 선택하세요.</MudAlert>
+                }
 
                 <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="savePositionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
-                    @if (mFormModel.ID != 0)
-                    {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="clearForm">새 직책</MudButton>
-                    }
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="createPositionAsync" StartIcon="@Icons.Material.Filled.Add" Class="hub-primary-action-button">직책 만들기</MudButton>
                 </MudStack>
             </MudPaper>
         </MudItem>
@@ -58,46 +59,84 @@ else
                 <div class="hub-admin-section-heading">
                     <div>
                         <MudText Typo="Typo.h6">권한 설정</MudText>
-                        <div class="hub-muted">허용할 업무를 켜고, 권한이 적용될 범위를 선택합니다. 특정 팀 범위는 대상 팀을 함께 선택해야 합니다.</div>
+                        <div class="hub-muted">팀과 직책을 고른 뒤, 허용할 업무와 적용 범위를 선택합니다.</div>
                     </div>
-                    <span class="hub-status-pill">@mFormModel.PermissionGrants.Count(grant => grant.IsAllowed).ToString(CultureInfo.InvariantCulture)개 허용</span>
+                    <span class="hub-status-pill">@getAllowedPermissionCountText()</span>
                 </div>
-                <div class="hub-permission-editor">
-                    @foreach (IGrouping<string, PermissionDefinition> definitionGroup in mPermissionDefinitions.GroupBy(definition => definition.Category))
-                    {
-                        <section class="hub-permission-group">
-                            <div class="hub-permission-group-title">@definitionGroup.Key</div>
-                            <div class="hub-permission-card-grid">
-                                @foreach (PermissionDefinition definition in definitionGroup)
-                                {
-                                    PositionPermissionGrantFormModel grantForm = getGrantForm(definition.Key);
-                                    <div class="hub-permission-row">
-                                        <div class="hub-permission-copy">
-                                            <div class="hub-permission-name">@definition.DisplayName</div>
-                                            <div class="hub-muted">@definition.Description</div>
-                                        </div>
-                                        <div class="hub-permission-controls">
-                                            <MudCheckBox T="bool" Value="@grantForm.IsAllowed" ValueChanged="@(value => setPermissionAllowed(definition.Key, value))" Color="Color.Primary" Label="허용" Class="hub-permission-allow" />
-                                            <MudSelect T="EPermissionScopeType" Label="범위" Value="@grantForm.ScopeType" ValueChanged="@(scopeType => setPermissionScope(definition.Key, scopeType))" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(grantForm.IsAllowed == false)" Class="hub-permission-scope">
-                                                <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.Global">전체</MudSelectItem>
-                                                <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeam">자기 팀</MudSelectItem>
-                                                <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeamAndChildren">자기 팀과 하위</MudSelectItem>
-                                                <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.SelectedTeam">특정 팀</MudSelectItem>
-                                                <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnCreated">본인 생성</MudSelectItem>
-                                            </MudSelect>
-                                            <MudSelect T="int?" Label="대상 팀" Value="@grantForm.TargetTeamID" ValueChanged="@(teamID => setPermissionTargetTeam(definition.Key, teamID))" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(grantForm.IsAllowed == false || grantForm.ScopeType != EPermissionScopeType.SelectedTeam)" Clearable="true" Class="hub-permission-target">
-                                                @foreach (Team team in mActiveTeams)
-                                                {
-                                                    <MudSelectItem T="int?" Value="@((int?)team.ID)">@team.DisplayName</MudSelectItem>
-                                                }
-                                            </MudSelect>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </section>
-                    }
+                <div class="hub-position-selection-grid">
+                    <MudSelect T="int" Label="권한을 설정할 팀" Value="mSelectedPermissionTeamID" ValueChanged="setPermissionTeamID" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (Team team in mActiveTeams)
+                        {
+                            <MudSelectItem T="int" Value="@team.ID">@team.DisplayName</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudSelect T="int?" Label="권한을 설정할 직책" Value="mSelectedPositionIDOrNull" ValueChanged="setSelectedPositionID" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(getPositionsForSelectedPermissionTeam().Count == 0)">
+                        @foreach (OrganizationPosition position in getPositionsForSelectedPermissionTeam())
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)position.ID)">@getPositionOptionText(position)</MudSelectItem>
+                        }
+                    </MudSelect>
                 </div>
+
+                @if (getSelectedPositionOrNull() == null)
+                {
+                    <div class="hub-empty hub-empty-state">
+                        <div class="hub-empty-copy">
+                            <div class="hub-empty-title">선택할 직책이 없습니다.</div>
+                            <div class="hub-empty-description">왼쪽에서 이 팀의 직책을 먼저 만든 뒤 권한을 설정할 수 있습니다.</div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    OrganizationPosition selectedPosition = getSelectedPositionOrNull()!;
+                    <div class="hub-position-selection-summary">
+                        <div>
+                            <div class="hub-muted">선택한 직책</div>
+                            <div class="hub-position-selection-title">@selectedPosition.Name</div>
+                        </div>
+                        <span class="@(selectedPosition.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(selectedPosition.IsActive ? "사용 중" : "비활성")</span>
+                    </div>
+                    <div class="hub-permission-editor">
+                        @foreach (IGrouping<string, PermissionDefinition> definitionGroup in mPermissionDefinitions.GroupBy(definition => definition.Category))
+                        {
+                            <section class="hub-permission-group">
+                                <div class="hub-permission-group-title">@definitionGroup.Key</div>
+                                <div class="hub-permission-card-grid">
+                                    @foreach (PermissionDefinition definition in definitionGroup)
+                                    {
+                                        PositionPermissionGrantFormModel grantForm = getPermissionGrantForm(definition.Key);
+                                        <div class="hub-permission-row">
+                                            <div class="hub-permission-copy">
+                                                <div class="hub-permission-name">@definition.DisplayName</div>
+                                                <div class="hub-muted">@definition.Description</div>
+                                            </div>
+                                            <div class="hub-permission-controls">
+                                                <MudCheckBox T="bool" Value="@grantForm.IsAllowed" ValueChanged="@(value => setPermissionAllowed(definition.Key, value))" Color="Color.Primary" Label="허용" Class="hub-permission-allow" />
+                                                <MudSelect T="EPermissionScopeType" Label="적용 범위" Value="@grantForm.ScopeType" ValueChanged="@(scopeType => setPermissionScope(definition.Key, scopeType))" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(grantForm.IsAllowed == false)" Class="hub-permission-scope">
+                                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.Global">모든 팀</MudSelectItem>
+                                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeam">소속 팀</MudSelectItem>
+                                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeamAndChildren">소속 팀과 하위 팀</MudSelectItem>
+                                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.SelectedTeam">지정한 팀</MudSelectItem>
+                                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnCreated">본인이 만든 항목</MudSelectItem>
+                                                </MudSelect>
+                                                <MudSelect T="int?" Label="대상 팀" Value="@grantForm.TargetTeamID" ValueChanged="@(teamID => setPermissionTargetTeam(definition.Key, teamID))" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(grantForm.IsAllowed == false || grantForm.ScopeType != EPermissionScopeType.SelectedTeam)" Clearable="true" Class="hub-permission-target">
+                                                    @foreach (Team team in mActiveTeams)
+                                                    {
+                                                        <MudSelectItem T="int?" Value="@((int?)team.ID)">@team.DisplayName</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </section>
+                        }
+                    </div>
+                    <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="savePermissionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">권한 저장</MudButton>
+                    </MudStack>
+                }
             </MudPaper>
         </MudItem>
         <MudItem xs="12">
@@ -118,16 +157,16 @@ else
                             <div>@position.Name</div>
                             @if (position.IsSystemAdministrator)
                             {
-                                <div class="hub-muted">시스템 관리자</div>
+                                <div class="hub-muted">시스템 관리자 직책</div>
                             }
                         </MudTd>
                         <MudTd DataLabel="권한">@position.PermissionGrants.Count</MudTd>
                         <MudTd DataLabel="사용자">@position.UserAccounts.Count</MudTd>
-                        <MudTd DataLabel="상태"><span class="@(position.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(position.IsActive ? "활성" : "비활성")</span></MudTd>
+                        <MudTd DataLabel="상태"><span class="@(position.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(position.IsActive ? "사용 중" : "비활성")</span></MudTd>
                         <MudTd DataLabel="작업" Class="hub-action-cell">
                             <div class="hub-table-actions">
-                                <MudTooltip Text="직책 수정">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editPosition(position))" aria-label="직책 수정" />
+                                <MudTooltip Text="이 직책 권한 설정">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" Size="Size.Small" OnClick="@(() => selectPositionForPermissions(position))" aria-label="이 직책 권한 설정" />
                                 </MudTooltip>
                                 <MudTooltip Text="@(position.IsActive ? "직책 비활성화" : "직책 활성화")">
                                     <MudIconButton Icon="@(position.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => togglePositionActiveAsync(position))" aria-label="@(position.IsActive ? "직책 비활성화" : "직책 활성화")" Disabled="@position.IsSystemAdministrator" />
@@ -146,15 +185,20 @@ else
     private List<Team> mActiveTeams = new List<Team>();
     private List<OrganizationPosition> mPositions = new List<OrganizationPosition>();
     private List<PermissionDefinition> mPermissionDefinitions = new List<PermissionDefinition>();
-    private PositionFormModel mFormModel = new PositionFormModel();
-    private string mFormTitle = "새 직책";
+    private PositionFormModel mNewPositionFormModel = new PositionFormModel();
+    private PositionFormModel mPermissionFormModel = new PositionFormModel();
+    private int mSelectedPermissionTeamID;
+    private int? mSelectedPositionIDOrNull;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
 
     protected override async Task OnInitializedAsync()
     {
         await loadDataAsync();
-        clearForm();
+        mSelectedPermissionTeamID = getDefaultTeamID();
+        mNewPositionFormModel = createEmptyFormModel(mSelectedPermissionTeamID);
+        ensurePositionSelectionForSelectedTeam();
+        loadSelectedPositionForm();
     }
 
     private async Task loadDataAsync()
@@ -167,36 +211,48 @@ else
         mPermissionDefinitions = permissionDefinitions.OrderBy(definition => definition.Category).ThenBy(definition => definition.DisplayName).ToList();
     }
 
-    private async Task savePositionAsync()
+    private async Task createPositionAsync()
     {
-        ServiceResult result = mFormModel.ID == 0 ? await PositionManagementService.CreatePositionAsync(mFormModel, CancellationToken.None) : await PositionManagementService.UpdatePositionAsync(mFormModel, CancellationToken.None);
-        showResult(result, "직책과 권한이 저장되었습니다.");
-        if (result.IsSuccess)
+        int createdTeamID = mNewPositionFormModel.TeamID;
+        string createdPositionName = mNewPositionFormModel.Name.Trim();
+        ServiceResult result = await PositionManagementService.CreatePositionAsync(mNewPositionFormModel, CancellationToken.None);
+        showResult(result, "직책이 만들어졌습니다. 오른쪽에서 권한을 설정할 수 있습니다.");
+        if (result.IsSuccess == false)
         {
-            await loadDataAsync();
-            clearForm();
+            return;
         }
+
+        await loadDataAsync();
+        mSelectedPermissionTeamID = createdTeamID;
+        OrganizationPosition? createdPositionOrNull = mPositions.FirstOrDefault(position => position.TeamID == createdTeamID && position.Name == createdPositionName);
+        mSelectedPositionIDOrNull = createdPositionOrNull?.ID;
+        ensurePositionSelectionForSelectedTeam();
+        loadSelectedPositionForm();
+        mNewPositionFormModel = createEmptyFormModel(createdTeamID);
     }
 
-    private void editPosition(OrganizationPosition position)
+    private async Task savePermissionAsync()
     {
-        mFormModel = createEmptyFormModel();
-        mFormModel.ID = position.ID;
-        mFormModel.TeamID = position.TeamID;
-        mFormModel.Name = position.Name;
-        mFormModel.Description = position.Description;
-        mFormModel.SortOrder = position.SortOrder;
-        mFormModel.IsActive = position.IsActive;
-        mFormModel.IsSystemAdministrator = position.IsSystemAdministrator;
-        foreach (PositionPermissionGrant permissionGrant in position.PermissionGrants)
+        if (mSelectedPositionIDOrNull.HasValue == false)
         {
-            PositionPermissionGrantFormModel grantForm = getGrantForm(permissionGrant.PermissionKey);
-            grantForm.IsAllowed = permissionGrant.IsAllowed;
-            grantForm.ScopeType = permissionGrant.ScopeType;
-            grantForm.TargetTeamID = permissionGrant.TargetTeamID;
+            mMessage = "권한을 설정할 직책을 선택해 주세요.";
+            mMessageSeverity = Severity.Warning;
+            return;
         }
 
-        mFormTitle = "직책 수정";
+        int selectedPositionID = mSelectedPositionIDOrNull.Value;
+        ServiceResult result = await PositionManagementService.UpdatePositionAsync(mPermissionFormModel, CancellationToken.None);
+        showResult(result, "직책 권한이 저장되었습니다.");
+        if (result.IsSuccess == false)
+        {
+            return;
+        }
+
+        await loadDataAsync();
+        mSelectedPositionIDOrNull = selectedPositionID;
+        ensurePermissionTeamSelection();
+        ensurePositionSelectionForSelectedTeam();
+        loadSelectedPositionForm();
     }
 
     private async Task togglePositionActiveAsync(OrganizationPosition position)
@@ -204,23 +260,134 @@ else
         ServiceResult result = position.IsActive ? await PositionManagementService.DeactivatePositionAsync(position.ID, CancellationToken.None) : await PositionManagementService.ActivatePositionAsync(position.ID, CancellationToken.None);
         showResult(result, "직책 상태가 변경되었습니다.");
         await loadDataAsync();
+        if (mSelectedPositionIDOrNull == position.ID)
+        {
+            loadSelectedPositionForm();
+        }
     }
 
-    private void clearForm()
+    private void setNewPositionTeamID(int teamID)
     {
-        mFormModel = createEmptyFormModel();
-        mFormTitle = "새 직책";
+        mNewPositionFormModel.TeamID = teamID;
     }
 
-    private PositionFormModel createEmptyFormModel()
+    private void setPermissionTeamID(int teamID)
+    {
+        mSelectedPermissionTeamID = teamID;
+        ensurePositionSelectionForSelectedTeam();
+        loadSelectedPositionForm();
+    }
+
+    private void setSelectedPositionID(int? positionIDOrNull)
+    {
+        mSelectedPositionIDOrNull = positionIDOrNull;
+        loadSelectedPositionForm();
+    }
+
+    private void selectPositionForPermissions(OrganizationPosition position)
+    {
+        mSelectedPermissionTeamID = position.TeamID;
+        mSelectedPositionIDOrNull = position.ID;
+        loadSelectedPositionForm();
+    }
+
+    private void setPermissionAllowed(string permissionKey, bool isAllowed)
+    {
+        PositionPermissionGrantFormModel grantForm = getPermissionGrantForm(permissionKey);
+        grantForm.IsAllowed = isAllowed;
+        if (isAllowed == false)
+        {
+            grantForm.TargetTeamID = null;
+        }
+    }
+
+    private void setPermissionScope(string permissionKey, EPermissionScopeType scopeType)
+    {
+        PositionPermissionGrantFormModel grantForm = getPermissionGrantForm(permissionKey);
+        grantForm.ScopeType = scopeType;
+        if (scopeType != EPermissionScopeType.SelectedTeam)
+        {
+            grantForm.TargetTeamID = null;
+        }
+    }
+
+    private void setPermissionTargetTeam(string permissionKey, int? teamIDOrNull)
+    {
+        PositionPermissionGrantFormModel grantForm = getPermissionGrantForm(permissionKey);
+        grantForm.TargetTeamID = teamIDOrNull;
+    }
+
+    private void ensurePermissionTeamSelection()
+    {
+        if (mActiveTeams.Count == 0)
+        {
+            mSelectedPermissionTeamID = 0;
+            return;
+        }
+
+        bool hasSelectedTeam = mActiveTeams.Any(team => team.ID == mSelectedPermissionTeamID);
+        if (hasSelectedTeam == false)
+        {
+            mSelectedPermissionTeamID = mActiveTeams[0].ID;
+        }
+
+        bool hasNewPositionTeam = mActiveTeams.Any(team => team.ID == mNewPositionFormModel.TeamID);
+        if (hasNewPositionTeam == false)
+        {
+            mNewPositionFormModel.TeamID = mSelectedPermissionTeamID;
+        }
+    }
+
+    private void ensurePositionSelectionForSelectedTeam()
+    {
+        ensurePermissionTeamSelection();
+        IReadOnlyList<OrganizationPosition> positions = getPositionsForSelectedPermissionTeam();
+        bool hasSelectedPosition = mSelectedPositionIDOrNull.HasValue && positions.Any(position => position.ID == mSelectedPositionIDOrNull.Value);
+        if (hasSelectedPosition == false)
+        {
+            mSelectedPositionIDOrNull = positions.Count == 0 ? null : positions[0].ID;
+        }
+    }
+
+    private void loadSelectedPositionForm()
+    {
+        OrganizationPosition? selectedPositionOrNull = getSelectedPositionOrNull();
+        if (selectedPositionOrNull == null)
+        {
+            mPermissionFormModel = createEmptyFormModel(mSelectedPermissionTeamID);
+            return;
+        }
+
+        mPermissionFormModel = createFormModelFromPosition(selectedPositionOrNull);
+    }
+
+    private PositionFormModel createFormModelFromPosition(OrganizationPosition position)
+    {
+        PositionFormModel formModel = createEmptyFormModel(position.TeamID);
+        formModel.ID = position.ID;
+        formModel.TeamID = position.TeamID;
+        formModel.Name = position.Name;
+        formModel.Description = position.Description;
+        formModel.SortOrder = position.SortOrder;
+        formModel.IsActive = position.IsActive;
+        formModel.IsSystemAdministrator = position.IsSystemAdministrator;
+        foreach (PositionPermissionGrant permissionGrant in position.PermissionGrants)
+        {
+            PositionPermissionGrantFormModel grantForm = ensureGrantForm(formModel, permissionGrant.PermissionKey);
+            grantForm.IsAllowed = permissionGrant.IsAllowed;
+            grantForm.ScopeType = permissionGrant.ScopeType;
+            grantForm.TargetTeamID = permissionGrant.TargetTeamID;
+        }
+
+        return formModel;
+    }
+
+    private PositionFormModel createEmptyFormModel(int teamID)
     {
         PositionFormModel formModel = new PositionFormModel();
         formModel.IsActive = true;
         formModel.SortOrder = 100;
-        if (mActiveTeams.Count > 0)
-        {
-            formModel.TeamID = mActiveTeams[0].ID;
-        }
+        formModel.TeamID = teamID;
 
         foreach (PermissionDefinition definition in mPermissionDefinitions)
         {
@@ -234,9 +401,14 @@ else
         return formModel;
     }
 
-    private PositionPermissionGrantFormModel getGrantForm(string permissionKey)
+    private PositionPermissionGrantFormModel getPermissionGrantForm(string permissionKey)
     {
-        PositionPermissionGrantFormModel? grantFormOrNull = mFormModel.PermissionGrants.FirstOrDefault(grantForm => grantForm.PermissionKey == permissionKey);
+        return ensureGrantForm(mPermissionFormModel, permissionKey);
+    }
+
+    private PositionPermissionGrantFormModel ensureGrantForm(PositionFormModel formModel, string permissionKey)
+    {
+        PositionPermissionGrantFormModel? grantFormOrNull = formModel.PermissionGrants.FirstOrDefault(grantForm => grantForm.PermissionKey == permissionKey);
         if (grantFormOrNull != null)
         {
             return grantFormOrNull;
@@ -245,39 +417,57 @@ else
         PositionPermissionGrantFormModel createdGrantForm = new PositionPermissionGrantFormModel();
         createdGrantForm.PermissionKey = permissionKey;
         createdGrantForm.ScopeType = EPermissionScopeType.OwnTeam;
-        mFormModel.PermissionGrants.Add(createdGrantForm);
+        formModel.PermissionGrants.Add(createdGrantForm);
         return createdGrantForm;
     }
 
-    private void setTeamID(int teamID)
+    private int getDefaultTeamID()
     {
-        mFormModel.TeamID = teamID;
-    }
-
-    private void setPermissionAllowed(string permissionKey, bool isAllowed)
-    {
-        PositionPermissionGrantFormModel grantForm = getGrantForm(permissionKey);
-        grantForm.IsAllowed = isAllowed;
-        if (isAllowed == false)
+        if (mActiveTeams.Count == 0)
         {
-            grantForm.TargetTeamID = null;
+            return 0;
         }
+
+        return mActiveTeams[0].ID;
     }
 
-    private void setPermissionScope(string permissionKey, EPermissionScopeType scopeType)
+    private List<OrganizationPosition> getPositionsForSelectedPermissionTeam()
     {
-        PositionPermissionGrantFormModel grantForm = getGrantForm(permissionKey);
-        grantForm.ScopeType = scopeType;
-        if (scopeType != EPermissionScopeType.SelectedTeam)
+        return mPositions
+            .Where(position => position.TeamID == mSelectedPermissionTeamID)
+            .OrderBy(position => position.SortOrder)
+            .ThenBy(position => position.Name)
+            .ToList();
+    }
+
+    private OrganizationPosition? getSelectedPositionOrNull()
+    {
+        if (mSelectedPositionIDOrNull.HasValue == false)
         {
-            grantForm.TargetTeamID = null;
+            return null;
         }
+
+        return mPositions.FirstOrDefault(position => position.ID == mSelectedPositionIDOrNull.Value);
     }
 
-    private void setPermissionTargetTeam(string permissionKey, int? teamIDOrNull)
+    private string getAllowedPermissionCountText()
     {
-        PositionPermissionGrantFormModel grantForm = getGrantForm(permissionKey);
-        grantForm.TargetTeamID = teamIDOrNull;
+        if (getSelectedPositionOrNull() == null)
+        {
+            return "직책 선택 필요";
+        }
+
+        return mPermissionFormModel.PermissionGrants.Count(grant => grant.IsAllowed).ToString(CultureInfo.InvariantCulture) + "개 허용";
+    }
+
+    private string getPositionOptionText(OrganizationPosition position)
+    {
+        if (position.IsActive)
+        {
+            return position.Name;
+        }
+
+        return position.Name + " (비활성)";
     }
 
     private string getTeamName(OrganizationPosition position)

@@ -4,12 +4,12 @@
 @inject IPositionManagementService PositionManagementService
 @inject ITeamManagementService TeamManagementService
 
-<PageTitle>@OrganizationHubProduct.FormatPageTitle("결재 경로 관리")</PageTitle>
+<PageTitle>@OrganizationHubProduct.FormatPageTitle("결재 경로 설정")</PageTitle>
 
 <div class="hub-page-header">
     <div>
-        <h1 class="hub-page-title">결재 경로 관리</h1>
-        <div class="hub-page-description">팀이나 업무 조건에 맞는 결재 단계와 승인자 선택 방식을 설정합니다.</div>
+        <h1 class="hub-page-title">결재 경로 설정</h1>
+        <div class="hub-page-description">요청 팀에 따라 어떤 순서로 누구에게 결재를 받을지 정합니다.</div>
     </div>
 </div>
 
@@ -27,15 +27,15 @@
             </div>
             <MudTextField @bind-Value="mFormModel.Name" Label="결재 경로 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             <MudTextField @bind-Value="mFormModel.Description" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Immediate="true" />
-            <MudSelect T="int?" Label="적용 팀" Value="mFormModel.AppliesToTeamID" ValueChanged="setAppliesToTeamID" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+            <MudSelect T="int?" Label="이 경로를 사용할 팀" Value="mFormModel.AppliesToTeamID" ValueChanged="setAppliesToTeamID" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
                 @foreach (Team team in mTeams)
                 {
                     <MudSelectItem T="int?" Value="@((int?)team.ID)">@team.DisplayName</MudSelectItem>
                 }
             </MudSelect>
-            <MudNumericField T="int" @bind-Value="mFormModel.Priority" Label="적용 우선순위" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-            <div class="hub-form-hint">여러 결재 경로가 같은 요청에 맞으면 숫자가 작은 경로를 먼저 적용합니다. 팀 전용 경로는 10처럼 낮게, 전체 기본 경로는 100처럼 높게 두면 관리하기 쉽습니다.</div>
-            <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="활성" Color="Color.Primary" />
+            <MudNumericField T="int" @bind-Value="mFormModel.Priority" Label="겹칠 때 먼저 적용할 순서" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <div class="hub-form-hint">같은 요청에 여러 경로가 맞으면 숫자가 작은 경로가 먼저 쓰입니다. 특정 팀 경로는 10처럼 작게, 전체 기본 경로는 100처럼 크게 두면 구분하기 쉽습니다.</div>
+            <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="바로 사용" Color="Color.Primary" />
 
             <MudDivider Class="my-4" />
             <div class="hub-google-panel-heading">
@@ -95,17 +95,17 @@
 
                             @if (step.ApproverSelectionType == EApproverSelectionType.PermissionHolder)
                             {
-                                <MudSelect T="string" Label="필요 권한" Value="step.RequiredPermissionKey" ValueChanged="@(permissionKey => step.RequiredPermissionKey = permissionKey)" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    <MudSelect T="string" Label="승인할 사람의 권한" Value="step.RequiredPermissionKey" ValueChanged="@(permissionKey => step.RequiredPermissionKey = permissionKey)" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (PermissionDefinition definition in mPermissionDefinitions)
                                     {
                                         <MudSelectItem T="string" Value="@definition.Key">@definition.DisplayName</MudSelectItem>
                                     }
                                 </MudSelect>
-                                <MudSelect T="EPermissionScopeType" Label="권한 범위" @bind-Value="step.ScopeType" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.Global">전체</MudSelectItem>
-                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeam">자기 팀</MudSelectItem>
-                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeamAndChildren">자기 팀과 하위</MudSelectItem>
-                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.SelectedTeam">특정 팀</MudSelectItem>
+                                <MudSelect T="EPermissionScopeType" Label="권한 적용 범위" @bind-Value="step.ScopeType" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.Global">모든 팀</MudSelectItem>
+                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeam">소속 팀</MudSelectItem>
+                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeamAndChildren">소속 팀과 하위 팀</MudSelectItem>
+                                    <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.SelectedTeam">지정한 팀</MudSelectItem>
                                 </MudSelect>
                             }
                         </div>
@@ -128,7 +128,7 @@
             <MudText Typo="Typo.h6">결재 경로 목록</MudText>
             <MudTable Items="mWorkflows" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
                 <HeaderContent>
-                    <MudTh>우선순위</MudTh>
+                    <MudTh>적용 순서</MudTh>
                     <MudTh>이름</MudTh>
                     <MudTh>적용 팀</MudTh>
                     <MudTh>단계</MudTh>
@@ -136,11 +136,11 @@
                     <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate Context="workflow">
-                    <MudTd DataLabel="우선순위">@workflow.Priority</MudTd>
+                    <MudTd DataLabel="적용 순서">@workflow.Priority</MudTd>
                     <MudTd DataLabel="이름">@workflow.Name</MudTd>
                     <MudTd DataLabel="적용 팀">@getWorkflowTeamName(workflow)</MudTd>
                     <MudTd DataLabel="단계">@workflow.Steps.Count</MudTd>
-                    <MudTd DataLabel="상태"><span class="@(workflow.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(workflow.IsActive ? "활성" : "비활성")</span></MudTd>
+                    <MudTd DataLabel="상태"><span class="@(workflow.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(workflow.IsActive ? "사용 중" : "비활성")</span></MudTd>
                     <MudTd DataLabel="작업" Class="hub-action-cell">
                         <div class="hub-table-actions">
                             <MudTooltip Text="결재 경로 수정">
@@ -192,7 +192,7 @@
     private async Task saveWorkflowAsync()
     {
         ServiceResult result = mFormModel.ID == 0 ? await ApprovalWorkflowManagementService.CreateWorkflowAsync(mFormModel, CancellationToken.None) : await ApprovalWorkflowManagementService.UpdateWorkflowAsync(mFormModel, CancellationToken.None);
-        showResult(result, "결재 경로가 저장되었습니다.");
+        showResult(result, "결재 경로 설정이 저장되었습니다.");
         if (result.IsSuccess)
         {
             await loadDataAsync();
