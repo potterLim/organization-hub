@@ -1,0 +1,278 @@
+# ============================================================
+# .editorconfig
+#
+# Formatting, code style, and naming rules for projects that follow this repository's C# coding standard.
+#
+# This file captures rules that can be checked mechanically by the formatter, IDE, and .NET analyzers.
+# Rules that depend on intent, API meaning, member ordering, file/type matching, switch coverage, or domain-specific validation still require code review or a custom analyzer.
+# ============================================================
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.sln]
+indent_style = tab
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{json,config,props,targets,xml,yml,yaml}]
+indent_size = 2
+
+[*.{cs,razor,cshtml}]
+# Generated files should define their own section and disable analyzers there.
+generated_code = false
+
+# ------------------------------------------------------------
+# Diagnostics
+# ------------------------------------------------------------
+
+# Remove unused using directives.
+dotnet_diagnostic.IDE0005.severity = error
+
+# Treat formatting violations as errors.
+dotnet_diagnostic.IDE0055.severity = error
+
+# Do not expose instance fields as public or protected API.
+dotnet_diagnostic.CA1051.severity = error
+dotnet_code_quality.CA1051.api_surface = public
+
+# Declare public and protected types inside a namespace.
+dotnet_diagnostic.CA1050.severity = error
+
+# Do not expose mutable static fields as public or protected API.
+dotnet_diagnostic.CA2211.severity = error
+
+# Naming rule severities are defined per rule below.
+# Do not set IDE1006 globally here, because a few semantic cases intentionally remain advisory.
+
+# ------------------------------------------------------------
+# using directives and namespace declarations
+# ------------------------------------------------------------
+
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+csharp_using_directive_placement = outside_namespace:error
+csharp_style_namespace_declarations = file_scoped:error
+csharp_style_prefer_top_level_statements = false:error
+
+# ------------------------------------------------------------
+# Formatting
+# ------------------------------------------------------------
+
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_prefer_braces = true:error
+csharp_preserve_single_line_blocks = false
+csharp_preserve_single_line_statements = false
+
+# ------------------------------------------------------------
+# Language style
+# ------------------------------------------------------------
+
+# Prefer using blocks over using declarations.
+# Built-in analyzers may not reliably flag every using declaration, so code review or a custom analyzer must enforce this rule when needed.
+csharp_prefer_simple_using_statement = false:error
+csharp_style_implicit_object_creation_when_type_is_apparent = false:error
+
+# The coding standard allows var only when the type is obvious, unavoidable, or clearer for LINQ/anonymous types.
+# EditorConfig cannot distinguish all semantic exceptions, so apparent-type var stays at suggestion severity.
+csharp_style_var_for_built_in_types = false:error
+csharp_style_var_elsewhere = false:suggestion
+csharp_style_var_when_type_is_apparent = false:suggestion
+
+# Prefer out variables declared on the previous line.
+# Some toolchains may not report every inline out declaration, so code review still matters here.
+csharp_style_inlined_variable_declaration = false:error
+
+# Do not suggest converting explicit null checks into ?? expressions.
+# This does not ban every direct use of ??; direct use still needs review or a custom analyzer.
+dotnet_style_coalesce_expression = false:error
+
+# Object initializers are generally discouraged, but required/init-only immutable objects remain valid by the coding standard.
+# Keep this advisory.
+dotnet_style_object_initializer = false:suggestion
+dotnet_style_readonly_field = true:error
+
+# ------------------------------------------------------------
+# Naming rules
+# ------------------------------------------------------------
+
+dotnet_naming_rule.types_should_be_pascal_case.severity = error
+dotnet_naming_rule.types_should_be_pascal_case.symbols = types
+dotnet_naming_rule.types_should_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_rule.namespaces_should_be_pascal_case.severity = error
+dotnet_naming_rule.namespaces_should_be_pascal_case.symbols = namespaces
+dotnet_naming_rule.namespaces_should_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_rule.interfaces_should_start_with_i.severity = error
+dotnet_naming_rule.interfaces_should_start_with_i.symbols = interfaces
+dotnet_naming_rule.interfaces_should_start_with_i.style = interface_style
+
+dotnet_naming_rule.enums_should_start_with_e.severity = error
+dotnet_naming_rule.enums_should_start_with_e.symbols = enums
+dotnet_naming_rule.enums_should_start_with_e.style = enum_style
+
+# Struct names are checked as PascalCase.
+# The S-prefix rule for non-readonly structs cannot be expressed precisely without conflicting with readonly structs.
+dotnet_naming_rule.struct_types_should_be_pascal_case.severity = error
+dotnet_naming_rule.struct_types_should_be_pascal_case.symbols = struct_types
+dotnet_naming_rule.struct_types_should_be_pascal_case.style = pascal_case_style
+
+# The coding standard excludes readonly struct from the S-prefix rule.
+# EditorConfig can check PascalCase here, but cannot forbid an S-prefixed readonly struct name such as SPoint.
+dotnet_naming_rule.readonly_structs_should_be_pascal_case.severity = error
+dotnet_naming_rule.readonly_structs_should_be_pascal_case.symbols = readonly_structs
+dotnet_naming_rule.readonly_structs_should_be_pascal_case.style = pascal_case_style
+
+# Enum member PascalCase is part of the coding standard, but built-in naming rules do not reliably target enum members.
+# Keep that check in code review or a custom analyzer.
+
+dotnet_naming_rule.public_methods_should_be_pascal_case.severity = error
+dotnet_naming_rule.public_methods_should_be_pascal_case.symbols = public_methods
+dotnet_naming_rule.public_methods_should_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_rule.non_public_methods_should_be_camel_case.severity = error
+dotnet_naming_rule.non_public_methods_should_be_camel_case.symbols = non_public_methods
+dotnet_naming_rule.non_public_methods_should_be_camel_case.style = camel_case_style
+
+# This catches methods declared with the async modifier.
+# Methods that return Task or Task<T> without async, and async void return types, still need code review or a custom analyzer.
+dotnet_naming_rule.public_async_methods_should_end_with_async.severity = error
+dotnet_naming_rule.public_async_methods_should_end_with_async.symbols = public_async_methods
+dotnet_naming_rule.public_async_methods_should_end_with_async.style = public_async_method_style
+
+dotnet_naming_rule.non_public_async_methods_should_end_with_async.severity = error
+dotnet_naming_rule.non_public_async_methods_should_end_with_async.symbols = non_public_async_methods
+dotnet_naming_rule.non_public_async_methods_should_end_with_async.style = non_public_async_method_style
+
+dotnet_naming_rule.properties_should_be_pascal_case.severity = error
+dotnet_naming_rule.properties_should_be_pascal_case.symbols = properties
+dotnet_naming_rule.properties_should_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_rule.locals_should_be_camel_case.severity = error
+dotnet_naming_rule.locals_should_be_camel_case.symbols = locals
+dotnet_naming_rule.locals_should_be_camel_case.style = camel_case_style
+
+dotnet_naming_rule.parameters_should_be_camel_case.severity = error
+dotnet_naming_rule.parameters_should_be_camel_case.symbols = parameters
+dotnet_naming_rule.parameters_should_be_camel_case.style = camel_case_style
+
+dotnet_naming_rule.private_fields_should_start_with_m.severity = error
+dotnet_naming_rule.private_fields_should_start_with_m.symbols = private_instance_fields
+dotnet_naming_rule.private_fields_should_start_with_m.style = private_field_style
+
+dotnet_naming_rule.private_static_fields_should_start_with_s.severity = error
+dotnet_naming_rule.private_static_fields_should_start_with_s.symbols = private_static_fields
+dotnet_naming_rule.private_static_fields_should_start_with_s.style = private_static_field_style
+
+# const fields are implicitly static, so they need a more specific rule to avoid being treated as ordinary private static fields with an s prefix.
+dotnet_naming_rule.private_constants_should_be_uppercase.severity = error
+dotnet_naming_rule.private_constants_should_be_uppercase.symbols = private_constants
+dotnet_naming_rule.private_constants_should_be_uppercase.style = uppercase_style
+
+dotnet_naming_rule.constants_should_be_uppercase.severity = error
+dotnet_naming_rule.constants_should_be_uppercase.symbols = constants
+dotnet_naming_rule.constants_should_be_uppercase.style = uppercase_style
+
+# Static readonly fields may be ordinary cached state or constant-like values.
+# EditorConfig cannot tell which role they serve.
+# This silent rule prevents static readonly fields from being forced into the ordinary s-prefixed static field rule; code review must decide between sName and CONSTANT_NAME.
+dotnet_naming_rule.static_readonly_fields_should_be_uppercase.severity = silent
+dotnet_naming_rule.static_readonly_fields_should_be_uppercase.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_fields_should_be_uppercase.style = uppercase_style
+
+# ------------------------------------------------------------
+# Naming symbols
+# ------------------------------------------------------------
+
+dotnet_naming_symbols.types.applicable_kinds = class, delegate
+
+dotnet_naming_symbols.namespaces.applicable_kinds = namespace
+
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+
+dotnet_naming_symbols.enums.applicable_kinds = enum
+
+dotnet_naming_symbols.struct_types.applicable_kinds = struct
+
+dotnet_naming_symbols.readonly_structs.applicable_kinds = struct
+dotnet_naming_symbols.readonly_structs.required_modifiers = readonly
+
+dotnet_naming_symbols.public_methods.applicable_kinds = method
+dotnet_naming_symbols.public_methods.applicable_accessibilities = public
+
+dotnet_naming_symbols.non_public_methods.applicable_kinds = method
+dotnet_naming_symbols.non_public_methods.applicable_accessibilities = private, internal, protected, protected_internal, private_protected
+
+dotnet_naming_symbols.public_async_methods.applicable_kinds = method
+dotnet_naming_symbols.public_async_methods.applicable_accessibilities = public
+dotnet_naming_symbols.public_async_methods.required_modifiers = async
+
+dotnet_naming_symbols.non_public_async_methods.applicable_kinds = method
+dotnet_naming_symbols.non_public_async_methods.applicable_accessibilities = private, internal, protected, protected_internal, private_protected
+dotnet_naming_symbols.non_public_async_methods.required_modifiers = async
+
+dotnet_naming_symbols.properties.applicable_kinds = property
+
+dotnet_naming_symbols.locals.applicable_kinds = local
+
+dotnet_naming_symbols.parameters.applicable_kinds = parameter
+
+dotnet_naming_symbols.private_instance_fields.applicable_kinds = field
+dotnet_naming_symbols.private_instance_fields.applicable_accessibilities = private
+
+dotnet_naming_symbols.private_static_fields.applicable_kinds = field
+dotnet_naming_symbols.private_static_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_static_fields.required_modifiers = static
+
+dotnet_naming_symbols.private_constants.applicable_kinds = field
+dotnet_naming_symbols.private_constants.applicable_accessibilities = private
+dotnet_naming_symbols.private_constants.required_modifiers = const
+
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
+
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
+
+# ------------------------------------------------------------
+# Naming styles
+# ------------------------------------------------------------
+
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
+dotnet_naming_style.camel_case_style.capitalization = camel_case
+
+dotnet_naming_style.interface_style.required_prefix = I
+dotnet_naming_style.interface_style.capitalization = pascal_case
+
+dotnet_naming_style.enum_style.required_prefix = E
+dotnet_naming_style.enum_style.capitalization = pascal_case
+
+dotnet_naming_style.private_field_style.required_prefix = m
+dotnet_naming_style.private_field_style.capitalization = pascal_case
+
+dotnet_naming_style.private_static_field_style.required_prefix = s
+dotnet_naming_style.private_static_field_style.capitalization = pascal_case
+
+dotnet_naming_style.uppercase_style.capitalization = all_upper
+
+dotnet_naming_style.public_async_method_style.required_suffix = Async
+dotnet_naming_style.public_async_method_style.capitalization = pascal_case
+
+dotnet_naming_style.non_public_async_method_style.required_suffix = Async
+dotnet_naming_style.non_public_async_method_style.capitalization = camel_case

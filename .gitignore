@@ -1,0 +1,64 @@
+# Build output
+bin/
+obj/
+out/
+publish/
+TestResults/
+coverage/
+coverage-*/
+*.trx
+*.coverage
+*.coveragexml
+
+# IDE and editor state
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.rsuser
+*.DotSettings.user
+
+# Local runtime data
+/Data/
+**/Data/DataProtectionKeys/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.log
+logs/
+artifacts/
+captures/
+tmp/
+scratch/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+
+# Node and frontend tooling
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+.parcel-cache/
+.vite/
+
+# Local-only helper scripts and generated QA data
+tools/local/
+tools/tmp/
+*.local.ps1
+*.local.mjs
+*.local.json
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
