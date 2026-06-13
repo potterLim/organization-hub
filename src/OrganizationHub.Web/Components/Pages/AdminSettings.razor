@@ -1,13 +1,17 @@
 @page "/admin/settings"
 @attribute [Authorize(Policy = OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE)]
 @inject ITeamManagementService TeamManagementService
+@inject IGoogleConnectionService GoogleConnectionService
+@inject IGoogleWorkspaceBrowserService GoogleWorkspaceBrowserService
+@inject IGoogleWorkspaceSetupService GoogleWorkspaceSetupService
+@inject IDriveService DriveService
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("시스템 설정")</PageTitle>
 
 <div class="hub-page-header">
     <div>
         <h1 class="hub-page-title">시스템 설정</h1>
-        <div class="hub-page-description">자료 위치, 일정, 할 일, 공지 연결값을 한곳에서 관리합니다.</div>
+        <div class="hub-page-description">자료 위치, 일정, 할 일, 공지 연결을 ID 입력 없이 선택해서 관리합니다.</div>
     </div>
 </div>
 
@@ -16,75 +20,1070 @@
     <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
 }
 
-<MudPaper Class="hub-card hub-form-card hub-settings-card pa-4">
-    <MudGrid Spacing="3" Class="hub-settings-grid">
-        <MudItem xs="12" md="6">
-            <SettingIdField @bind-Value="mFormModel.OfficialRootFolderID" Label="공식 루트 폴더 ID" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <SettingIdField @bind-Value="mFormModel.PublicFolderID" Label="외부 공유 자료 폴더 ID" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <SettingIdField @bind-Value="mFormModel.CommonFolderID" Label="공통 자료 폴더 ID" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <SettingIdField @bind-Value="mFormModel.ResponsibleResourcesFolderID" Label="책임자 자료 폴더 ID" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <SettingIdField @bind-Value="mFormModel.WorkResourcesFolderID" Label="업무 지원 자료 폴더 ID" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <SettingIdField @bind-Value="mFormModel.OrganizationCalendarID" Label="조직 공용 캘린더 ID" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <SettingIdField @bind-Value="mFormModel.ResponsibleCalendarID" Label="책임자 캘린더 ID" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <SettingIdField @bind-Value="mFormModel.OrganizationTaskListID" Label="조직 공용 할 일 목록 ID" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <SettingIdField @bind-Value="mFormModel.ResponsibleTaskListID" Label="책임자 할 일 목록 ID" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <SettingIdField @bind-Value="mFormModel.NoticeFileID" Label="공지 파일 ID" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <SettingIdField @bind-Value="mFormModel.WorkGuidelineFileID" Label="업무 기준 파일 ID" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudSwitch T="bool" @bind-Value="mFormModel.ShowTodoAuthor" Label="할 일 작성자 표시" Color="Color.Primary" />
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudSwitch T="bool" @bind-Value="mFormModel.ShowCalendarAuthor" Label="일정 작성자 표시" Color="Color.Primary" />
-        </MudItem>
-    </MudGrid>
-    <div class="hub-submit-row">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveSettingAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
+<div class="hub-settings-layout">
+    <div class="hub-settings-side">
+        <MudPaper Class="hub-card hub-form-card pa-4">
+            <div class="hub-admin-form-heading">
+                <MudText Typo="Typo.h6">연결 상태</MudText>
+                <span>@(mStatus.IsConnected ? "사용 가능" : "연결 필요")</span>
+            </div>
+            <div class="hub-google-status">
+                <span class="@(mStatus.IsConnected ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(mStatus.IsConnected ? "연결됨" : "미연결")</span>
+                <div>
+                    <div class="hub-google-status-title">@(mStatus.IsConnected ? mStatus.ConnectedEmail : "Google 계정 없음")</div>
+                    <div class="hub-muted">@(mStatus.IsConnected ? "아래 목록에서 사용할 자료 위치를 선택할 수 있습니다." : "Google 연결 메뉴에서 계정을 먼저 연결해 주세요.")</div>
+                </div>
+            </div>
+        </MudPaper>
+
+        <MudPaper Class="hub-card hub-form-card pa-4">
+            <div class="hub-admin-form-heading">
+                <MudText Typo="Typo.h6">표시 옵션</MudText>
+                <span>운영 화면</span>
+            </div>
+            <div class="hub-form-hint">일정과 할 일 화면에서 작성자 정보를 함께 보여줄지 정합니다.</div>
+            <MudStack Spacing="1" Class="hub-settings-switches">
+                <MudSwitch T="bool" @bind-Value="mFormModel.ShowTodoAuthor" Label="할 일 작성자 표시" Color="Color.Primary" />
+                <MudSwitch T="bool" @bind-Value="mFormModel.ShowCalendarAuthor" Label="일정 작성자 표시" Color="Color.Primary" />
+            </MudStack>
+            <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveSettingAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">표시 옵션 저장</MudButton>
+            </MudStack>
+        </MudPaper>
     </div>
-</MudPaper>
+
+    <div class="hub-settings-main">
+        <MudPaper Class="hub-card hub-list-card pa-4">
+            <div class="hub-admin-section-heading">
+                <div>
+                    <MudText Typo="Typo.h6">현재 연결 요약</MudText>
+                    <div class="hub-muted">운영 화면에서 실제로 사용할 Google 리소스입니다.</div>
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="refreshAllAsync" StartIcon="@Icons.Material.Filled.Refresh" Disabled="mIsRefreshing">새로고침</MudButton>
+            </div>
+            <div class="hub-resource-summary-grid">
+                @foreach (SettingResourceSummary summary in getPrimaryResourceSummaries())
+                {
+                    <div class="hub-resource-summary-card">
+                        <div class="hub-resource-summary-heading">
+                            <span>@summary.GroupName</span>
+                            <span class="@(summary.IsConfigured ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(summary.IsConfigured ? "연결됨" : "미설정")</span>
+                        </div>
+                        <div class="hub-resource-summary-title">@summary.DisplayName</div>
+                        <div class="hub-muted">@summary.Detail</div>
+                    </div>
+                }
+            </div>
+        </MudPaper>
+
+        <MudPaper Class="hub-card hub-list-card pa-4">
+            <div class="hub-google-panel-heading">
+                <div>
+                    <MudText Typo="Typo.h6">Drive 자료 위치 선택</MudText>
+                    <div class="hub-muted">폴더를 열어 위치를 확인하고, 선택한 폴더나 파일을 운영 설정에 연결합니다.</div>
+                </div>
+                <div class="hub-google-panel-actions">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="goToDriveRootAsync" StartIcon="@Icons.Material.Filled.CloudQueue" Disabled="@(mStatus.IsConnected == false)">내 Drive</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="goToOfficialRootAsync" StartIcon="@Icons.Material.Filled.Home" Disabled="@(mStatus.IsConnected == false || string.IsNullOrWhiteSpace(mFormModel.OfficialRootFolderID))">공식 루트</MudButton>
+                </div>
+            </div>
+
+            @if (mStatus.IsConnected == false)
+            {
+                <div class="hub-empty">Google 계정을 연결하면 Drive 폴더와 파일을 목록에서 선택할 수 있습니다.</div>
+            }
+            else
+            {
+                <div class="hub-resource-picker-grid">
+                    <MudSelect T="string" Label="폴더를 연결할 대상" Value="mSelectedFolderTargetKey" ValueChanged="setFolderTarget" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (GoogleFolderAssignmentOption option in mFolderAssignmentOptions)
+                        {
+                            <MudSelectItem T="string" Value="@option.TargetKey">@option.DisplayName</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudSelect T="string" Label="파일을 연결할 대상" Value="mSelectedFileTargetKey" ValueChanged="setFileTarget" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        <MudSelectItem T="string" Value="@NOTICE_FILE_TARGET_KEY">공지 파일</MudSelectItem>
+                        <MudSelectItem T="string" Value="@WORK_GUIDELINE_FILE_TARGET_KEY">업무 기준 파일</MudSelectItem>
+                    </MudSelect>
+                </div>
+
+                <div class="hub-selected-resource-grid">
+                    <div class="hub-selected-resource">
+                        <div class="hub-muted">선택한 폴더 대상의 현재 연결</div>
+                        <strong>@getSelectedFolderAssignmentDisplayName()</strong>
+                        <span>@getSelectedFolderAssignmentDetail()</span>
+                    </div>
+                    <div class="hub-selected-resource">
+                        <div class="hub-muted">선택한 파일 대상의 현재 연결</div>
+                        <strong>@getSelectedFileAssignmentDisplayName()</strong>
+                        <span>@getSelectedFileAssignmentDetail()</span>
+                    </div>
+                </div>
+
+                <div class="hub-google-path">
+                    @for (int index = 0; index < mFolderPath.Count; index++)
+                    {
+                        int pathIndex = index;
+                        GoogleDriveFolderPathItem pathItem = mFolderPath[index];
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => openPathAsync(pathIndex))">@pathItem.Name</MudButton>
+                        @if (index < mFolderPath.Count - 1)
+                        {
+                            <span>/</span>
+                        }
+                    }
+                    <MudTooltip Text="현재 폴더 새로고침">
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Size="Size.Small" OnClick="loadDriveItemsAsync" Disabled="mIsLoadingDriveItems" aria-label="현재 폴더 새로고침" />
+                    </MudTooltip>
+                </div>
+
+                @if (mIsLoadingDriveItems)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                }
+                else if (mDriveItems.Count == 0)
+                {
+                    <div class="hub-empty">이 위치에는 선택할 폴더나 파일이 없습니다.</div>
+                }
+                else
+                {
+                    <MudTable Items="getOrderedDriveItems()" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table hub-resource-picker-table">
+                        <HeaderContent>
+                            <MudTh>이름</MudTh>
+                            <MudTh>종류</MudTh>
+                            <MudTh>수정일</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate Context="driveItem">
+                            <MudTd DataLabel="이름">
+                                <div class="hub-resource-name-cell">
+                                    <MudIcon Icon="@(driveItem.IsFolder ? Icons.Material.Filled.Folder : Icons.Material.Filled.Description)" Size="Size.Small" />
+                                    <span>@driveItem.Name</span>
+                                </div>
+                            </MudTd>
+                            <MudTd DataLabel="종류">@(driveItem.IsFolder ? "폴더" : getFileTypeDisplayName(driveItem))</MudTd>
+                            <MudTd DataLabel="수정일">@formatDate(driveItem.ModifiedTime)</MudTd>
+                            <MudTd DataLabel="작업" Class="hub-action-cell">
+                                <div class="hub-table-actions">
+                                    @if (driveItem.IsFolder)
+                                    {
+                                        <MudTooltip Text="폴더 열기">
+                                            <MudIconButton Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" Size="Size.Small" OnClick="@(() => openFolderAsync(driveItem))" aria-label="폴더 열기" />
+                                        </MudTooltip>
+                                        <MudTooltip Text="이 폴더로 연결">
+                                            <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => assignFolderAsync(driveItem))" aria-label="이 폴더로 연결" />
+                                        </MudTooltip>
+                                    }
+                                    else
+                                    {
+                                        <MudTooltip Text="이 파일로 연결">
+                                            <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => assignFileAsync(driveItem))" aria-label="이 파일로 연결" />
+                                        </MudTooltip>
+                                    }
+                                </div>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            }
+        </MudPaper>
+
+        <MudPaper Class="hub-card hub-list-card pa-4">
+            <div class="hub-google-panel-heading">
+                <div>
+                    <MudText Typo="Typo.h6">Calendar 선택</MudText>
+                    <div class="hub-muted">일정을 표시하거나 작성할 캘린더를 목록에서 연결합니다.</div>
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="loadCalendarsAsync" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(mStatus.IsConnected == false)">새로고침</MudButton>
+            </div>
+            @if (mStatus.IsConnected == false)
+            {
+                <div class="hub-empty">Google 계정을 연결하면 Calendar 목록을 선택할 수 있습니다.</div>
+            }
+            else
+            {
+                <div class="hub-google-toolbar">
+                    <MudSelect T="string" Label="캘린더를 연결할 대상" Value="mSelectedCalendarTargetKey" ValueChanged="setCalendarTarget" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (GoogleCalendarAssignmentOption option in mCalendarAssignmentOptions)
+                        {
+                            <MudSelectItem T="string" Value="@option.TargetKey">@option.DisplayName</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <div class="hub-selected-resource">
+                        <div class="hub-muted">현재 연결</div>
+                        <strong>@getSelectedCalendarAssignmentDisplayName()</strong>
+                        <span>@getSelectedCalendarAssignmentDetail()</span>
+                    </div>
+                </div>
+                <div class="hub-resource-card-list">
+                    @foreach (GoogleCalendarListItem calendar in mCalendars)
+                    {
+                        <div class="hub-resource-choice-card">
+                            <div>
+                                <div class="hub-resource-choice-title">@calendar.Summary</div>
+                                <div class="hub-muted">@getCalendarAccessDisplayName(calendar)</div>
+                            </div>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => assignCalendarAsync(calendar))" StartIcon="@Icons.Material.Filled.CheckCircle">연결</MudButton>
+                        </div>
+                    }
+                </div>
+            }
+        </MudPaper>
+
+        <MudPaper Class="hub-card hub-list-card pa-4">
+            <div class="hub-google-panel-heading">
+                <div>
+                    <MudText Typo="Typo.h6">할 일 목록 선택</MudText>
+                    <div class="hub-muted">할 일 화면에서 사용할 Google Tasks 목록을 연결합니다.</div>
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="loadTaskListsAsync" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(mStatus.IsConnected == false)">새로고침</MudButton>
+            </div>
+            @if (mStatus.IsConnected == false)
+            {
+                <div class="hub-empty">Google 계정을 연결하면 할 일 목록을 선택할 수 있습니다.</div>
+            }
+            else
+            {
+                <div class="hub-google-toolbar">
+                    <MudSelect T="string" Label="할 일 목록을 연결할 대상" Value="mSelectedTaskListTargetKey" ValueChanged="setTaskListTarget" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (GoogleTaskListAssignmentOption option in mTaskListAssignmentOptions)
+                        {
+                            <MudSelectItem T="string" Value="@option.TargetKey">@option.DisplayName</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <div class="hub-selected-resource">
+                        <div class="hub-muted">현재 연결</div>
+                        <strong>@getSelectedTaskListAssignmentDisplayName()</strong>
+                        <span>@getSelectedTaskListAssignmentDetail()</span>
+                    </div>
+                </div>
+                <div class="hub-resource-card-list">
+                    @foreach (GoogleTaskListItem taskList in mTaskLists)
+                    {
+                        <div class="hub-resource-choice-card">
+                            <div>
+                                <div class="hub-resource-choice-title">@taskList.Title</div>
+                                <div class="hub-muted">Google Tasks 목록</div>
+                            </div>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => assignTaskListAsync(taskList))" StartIcon="@Icons.Material.Filled.CheckCircle">연결</MudButton>
+                        </div>
+                    }
+                </div>
+            }
+        </MudPaper>
+
+        <MudExpansionPanels Elevation="0" Class="hub-advanced-settings">
+            <MudExpansionPanel Text="고급: 연결 ID 직접 확인/수정">
+                <div class="hub-form-hint">일반 운영자는 위 선택 목록을 사용하면 됩니다. 외부에서 받은 정확한 ID를 직접 넣어야 할 때만 이 영역을 사용하세요.</div>
+                <MudGrid Spacing="3" Class="hub-settings-grid">
+                    <MudItem xs="12" md="6">
+                        <SettingIdField @bind-Value="mFormModel.OfficialRootFolderID" Label="공식 루트 폴더 ID" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <SettingIdField @bind-Value="mFormModel.PublicFolderID" Label="외부 공유 자료 폴더 ID" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <SettingIdField @bind-Value="mFormModel.CommonFolderID" Label="공통 자료 폴더 ID" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <SettingIdField @bind-Value="mFormModel.ResponsibleResourcesFolderID" Label="책임자 자료 폴더 ID" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <SettingIdField @bind-Value="mFormModel.WorkResourcesFolderID" Label="업무 지원 자료 폴더 ID" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <SettingIdField @bind-Value="mFormModel.OrganizationCalendarID" Label="조직 공용 캘린더 ID" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <SettingIdField @bind-Value="mFormModel.ResponsibleCalendarID" Label="책임자 캘린더 ID" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <SettingIdField @bind-Value="mFormModel.OrganizationTaskListID" Label="조직 공용 할 일 목록 ID" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <SettingIdField @bind-Value="mFormModel.ResponsibleTaskListID" Label="책임자 할 일 목록 ID" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <SettingIdField @bind-Value="mFormModel.NoticeFileID" Label="공지 파일 ID" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <SettingIdField @bind-Value="mFormModel.WorkGuidelineFileID" Label="업무 기준 파일 ID" />
+                    </MudItem>
+                </MudGrid>
+                <div class="hub-submit-row">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveSettingAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">고급 설정 저장</MudButton>
+                </div>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    </div>
+</div>
 
 @code
 {
+    private const string NOTICE_FILE_TARGET_KEY = "Notice";
+    private const string WORK_GUIDELINE_FILE_TARGET_KEY = "WorkGuideline";
+    private const string DRIVE_ROOT_ID = "root";
+
     private GlobalSettingFormModel mFormModel = new GlobalSettingFormModel();
+    private GoogleConnectionStatus mStatus = new GoogleConnectionStatus();
+    private List<Team> mTeams = new List<Team>();
+    private List<GoogleFolderAssignmentOption> mFolderAssignmentOptions = new List<GoogleFolderAssignmentOption>();
+    private List<GoogleCalendarAssignmentOption> mCalendarAssignmentOptions = new List<GoogleCalendarAssignmentOption>();
+    private List<GoogleTaskListAssignmentOption> mTaskListAssignmentOptions = new List<GoogleTaskListAssignmentOption>();
+    private List<GoogleDriveFolderPathItem> mFolderPath = new List<GoogleDriveFolderPathItem>();
+    private List<DriveFileItem> mDriveItems = new List<DriveFileItem>();
+    private List<GoogleCalendarListItem> mCalendars = new List<GoogleCalendarListItem>();
+    private List<GoogleTaskListItem> mTaskLists = new List<GoogleTaskListItem>();
+    private Dictionary<string, string> mDriveResourceNameByID = new Dictionary<string, string>();
+    private string mSelectedFolderTargetKey = string.Empty;
+    private string mSelectedCalendarTargetKey = string.Empty;
+    private string mSelectedTaskListTargetKey = string.Empty;
+    private string mSelectedFileTargetKey = NOTICE_FILE_TARGET_KEY;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
+    private bool mIsLoadingDriveItems;
+    private bool mIsRefreshing;
 
     protected override async Task OnInitializedAsync()
     {
+        await loadConfigurationAsync();
+        await loadConnectionStatusAsync();
+        await loadAssignmentOptionsAsync();
+        resetDrivePathToOfficialRoot();
+        if (mStatus.IsConnected)
+        {
+            Task driveItemsTask = loadDriveItemsAsync();
+            Task calendarsTask = loadCalendarsAsync();
+            Task taskListsTask = loadTaskListsAsync();
+            Task driveResourceNamesTask = loadDriveResourceNamesAsync();
+            await Task.WhenAll(driveItemsTask, calendarsTask, taskListsTask, driveResourceNamesTask);
+        }
+    }
+
+    private async Task loadConfigurationAsync()
+    {
         mFormModel = await TeamManagementService.GetGlobalSettingAsync(CancellationToken.None);
+        IReadOnlyList<Team> teams = await TeamManagementService.GetTeamsAsync(CancellationToken.None);
+        mTeams = teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName).ToList();
+    }
+
+    private async Task loadConnectionStatusAsync()
+    {
+        mStatus = await GoogleConnectionService.GetStatusAsync(CancellationToken.None);
+    }
+
+    private async Task loadAssignmentOptionsAsync()
+    {
+        IReadOnlyList<GoogleFolderAssignmentOption> folderOptions = await GoogleWorkspaceSetupService.GetFolderAssignmentOptionsAsync(CancellationToken.None);
+        mFolderAssignmentOptions = folderOptions.ToList();
+        if (string.IsNullOrWhiteSpace(mSelectedFolderTargetKey) && mFolderAssignmentOptions.Count > 0)
+        {
+            mSelectedFolderTargetKey = mFolderAssignmentOptions[0].TargetKey;
+        }
+
+        IReadOnlyList<GoogleCalendarAssignmentOption> calendarOptions = await GoogleWorkspaceSetupService.GetCalendarAssignmentOptionsAsync(CancellationToken.None);
+        mCalendarAssignmentOptions = calendarOptions.ToList();
+        if (string.IsNullOrWhiteSpace(mSelectedCalendarTargetKey) && mCalendarAssignmentOptions.Count > 0)
+        {
+            mSelectedCalendarTargetKey = mCalendarAssignmentOptions[0].TargetKey;
+        }
+
+        IReadOnlyList<GoogleTaskListAssignmentOption> taskListOptions = await GoogleWorkspaceSetupService.GetTaskListAssignmentOptionsAsync(CancellationToken.None);
+        mTaskListAssignmentOptions = taskListOptions.ToList();
+        if (string.IsNullOrWhiteSpace(mSelectedTaskListTargetKey) && mTaskListAssignmentOptions.Count > 0)
+        {
+            mSelectedTaskListTargetKey = mTaskListAssignmentOptions[0].TargetKey;
+        }
+    }
+
+    private async Task refreshAllAsync()
+    {
+        mIsRefreshing = true;
+        try
+        {
+            await loadConfigurationAsync();
+            await loadConnectionStatusAsync();
+            await loadAssignmentOptionsAsync();
+            if (mStatus.IsConnected)
+            {
+                Task driveItemsTask = loadDriveItemsAsync();
+                Task calendarsTask = loadCalendarsAsync();
+                Task taskListsTask = loadTaskListsAsync();
+                Task driveResourceNamesTask = loadDriveResourceNamesAsync();
+                await Task.WhenAll(driveItemsTask, calendarsTask, taskListsTask, driveResourceNamesTask);
+            }
+
+            mMessage = "설정을 다시 불러왔습니다.";
+            mMessageSeverity = Severity.Success;
+        }
+        finally
+        {
+            mIsRefreshing = false;
+        }
+    }
+
+    private async Task loadDriveItemsAsync()
+    {
+        if (mStatus.IsConnected == false)
+        {
+            return;
+        }
+
+        mIsLoadingDriveItems = true;
+        try
+        {
+            IReadOnlyList<DriveFileItem> driveItems = await DriveService.ListFilesAsync(getCurrentFolderID(), CancellationToken.None);
+            mDriveItems = driveItems.ToList();
+        }
+        catch (Exception exception)
+        {
+            mMessage = "Drive 목록을 불러오지 못했습니다. " + exception.Message;
+            mMessageSeverity = Severity.Error;
+        }
+        finally
+        {
+            mIsLoadingDriveItems = false;
+        }
+    }
+
+    private async Task loadCalendarsAsync()
+    {
+        if (mStatus.IsConnected == false)
+        {
+            return;
+        }
+
+        try
+        {
+            IReadOnlyList<GoogleCalendarListItem> calendars = await GoogleWorkspaceBrowserService.ListCalendarsAsync(CancellationToken.None);
+            mCalendars = calendars.ToList();
+        }
+        catch (Exception exception)
+        {
+            mMessage = "Calendar 목록을 불러오지 못했습니다. " + exception.Message;
+            mMessageSeverity = Severity.Error;
+        }
+    }
+
+    private async Task loadTaskListsAsync()
+    {
+        if (mStatus.IsConnected == false)
+        {
+            return;
+        }
+
+        try
+        {
+            IReadOnlyList<GoogleTaskListItem> taskLists = await GoogleWorkspaceBrowserService.ListTaskListsAsync(CancellationToken.None);
+            mTaskLists = taskLists.ToList();
+        }
+        catch (Exception exception)
+        {
+            mMessage = "할 일 목록을 불러오지 못했습니다. " + exception.Message;
+            mMessageSeverity = Severity.Error;
+        }
+    }
+
+    private async Task loadDriveResourceNamesAsync()
+    {
+        if (mStatus.IsConnected == false)
+        {
+            return;
+        }
+
+        Dictionary<string, string> namesByID = new Dictionary<string, string>();
+        foreach (string driveResourceID in getConfiguredDriveResourceIDs())
+        {
+            if (namesByID.ContainsKey(driveResourceID))
+            {
+                continue;
+            }
+
+            try
+            {
+                DriveFileMetadata? metadataOrNull = await DriveService.GetFileOrNullAsync(driveResourceID, CancellationToken.None);
+                if (metadataOrNull == null)
+                {
+                    namesByID[driveResourceID] = "연결된 항목을 찾을 수 없음";
+                    continue;
+                }
+
+                namesByID[driveResourceID] = metadataOrNull.Name;
+            }
+            catch
+            {
+                namesByID[driveResourceID] = "이름을 확인하지 못함";
+            }
+        }
+
+        mDriveResourceNameByID = namesByID;
+    }
+
+    private async Task openFolderAsync(DriveFileItem folder)
+    {
+        if (folder.IsFolder == false)
+        {
+            return;
+        }
+
+        GoogleDriveFolderPathItem pathItem = new GoogleDriveFolderPathItem();
+        pathItem.ID = folder.ID;
+        pathItem.Name = folder.Name;
+        mFolderPath.Add(pathItem);
+        await loadDriveItemsAsync();
+    }
+
+    private async Task openPathAsync(int index)
+    {
+        if (index < 0 || index >= mFolderPath.Count)
+        {
+            return;
+        }
+
+        mFolderPath = mFolderPath.Take(index + 1).ToList();
+        await loadDriveItemsAsync();
+    }
+
+    private async Task goToDriveRootAsync()
+    {
+        resetDrivePathToRoot();
+        await loadDriveItemsAsync();
+    }
+
+    private async Task goToOfficialRootAsync()
+    {
+        resetDrivePathToOfficialRoot();
+        await loadDriveItemsAsync();
+    }
+
+    private async Task assignFolderAsync(DriveFileItem folder)
+    {
+        if (folder.IsFolder == false)
+        {
+            return;
+        }
+
+        ServiceResult result = await GoogleWorkspaceSetupService.AssignFolderAsync(mSelectedFolderTargetKey, folder.ID, CancellationToken.None);
+        showResult(result, result.IsSuccess ? folder.Name + " 폴더를 연결했습니다." : string.Empty);
+        if (result.IsSuccess)
+        {
+            await loadConfigurationAsync();
+            await loadAssignmentOptionsAsync();
+            await loadDriveResourceNamesAsync();
+        }
+    }
+
+    private async Task assignFileAsync(DriveFileItem file)
+    {
+        if (file.IsFolder)
+        {
+            return;
+        }
+
+        if (mSelectedFileTargetKey == NOTICE_FILE_TARGET_KEY)
+        {
+            mFormModel.NoticeFileID = file.ID;
+        }
+        else
+        {
+            mFormModel.WorkGuidelineFileID = file.ID;
+        }
+
+        ServiceResult result = await TeamManagementService.UpdateGlobalSettingAsync(mFormModel, CancellationToken.None);
+        showResult(result, result.IsSuccess ? file.Name + " 파일을 연결했습니다." : string.Empty);
+        if (result.IsSuccess)
+        {
+            await loadConfigurationAsync();
+            await loadDriveResourceNamesAsync();
+        }
+    }
+
+    private async Task assignCalendarAsync(GoogleCalendarListItem calendar)
+    {
+        ServiceResult result = await GoogleWorkspaceSetupService.AssignCalendarAsync(mSelectedCalendarTargetKey, calendar.ID, CancellationToken.None);
+        showResult(result, result.IsSuccess ? calendar.Summary + " 캘린더를 연결했습니다." : string.Empty);
+        if (result.IsSuccess)
+        {
+            await loadConfigurationAsync();
+            await loadAssignmentOptionsAsync();
+        }
+    }
+
+    private async Task assignTaskListAsync(GoogleTaskListItem taskList)
+    {
+        ServiceResult result = await GoogleWorkspaceSetupService.AssignTaskListAsync(mSelectedTaskListTargetKey, taskList.ID, CancellationToken.None);
+        showResult(result, result.IsSuccess ? taskList.Title + " 할 일 목록을 연결했습니다." : string.Empty);
+        if (result.IsSuccess)
+        {
+            await loadConfigurationAsync();
+            await loadAssignmentOptionsAsync();
+        }
     }
 
     private async Task saveSettingAsync()
     {
         ServiceResult result = await TeamManagementService.UpdateGlobalSettingAsync(mFormModel, CancellationToken.None);
+        showResult(result, "시스템 설정이 저장되었습니다.");
         if (result.IsSuccess)
         {
-            mMessage = "시스템 설정이 저장되었습니다.";
+            await loadConfigurationAsync();
+            await loadDriveResourceNamesAsync();
+        }
+    }
+
+    private void setFolderTarget(string targetKey)
+    {
+        mSelectedFolderTargetKey = targetKey;
+    }
+
+    private void setCalendarTarget(string targetKey)
+    {
+        mSelectedCalendarTargetKey = targetKey;
+    }
+
+    private void setTaskListTarget(string targetKey)
+    {
+        mSelectedTaskListTargetKey = targetKey;
+    }
+
+    private void setFileTarget(string targetKey)
+    {
+        mSelectedFileTargetKey = targetKey;
+    }
+
+    private void resetDrivePathToRoot()
+    {
+        GoogleDriveFolderPathItem rootPathItem = new GoogleDriveFolderPathItem();
+        rootPathItem.ID = DRIVE_ROOT_ID;
+        rootPathItem.Name = "내 Drive";
+        mFolderPath = new List<GoogleDriveFolderPathItem>();
+        mFolderPath.Add(rootPathItem);
+    }
+
+    private void resetDrivePathToOfficialRoot()
+    {
+        if (string.IsNullOrWhiteSpace(mFormModel.OfficialRootFolderID))
+        {
+            resetDrivePathToRoot();
+            return;
+        }
+
+        GoogleDriveFolderPathItem rootPathItem = new GoogleDriveFolderPathItem();
+        rootPathItem.ID = mFormModel.OfficialRootFolderID;
+        rootPathItem.Name = "공식 루트";
+        mFolderPath = new List<GoogleDriveFolderPathItem>();
+        mFolderPath.Add(rootPathItem);
+    }
+
+    private List<DriveFileItem> getOrderedDriveItems()
+    {
+        return mDriveItems.OrderBy(item => item.IsFolder ? 0 : 1).ThenBy(item => item.IsFolder ? item.Name : string.Empty).ThenByDescending(item => item.ModifiedTime).ThenBy(item => item.Name).ToList();
+    }
+
+    private IReadOnlyList<SettingResourceSummary> getPrimaryResourceSummaries()
+    {
+        List<SettingResourceSummary> summaries = new List<SettingResourceSummary>();
+        summaries.Add(createDriveSummary("Drive", "공식 루트", mFormModel.OfficialRootFolderID));
+        summaries.Add(createDriveSummary("Drive", "공통 자료", mFormModel.CommonFolderID));
+        summaries.Add(createDriveSummary("Drive", "외부 공유 자료", mFormModel.PublicFolderID));
+        summaries.Add(createDriveSummary("Drive", "책임자 자료", mFormModel.ResponsibleResourcesFolderID));
+        summaries.Add(createDriveSummary("Drive", "업무 지원 자료", mFormModel.WorkResourcesFolderID));
+        summaries.Add(createDriveSummary("파일", "공지 파일", mFormModel.NoticeFileID));
+        summaries.Add(createDriveSummary("파일", "업무 기준 파일", mFormModel.WorkGuidelineFileID));
+        summaries.Add(createCalendarSummary("Calendar", "조직 공용 캘린더", mFormModel.OrganizationCalendarID));
+        summaries.Add(createCalendarSummary("Calendar", "책임자 캘린더", mFormModel.ResponsibleCalendarID));
+        summaries.Add(createTaskListSummary("할 일", "조직 공용 할 일", mFormModel.OrganizationTaskListID));
+        summaries.Add(createTaskListSummary("할 일", "책임자 할 일", mFormModel.ResponsibleTaskListID));
+        return summaries;
+    }
+
+    private SettingResourceSummary createDriveSummary(string groupName, string displayName, string resourceID)
+    {
+        SettingResourceSummary summary = new SettingResourceSummary();
+        summary.GroupName = groupName;
+        summary.DisplayName = displayName;
+        summary.IsConfigured = string.IsNullOrWhiteSpace(resourceID) == false;
+        summary.Detail = getDriveResourceName(resourceID);
+        return summary;
+    }
+
+    private SettingResourceSummary createCalendarSummary(string groupName, string displayName, string calendarID)
+    {
+        SettingResourceSummary summary = new SettingResourceSummary();
+        summary.GroupName = groupName;
+        summary.DisplayName = displayName;
+        summary.IsConfigured = string.IsNullOrWhiteSpace(calendarID) == false;
+        summary.Detail = getCalendarName(calendarID);
+        return summary;
+    }
+
+    private SettingResourceSummary createTaskListSummary(string groupName, string displayName, string taskListID)
+    {
+        SettingResourceSummary summary = new SettingResourceSummary();
+        summary.GroupName = groupName;
+        summary.DisplayName = displayName;
+        summary.IsConfigured = string.IsNullOrWhiteSpace(taskListID) == false;
+        summary.Detail = getTaskListName(taskListID);
+        return summary;
+    }
+
+    private IEnumerable<string> getConfiguredDriveResourceIDs()
+    {
+        List<string> ids = new List<string>();
+        addConfiguredID(ids, mFormModel.OfficialRootFolderID);
+        addConfiguredID(ids, mFormModel.PublicFolderID);
+        addConfiguredID(ids, mFormModel.CommonFolderID);
+        addConfiguredID(ids, mFormModel.ResponsibleResourcesFolderID);
+        addConfiguredID(ids, mFormModel.WorkResourcesFolderID);
+        addConfiguredID(ids, mFormModel.NoticeFileID);
+        addConfiguredID(ids, mFormModel.WorkGuidelineFileID);
+        foreach (Team team in mTeams)
+        {
+            addConfiguredID(ids, getNullAsEmpty(team.MaterialsFolderID));
+            addConfiguredID(ids, getNullAsEmpty(team.ApprovedFolderID));
+        }
+
+        return ids.Distinct();
+    }
+
+    private void addConfiguredID(List<string> ids, string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        ids.Add(value.Trim());
+    }
+
+    private string getSelectedFolderAssignmentDisplayName()
+    {
+        GoogleFolderAssignmentOption? optionOrNull = getSelectedFolderAssignmentOptionOrNull();
+        if (optionOrNull == null)
+        {
+            return "대상을 선택해 주세요";
+        }
+
+        return optionOrNull.DisplayName;
+    }
+
+    private string getSelectedFolderAssignmentDetail()
+    {
+        GoogleFolderAssignmentOption? optionOrNull = getSelectedFolderAssignmentOptionOrNull();
+        if (optionOrNull == null)
+        {
+            return "저장 대상이 없습니다.";
+        }
+
+        return getDriveResourceName(getFolderAssignmentID(optionOrNull));
+    }
+
+    private string getSelectedFileAssignmentDisplayName()
+    {
+        if (mSelectedFileTargetKey == NOTICE_FILE_TARGET_KEY)
+        {
+            return "공지 파일";
+        }
+
+        return "업무 기준 파일";
+    }
+
+    private string getSelectedFileAssignmentDetail()
+    {
+        if (mSelectedFileTargetKey == NOTICE_FILE_TARGET_KEY)
+        {
+            return getDriveResourceName(mFormModel.NoticeFileID);
+        }
+
+        return getDriveResourceName(mFormModel.WorkGuidelineFileID);
+    }
+
+    private string getSelectedCalendarAssignmentDisplayName()
+    {
+        GoogleCalendarAssignmentOption? optionOrNull = getSelectedCalendarAssignmentOptionOrNull();
+        if (optionOrNull == null)
+        {
+            return "대상을 선택해 주세요";
+        }
+
+        return optionOrNull.DisplayName;
+    }
+
+    private string getSelectedCalendarAssignmentDetail()
+    {
+        GoogleCalendarAssignmentOption? optionOrNull = getSelectedCalendarAssignmentOptionOrNull();
+        if (optionOrNull == null)
+        {
+            return "저장 대상이 없습니다.";
+        }
+
+        return getCalendarName(getCalendarAssignmentID(optionOrNull));
+    }
+
+    private string getSelectedTaskListAssignmentDisplayName()
+    {
+        GoogleTaskListAssignmentOption? optionOrNull = getSelectedTaskListAssignmentOptionOrNull();
+        if (optionOrNull == null)
+        {
+            return "대상을 선택해 주세요";
+        }
+
+        return optionOrNull.DisplayName;
+    }
+
+    private string getSelectedTaskListAssignmentDetail()
+    {
+        GoogleTaskListAssignmentOption? optionOrNull = getSelectedTaskListAssignmentOptionOrNull();
+        if (optionOrNull == null)
+        {
+            return "저장 대상이 없습니다.";
+        }
+
+        return getTaskListName(getTaskListAssignmentID(optionOrNull));
+    }
+
+    private GoogleFolderAssignmentOption? getSelectedFolderAssignmentOptionOrNull()
+    {
+        return mFolderAssignmentOptions.FirstOrDefault(option => option.TargetKey == mSelectedFolderTargetKey);
+    }
+
+    private GoogleCalendarAssignmentOption? getSelectedCalendarAssignmentOptionOrNull()
+    {
+        return mCalendarAssignmentOptions.FirstOrDefault(option => option.TargetKey == mSelectedCalendarTargetKey);
+    }
+
+    private GoogleTaskListAssignmentOption? getSelectedTaskListAssignmentOptionOrNull()
+    {
+        return mTaskListAssignmentOptions.FirstOrDefault(option => option.TargetKey == mSelectedTaskListTargetKey);
+    }
+
+    private string getFolderAssignmentID(GoogleFolderAssignmentOption option)
+    {
+        if (option.FolderAssignmentKind == EGoogleFolderAssignmentKind.OfficialRoot)
+        {
+            return mFormModel.OfficialRootFolderID;
+        }
+
+        if (option.FolderAssignmentKind == EGoogleFolderAssignmentKind.Public)
+        {
+            return mFormModel.PublicFolderID;
+        }
+
+        if (option.FolderAssignmentKind == EGoogleFolderAssignmentKind.Common)
+        {
+            return mFormModel.CommonFolderID;
+        }
+
+        if (option.FolderAssignmentKind == EGoogleFolderAssignmentKind.ResponsibleResources)
+        {
+            return mFormModel.ResponsibleResourcesFolderID;
+        }
+
+        if (option.FolderAssignmentKind == EGoogleFolderAssignmentKind.WorkResources)
+        {
+            return mFormModel.WorkResourcesFolderID;
+        }
+
+        Team? teamOrNull = getTeamOrNull(option.TeamID);
+        if (teamOrNull == null)
+        {
+            return string.Empty;
+        }
+
+        if (option.FolderAssignmentKind == EGoogleFolderAssignmentKind.TeamMaterials)
+        {
+            return getNullAsEmpty(teamOrNull.MaterialsFolderID);
+        }
+
+        return getNullAsEmpty(teamOrNull.ApprovedFolderID);
+    }
+
+    private string getCalendarAssignmentID(GoogleCalendarAssignmentOption option)
+    {
+        if (option.CalendarAssignmentKind == EGoogleCalendarAssignmentKind.Organization)
+        {
+            return mFormModel.OrganizationCalendarID;
+        }
+
+        if (option.CalendarAssignmentKind == EGoogleCalendarAssignmentKind.Leader)
+        {
+            return mFormModel.ResponsibleCalendarID;
+        }
+
+        Team? teamOrNull = getTeamOrNull(option.TeamID);
+        if (teamOrNull == null)
+        {
+            return string.Empty;
+        }
+
+        return getNullAsEmpty(teamOrNull.CalendarID);
+    }
+
+    private string getTaskListAssignmentID(GoogleTaskListAssignmentOption option)
+    {
+        if (option.TaskListAssignmentKind == EGoogleTaskListAssignmentKind.Organization)
+        {
+            return mFormModel.OrganizationTaskListID;
+        }
+
+        if (option.TaskListAssignmentKind == EGoogleTaskListAssignmentKind.Leader)
+        {
+            return mFormModel.ResponsibleTaskListID;
+        }
+
+        Team? teamOrNull = getTeamOrNull(option.TeamID);
+        if (teamOrNull == null)
+        {
+            return string.Empty;
+        }
+
+        return getNullAsEmpty(teamOrNull.TaskListID);
+    }
+
+    private Team? getTeamOrNull(int? teamIDOrNull)
+    {
+        if (teamIDOrNull.HasValue == false)
+        {
+            return null;
+        }
+
+        return mTeams.FirstOrDefault(team => team.ID == teamIDOrNull.Value);
+    }
+
+    private string getDriveResourceName(string resourceID)
+    {
+        if (string.IsNullOrWhiteSpace(resourceID))
+        {
+            return "아직 연결되지 않았습니다.";
+        }
+
+        string trimmedResourceID = resourceID.Trim();
+        string? nameOrNull;
+        if (mDriveResourceNameByID.TryGetValue(trimmedResourceID, out nameOrNull))
+        {
+            return nameOrNull;
+        }
+
+        return "연결됨";
+    }
+
+    private string getCalendarName(string calendarID)
+    {
+        if (string.IsNullOrWhiteSpace(calendarID))
+        {
+            return "아직 연결되지 않았습니다.";
+        }
+
+        GoogleCalendarListItem? calendarOrNull = mCalendars.FirstOrDefault(calendar => calendar.ID == calendarID);
+        if (calendarOrNull == null)
+        {
+            return "연결됨";
+        }
+
+        return calendarOrNull.Summary;
+    }
+
+    private string getTaskListName(string taskListID)
+    {
+        if (string.IsNullOrWhiteSpace(taskListID))
+        {
+            return "아직 연결되지 않았습니다.";
+        }
+
+        GoogleTaskListItem? taskListOrNull = mTaskLists.FirstOrDefault(taskList => taskList.ID == taskListID);
+        if (taskListOrNull == null)
+        {
+            return "연결됨";
+        }
+
+        return taskListOrNull.Title;
+    }
+
+    private string getFileTypeDisplayName(DriveFileItem file)
+    {
+        if (string.IsNullOrWhiteSpace(file.MimeType))
+        {
+            return "파일";
+        }
+
+        if (file.MimeType == "application/pdf")
+        {
+            return "PDF";
+        }
+
+        if (file.MimeType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return "이미지";
+        }
+
+        return "파일";
+    }
+
+    private string getCalendarAccessDisplayName(GoogleCalendarListItem calendar)
+    {
+        if (calendar.IsPrimary)
+        {
+            return "기본 캘린더";
+        }
+
+        if (string.IsNullOrWhiteSpace(calendar.AccessRole))
+        {
+            return "접근 가능";
+        }
+
+        return calendar.AccessRole;
+    }
+
+    private string getCurrentFolderID()
+    {
+        if (mFolderPath.Count == 0)
+        {
+            return DRIVE_ROOT_ID;
+        }
+
+        return mFolderPath[mFolderPath.Count - 1].ID;
+    }
+
+    private string formatDate(DateTime? dateOrNull)
+    {
+        if (dateOrNull.HasValue == false)
+        {
+            return "-";
+        }
+
+        return dateOrNull.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.CurrentCulture);
+    }
+
+    private string getNullAsEmpty(string? valueOrNull)
+    {
+        if (valueOrNull == null)
+        {
+            return string.Empty;
+        }
+
+        return valueOrNull;
+    }
+
+    private void showResult(ServiceResult result, string successMessage)
+    {
+        if (result.IsSuccess)
+        {
+            mMessage = successMessage;
             mMessageSeverity = Severity.Success;
             return;
         }
 
         mMessage = result.ErrorMessage;
         mMessageSeverity = Severity.Error;
+    }
+
+    private sealed class SettingResourceSummary
+    {
+        public string GroupName { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string Detail { get; set; } = string.Empty;
+        public bool IsConfigured
+        {
+            get; set;
+        }
     }
 }

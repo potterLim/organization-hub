@@ -7,7 +7,7 @@
 <div class="hub-page-header">
     <div>
         <h1 class="hub-page-title">팀 관리</h1>
-        <div class="hub-page-description">팀 이름, 표시 순서, 자료 위치와 일정/할 일 연결을 관리합니다.</div>
+        <div class="hub-page-description">조직에서 사용할 팀 이름과 표시 순서를 관리합니다. 자료 위치와 일정/할 일 연결은 Google 연결 또는 고급 설정에서 조정합니다.</div>
     </div>
 </div>
 
@@ -23,14 +23,20 @@
                 <MudText Typo="Typo.h6">@mFormTitle</MudText>
                 <span>@(mFormModel.ID == 0 ? "새 팀" : "수정 중")</span>
             </div>
-            <MudTextField @bind-Value="mFormModel.TeamKey" Label="팀 키" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-            <MudTextField @bind-Value="mFormModel.DisplayName" Label="표시 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <div class="hub-form-hint">팀 이름은 사용자 화면에 그대로 표시됩니다. 고유 코드는 영문/숫자로 짧게 정해두면 나중에 연동과 정리에 도움이 됩니다.</div>
+            <MudTextField @bind-Value="mFormModel.DisplayName" Label="팀 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <MudTextField @bind-Value="mFormModel.TeamKey" Label="팀 고유 코드" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             <MudNumericField T="int" @bind-Value="mFormModel.SortOrder" Label="표시 순서" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-            <SettingIdField @bind-Value="mFormModel.MaterialsFolderID" Label="팀 자료 폴더 ID" />
-            <SettingIdField @bind-Value="mFormModel.ApprovedFolderID" Label="결재 완료 자료 폴더 ID" />
-            <SettingIdField @bind-Value="mFormModel.CalendarID" Label="캘린더 ID" />
-            <SettingIdField @bind-Value="mFormModel.TaskListID" Label="할 일 목록 ID" />
             <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="활성 상태" Color="Color.Primary" />
+            <MudExpansionPanels Elevation="0" Class="hub-advanced-settings hub-team-advanced-settings">
+                <MudExpansionPanel Text="고급: 이 팀의 Google 연결 ID">
+                    <div class="hub-form-hint">대부분은 Google 연결 메뉴에서 목록을 선택해 연결하면 됩니다. 정확한 ID를 직접 입력해야 할 때만 수정하세요.</div>
+                    <SettingIdField @bind-Value="mFormModel.MaterialsFolderID" Label="팀 자료 폴더 ID" />
+                    <SettingIdField @bind-Value="mFormModel.ApprovedFolderID" Label="결재 완료 자료 폴더 ID" />
+                    <SettingIdField @bind-Value="mFormModel.CalendarID" Label="캘린더 ID" />
+                    <SettingIdField @bind-Value="mFormModel.TaskListID" Label="할 일 목록 ID" />
+                </MudExpansionPanel>
+            </MudExpansionPanels>
             <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveTeamAsync" Class="hub-primary-action-button">저장</MudButton>
                 @if (mFormModel.ID != 0)
@@ -46,16 +52,16 @@
             <MudTable Items="mTeams" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
                 <HeaderContent>
                     <MudTh>순서</MudTh>
-                    <MudTh>팀 키</MudTh>
-                    <MudTh>표시 이름</MudTh>
+                    <MudTh>팀 이름</MudTh>
+                    <MudTh>고유 코드</MudTh>
                     <MudTh>사용자</MudTh>
                     <MudTh>상태</MudTh>
                     <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate Context="team">
                     <MudTd DataLabel="순서">@team.SortOrder</MudTd>
-                    <MudTd DataLabel="팀 키">@team.TeamKey</MudTd>
-                    <MudTd DataLabel="표시 이름">@team.DisplayName</MudTd>
+                    <MudTd DataLabel="팀 이름">@team.DisplayName</MudTd>
+                    <MudTd DataLabel="고유 코드">@team.TeamKey</MudTd>
                     <MudTd DataLabel="사용자">@team.UserAccounts.Count</MudTd>
                     <MudTd DataLabel="상태"><span class="@(team.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(team.IsActive ? "활성" : "비활성")</span></MudTd>
                     <MudTd DataLabel="작업" Class="hub-action-cell">

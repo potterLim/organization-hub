@@ -259,12 +259,12 @@
                 <MudTable Items="mTaskLists" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
                     <HeaderContent>
                         <MudTh>목록</MudTh>
-                        <MudTh>ID</MudTh>
+                        <MudTh>종류</MudTh>
                         <MudTh></MudTh>
                     </HeaderContent>
                     <RowTemplate Context="taskList">
                         <MudTd DataLabel="목록">@taskList.Title</MudTd>
-                        <MudTd DataLabel="ID">@taskList.ID</MudTd>
+                        <MudTd DataLabel="종류">Google Tasks</MudTd>
                         <MudTd DataLabel="작업" Class="hub-action-cell">
                             <div class="hub-table-actions">
                                 <MudTooltip Text="이 목록으로 연결">

@@ -27,14 +27,14 @@
             </div>
             <MudTextField @bind-Value="mFormModel.Name" Label="결재 경로 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             <MudTextField @bind-Value="mFormModel.Description" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Immediate="true" />
-            <MudSelect T="int?" Label="이 경로를 사용할 팀" Value="mFormModel.AppliesToTeamID" ValueChanged="setAppliesToTeamID" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+            <MudSelect T="int?" Label="요청을 올리는 팀" Value="mFormModel.AppliesToTeamID" ValueChanged="setAppliesToTeamID" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
                 @foreach (Team team in mTeams)
                 {
                     <MudSelectItem T="int?" Value="@((int?)team.ID)">@team.DisplayName</MudSelectItem>
                 }
             </MudSelect>
-            <MudNumericField T="int" @bind-Value="mFormModel.Priority" Label="겹칠 때 먼저 적용할 순서" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-            <div class="hub-form-hint">같은 요청에 여러 경로가 맞으면 숫자가 작은 경로가 먼저 쓰입니다. 특정 팀 경로는 10처럼 작게, 전체 기본 경로는 100처럼 크게 두면 구분하기 쉽습니다.</div>
+            <MudNumericField T="int" @bind-Value="mFormModel.Priority" Label="적용 우선순위" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <div class="hub-form-hint">같은 요청에 여러 경로가 맞으면 우선순위 숫자가 작은 경로가 선택됩니다. 팀 전용 경로는 낮게, 전체 기본 경로는 높게 두면 관리하기 쉽습니다.</div>
             <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="바로 사용" Color="Color.Primary" />
 
             <MudDivider Class="my-4" />
@@ -55,7 +55,7 @@
                         </div>
                         <div class="hub-workflow-step-fields">
                             <MudTextField @bind-Value="step.StepName" Label="단계 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-                            <MudSelect T="EApproverSelectionType" Label="승인자 선택 방식" Value="step.ApproverSelectionType" ValueChanged="@(selectionType => setApproverSelectionType(step, selectionType))" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudSelect T="EApproverSelectionType" Label="승인자를 찾는 방법" Value="step.ApproverSelectionType" ValueChanged="@(selectionType => setApproverSelectionType(step, selectionType))" Variant="Variant.Outlined" Margin="Margin.Dense">
                                 <MudSelectItem T="EApproverSelectionType" Value="EApproverSelectionType.SpecificUser">특정 사용자</MudSelectItem>
                                 <MudSelectItem T="EApproverSelectionType" Value="EApproverSelectionType.SpecificPosition">특정 직책</MudSelectItem>
                                 <MudSelectItem T="EApproverSelectionType" Value="EApproverSelectionType.PositionInRequesterTeam">요청자 팀의 직책</MudSelectItem>
@@ -114,6 +114,26 @@
                 }
             </div>
 
+            <div class="hub-workflow-preview">
+                <div class="hub-workflow-preview-heading">
+                    <MudIcon Icon="@Icons.Material.Filled.Route" Size="Size.Small" />
+                    <span>결재 흐름 미리보기</span>
+                </div>
+                <div class="hub-muted">@getWorkflowTargetPreview()</div>
+                <div class="hub-workflow-preview-steps">
+                    @foreach (ApprovalWorkflowStepFormModel step in mFormModel.Steps.OrderBy(step => step.StepOrder))
+                    {
+                        <div class="hub-workflow-preview-step">
+                            <span>@step.StepOrder</span>
+                            <div>
+                                <strong>@step.StepName</strong>
+                                <div>@getWorkflowStepPreview(step)</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
             <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveWorkflowAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
                 @if (mFormModel.ID != 0)
@@ -128,7 +148,7 @@
             <MudText Typo="Typo.h6">결재 경로 목록</MudText>
             <MudTable Items="mWorkflows" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
                 <HeaderContent>
-                    <MudTh>적용 순서</MudTh>
+                    <MudTh>우선순위</MudTh>
                     <MudTh>이름</MudTh>
                     <MudTh>적용 팀</MudTh>
                     <MudTh>단계</MudTh>
@@ -136,7 +156,7 @@
                     <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate Context="workflow">
-                    <MudTd DataLabel="적용 순서">@workflow.Priority</MudTd>
+                    <MudTd DataLabel="우선순위">@workflow.Priority</MudTd>
                     <MudTd DataLabel="이름">@workflow.Name</MudTd>
                     <MudTd DataLabel="적용 팀">@getWorkflowTeamName(workflow)</MudTd>
                     <MudTd DataLabel="단계">@workflow.Steps.Count</MudTd>
@@ -327,6 +347,88 @@
         }
 
         return user.DisplayName + " · " + user.Team.DisplayName;
+    }
+
+    private string getWorkflowTargetPreview()
+    {
+        if (mFormModel.AppliesToTeamID.HasValue == false)
+        {
+            return "모든 팀 요청에 적용됩니다. 팀 전용 경로와 겹치면 우선순위 숫자가 낮은 경로가 먼저 선택됩니다.";
+        }
+
+        Team? teamOrNull = mTeams.FirstOrDefault(team => team.ID == mFormModel.AppliesToTeamID.Value);
+        if (teamOrNull == null)
+        {
+            return "선택한 팀 요청에 적용됩니다.";
+        }
+
+        return teamOrNull.DisplayName + " 팀 요청에 적용됩니다.";
+    }
+
+    private string getWorkflowStepPreview(ApprovalWorkflowStepFormModel step)
+    {
+        string approverText = getApproverPreview(step);
+        if (step.IsRequired)
+        {
+            return approverText + "에게 반드시 결재를 받습니다.";
+        }
+
+        return approverText + "에게 필요한 경우 결재를 받습니다.";
+    }
+
+    private string getApproverPreview(ApprovalWorkflowStepFormModel step)
+    {
+        if (step.ApproverSelectionType == EApproverSelectionType.SpecificUser)
+        {
+            UserAccount? userOrNull = mUsers.FirstOrDefault(user => step.ApproverUserID.HasValue && user.ID == step.ApproverUserID.Value);
+            if (userOrNull == null)
+            {
+                return "선택한 사용자";
+            }
+
+            return getUserDisplayName(userOrNull);
+        }
+
+        if (step.ApproverSelectionType == EApproverSelectionType.SpecificPosition)
+        {
+            return getSelectedPositionPreview(step, "선택한 직책");
+        }
+
+        if (step.ApproverSelectionType == EApproverSelectionType.PositionInRequesterTeam)
+        {
+            return "요청자 팀의 " + getSelectedPositionPreview(step, "선택한 직책");
+        }
+
+        if (step.ApproverSelectionType == EApproverSelectionType.PositionInSelectedTeam)
+        {
+            string teamText = "선택한 팀";
+            Team? teamOrNull = mTeams.FirstOrDefault(team => step.ApproverTeamID.HasValue && team.ID == step.ApproverTeamID.Value);
+            if (teamOrNull != null)
+            {
+                teamText = teamOrNull.DisplayName;
+            }
+
+            return teamText + "의 " + getSelectedPositionPreview(step, "선택한 직책");
+        }
+
+        PermissionDefinition? definitionOrNull = mPermissionDefinitions.FirstOrDefault(definition => definition.Key == step.RequiredPermissionKey);
+        if (definitionOrNull == null)
+        {
+            return "선택한 권한 보유자";
+        }
+
+        return definitionOrNull.DisplayName + " 권한 보유자";
+    }
+
+    private string getSelectedPositionPreview(ApprovalWorkflowStepFormModel step, string fallback)
+    {
+        OrganizationPosition? positionOrNull = mPositions.FirstOrDefault(position => step.ApproverPositionID.HasValue && position.ID == step.ApproverPositionID.Value);
+        if (positionOrNull == null)
+        {
+            return fallback;
+        }
+
+        return getPositionDisplayName(positionOrNull);
     }
 
     private void showResult(ServiceResult result, string successMessage)
