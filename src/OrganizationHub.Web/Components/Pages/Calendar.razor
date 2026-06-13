@@ -178,11 +178,44 @@ else
                         </div>
                     }
                 }
+                else if (mSelectedDayOrNull.HasValue)
+                {
+                    IReadOnlyList<CalendarEventItem> selectedDayEvents = getSelectedDayEvents();
+                    <div class="hub-calendar-selected-head">
+                        <div class="hub-calendar-selected-title-group">
+                            <MudText Typo="Typo.h6">@formatSelectedDayTitle()</MudText>
+                            <span class="hub-calendar-selected-calendar">@selectedDayEvents.Count.ToString(CultureInfo.InvariantCulture)건</span>
+                        </div>
+                        <MudTooltip Text="닫기">
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" Size="Size.Small" OnClick="clearSelectedDay" Class="hub-calendar-detail-close" aria-label="날짜별 일정 닫기" />
+                        </MudTooltip>
+                    </div>
+                    @if (selectedDayEvents.Count == 0)
+                    {
+                        <div class="hub-empty hub-empty-state hub-calendar-detail-empty">
+                            <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Medium" />
+                            <span>이 날짜의 일정이 없습니다.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="hub-calendar-day-detail-list">
+                            @foreach (CalendarEventItem calendarEvent in selectedDayEvents)
+                            {
+                                <button type="button" class="@getCalendarDayDetailItemClass(calendarEvent)" data-event-id="@calendarEvent.ID" @onclick="@(() => selectEvent(calendarEvent))">
+                                    <span>@formatCalendarChipTime(calendarEvent)</span>
+                                    <strong>@calendarEvent.Summary</strong>
+                                    <small>@calendarEvent.CalendarName</small>
+                                </button>
+                            }
+                        </div>
+                    }
+                }
                 else
                 {
                     <div class="hub-empty hub-empty-state hub-calendar-detail-empty">
                         <MudIcon Icon="@Icons.Material.Filled.TouchApp" Size="Size.Medium" />
-                        <span>일정을 선택해 주세요.</span>
+                        <span>날짜나 일정을 선택해 주세요.</span>
                     </div>
                 }
             </MudPaper>
@@ -218,21 +251,16 @@ else
                                     </div>
                                     @if (dayCell.Events.Count > 0)
                                     {
-                                        <div class="hub-calendar-day-events">
-                                            @foreach (CalendarEventItem calendarEvent in getVisibleDayEvents(dayCell))
-                                            {
-                                                <div class="@getCalendarEventChipClass(calendarEvent)">
-                                                    <button type="button" class="hub-calendar-event-main" data-event-id="@calendarEvent.ID" @onclick="@(() => openEventFromCalendarGrid(calendarEvent))">
-                                                        <span>@formatCalendarChipTime(calendarEvent)</span>
-                                                        <strong>@calendarEvent.Summary</strong>
-                                                    </button>
-                                                </div>
-                                            }
-                                            @if (getHiddenDayEventCount(dayCell) > 0)
-                                            {
-                                                <div class="hub-calendar-more">+@getHiddenDayEventCount(dayCell)</div>
-                                            }
-                                        </div>
+                                        <button type="button" class="hub-calendar-day-summary" @onclick="@(() => selectDay(dayCell))" aria-label="@getDaySummaryLabel(dayCell)">
+                                            <span class="hub-calendar-day-count">@getDayEventCountText(dayCell)</span>
+                                            <span class="hub-calendar-day-time">@getDayTimePreview(dayCell)</span>
+                                            <span class="hub-calendar-day-dots" aria-hidden="true">
+                                                @foreach (CalendarEventItem calendarEvent in getPreviewDayEvents(dayCell))
+                                                {
+                                                    <span class="@getCalendarDayDotClass(calendarEvent)"></span>
+                                                }
+                                            </span>
+                                        </button>
                                     }
                                 </div>
                             }
@@ -327,6 +355,7 @@ else
     private readonly string[] mCalendarWeekdayLabels = new[] { "일", "월", "화", "수", "목", "금", "토" };
     private CalendarEventItem? mDeleteCandidateOrNull;
     private CalendarEventItem? mSelectedEventOrNull;
+    private DateTime? mSelectedDayOrNull;
     private string mSelectedCalendarID = "all";
     private string mErrorMessage = string.Empty;
     private string mEditorCalendarID = string.Empty;
@@ -524,21 +553,6 @@ else
         return calendarEvent.Start.Value.ToLocalTime().Date;
     }
 
-    private IReadOnlyList<CalendarEventItem> getVisibleDayEvents(CalendarDayCell dayCell)
-    {
-        return dayCell.Events.Take(3).ToList();
-    }
-
-    private int getHiddenDayEventCount(CalendarDayCell dayCell)
-    {
-        return Math.Max(0, dayCell.Events.Count - 3);
-    }
-
-    private void openEventFromCalendarGrid(CalendarEventItem calendarEvent)
-    {
-        selectEvent(calendarEvent);
-    }
-
     private string getCalendarViewButtonClass(ECalendarDisplayMode displayMode)
     {
         ECalendarDisplayMode currentDisplayMode = mIsCalendarMonthView ? ECalendarDisplayMode.Month : ECalendarDisplayMode.List;
@@ -571,14 +585,71 @@ else
         return className;
     }
 
-    private string getCalendarEventChipClass(CalendarEventItem calendarEvent)
+    private IReadOnlyList<CalendarEventItem> getPreviewDayEvents(CalendarDayCell dayCell)
+    {
+        return dayCell.Events.Take(4).ToList();
+    }
+
+    private IReadOnlyList<CalendarEventItem> getSelectedDayEvents()
+    {
+        if (mSelectedDayOrNull.HasValue == false)
+        {
+            return new List<CalendarEventItem>();
+        }
+
+        DateTime selectedDay = mSelectedDayOrNull.Value.Date;
+        return mMonthEvents
+            .Where(calendarEvent => getEventLocalDateOrNull(calendarEvent) == selectedDay)
+            .OrderBy(calendarEvent => calendarEvent.Start)
+            .ThenBy(calendarEvent => calendarEvent.Summary)
+            .ToList();
+    }
+
+    private string getDayEventCountText(CalendarDayCell dayCell)
+    {
+        return dayCell.Events.Count.ToString(CultureInfo.InvariantCulture) + "건";
+    }
+
+    private string getDayTimePreview(CalendarDayCell dayCell)
+    {
+        CalendarEventItem? firstEventOrNull = dayCell.Events.FirstOrDefault();
+        if (firstEventOrNull == null)
+        {
+            return string.Empty;
+        }
+
+        string firstTimeText = formatCalendarChipTime(firstEventOrNull);
+        if (dayCell.Events.Count == 1)
+        {
+            return firstTimeText;
+        }
+
+        return firstTimeText + " 외 " + (dayCell.Events.Count - 1).ToString(CultureInfo.InvariantCulture);
+    }
+
+    private string getDaySummaryLabel(CalendarDayCell dayCell)
+    {
+        return dayCell.Date.ToString("M월 d일", CultureInfo.InvariantCulture) + " 일정 " + getDayEventCountText(dayCell) + " 보기";
+    }
+
+    private string getCalendarDayDotClass(CalendarEventItem calendarEvent)
     {
         if (calendarEvent.CanEdit)
         {
-            return "hub-calendar-event-chip hub-calendar-event-chip-editable";
+            return "hub-calendar-day-dot hub-calendar-day-dot-editable";
         }
 
-        return "hub-calendar-event-chip";
+        return "hub-calendar-day-dot";
+    }
+
+    private string getCalendarDayDetailItemClass(CalendarEventItem calendarEvent)
+    {
+        if (calendarEvent.CanEdit)
+        {
+            return "hub-calendar-day-detail-item hub-calendar-day-detail-item-editable";
+        }
+
+        return "hub-calendar-day-detail-item";
     }
 
     private void openCreateEditor()
@@ -592,6 +663,7 @@ else
         mIsEditorOpen = true;
         mIsEditing = false;
         mSelectedEventOrNull = null;
+        mSelectedDayOrNull = null;
         mEditorEventID = string.Empty;
         mEditorSummary = string.Empty;
         mEditorDescription = string.Empty;
@@ -608,6 +680,7 @@ else
         mIsEditorOpen = true;
         mIsEditing = true;
         mSelectedEventOrNull = calendarEvent;
+        mSelectedDayOrNull = getEventLocalDateOrNull(calendarEvent);
         mEditorEventID = calendarEvent.ID;
         mEditorCalendarID = calendarEvent.CalendarID;
         mEditorSummary = calendarEvent.Summary;
@@ -628,12 +701,29 @@ else
     private void selectEvent(CalendarEventItem calendarEvent)
     {
         mSelectedEventOrNull = calendarEvent;
+        mSelectedDayOrNull = getEventLocalDateOrNull(calendarEvent);
+        mIsEditorOpen = false;
+        mEditorMessage = string.Empty;
+    }
+
+    private void selectDay(CalendarDayCell dayCell)
+    {
+        mSelectedDayOrNull = dayCell.Date.Date;
+        mSelectedEventOrNull = null;
         mIsEditorOpen = false;
         mEditorMessage = string.Empty;
     }
 
     private void clearSelectedEvent()
     {
+        mSelectedEventOrNull = null;
+        mIsEditorOpen = false;
+        mEditorMessage = string.Empty;
+    }
+
+    private void clearSelectedDay()
+    {
+        mSelectedDayOrNull = null;
         mSelectedEventOrNull = null;
         mIsEditorOpen = false;
         mEditorMessage = string.Empty;
@@ -1047,6 +1137,16 @@ else
         }
 
         return calendarEvent.Start.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private string formatSelectedDayTitle()
+    {
+        if (mSelectedDayOrNull.HasValue == false)
+        {
+            return "날짜별 일정";
+        }
+
+        return mSelectedDayOrNull.Value.ToString("M월 d일 dddd", CultureInfo.GetCultureInfo("ko-KR"));
     }
 
     private string formatCalendarEventMeta(CalendarEventItem calendarEvent)

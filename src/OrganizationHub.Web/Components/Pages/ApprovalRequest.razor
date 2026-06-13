@@ -168,10 +168,29 @@ else
                 </div>
                 @if (mIsDestinationFolderCreateOpen)
                 {
-                    <div class="hub-folder-create-panel">
-                        <MudTextField @bind-Value="mNewDestinationFolderName" Label="폴더 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-folder-create-input" />
+                    <div class="hub-folder-create-panel" role="group" aria-label="새 폴더 만들기">
+                        <div class="hub-folder-create-head">
+                            <span class="hub-folder-create-icon">
+                                <MudIcon Icon="@Icons.Material.Filled.CreateNewFolder" Size="Size.Small" />
+                            </span>
+                            <div>
+                                <strong>새 폴더 만들기</strong>
+                                <span>승인본 저장 위치 안에 새 폴더가 만들어집니다.</span>
+                            </div>
+                            <MudTooltip Text="닫기">
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Color="Color.Default" OnClick="closeDestinationFolderCreate" aria-label="새 폴더 만들기 닫기" />
+                            </MudTooltip>
+                        </div>
+                        <MudTextField @bind-Value="mNewDestinationFolderName"
+                                      Label="폴더 이름"
+                                      Placeholder="예: 승인 완료 자료"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Immediate="true"
+                                      OnKeyDown="handleDestinationFolderCreateKeyDownAsync"
+                                      Class="hub-folder-create-input" />
                         <div class="hub-folder-create-actions">
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@mIsCreatingDestinationFolder" OnClick="createDestinationFolderAsync">만들기</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@mIsCreatingDestinationFolder" OnClick="createDestinationFolderAsync">폴더 만들기</MudButton>
                             <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="closeDestinationFolderCreate">취소</MudButton>
                         </div>
                     </div>
@@ -207,47 +226,64 @@ else
         <MudItem xs="12" lg="4">
             <MudStack Spacing="4">
                 <MudPaper Class="hub-card hub-form-card hub-approval-line-card pa-4">
-                    <MudText Typo="Typo.h6">결재선</MudText>
-                    <MudTextField T="string" Value="@mFormModel.Title" ValueChanged="handleTitleChangedAsync" Label="제목" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    <MudSelect T="int" Label="결재 단계" Value="mFormModel.StepCount" ValueChanged="handleStepCountChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <div class="hub-approval-line-head">
+                        <MudText Typo="Typo.h6">결재 경로</MudText>
+                        <MudText Typo="Typo.body2" Class="hub-muted">요청 후 아래 순서대로 검토와 승인이 진행됩니다.</MudText>
+                    </div>
+                    <MudTextField T="string" Value="@mFormModel.Title" ValueChanged="handleTitleChangedAsync" Label="요청 제목" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudSelect T="int" Label="결재 방식" Value="mFormModel.StepCount" ValueChanged="handleStepCountChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@getApprovalStepDescription()">
                         @foreach (int stepCount in mCreateContext.AvailableStepCounts)
                         {
-                            <MudSelectItem T="int" Value="@stepCount">@(stepCount)단계</MudSelectItem>
+                            <MudSelectItem T="int" Value="@stepCount">@getApprovalStepLabel(stepCount)</MudSelectItem>
                         }
                     </MudSelect>
-                    @if (mFormModel.StepCount >= 2)
-                    {
-                        <MudSelect @key="@("first-" + mFormModel.StepCount)" T="int" Label="1차 결재권자" Value="mFormModel.FirstApproverUserID" ValueChanged="handleFirstApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
-                            @foreach (ApprovalUserOption userOption in getFirstApproverOptions())
-                            {
-                                <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
-                            }
-                        </MudSelect>
-                    }
-                    @if (mFormModel.StepCount == 3)
-                    {
-                        <MudSelect @key="@("second-" + mFormModel.StepCount)" T="int" Label="2차 결재권자" Value="mFormModel.SecondApproverUserID" ValueChanged="handleSecondApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
-                            @foreach (ApprovalUserOption userOption in getSecondApproverOptions())
-                            {
-                                <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
-                            }
-                        </MudSelect>
-                    }
-                    @if (mCreateContext.FinalApproverOptions.Count == 1)
-                    {
-                        <MudTextField Value="@mCreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="최종 결재권자" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
-                    }
-                    else
-                    {
-                        <MudSelect @key="@("final-" + mFormModel.StepCount)" T="int" Label="최종 결재권자" Value="mFormModel.FinalApproverUserID" ValueChanged="handleFinalApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
-                            @foreach (ApprovalUserOption userOption in getFinalApproverOptions())
-                            {
-                                <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
-                            }
-                        </MudSelect>
-                    }
+                    <div class="hub-approval-flow-preview" aria-label="결재 진행 순서">
+                        @foreach (ApprovalFlowPreviewItem previewItem in getApprovalFlowPreviewItems())
+                        {
+                            <div class="@getApprovalFlowStepClass(previewItem)">
+                                <span class="hub-approval-flow-number">@previewItem.StepNumber</span>
+                                <div>
+                                    <strong>@previewItem.Title</strong>
+                                    <span>@previewItem.ApproverLabel</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="hub-approval-approver-fields">
+                        @if (mFormModel.StepCount >= 2)
+                        {
+                            <MudSelect @key="@("first-" + mFormModel.StepCount)" T="int" Label="팀 검토자" Value="mFormModel.FirstApproverUserID" ValueChanged="handleFirstApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                @foreach (ApprovalUserOption userOption in getFirstApproverOptions())
+                                {
+                                    <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
+                                }
+                            </MudSelect>
+                        }
+                        @if (mFormModel.StepCount == 3)
+                        {
+                            <MudSelect @key="@("second-" + mFormModel.StepCount)" T="int" Label="추가 검토자" Value="mFormModel.SecondApproverUserID" ValueChanged="handleSecondApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                @foreach (ApprovalUserOption userOption in getSecondApproverOptions())
+                                {
+                                    <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
+                                }
+                            </MudSelect>
+                        }
+                        @if (mCreateContext.FinalApproverOptions.Count == 1)
+                        {
+                            <MudTextField Value="@mCreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="최종 승인자" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
+                        }
+                        else
+                        {
+                            <MudSelect @key="@("final-" + mFormModel.StepCount)" T="int" Label="최종 승인자" Value="mFormModel.FinalApproverUserID" ValueChanged="handleFinalApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                @foreach (ApprovalUserOption userOption in getFinalApproverOptions())
+                                {
+                                    <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
+                                }
+                            </MudSelect>
+                        }
+                    </div>
                     <div class="hub-submit-row">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Approval" Disabled="@(mIsSubmitting || string.IsNullOrWhiteSpace(mFormModel.FileID))" OnClick="submitRequestAsync" Class="hub-primary-action-button hub-approval-submit-button">결재 요청</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Approval" Disabled="@(mIsSubmitting || string.IsNullOrWhiteSpace(mFormModel.FileID))" OnClick="submitRequestAsync" Class="hub-primary-action-button hub-approval-submit-button">결재 요청 보내기</MudButton>
                     </div>
                     @if (string.IsNullOrWhiteSpace(mFormModel.FileID))
                     {
@@ -775,6 +811,20 @@ else
         mNewDestinationFolderName = string.Empty;
     }
 
+    private async Task handleDestinationFolderCreateKeyDownAsync(KeyboardEventArgs keyboardEventArgs)
+    {
+        if (keyboardEventArgs.Key == "Enter" && mIsCreatingDestinationFolder == false)
+        {
+            await createDestinationFolderAsync();
+            return;
+        }
+
+        if (keyboardEventArgs.Key == "Escape")
+        {
+            closeDestinationFolderCreate();
+        }
+    }
+
     private void selectFile(DriveFileItem file)
     {
         mFormModel.FileID = file.ID;
@@ -882,6 +932,86 @@ else
         return trimmedName;
     }
 
+    private string getApprovalStepLabel(int stepCount)
+    {
+        if (stepCount == 2)
+        {
+            return "팀 검토 + 최종 승인";
+        }
+
+        if (stepCount == 3)
+        {
+            return "팀 검토 + 추가 검토 + 최종 승인";
+        }
+
+        return stepCount.ToString(CultureInfo.InvariantCulture) + "단계";
+    }
+
+    private string getApprovalStepDescription()
+    {
+        if (mFormModel.StepCount == 3)
+        {
+            return "중요 문서처럼 중간 검토가 한 번 더 필요한 요청에 적합합니다.";
+        }
+
+        return "일반 문서처럼 팀 검토 후 바로 최종 승인을 받는 요청에 적합합니다.";
+    }
+
+    private IReadOnlyList<ApprovalFlowPreviewItem> getApprovalFlowPreviewItems()
+    {
+        List<ApprovalFlowPreviewItem> previewItems = new List<ApprovalFlowPreviewItem>();
+        if (mFormModel.StepCount >= 2)
+        {
+            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "팀 검토", mFormModel.FirstApproverUserID));
+        }
+
+        if (mFormModel.StepCount == 3)
+        {
+            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "추가 검토", mFormModel.SecondApproverUserID));
+        }
+
+        previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "최종 승인", mFormModel.FinalApproverUserID));
+        return previewItems;
+    }
+
+    private ApprovalFlowPreviewItem createApprovalFlowPreviewItem(int stepNumber, string title, int approverUserID)
+    {
+        ApprovalFlowPreviewItem previewItem = new ApprovalFlowPreviewItem();
+        previewItem.StepNumber = stepNumber.ToString(CultureInfo.InvariantCulture);
+        previewItem.Title = title;
+        previewItem.ApproverLabel = getApproverLabelOrPlaceholder(approverUserID);
+        previewItem.IsComplete = approverUserID > 0;
+        return previewItem;
+    }
+
+    private string getApproverLabelOrPlaceholder(int approverUserID)
+    {
+        if (approverUserID <= 0)
+        {
+            return "선택 필요";
+        }
+
+        ApprovalUserOption? userOptionOrNull = mCreateContext.ApproverOptions
+            .Concat(mCreateContext.FinalApproverOptions)
+            .FirstOrDefault(userOption => userOption.UserID == approverUserID);
+        if (userOptionOrNull == null)
+        {
+            return "선택 필요";
+        }
+
+        return userOptionOrNull.GetDisplayLabel();
+    }
+
+    private string getApprovalFlowStepClass(ApprovalFlowPreviewItem previewItem)
+    {
+        if (previewItem.IsComplete)
+        {
+            return "hub-approval-flow-step";
+        }
+
+        return "hub-approval-flow-step hub-approval-flow-step-empty";
+    }
+
     private string getFileCountText()
     {
         int folderCount = mFiles.Count(file => file.IsFolder);
@@ -933,5 +1063,13 @@ else
         }
 
         return Icons.Material.Filled.InsertDriveFile;
+    }
+
+    private sealed class ApprovalFlowPreviewItem
+    {
+        public string StepNumber { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string ApproverLabel { get; set; } = string.Empty;
+        public bool IsComplete { get; set; }
     }
 }

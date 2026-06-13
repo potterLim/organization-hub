@@ -1,49 +1,65 @@
 @inherits OrganizationHubComponentBase
-@implements IDisposable
 @inject INavigationMenuService NavigationMenuService
 @inject NavigationManager NavigationManager
 
+@if (mCanRenderContent)
+{
+    @ChildContent
+}
+else
+{
+    <div class="hub-route-guard-loading" aria-live="polite">
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+    </div>
+}
+
 @code
 {
-    private bool mIsDisposed;
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
 
-    protected override void OnInitialized()
-    {
-        NavigationManager.LocationChanged += handleLocationChanged;
-    }
+    private string mLastCheckedPath = string.Empty;
+    private bool mCanRenderContent;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnParametersSetAsync()
     {
-        if (firstRender)
-        {
-            await checkCurrentRouteAsync();
-        }
-    }
-
-    public void Dispose()
-    {
-        mIsDisposed = true;
-        NavigationManager.LocationChanged -= handleLocationChanged;
-    }
-
-    private void handleLocationChanged(object? sender, LocationChangedEventArgs args)
-    {
-        _ = InvokeAsync(checkCurrentRouteAsync);
+        await checkCurrentRouteAsync();
     }
 
     private async Task checkCurrentRouteAsync()
     {
-        bool hasSession = await loadUserSessionAsync();
-        if (hasSession == false || CurrentUserSessionOrNull == null)
+        Uri currentUri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        string currentPath = currentUri.AbsolutePath;
+        if (string.Equals(mLastCheckedPath, currentPath, StringComparison.OrdinalIgnoreCase) && mCanRenderContent)
         {
             return;
         }
 
-        Uri currentUri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-        bool canAccessPath = await NavigationMenuService.CanAccessPathAsync(CurrentUserSessionOrNull, currentUri.AbsolutePath, CancellationToken.None);
-        if (canAccessPath == false && mIsDisposed == false)
+        if (string.Equals(currentUri.AbsolutePath, "/access-denied", StringComparison.OrdinalIgnoreCase))
         {
-            NavigationManager.NavigateTo("/access-denied");
+            mLastCheckedPath = currentPath;
+            mCanRenderContent = true;
+            return;
         }
+
+        mCanRenderContent = false;
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession == false || CurrentUserSessionOrNull == null)
+        {
+            mLastCheckedPath = currentPath;
+            mCanRenderContent = true;
+            return;
+        }
+
+        bool canAccessPath = await NavigationMenuService.CanAccessPathAsync(CurrentUserSessionOrNull, currentUri.AbsolutePath, CancellationToken.None);
+        if (canAccessPath)
+        {
+            mLastCheckedPath = currentPath;
+            mCanRenderContent = true;
+            return;
+        }
+
+        mLastCheckedPath = string.Empty;
+        NavigationManager.NavigateTo("/access-denied");
     }
 }

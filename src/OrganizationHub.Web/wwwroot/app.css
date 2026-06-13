@@ -32,7 +32,7 @@ body {
     background: linear-gradient(135deg, #f8fbff 0%, #f1f6fd 38%, #e8f0fa 72%, #f2f0eb 100%);
     background-attachment: fixed;
     color: var(--hub-text-strong);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
     letter-spacing: 0;
     min-height: 100%;
 }
@@ -309,6 +309,10 @@ h1:focus {
     margin: 0 auto;
     max-width: var(--hub-frame);
     padding: 120px 20px 56px;
+}
+
+.hub-route-guard-loading {
+    padding: 24px 0;
 }
 
 .hub-page-header {
@@ -981,42 +985,56 @@ h1:focus {
     padding: 5px 7px;
 }
 
-.hub-calendar-day-events {
-    display: grid;
-    gap: 6px;
-    margin-top: 9px;
-}
-
-.hub-calendar-event-chip {
-    align-items: center;
-    background: rgba(33, 107, 255, .08);
-    border: 1px solid rgba(33, 107, 255, .12);
-    border-radius: 12px;
-    display: block;
-    min-height: 32px;
-    padding: 6px 8px;
-}
-
-.hub-calendar-event-chip-editable {
-    border-color: rgba(33, 107, 255, .22);
-    box-shadow: inset 3px 0 0 rgba(33, 107, 255, .42);
-}
-
-.hub-calendar-event-chip:not(.hub-calendar-event-chip-editable) .hub-calendar-event-main {
-    cursor: default;
-}
-
-.hub-calendar-event-main {
-    background: transparent;
-    border: 0;
+.hub-calendar-day-summary {
+    background: rgba(255, 255, 255, .64);
+    border: 1px solid rgba(78, 104, 145, .12);
+    border-radius: 14px;
     color: var(--hub-text-strong);
     cursor: pointer;
     display: grid;
-    gap: 2px;
-    min-width: 0;
-    width: 100%;
-    padding: 0;
+    gap: 8px;
+    margin-top: 10px;
+    min-height: 62px;
+    padding: 10px;
     text-align: left;
+    width: 100%;
+}
+
+.hub-calendar-day-summary:hover {
+    background: rgba(33, 107, 255, .08);
+    border-color: rgba(33, 107, 255, .2);
+}
+
+.hub-calendar-day-count {
+    color: var(--hub-text-strong);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.hub-calendar-day-time {
+    color: var(--hub-text-muted);
+    font-size: 11px;
+    font-weight: 850;
+    line-height: 1;
+}
+
+.hub-calendar-day-dots {
+    display: flex;
+    gap: 5px;
+    min-height: 7px;
+}
+
+.hub-calendar-day-dot {
+    background: rgba(78, 104, 145, .36);
+    border-radius: 999px;
+    display: inline-block;
+    height: 7px;
+    width: 7px;
+}
+
+.hub-calendar-day-dot-editable {
+    background: var(--hub-brand-deep);
 }
 
 .hub-calendar-row-button {
@@ -1038,28 +1056,55 @@ h1:focus {
     color: var(--hub-brand-deep);
 }
 
-.hub-calendar-event-main span {
+.hub-calendar-day-detail-list {
+    display: grid;
+    gap: 8px;
+}
+
+.hub-calendar-day-detail-item {
+    background: rgba(255, 255, 255, .58);
+    border: 1px solid rgba(78, 104, 145, .12);
+    border-radius: 16px;
+    color: var(--hub-text-strong);
+    cursor: pointer;
+    display: grid;
+    font: inherit;
+    gap: 4px;
+    min-width: 0;
+    padding: 12px 14px;
+    text-align: left;
+    width: 100%;
+}
+
+.hub-calendar-day-detail-item:hover {
+    background: rgba(33, 107, 255, .08);
+    border-color: rgba(33, 107, 255, .2);
+}
+
+.hub-calendar-day-detail-item-editable {
+    box-shadow: inset 3px 0 0 rgba(33, 107, 255, .42);
+}
+
+.hub-calendar-day-detail-item span {
     color: var(--hub-brand-deep);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 900;
     line-height: 1;
 }
 
-.hub-calendar-event-main strong {
-    display: block;
-    font-size: 12px;
+.hub-calendar-day-detail-item strong {
+    color: var(--hub-text-strong);
+    font-size: 14px;
     font-weight: 900;
-    line-height: 1.25;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
 }
 
-.hub-calendar-more {
+.hub-calendar-day-detail-item small {
     color: var(--hub-text-muted);
     font-size: 12px;
-    font-weight: 900;
-    padding: 2px 4px;
+    font-weight: 800;
+    line-height: 1.2;
 }
 
 .hub-delete-confirm {
@@ -2171,15 +2216,51 @@ h1:focus {
 }
 
 .hub-folder-create-panel {
-    align-items: center;
-    background: rgba(255, 255, 255, .62);
+    align-items: stretch;
+    background: rgba(255, 255, 255, .74);
     border: 1px solid rgba(78, 104, 145, .14);
-    border-radius: 18px;
+    border-radius: 20px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72);
     display: grid;
     gap: 12px;
-    grid-template-columns: minmax(0, 1fr) auto;
     margin: 0 0 14px;
-    padding: 12px;
+    padding: 14px;
+}
+
+.hub-folder-create-head {
+    align-items: center;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+}
+
+.hub-folder-create-head strong {
+    color: var(--hub-text-strong);
+    display: block;
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.hub-folder-create-head span:not(.hub-folder-create-icon) {
+    color: var(--hub-text-muted);
+    display: block;
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.45;
+    margin-top: 3px;
+}
+
+.hub-folder-create-icon {
+    align-items: center;
+    background: rgba(33, 107, 255, .1);
+    border: 1px solid rgba(33, 107, 255, .14);
+    border-radius: 12px;
+    color: var(--hub-brand-deep);
+    display: inline-flex;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
 }
 
 .hub-folder-create-input {
@@ -2190,6 +2271,7 @@ h1:focus {
     align-items: center;
     display: flex;
     gap: 8px;
+    justify-content: flex-end;
 }
 
 .hub-folder-tile-list {
@@ -2230,15 +2312,86 @@ h1:focus {
 
 .hub-approval-line-card {
     display: grid;
-    gap: 18px;
+    gap: 16px;
 }
 
 .hub-approval-line-card .mud-input-control {
     margin-bottom: 0 !important;
 }
 
+.hub-approval-line-head {
+    display: grid;
+    gap: 4px;
+}
+
+.hub-approval-flow-preview {
+    display: grid;
+    gap: 8px;
+}
+
+.hub-approval-flow-step {
+    align-items: center;
+    background: rgba(255, 255, 255, .62);
+    border: 1px solid rgba(78, 104, 145, .12);
+    border-radius: 16px;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    min-height: 58px;
+    padding: 10px 12px;
+}
+
+.hub-approval-flow-step-empty {
+    background: rgba(255, 255, 255, .42);
+    border-style: dashed;
+}
+
+.hub-approval-flow-number {
+    align-items: center;
+    background: linear-gradient(135deg, var(--hub-brand), var(--hub-brand-deep));
+    border-radius: 999px;
+    color: #ffffff;
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 900;
+    height: 30px;
+    justify-content: center;
+    line-height: 1;
+    width: 30px;
+}
+
+.hub-approval-flow-step-empty .hub-approval-flow-number {
+    background: rgba(78, 104, 145, .12);
+    color: var(--hub-text-muted);
+}
+
+.hub-approval-flow-step strong {
+    color: var(--hub-text-strong);
+    display: block;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.hub-approval-flow-step span:not(.hub-approval-flow-number) {
+    color: var(--hub-text-muted);
+    display: block;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.35;
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-approval-approver-fields {
+    display: grid;
+    gap: 12px;
+}
+
 .hub-approval-submit-button {
-    min-width: 188px;
+    min-width: 204px;
 }
 
 .hub-approval-submit-hint {
@@ -4179,15 +4332,14 @@ h1:focus {
         content: "일";
     }
 
-    .hub-calendar-event-chip {
-        border-radius: 14px;
-        min-height: 46px;
-        padding: 8px 8px 8px 10px;
+    .hub-calendar-day-summary {
+        align-items: center;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        min-height: 48px;
     }
 
-    .hub-calendar-event-main strong {
-        font-size: 13px;
-        white-space: normal;
+    .hub-calendar-day-dots {
+        justify-content: flex-end;
     }
 
     .hub-login-panel {
@@ -4323,7 +4475,10 @@ h1:focus {
 
     .hub-folder-create-panel {
         align-items: stretch;
-        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-folder-create-head {
+        grid-template-columns: 34px minmax(0, 1fr) auto;
     }
 
     .hub-folder-create-actions {

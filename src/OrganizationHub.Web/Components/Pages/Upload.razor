@@ -60,10 +60,29 @@
                 }
                 @if (mIsFolderCreateOpen)
                 {
-                    <div class="hub-folder-create-panel">
-                        <MudTextField @bind-Value="mNewFolderName" Label="폴더 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-folder-create-input" />
+                    <div class="hub-folder-create-panel" role="group" aria-label="새 폴더 만들기">
+                        <div class="hub-folder-create-head">
+                            <span class="hub-folder-create-icon">
+                                <MudIcon Icon="@Icons.Material.Filled.CreateNewFolder" Size="Size.Small" />
+                            </span>
+                            <div>
+                                <strong>새 폴더 만들기</strong>
+                                <span>현재 위치에 새 폴더가 만들어집니다.</span>
+                            </div>
+                            <MudTooltip Text="닫기">
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Color="Color.Default" OnClick="closeFolderCreate" aria-label="새 폴더 만들기 닫기" />
+                            </MudTooltip>
+                        </div>
+                        <MudTextField @bind-Value="mNewFolderName"
+                                      Label="폴더 이름"
+                                      Placeholder="예: 6월 정산 자료"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Immediate="true"
+                                      OnKeyDown="handleFolderCreateKeyDownAsync"
+                                      Class="hub-folder-create-input" />
                         <div class="hub-folder-create-actions">
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@mIsCreatingFolder" OnClick="createFolderAsync">만들기</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="@mIsCreatingFolder" OnClick="createFolderAsync">폴더 만들기</MudButton>
                             <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="closeFolderCreate">취소</MudButton>
                         </div>
                     </div>
@@ -349,6 +368,20 @@
     {
         mIsFolderCreateOpen = false;
         mNewFolderName = string.Empty;
+    }
+
+    private async Task handleFolderCreateKeyDownAsync(KeyboardEventArgs keyboardEventArgs)
+    {
+        if (keyboardEventArgs.Key == "Enter" && mIsCreatingFolder == false)
+        {
+            await createFolderAsync();
+            return;
+        }
+
+        if (keyboardEventArgs.Key == "Escape")
+        {
+            closeFolderCreate();
+        }
     }
 
     private void handleFileSelected(InputFileChangeEventArgs inputFileChangeEventArgs)

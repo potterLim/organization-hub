@@ -2,30 +2,30 @@
 
 <dialog id="components-reconnect-modal" data-nosnippet>
     <div class="components-reconnect-container">
-        <div class="components-rejoining-animation" aria-hidden="true">
-            <div></div>
-            <div></div>
+        <div class="components-reconnect-icon" aria-hidden="true">
+            <MudIcon Icon="@Icons.Material.Filled.WifiOff" Size="Size.Medium" />
         </div>
-        <p class="components-reconnect-first-attempt-visible">
-            Rejoining the server...
-        </p>
-        <p class="components-reconnect-repeated-attempt-visible">
-            Rejoin failed... trying again in <span id="components-seconds-to-next-attempt"></span> seconds.
-        </p>
-        <p class="components-reconnect-failed-visible">
-            Failed to rejoin.<br />Please retry or reload the page.
-        </p>
-        <button id="components-reconnect-button" class="components-reconnect-failed-visible">
-            Retry
-        </button>
-        <p class="components-pause-visible">
-            The session has been paused by the server.
-        </p>
-        <p class="components-resume-failed-visible">
-            Failed to resume the session.<br />Please retry or reload the page.
-        </p>
-        <button id="components-resume-button" class="components-pause-visible components-resume-failed-visible">
-            Resume
-        </button>
+        <div class="components-reconnect-copy">
+            <strong class="components-reconnect-first-attempt-visible">연결을 다시 확인하고 있습니다.</strong>
+            <strong class="components-reconnect-repeated-attempt-visible">아직 연결되지 않았습니다.</strong>
+            <strong class="components-reconnect-failed-visible">연결을 다시 시작해야 합니다.</strong>
+            <strong class="components-pause-visible">작업 세션이 잠시 멈췄습니다.</strong>
+            <strong class="components-resume-failed-visible">세션을 다시 시작하지 못했습니다.</strong>
+            <span class="components-reconnect-first-attempt-visible">잠시만 기다려 주세요.</span>
+            <span class="components-reconnect-repeated-attempt-visible"><span id="components-seconds-to-next-attempt"></span>초 후 자동으로 다시 시도합니다.</span>
+            <span class="components-reconnect-failed-visible">저장 전이라면 내용을 확인해 주세요.</span>
+            <span class="components-pause-visible components-resume-failed-visible">계속 진행하려면 아래 버튼을 눌러 주세요.</span>
+        </div>
+        <div class="components-reconnect-actions">
+            <button id="components-reconnect-button" class="components-reconnect-failed-visible" type="button">
+                다시 연결
+            </button>
+            <button id="components-resume-button" class="components-pause-visible components-resume-failed-visible" type="button">
+                세션 이어가기
+            </button>
+            <button class="components-reconnect-failed-visible components-resume-failed-visible components-reconnect-secondary" type="button" onclick="location.reload()">
+                새로고침
+            </button>
+        </div>
     </div>
 </dialog>

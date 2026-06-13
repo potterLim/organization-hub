@@ -35,8 +35,9 @@
     </MudDrawer>
     <MudMainContent Class="hub-main">
         <MudContainer MaxWidth="MaxWidth.False" Class="hub-container">
-            <MenuRouteGuard />
-            @Body
+            <MenuRouteGuard>
+                @Body
+            </MenuRouteGuard>
         </MudContainer>
     </MudMainContent>
 </MudLayout>
