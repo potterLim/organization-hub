@@ -182,7 +182,7 @@ public sealed class NavigationMenuService : INavigationMenuService
                 return true;
             }
 
-            int? targetTeamIDOrNull = MenuAccessLevelUtility.IsTeamScoped(menuItem.AccessLevel) ? userSession.TeamID : null;
+            int? targetTeamIDOrNull = getConfiguredPermissionTargetTeamIDOrNull(menuItem, userSession);
             foreach (string permissionKey in permissionKeys)
             {
                 bool hasPermission = await mOrganizationPermissionService.HasPermissionAsync(userSession, permissionKey, targetTeamIDOrNull, cancellationToken);
@@ -196,6 +196,36 @@ public sealed class NavigationMenuService : INavigationMenuService
         }
 
         return MenuAccessLevelUtility.IsRoleAllowed(menuItem.AccessLevel, userSession.Role);
+    }
+
+    private int? getConfiguredPermissionTargetTeamIDOrNull(NavigationMenuItem menuItem, UserSession userSession)
+    {
+        if (MenuAccessLevelUtility.IsTeamScoped(menuItem.AccessLevel))
+        {
+            return userSession.TeamID;
+        }
+
+        if (shouldUseUserTeamContext(menuItem))
+        {
+            return userSession.TeamID;
+        }
+
+        return null;
+    }
+
+    private bool shouldUseUserTeamContext(NavigationMenuItem menuItem)
+    {
+        switch (menuItem.MenuKey)
+        {
+            case "Calendar":
+            case "Todos":
+            case "ApprovalInbox":
+            case "ApprovalHistory":
+            case "WorkGuidelines":
+                return true;
+            default:
+                return false;
+        }
     }
 
     private IReadOnlyList<string> getMenuPermissionKeys(NavigationMenuItem menuItem)

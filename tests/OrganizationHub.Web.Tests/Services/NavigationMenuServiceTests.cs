@@ -191,6 +191,34 @@ public sealed class NavigationMenuServiceTests
         }
     }
 
+    [Fact]
+    public async Task ConfiguredOwnTeamPermissionShowsTeamContextMenusAsync()
+    {
+        using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
+        {
+            await seedConfiguredTeamContextUserAsync(dbContextFactory);
+            using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+            {
+                dbContext.NavigationMenuItems.Add(createMenuItem("Calendar", "일정", "/calendar", EMenuAccessLevel.Authenticated, 20));
+                dbContext.NavigationMenuItems.Add(createMenuItem("Todos", "할 일", "/todos", EMenuAccessLevel.Authenticated, 30));
+                dbContext.NavigationMenuItems.Add(createMenuItem("AdminSettings", "기본 설정", "/admin/settings", EMenuAccessLevel.Admin, 340));
+                dbContext.SaveChanges();
+            }
+
+            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory);
+            UserSession userSession = new UserSession(31, "team.context", "팀 맥락 사용자", EUserRole.TeamUser, 2, "Support", "고객지원팀");
+
+            IReadOnlyList<NavigationMenuItem> menus = await navigationMenuService.GetVisibleMenuItemsAsync(userSession, CancellationToken.None);
+
+            Assert.Contains(menus, menuItem => menuItem.MenuKey == "Calendar");
+            Assert.Contains(menus, menuItem => menuItem.MenuKey == "Todos");
+            Assert.DoesNotContain(menus, menuItem => menuItem.MenuKey == "AdminSettings");
+            Assert.True(await navigationMenuService.CanAccessPathAsync(userSession, "/calendar", CancellationToken.None));
+            Assert.True(await navigationMenuService.CanAccessPathAsync(userSession, "/todos", CancellationToken.None));
+            Assert.False(await navigationMenuService.CanAccessPathAsync(userSession, "/admin/settings", CancellationToken.None));
+        }
+    }
+
     private static async Task seedConfiguredPermissionUserAsync(TestDbContextFactory dbContextFactory)
     {
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
@@ -212,6 +240,40 @@ public sealed class NavigationMenuServiceTests
             userAccount.ID = 21;
             userAccount.Username = "configured";
             userAccount.DisplayName = "설정형 사용자";
+            userAccount.PasswordHash = "test";
+            userAccount.Role = EUserRole.TeamUser;
+            userAccount.Team = team;
+            userAccount.Position = position;
+            userAccount.IsActive = true;
+            userAccount.CreatedAt = DateTime.UtcNow;
+            dbContext.Teams.Add(team);
+            dbContext.Positions.Add(position);
+            dbContext.UserAccounts.Add(userAccount);
+            await dbContext.SaveChangesAsync(CancellationToken.None);
+        }
+    }
+
+    private static async Task seedConfiguredTeamContextUserAsync(TestDbContextFactory dbContextFactory)
+    {
+        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+        {
+            Team team = new Team();
+            team.ID = 2;
+            team.TeamKey = "Support";
+            team.DisplayName = "고객지원팀";
+            team.IsActive = true;
+            OrganizationPosition position = new OrganizationPosition();
+            position.Team = team;
+            position.Name = "일정 담당자";
+            position.Description = string.Empty;
+            position.SortOrder = 10;
+            position.IsActive = true;
+            addPermissionGrant(position, PermissionKeys.CALENDAR_READ, EPermissionScopeType.OwnTeam);
+            addPermissionGrant(position, PermissionKeys.TODOS_READ, EPermissionScopeType.OwnTeam);
+            UserAccount userAccount = new UserAccount();
+            userAccount.ID = 31;
+            userAccount.Username = "team.context";
+            userAccount.DisplayName = "팀 맥락 사용자";
             userAccount.PasswordHash = "test";
             userAccount.Role = EUserRole.TeamUser;
             userAccount.Team = team;
