@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -135,6 +136,11 @@ public sealed class NavigationMenuService : INavigationMenuService
             return false;
         }
 
+        if (isManagementFilesMenu(menuItem) && isManagementFilesUser(userSession) == false)
+        {
+            return false;
+        }
+
         if (userSession.IsManagementRole())
         {
             return true;
@@ -221,11 +227,27 @@ public sealed class NavigationMenuService : INavigationMenuService
             case "Todos":
             case "ApprovalInbox":
             case "ApprovalHistory":
+            case "ManagementFiles":
             case "WorkGuidelines":
                 return true;
             default:
                 return false;
         }
+    }
+
+    private bool isManagementFilesMenu(NavigationMenuItem menuItem)
+    {
+        return string.Equals(menuItem.MenuKey, "ManagementFiles", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool isManagementFilesUser(UserSession userSession)
+    {
+        if (userSession.Role == EUserRole.Admin || userSession.IsManagementRole())
+        {
+            return true;
+        }
+
+        return string.Equals(userSession.TeamKey, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY, StringComparison.OrdinalIgnoreCase);
     }
 
     private IReadOnlyList<string> getMenuPermissionKeys(NavigationMenuItem menuItem)

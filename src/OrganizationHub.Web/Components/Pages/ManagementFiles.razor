@@ -1,12 +1,74 @@
 @page "/management-files"
-@attribute [Authorize(Policy = OrganizationHubPolicies.MANAGEMENT_ACCESS)]
+@attribute [Authorize]
+@inherits OrganizationHubComponentBase
+@inject IOrganizationPermissionService OrganizationPermissionService
+@inject ITeamManagementService TeamManagementService
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle(OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME)</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">@OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME</h1>
+@if (mIsLoading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else if (mCanReadManagementFiles == false)
+{
+    <div class="hub-access-shell">
+        <MudPaper Class="hub-card hub-access-card">
+            <div class="hub-access-visual">
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Large" />
+            </div>
+            <MudText Typo="Typo.h4">접근 권한이 없습니다.</MudText>
+            <MudText Typo="Typo.body1" Class="hub-muted">현재 계정에는 이 화면이나 자료를 볼 권한이 없습니다. 필요한 경우 관리자에게 권한 변경을 요청해 주세요.</MudText>
+            <div class="hub-access-actions">
+                <MudButton Href="/dashboard" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Dashboard" Class="hub-primary-action-button">홈으로</MudButton>
+            </div>
+        </MudPaper>
     </div>
-</div>
+}
+else
+{
+    <div class="hub-page-header">
+        <div>
+            <h1 class="hub-page-title">@OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME</h1>
+        </div>
+    </div>
 
-<DriveFileBrowser FolderKind="EDriveFolderKind.TeamMaterials" ManagementTeamOnly="true" ShowTeam="false" ShowPreview="true" EnableSearch="true" SearchPlaceholder="관리팀 자료 검색" RootFolderLabel="@OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME" EmptyMessage="관리팀 자료가 없습니다." ErrorMessagePrefix="관리팀 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." />
+    <DriveFileBrowser FolderKind="EDriveFolderKind.TeamMaterials" ManagementTeamOnly="true" ShowTeam="false" ShowPreview="true" EnableSearch="true" SearchPlaceholder="관리팀 자료 검색" RootFolderLabel="@OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME" EmptyMessage="관리팀 자료가 없습니다." ErrorMessagePrefix="관리팀 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." />
+}
+
+@code
+{
+    private bool mIsLoading = true;
+    private bool mCanReadManagementFiles;
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool hasSession = await loadUserSessionAsync();
+        if (hasSession == false || CurrentUserSessionOrNull == null)
+        {
+            mIsLoading = false;
+            return;
+        }
+
+        mCanReadManagementFiles = await canReadManagementFilesAsync(CurrentUserSessionOrNull);
+        mIsLoading = false;
+    }
+
+    private async Task<bool> canReadManagementFilesAsync(UserSession userSession)
+    {
+        bool usesConfiguredPermissions = await OrganizationPermissionService.UsesConfiguredPermissionsAsync(userSession, CancellationToken.None);
+        if (usesConfiguredPermissions == false)
+        {
+            return userSession.Role == EUserRole.Admin || userSession.IsManagementRole();
+        }
+
+        IReadOnlyList<Team> teams = await TeamManagementService.GetTeamsAsync(CancellationToken.None);
+        Team? managementTeamOrNull = teams.FirstOrDefault(team => string.Equals(team.TeamKey, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY, StringComparison.OrdinalIgnoreCase));
+        if (managementTeamOrNull == null)
+        {
+            return false;
+        }
+
+        return await OrganizationPermissionService.HasPermissionAsync(userSession, PermissionKeys.FILES_READ, managementTeamOrNull.ID, CancellationToken.None);
+    }
+}
