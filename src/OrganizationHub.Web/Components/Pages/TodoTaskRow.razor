@@ -1,0 +1,119 @@
+<div class="@getRowClass()" data-task-id="@Task.ID">
+    @if (CanDrag)
+    {
+        <span class="hub-todo-drag-handle" data-task-id="@Task.ID" role="button" aria-label="순서 변경">
+            <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
+        </span>
+    }
+    <MudCheckBox T="bool" Value="@Task.IsCompleted" ValueChanged="CompletionChanged" Color="Color.Primary" Class="hub-todo-check" Disabled="@(CanWrite == false)" />
+    <div class="hub-todo-row-main">
+        @if (IsEditing)
+        {
+            <MudTextField T="string" Value="@EditingTitle" ValueChanged="EditingTitleChanged" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Class="hub-todo-edit-field" />
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="hub-todo-title">@Task.Title</MudText>
+            @if (string.IsNullOrWhiteSpace(TaskMeta) == false)
+            {
+                <MudText Typo="Typo.caption" Class="hub-muted hub-todo-meta">@TaskMeta</MudText>
+            }
+        }
+    </div>
+    <div class="hub-table-actions hub-todo-actions">
+        @if (CanWrite)
+        {
+            @if (IsDeleting)
+            {
+                <span class="hub-todo-delete-confirm">삭제할까요?</span>
+                <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="DeleteCanceled" Class="hub-todo-inline-button">취소</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" OnClick="DeleteConfirmed" Class="hub-todo-inline-button">삭제</MudButton>
+            }
+            else if (IsEditing)
+            {
+                <MudTooltip Text="저장">
+                    <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Primary" Size="Size.Small" OnClick="EditSaved" aria-label="저장" />
+                </MudTooltip>
+                <MudTooltip Text="취소">
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" Size="Size.Small" OnClick="EditCanceled" aria-label="취소" />
+                </MudTooltip>
+            }
+            else
+            {
+                <MudTooltip Text="수정">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="EditStarted" aria-label="수정" />
+                </MudTooltip>
+                <MudTooltip Text="삭제">
+                    <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Warning" Size="Size.Small" OnClick="DeleteRequested" aria-label="삭제" />
+                </MudTooltip>
+            }
+        }
+    </div>
+</div>
+
+@code
+{
+    [Parameter]
+    [EditorRequired]
+    public TodoTaskItem Task { get; set; } = new TodoTaskItem();
+
+    [Parameter]
+    public ETodoTaskCompletionState CompletionState { get; set; }
+
+    [Parameter]
+    public bool CanDrag { get; set; }
+
+    [Parameter]
+    public bool CanWrite { get; set; }
+
+    [Parameter]
+    public bool IsEditing { get; set; }
+
+    [Parameter]
+    public string EditingTitle { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> EditingTitleChanged { get; set; }
+
+    [Parameter]
+    public bool IsDeleting { get; set; }
+
+    [Parameter]
+    public string TaskMeta { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<bool> CompletionChanged { get; set; }
+
+    [Parameter]
+    public EventCallback EditStarted { get; set; }
+
+    [Parameter]
+    public EventCallback EditSaved { get; set; }
+
+    [Parameter]
+    public EventCallback EditCanceled { get; set; }
+
+    [Parameter]
+    public EventCallback DeleteRequested { get; set; }
+
+    [Parameter]
+    public EventCallback DeleteConfirmed { get; set; }
+
+    [Parameter]
+    public EventCallback DeleteCanceled { get; set; }
+
+    private string getRowClass()
+    {
+        string rowClass = CompletionState == ETodoTaskCompletionState.Completed ? "hub-todo-row hub-todo-row-completed" : "hub-todo-row";
+        if (CanDrag)
+        {
+            rowClass += " hub-todo-row-draggable";
+        }
+        else
+        {
+            rowClass += " hub-todo-row-static";
+        }
+
+        return rowClass;
+    }
+}
