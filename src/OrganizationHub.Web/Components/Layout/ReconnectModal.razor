@@ -1,21 +1,38 @@
 <script type="module" src="/js/reconnectModal.js"></script>
 
-<dialog id="components-reconnect-modal" data-nosnippet>
+<dialog id="components-reconnect-modal" aria-label="연결 상태 알림" aria-live="polite" data-nosnippet>
     <div class="components-reconnect-container">
+        <div class="components-reconnect-status" aria-hidden="true">
+            <span class="components-reconnect-pulse"></span>
+            <span class="components-reconnect-first-attempt-visible">연결 확인 중</span>
+            <span class="components-reconnect-repeated-attempt-visible">자동 재시도 중</span>
+            <span class="components-reconnect-failed-visible">확인 필요</span>
+            <span class="components-pause-visible">세션 일시정지</span>
+            <span class="components-resume-failed-visible">재시작 필요</span>
+        </div>
+
         <div class="components-reconnect-icon" aria-hidden="true">
-            <MudIcon Icon="@Icons.Material.Filled.WifiOff" Size="Size.Medium" />
+            <MudIcon Icon="@Icons.Material.Filled.WifiOff" Size="Size.Small" />
         </div>
+
         <div class="components-reconnect-copy">
-            <strong class="components-reconnect-first-attempt-visible">연결을 다시 확인하고 있습니다.</strong>
-            <strong class="components-reconnect-repeated-attempt-visible">아직 연결되지 않았습니다.</strong>
-            <strong class="components-reconnect-failed-visible">연결을 다시 시작해야 합니다.</strong>
+            <strong class="components-reconnect-first-attempt-visible">연결을 확인하고 있습니다.</strong>
+            <strong class="components-reconnect-repeated-attempt-visible">다시 연결을 시도하고 있습니다.</strong>
+            <strong class="components-reconnect-failed-visible">다시 연결이 필요합니다.</strong>
             <strong class="components-pause-visible">작업 세션이 잠시 멈췄습니다.</strong>
-            <strong class="components-resume-failed-visible">세션을 다시 시작하지 못했습니다.</strong>
-            <span class="components-reconnect-first-attempt-visible">잠시만 기다려 주세요.</span>
+            <strong class="components-resume-failed-visible">세션을 이어갈 수 없습니다.</strong>
+
+            <span class="components-reconnect-first-attempt-visible">잠시만 기다려 주세요. 저장된 내용은 유지됩니다.</span>
             <span class="components-reconnect-repeated-attempt-visible"><span id="components-seconds-to-next-attempt"></span>초 후 자동으로 다시 시도합니다.</span>
-            <span class="components-reconnect-failed-visible">저장 전이라면 내용을 확인해 주세요.</span>
-            <span class="components-pause-visible components-resume-failed-visible">계속 진행하려면 아래 버튼을 눌러 주세요.</span>
+            <span class="components-reconnect-failed-visible">인터넷 연결을 확인한 뒤 다시 연결하거나 새로고침해 주세요.</span>
+            <span class="components-pause-visible">계속 진행하려면 세션을 이어가 주세요.</span>
+            <span class="components-resume-failed-visible">새로고침하면 최신 상태로 다시 시작합니다.</span>
         </div>
+
+        <div class="components-reconnect-progress" aria-hidden="true">
+            <span></span>
+        </div>
+
         <div class="components-reconnect-actions">
             <button id="components-reconnect-button" class="components-reconnect-failed-visible" type="button">
                 다시 연결

@@ -34,10 +34,12 @@ function handleReconnectStateChanged(event: ReconnectStateChangedEvent): void {
     }
 
     if (event.detail.state === "show") {
-        reconnectModalOrNull.showModal();
+        openModal();
     } else if (event.detail.state === "hide") {
-        reconnectModalOrNull.close();
+        document.removeEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
+        closeModal();
     } else if (event.detail.state === "failed") {
+        openModal();
         document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
     } else if (event.detail.state === "rejected") {
         location.reload();
@@ -57,7 +59,7 @@ async function retry(): Promise<void> {
             if (resumeSuccessful === false) {
                 location.reload();
             } else {
-                reconnectModalOrNull.close();
+                closeModal();
             }
         }
     } catch {
@@ -74,9 +76,23 @@ async function resume(): Promise<void> {
         const successful: boolean = await Blazor.resumeCircuit();
         if (successful === false) {
             location.reload();
+        } else {
+            closeModal();
         }
     } catch {
         reconnectModalOrNull.classList.replace("components-reconnect-paused", "components-reconnect-resume-failed");
+    }
+}
+
+function openModal(): void {
+    if (reconnectModalOrNull !== null && reconnectModalOrNull.open === false) {
+        reconnectModalOrNull.showModal();
+    }
+}
+
+function closeModal(): void {
+    if (reconnectModalOrNull !== null && reconnectModalOrNull.open) {
+        reconnectModalOrNull.close();
     }
 }
 

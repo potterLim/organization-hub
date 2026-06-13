@@ -16,12 +16,14 @@ function handleReconnectStateChanged(event) {
         return;
     }
     if (event.detail.state === "show") {
-        reconnectModalOrNull.showModal();
+        openModal();
     }
     else if (event.detail.state === "hide") {
-        reconnectModalOrNull.close();
+        document.removeEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
+        closeModal();
     }
     else if (event.detail.state === "failed") {
+        openModal();
         document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
     }
     else if (event.detail.state === "rejected") {
@@ -41,7 +43,7 @@ async function retry() {
                 location.reload();
             }
             else {
-                reconnectModalOrNull.close();
+                closeModal();
             }
         }
     }
@@ -58,9 +60,22 @@ async function resume() {
         if (successful === false) {
             location.reload();
         }
+        else {
+            closeModal();
+        }
     }
     catch {
         reconnectModalOrNull.classList.replace("components-reconnect-paused", "components-reconnect-resume-failed");
+    }
+}
+function openModal() {
+    if (reconnectModalOrNull !== null && reconnectModalOrNull.open === false) {
+        reconnectModalOrNull.showModal();
+    }
+}
+function closeModal() {
+    if (reconnectModalOrNull !== null && reconnectModalOrNull.open) {
+        reconnectModalOrNull.close();
     }
 }
 async function retryWhenDocumentBecomesVisible() {
