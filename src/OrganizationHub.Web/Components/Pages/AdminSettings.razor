@@ -11,7 +11,7 @@
 <div class="hub-page-header">
     <div>
         <h1 class="hub-page-title">시스템 설정</h1>
-        <div class="hub-page-description">자료 위치, 일정, 할 일, 공지 연결을 ID 입력 없이 선택해서 관리합니다.</div>
+        <div class="hub-page-description">자료 위치, 일정, 할 일, 공지 파일을 목록에서 선택해 연결합니다.</div>
     </div>
 </div>
 
@@ -53,11 +53,13 @@
     </div>
 
     <div class="hub-settings-main">
+        <MudTabs Elevation="0" Class="hub-settings-tabs">
+            <MudTabPanel Text="요약">
         <MudPaper Class="hub-card hub-list-card pa-4">
             <div class="hub-admin-section-heading">
                 <div>
                     <MudText Typo="Typo.h6">현재 연결 요약</MudText>
-                    <div class="hub-muted">운영 화면에서 실제로 사용할 Google 리소스입니다.</div>
+                    <div class="hub-muted">운영 화면에서 실제로 사용할 연결 항목입니다.</div>
                 </div>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="refreshAllAsync" StartIcon="@Icons.Material.Filled.Refresh" Disabled="mIsRefreshing">새로고침</MudButton>
             </div>
@@ -76,21 +78,23 @@
             </div>
         </MudPaper>
 
+            </MudTabPanel>
+            <MudTabPanel Text="자료 위치">
         <MudPaper Class="hub-card hub-list-card pa-4">
             <div class="hub-google-panel-heading">
                 <div>
-                    <MudText Typo="Typo.h6">Drive 자료 위치 선택</MudText>
+                    <MudText Typo="Typo.h6">자료 위치 선택</MudText>
                     <div class="hub-muted">폴더를 열어 위치를 확인하고, 선택한 폴더나 파일을 운영 설정에 연결합니다.</div>
                 </div>
                 <div class="hub-google-panel-actions">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="goToDriveRootAsync" StartIcon="@Icons.Material.Filled.CloudQueue" Disabled="@(mStatus.IsConnected == false)">내 Drive</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="goToOfficialRootAsync" StartIcon="@Icons.Material.Filled.Home" Disabled="@(mStatus.IsConnected == false || string.IsNullOrWhiteSpace(mFormModel.OfficialRootFolderID))">공식 루트</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="goToDriveRootAsync" StartIcon="@Icons.Material.Filled.CloudQueue" Disabled="@(mStatus.IsConnected == false)">내 드라이브</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="goToOfficialRootAsync" StartIcon="@Icons.Material.Filled.Home" Disabled="@(mStatus.IsConnected == false || string.IsNullOrWhiteSpace(mFormModel.OfficialRootFolderID))">기본 자료</MudButton>
                 </div>
             </div>
 
             @if (mStatus.IsConnected == false)
             {
-                <div class="hub-empty">Google 계정을 연결하면 Drive 폴더와 파일을 목록에서 선택할 수 있습니다.</div>
+                <div class="hub-empty">Google 계정을 연결하면 자료 폴더와 파일을 목록에서 선택할 수 있습니다.</div>
             }
             else
             {
@@ -187,17 +191,19 @@
             }
         </MudPaper>
 
+            </MudTabPanel>
+            <MudTabPanel Text="캘린더">
         <MudPaper Class="hub-card hub-list-card pa-4">
             <div class="hub-google-panel-heading">
                 <div>
-                    <MudText Typo="Typo.h6">Calendar 선택</MudText>
+                    <MudText Typo="Typo.h6">캘린더 선택</MudText>
                     <div class="hub-muted">일정을 표시하거나 작성할 캘린더를 목록에서 연결합니다.</div>
                 </div>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="loadCalendarsAsync" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(mStatus.IsConnected == false)">새로고침</MudButton>
             </div>
             @if (mStatus.IsConnected == false)
             {
-                <div class="hub-empty">Google 계정을 연결하면 Calendar 목록을 선택할 수 있습니다.</div>
+                <div class="hub-empty">Google 계정을 연결하면 캘린더 목록을 선택할 수 있습니다.</div>
             }
             else
             {
@@ -229,11 +235,13 @@
             }
         </MudPaper>
 
+            </MudTabPanel>
+            <MudTabPanel Text="할 일">
         <MudPaper Class="hub-card hub-list-card pa-4">
             <div class="hub-google-panel-heading">
                 <div>
                     <MudText Typo="Typo.h6">할 일 목록 선택</MudText>
-                    <div class="hub-muted">할 일 화면에서 사용할 Google Tasks 목록을 연결합니다.</div>
+                    <div class="hub-muted">할 일 화면에서 사용할 목록을 연결합니다.</div>
                 </div>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="loadTaskListsAsync" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(mStatus.IsConnected == false)">새로고침</MudButton>
             </div>
@@ -262,7 +270,7 @@
                         <div class="hub-resource-choice-card">
                             <div>
                                 <div class="hub-resource-choice-title">@taskList.Title</div>
-                                <div class="hub-muted">Google Tasks 목록</div>
+                                <div class="hub-muted">할 일 목록</div>
                             </div>
                             <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => assignTaskListAsync(taskList))" StartIcon="@Icons.Material.Filled.CheckCircle">연결</MudButton>
                         </div>
@@ -271,12 +279,14 @@
             }
         </MudPaper>
 
+            </MudTabPanel>
+            <MudTabPanel Text="고급">
         <MudExpansionPanels Elevation="0" Class="hub-advanced-settings">
             <MudExpansionPanel Text="고급: 연결 ID 직접 확인/수정">
                 <div class="hub-form-hint">일반 운영자는 위 선택 목록을 사용하면 됩니다. 외부에서 받은 정확한 ID를 직접 넣어야 할 때만 이 영역을 사용하세요.</div>
                 <MudGrid Spacing="3" Class="hub-settings-grid">
                     <MudItem xs="12" md="6">
-                        <SettingIdField @bind-Value="mFormModel.OfficialRootFolderID" Label="공식 루트 폴더 ID" />
+                        <SettingIdField @bind-Value="mFormModel.OfficialRootFolderID" Label="기본 자료 폴더 ID" />
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <SettingIdField @bind-Value="mFormModel.PublicFolderID" Label="외부 공유 자료 폴더 ID" />
@@ -314,6 +324,8 @@
                 </div>
             </MudExpansionPanel>
         </MudExpansionPanels>
+            </MudTabPanel>
+        </MudTabs>
     </div>
 </div>
 
@@ -436,7 +448,7 @@
         }
         catch (Exception exception)
         {
-            mMessage = "Drive 목록을 불러오지 못했습니다. " + exception.Message;
+            mMessage = "자료 목록을 불러오지 못했습니다. " + exception.Message;
             mMessageSeverity = Severity.Error;
         }
         finally
@@ -459,7 +471,7 @@
         }
         catch (Exception exception)
         {
-            mMessage = "Calendar 목록을 불러오지 못했습니다. " + exception.Message;
+            mMessage = "캘린더 목록을 불러오지 못했습니다. " + exception.Message;
             mMessageSeverity = Severity.Error;
         }
     }
@@ -654,7 +666,7 @@
     {
         GoogleDriveFolderPathItem rootPathItem = new GoogleDriveFolderPathItem();
         rootPathItem.ID = DRIVE_ROOT_ID;
-        rootPathItem.Name = "내 Drive";
+        rootPathItem.Name = "내 드라이브";
         mFolderPath = new List<GoogleDriveFolderPathItem>();
         mFolderPath.Add(rootPathItem);
     }
@@ -669,7 +681,7 @@
 
         GoogleDriveFolderPathItem rootPathItem = new GoogleDriveFolderPathItem();
         rootPathItem.ID = mFormModel.OfficialRootFolderID;
-        rootPathItem.Name = "공식 루트";
+        rootPathItem.Name = "기본 자료";
         mFolderPath = new List<GoogleDriveFolderPathItem>();
         mFolderPath.Add(rootPathItem);
     }
@@ -682,15 +694,15 @@
     private IReadOnlyList<SettingResourceSummary> getPrimaryResourceSummaries()
     {
         List<SettingResourceSummary> summaries = new List<SettingResourceSummary>();
-        summaries.Add(createDriveSummary("Drive", "공식 루트", mFormModel.OfficialRootFolderID));
-        summaries.Add(createDriveSummary("Drive", "공통 자료", mFormModel.CommonFolderID));
-        summaries.Add(createDriveSummary("Drive", "외부 공유 자료", mFormModel.PublicFolderID));
-        summaries.Add(createDriveSummary("Drive", "책임자 자료", mFormModel.ResponsibleResourcesFolderID));
-        summaries.Add(createDriveSummary("Drive", "업무 지원 자료", mFormModel.WorkResourcesFolderID));
+        summaries.Add(createDriveSummary("드라이브", "기본 자료 위치", mFormModel.OfficialRootFolderID));
+        summaries.Add(createDriveSummary("드라이브", "공통 자료", mFormModel.CommonFolderID));
+        summaries.Add(createDriveSummary("드라이브", "외부 공유 자료", mFormModel.PublicFolderID));
+        summaries.Add(createDriveSummary("드라이브", "책임자 자료", mFormModel.ResponsibleResourcesFolderID));
+        summaries.Add(createDriveSummary("드라이브", "업무 지원 자료", mFormModel.WorkResourcesFolderID));
         summaries.Add(createDriveSummary("파일", "공지 파일", mFormModel.NoticeFileID));
         summaries.Add(createDriveSummary("파일", "업무 기준 파일", mFormModel.WorkGuidelineFileID));
-        summaries.Add(createCalendarSummary("Calendar", "조직 공용 캘린더", mFormModel.OrganizationCalendarID));
-        summaries.Add(createCalendarSummary("Calendar", "책임자 캘린더", mFormModel.ResponsibleCalendarID));
+        summaries.Add(createCalendarSummary("캘린더", "조직 공용 캘린더", mFormModel.OrganizationCalendarID));
+        summaries.Add(createCalendarSummary("캘린더", "책임자 캘린더", mFormModel.ResponsibleCalendarID));
         summaries.Add(createTaskListSummary("할 일", "조직 공용 할 일", mFormModel.OrganizationTaskListID));
         summaries.Add(createTaskListSummary("할 일", "책임자 할 일", mFormModel.ResponsibleTaskListID));
         return summaries;
@@ -1030,7 +1042,17 @@
             return "접근 가능";
         }
 
-        return calendar.AccessRole;
+        switch (calendar.AccessRole)
+        {
+            case "owner":
+                return "소유자";
+            case "writer":
+                return "편집 가능";
+            case "reader":
+                return "읽기 가능";
+            default:
+                return "접근 가능";
+        }
     }
 
     private string getCurrentFolderID()

@@ -59,18 +59,18 @@ else
                 <div class="hub-admin-section-heading">
                     <div>
                         <MudText Typo="Typo.h6">권한 설정</MudText>
-                        <div class="hub-muted">팀과 직책을 고른 뒤, 허용할 업무와 적용 범위를 선택합니다.</div>
+                        <div class="hub-muted">팀과 직책을 고른 뒤, 필요한 업무 권한만 켭니다.</div>
                     </div>
                     <span class="hub-status-pill">@getAllowedPermissionCountText()</span>
                 </div>
                 <div class="hub-position-selection-grid">
-                    <MudSelect T="int" Label="권한을 설정할 팀" Value="mSelectedPermissionTeamID" ValueChanged="setPermissionTeamID" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <MudSelect T="int" Label="팀 선택" Value="mSelectedPermissionTeamID" ValueChanged="setPermissionTeamID" Variant="Variant.Outlined" Margin="Margin.Dense">
                         @foreach (Team team in mActiveTeams)
                         {
                             <MudSelectItem T="int" Value="@team.ID">@team.DisplayName</MudSelectItem>
                         }
                     </MudSelect>
-                    <MudSelect T="int?" Label="권한을 설정할 직책" Value="mSelectedPositionIDOrNull" ValueChanged="setSelectedPositionID" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(getPositionsForSelectedPermissionTeam().Count == 0)">
+                    <MudSelect T="int?" Label="직책 선택" Value="mSelectedPositionIDOrNull" ValueChanged="setSelectedPositionID" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(getPositionsForSelectedPermissionTeam().Count == 0)">
                         @foreach (OrganizationPosition position in getPositionsForSelectedPermissionTeam())
                         {
                             <MudSelectItem T="int?" Value="@((int?)position.ID)">@getPositionOptionText(position)</MudSelectItem>
@@ -98,14 +98,14 @@ else
                         <span class="@(selectedPosition.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(selectedPosition.IsActive ? "사용 중" : "비활성")</span>
                     </div>
                     <div class="hub-permission-toolbar">
-                        <MudSelect T="string" Label="권한 묶음" @bind-Value="mSelectedPermissionCategory" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        <MudSelect T="string" Label="업무 영역" @bind-Value="mSelectedPermissionCategory" Variant="Variant.Outlined" Margin="Margin.Dense">
                             <MudSelectItem T="string" Value="@ALL_PERMISSION_CATEGORY">전체</MudSelectItem>
                             @foreach (string category in getPermissionCategories())
                             {
                                 <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
                             }
                         </MudSelect>
-                        <MudCheckBox T="bool" @bind-Value="mShowOnlyAllowedPermissions" Label="허용된 권한만 보기" Color="Color.Primary" />
+                        <MudCheckBox T="bool" @bind-Value="mShowOnlyAllowedPermissions" Label="허용만 보기" Color="Color.Primary" />
                     </div>
                     <div class="hub-permission-editor">
                         @foreach (string category in getVisiblePermissionCategories())
@@ -123,7 +123,7 @@ else
                                                 <div class="hub-muted">@definition.Description</div>
                                             </div>
                                             <div class="hub-permission-controls">
-                                                <MudCheckBox T="bool" Value="@grantForm.IsAllowed" ValueChanged="@(value => setPermissionAllowed(definition.Key, value))" Color="Color.Primary" Label="허용" Class="hub-permission-allow" />
+                                                <MudCheckBox T="bool" Value="@grantForm.IsAllowed" ValueChanged="@(value => setPermissionAllowed(definition.Key, value))" Color="Color.Primary" Label="사용" Class="hub-permission-allow" />
                                                 @if (grantForm.IsAllowed)
                                                 {
                                                     <MudSelect T="EPermissionScopeType" Label="적용 범위" Value="@grantForm.ScopeType" ValueChanged="@(scopeType => setPermissionScope(definition.Key, scopeType))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-permission-scope">
@@ -145,7 +145,7 @@ else
                                                 }
                                                 else
                                                 {
-                                                    <div class="hub-permission-disabled-hint">허용하면 적용 범위를 선택할 수 있습니다.</div>
+                                                    <div class="hub-permission-disabled-hint">사용으로 바꾸면 범위를 고를 수 있습니다.</div>
                                                 }
                                             </div>
                                         </div>
@@ -154,7 +154,7 @@ else
                             </section>
                         }
                     </div>
-                    <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
+                    <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered hub-permission-save-bar mt-4">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="savePermissionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">권한 저장</MudButton>
                     </MudStack>
                 }
@@ -212,7 +212,7 @@ else
     private PositionFormModel mPermissionFormModel = new PositionFormModel();
     private int mSelectedPermissionTeamID;
     private int? mSelectedPositionIDOrNull;
-    private string mSelectedPermissionCategory = ALL_PERMISSION_CATEGORY;
+    private string mSelectedPermissionCategory = string.Empty;
     private bool mShowOnlyAllowedPermissions;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
@@ -220,6 +220,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await loadDataAsync();
+        ensurePermissionCategorySelection();
         mSelectedPermissionTeamID = getDefaultTeamID();
         mNewPositionFormModel = createEmptyFormModel(mSelectedPermissionTeamID);
         ensurePositionSelectionForSelectedTeam();
@@ -503,6 +504,21 @@ else
         }
 
         return categories;
+    }
+
+    private void ensurePermissionCategorySelection()
+    {
+        IReadOnlyList<string> categories = getPermissionCategories();
+        if (categories.Count == 0)
+        {
+            mSelectedPermissionCategory = ALL_PERMISSION_CATEGORY;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(mSelectedPermissionCategory) || (mSelectedPermissionCategory != ALL_PERMISSION_CATEGORY && categories.Contains(mSelectedPermissionCategory) == false))
+        {
+            mSelectedPermissionCategory = categories[0];
+        }
     }
 
     private IReadOnlyList<PermissionDefinition> getVisiblePermissionDefinitions(string category)

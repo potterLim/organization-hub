@@ -33,8 +33,8 @@
                     <MudSelectItem T="int?" Value="@((int?)team.ID)">@team.DisplayName</MudSelectItem>
                 }
             </MudSelect>
-            <MudNumericField T="int" @bind-Value="mFormModel.Priority" Label="적용 우선순위" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-            <div class="hub-form-hint">같은 요청에 여러 경로가 맞으면 우선순위 숫자가 작은 경로가 선택됩니다. 팀 전용 경로는 낮게, 전체 기본 경로는 높게 두면 관리하기 쉽습니다.</div>
+            <MudNumericField T="int" @bind-Value="mFormModel.Priority" Label="우선순위 숫자" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <div class="hub-form-hint">겹치면 숫자가 낮은 경로가 먼저 적용됩니다. 예: 팀 전용 10, 기본 경로 100.</div>
             <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="바로 사용" Color="Color.Primary" />
 
             <MudDivider Class="my-4" />
@@ -353,7 +353,7 @@
     {
         if (mFormModel.AppliesToTeamID.HasValue == false)
         {
-            return "모든 팀 요청에 적용됩니다. 팀 전용 경로와 겹치면 우선순위 숫자가 낮은 경로가 먼저 선택됩니다.";
+            return "모든 팀 요청에 적용됩니다. 겹치면 숫자가 낮은 경로가 먼저입니다.";
         }
 
         Team? teamOrNull = mTeams.FirstOrDefault(team => team.ID == mFormModel.AppliesToTeamID.Value);

@@ -346,6 +346,13 @@ h1:focus {
     color: var(--hub-text);
 }
 
+.hub-admin-page-grid .hub-card,
+.hub-settings-layout .hub-card,
+.hub-google-layout .hub-card {
+    border-radius: 12px !important;
+    box-shadow: 0 10px 28px rgba(24, 44, 78, .07) !important;
+}
+
 .hub-card.pa-4 {
     padding: 22px !important;
 }
@@ -1139,10 +1146,12 @@ h1:focus {
     color: var(--hub-text-muted);
     font-size: 13px;
     font-weight: 800;
-    line-height: 1.4;
+    line-height: 1.55;
     margin-bottom: 10px;
     margin-top: -2px;
     padding: 10px 12px;
+    text-wrap: pretty;
+    word-break: keep-all;
 }
 
 .hub-admin-section-heading {
@@ -1262,10 +1271,10 @@ h1:focus {
 .hub-permission-group {
     background: rgba(255, 255, 255, .46);
     border: 1px solid var(--hub-border);
-    border-radius: 16px;
+    border-radius: 12px;
     display: grid;
     gap: 10px;
-    padding: 14px;
+    padding: 12px;
 }
 
 .hub-permission-group-title {
@@ -1278,18 +1287,19 @@ h1:focus {
 .hub-permission-card-grid {
     display: grid;
     gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 .hub-permission-row {
     align-items: stretch;
     background: rgba(255, 255, 255, .66);
     border: 1px solid rgba(78, 104, 145, .12);
-    border-radius: 14px;
+    border-radius: 10px;
     display: grid;
     gap: 12px;
     grid-template-columns: minmax(0, 1fr);
     min-width: 0;
-    padding: 12px;
+    padding: 11px;
 }
 
 .hub-permission-row-active {
@@ -1307,6 +1317,15 @@ h1:focus {
     color: var(--hub-text-strong);
     font-weight: 850;
     line-height: 1.35;
+}
+
+.hub-permission-copy .hub-muted {
+    display: -webkit-box;
+    line-height: 1.45;
+    overflow: hidden;
+    text-wrap: pretty;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 .hub-permission-controls {
@@ -1341,13 +1360,22 @@ h1:focus {
 .hub-permission-disabled-hint {
     background: rgba(255, 255, 255, .62);
     border: 1px dashed rgba(116, 139, 178, .3);
-    border-radius: 12px;
+    border-radius: 10px;
     color: var(--hub-text-muted);
     font-size: 13px;
     font-weight: 800;
     line-height: 1.35;
     min-height: 40px;
     padding: 11px 12px;
+}
+
+.hub-permission-save-bar {
+    background: transparent;
+    border-top: 1px solid rgba(200, 211, 231, .68);
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 16px 0 0;
+    width: 100%;
 }
 
 .hub-workflow-step-list {
@@ -1504,7 +1532,7 @@ h1:focus {
     background: var(--hub-surface-muted);
     border: 1px solid var(--hub-border);
     border-radius: 8px;
-    margin-top: 16px;
+    margin-top: 0;
     padding: 10px 12px;
 }
 
@@ -1675,6 +1703,10 @@ h1:focus {
     margin-bottom: 16px;
 }
 
+.hub-google-advanced-settings {
+    margin-top: 16px;
+}
+
 .hub-google-path {
     align-items: center;
     color: var(--hub-text-muted);
@@ -1705,6 +1737,48 @@ h1:focus {
     display: grid;
     gap: 22px;
     min-width: 0;
+}
+
+.hub-settings-tabs {
+    min-width: 0;
+}
+
+.hub-settings-tabs .mud-tabs-toolbar {
+    background: rgba(255, 255, 255, .66);
+    border: 1px solid rgba(200, 211, 231, .72);
+    border-radius: 12px;
+    margin-bottom: 14px;
+    min-height: 50px;
+    overflow-x: auto;
+    padding: 4px;
+}
+
+.hub-settings-tabs .mud-tab {
+    border-radius: 9px;
+    color: var(--hub-text-muted);
+    flex: 0 0 auto;
+    font-weight: 850;
+    min-height: 40px;
+    min-width: auto !important;
+    padding: 0 16px !important;
+    text-transform: none;
+    white-space: nowrap;
+    width: auto !important;
+}
+
+.hub-settings-tabs .mud-tabs-tabbar-wrapper > .mud-tooltip-root {
+    margin-right: 6px;
+}
+
+.hub-settings-tabs .mud-tab.mud-tab-active {
+    background: rgba(33, 107, 255, .1) !important;
+    color: var(--hub-brand-deep) !important;
+}
+
+.hub-settings-tabs .mud-tabs-panels,
+.hub-settings-tabs .mud-tab-panel {
+    background: transparent;
+    padding: 0;
 }
 
 .hub-settings-switches {
@@ -1884,18 +1958,29 @@ h1:focus {
 }
 
 .hub-admin-table .mud-table-container {
-    border-radius: 20px;
+    border-radius: 12px;
     margin-top: 8px;
     overflow-x: auto;
 }
 
+.hub-admin-table table {
+    min-width: 680px;
+}
+
+.hub-google-layout .hub-admin-table table {
+    min-width: 560px;
+}
+
 .hub-admin-table th,
 .hub-admin-table td {
+    word-break: keep-all;
     vertical-align: middle;
 }
 
 .hub-admin-table th {
+    line-height: 1.2;
     padding: 14px 18px !important;
+    white-space: nowrap;
 }
 
 .hub-admin-table td {
@@ -4118,8 +4203,36 @@ h1:focus {
         border-radius: 24px !important;
     }
 
+    .hub-admin-page-grid .hub-card,
+    .hub-settings-layout .hub-card,
+    .hub-google-layout .hub-card {
+        border-radius: 12px !important;
+    }
+
     .hub-card.pa-4 {
         padding: 18px !important;
+    }
+
+    .hub-settings-tabs .mud-tabs-toolbar {
+        margin-bottom: 12px;
+    }
+
+    .hub-settings-tabs .mud-tab {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    .hub-settings-tabs .mud-tabs-tabbar-wrapper > .mud-tooltip-root {
+        margin-right: 4px;
+    }
+
+    .hub-resource-summary-grid,
+    .hub-permission-card-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-permission-save-bar {
+        bottom: 8px;
     }
 
     .hub-management-grid {
@@ -4307,6 +4420,14 @@ h1:focus {
 
     .hub-admin-table .mud-table-container {
         overflow: visible;
+    }
+
+    .hub-admin-table table {
+        min-width: 0;
+    }
+
+    .hub-google-layout .hub-admin-table table {
+        min-width: 0;
     }
 
     .hub-admin-table table,

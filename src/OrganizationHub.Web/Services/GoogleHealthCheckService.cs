@@ -36,7 +36,7 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
     {
         List<GoogleHealthCheckItem> items = new List<GoogleHealthCheckItem>();
         GoogleConnectionStatus status = await mGoogleConnectionService.GetStatusAsync(cancellationToken);
-        addItem(items, "연결", "OAuth 설정", status.HasOAuthConfiguration ? STATUS_HEALTHY : STATUS_ERROR, status.HasOAuthConfiguration ? "OAuth Client ID와 Secret이 설정되어 있습니다." : "OAuth Client ID와 Secret을 설정해야 합니다.");
+        addItem(items, "연결", "Google 연결 정보", status.HasOAuthConfiguration ? STATUS_HEALTHY : STATUS_ERROR, status.HasOAuthConfiguration ? "Google 연결 정보가 준비되어 있습니다." : "배포 설정에 Google 연결 정보가 필요합니다.");
         addItem(items, "연결", "Google 계정", status.IsConnected ? STATUS_HEALTHY : STATUS_ERROR, status.IsConnected ? status.ConnectedEmail + " 계정이 연결되어 있습니다." : "조직 운영용 Google 계정을 연결해 주세요.");
         if (status.IsConnected == false)
         {
@@ -62,7 +62,7 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
             }
             catch (Exception exception)
             {
-                addItem(items, "Drive", "폴더 접근", STATUS_ERROR, "Google Drive 폴더 진단 중 오류가 발생했습니다. " + exception.Message);
+                addItem(items, "자료", "폴더 접근", STATUS_ERROR, "자료 폴더 진단 중 오류가 발생했습니다. " + exception.Message);
             }
 
             try
@@ -71,7 +71,7 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
             }
             catch (Exception exception)
             {
-                addItem(items, "Calendar", "캘린더 접근", STATUS_ERROR, "Google Calendar 진단 중 오류가 발생했습니다. " + exception.Message);
+                addItem(items, "캘린더", "캘린더 접근", STATUS_ERROR, "캘린더 진단 중 오류가 발생했습니다. " + exception.Message);
             }
 
             try
@@ -80,7 +80,7 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
             }
             catch (Exception exception)
             {
-                addItem(items, "Tasks", "할 일 목록 접근", STATUS_ERROR, createGoogleTasksErrorMessage(exception));
+                addItem(items, "할 일", "할 일 목록 접근", STATUS_ERROR, createGoogleTasksErrorMessage(exception));
             }
 
             try
@@ -89,7 +89,7 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
             }
             catch (Exception exception)
             {
-                addItem(items, "파일", "공지/운영 규칙 파일", STATUS_ERROR, "Google Drive 파일 진단 중 오류가 발생했습니다. " + exception.Message);
+                addItem(items, "파일", "공지/운영 규칙 파일", STATUS_ERROR, "연결 파일 진단 중 오류가 발생했습니다. " + exception.Message);
             }
         }
 
@@ -100,38 +100,38 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
     {
         if (connectionOrNull == null)
         {
-            addItem(items, "연결", "Calendar 쓰기 권한", STATUS_ERROR, "활성 Google 연결을 찾을 수 없습니다.");
+            addItem(items, "연결", "캘린더 수정 권한", STATUS_ERROR, "활성 Google 연결을 찾을 수 없습니다.");
             return;
         }
 
         bool hasCalendarWriteScope = connectionOrNull.Scopes.Contains(GoogleCalendarApi.Scope.Calendar);
-        addItem(items, "연결", "Calendar 쓰기 권한", hasCalendarWriteScope ? STATUS_HEALTHY : STATUS_WARNING, hasCalendarWriteScope ? "일정 추가/수정/삭제 권한이 포함되어 있습니다." : "기존 연결은 읽기 권한만 가질 수 있습니다. Google 계정을 다시 연결해 주세요.");
+        addItem(items, "연결", "캘린더 수정 권한", hasCalendarWriteScope ? STATUS_HEALTHY : STATUS_WARNING, hasCalendarWriteScope ? "일정 추가, 수정, 삭제 권한이 포함되어 있습니다." : "기존 연결은 읽기만 가능할 수 있습니다. Google 계정을 다시 연결해 주세요.");
     }
 
     private void addTasksScopeItem(List<GoogleHealthCheckItem> items, GoogleStorageConnection? connectionOrNull)
     {
         if (connectionOrNull == null)
         {
-            addItem(items, "연결", "Tasks 권한", STATUS_ERROR, "활성 Google 연결을 찾을 수 없습니다.");
+            addItem(items, "연결", "할 일 수정 권한", STATUS_ERROR, "활성 Google 연결을 찾을 수 없습니다.");
             return;
         }
 
         bool hasTasksScope = connectionOrNull.Scopes.Contains(GoogleTasksApi.Scope.Tasks);
-        addItem(items, "연결", "Tasks 권한", hasTasksScope ? STATUS_HEALTHY : STATUS_WARNING, hasTasksScope ? "할 일 추가/수정/삭제 권한이 포함되어 있습니다." : "기존 연결에 Google Tasks 권한이 없습니다. Google 계정을 다시 연결해 주세요.");
+        addItem(items, "연결", "할 일 수정 권한", hasTasksScope ? STATUS_HEALTHY : STATUS_WARNING, hasTasksScope ? "할 일 추가, 수정, 삭제 권한이 포함되어 있습니다." : "기존 연결에 할 일 수정 권한이 없습니다. Google 계정을 다시 연결해 주세요.");
     }
 
     private async Task addFolderItemsAsync(List<GoogleHealthCheckItem> items, GlobalSetting setting, List<Team> teams, CancellationToken cancellationToken)
     {
-        await addFolderItemAsync(items, "Drive", "공식 루트", setting.OfficialRootFolderID, string.Empty, EGoogleHealthFolderCheckKind.RootFolder, cancellationToken);
+        await addFolderItemAsync(items, "자료", "기본 자료 위치", setting.OfficialRootFolderID, string.Empty, EGoogleHealthFolderCheckKind.RootFolder, cancellationToken);
         string officialRootFolderID = getNullAsEmpty(setting.OfficialRootFolderID);
-        await addFolderItemAsync(items, "Drive", OrganizationHubWorkspaceDefaults.PUBLIC_FOLDER_NAME, setting.PublicFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
-        await addFolderItemAsync(items, "Drive", OrganizationHubWorkspaceDefaults.COMMON_FOLDER_NAME, setting.CommonFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
-        await addFolderItemAsync(items, "Drive", OrganizationHubWorkspaceDefaults.RESPONSIBLE_RESOURCES_FOLDER_NAME, setting.ResponsibleResourcesFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
-        await addFolderItemAsync(items, "Drive", OrganizationHubWorkspaceDefaults.WORK_RESOURCES_FOLDER_NAME, setting.WorkResourcesFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
+        await addFolderItemAsync(items, "자료", OrganizationHubWorkspaceDefaults.PUBLIC_FOLDER_NAME, setting.PublicFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
+        await addFolderItemAsync(items, "자료", OrganizationHubWorkspaceDefaults.COMMON_FOLDER_NAME, setting.CommonFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
+        await addFolderItemAsync(items, "자료", OrganizationHubWorkspaceDefaults.RESPONSIBLE_RESOURCES_FOLDER_NAME, setting.ResponsibleResourcesFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
+        await addFolderItemAsync(items, "자료", OrganizationHubWorkspaceDefaults.WORK_RESOURCES_FOLDER_NAME, setting.WorkResourcesFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
         foreach (Team team in teams)
         {
-            await addFolderItemAsync(items, "팀 Drive", team.DisplayName + " 자료", team.MaterialsFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
-            await addFolderItemAsync(items, "팀 Drive", team.DisplayName + " " + OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME, team.ApprovedFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
+            await addFolderItemAsync(items, "팀 자료", team.DisplayName + " 자료", team.MaterialsFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
+            await addFolderItemAsync(items, "팀 자료", team.DisplayName + " " + OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME, team.ApprovedFolderID, officialRootFolderID, EGoogleHealthFolderCheckKind.ChildFolder, cancellationToken);
         }
     }
 
@@ -148,14 +148,14 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
     {
         if (string.IsNullOrWhiteSpace(folderIDOrNull))
         {
-            addItem(items, area, name, STATUS_WARNING, "폴더 ID가 설정되지 않았습니다.");
+            addItem(items, area, name, STATUS_WARNING, "폴더가 연결되지 않았습니다.");
             return;
         }
 
         DriveFileMetadata? metadataOrNull = await mDriveService.GetFileOrNullAsync(folderIDOrNull, cancellationToken);
         if (metadataOrNull == null)
         {
-            addItem(items, area, name, STATUS_ERROR, "Google Drive에서 폴더를 찾을 수 없습니다.");
+            addItem(items, area, name, STATUS_ERROR, "연결된 계정에서 폴더를 찾을 수 없습니다.");
             return;
         }
 
@@ -166,18 +166,18 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
         }
 
         IReadOnlySet<string> ancestorFolderIDs = await mDriveService.GetAncestorFolderIDsAsync(folderIDOrNull, cancellationToken);
-        addItem(items, area, name, ancestorFolderIDs.Contains(officialRootFolderID) ? STATUS_HEALTHY : STATUS_ERROR, ancestorFolderIDs.Contains(officialRootFolderID) ? metadataOrNull.Name + " 폴더가 공식 루트 아래에 있습니다." : metadataOrNull.Name + " 폴더가 공식 루트 아래에 있지 않습니다.");
+        addItem(items, area, name, ancestorFolderIDs.Contains(officialRootFolderID) ? STATUS_HEALTHY : STATUS_ERROR, ancestorFolderIDs.Contains(officialRootFolderID) ? metadataOrNull.Name + " 폴더가 기본 자료 위치 안에 있습니다." : metadataOrNull.Name + " 폴더가 기본 자료 위치 안에 있지 않습니다.");
     }
 
     private async Task addCalendarItemsAsync(List<GoogleHealthCheckItem> items, GlobalSetting setting, List<Team> teams, CancellationToken cancellationToken)
     {
         IReadOnlyList<GoogleCalendarListItem> calendars = await mGoogleWorkspaceBrowserService.ListCalendarsAsync(cancellationToken);
         HashSet<string> calendarIDs = new HashSet<string>(calendars.Select(calendar => calendar.ID));
-        addCalendarItem(items, "Calendar", OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME + " 캘린더", setting.OrganizationCalendarID, calendarIDs);
-        addCalendarItem(items, "Calendar", OrganizationHubWorkspaceDefaults.RESPONSIBLE_CALENDAR_NAME + " 캘린더", setting.ResponsibleCalendarID, calendarIDs);
+        addCalendarItem(items, "캘린더", OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME + " 캘린더", setting.OrganizationCalendarID, calendarIDs);
+        addCalendarItem(items, "캘린더", OrganizationHubWorkspaceDefaults.RESPONSIBLE_CALENDAR_NAME + " 캘린더", setting.ResponsibleCalendarID, calendarIDs);
         foreach (Team team in teams)
         {
-            addCalendarItem(items, "팀 Calendar", team.DisplayName + " 캘린더", team.CalendarID, calendarIDs);
+            addCalendarItem(items, "팀 캘린더", team.DisplayName + " 캘린더", team.CalendarID, calendarIDs);
         }
     }
 
@@ -185,22 +185,22 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
     {
         if (string.IsNullOrWhiteSpace(calendarIDOrNull))
         {
-            addItem(items, area, name, STATUS_WARNING, "캘린더 ID가 설정되지 않았습니다.");
+            addItem(items, area, name, STATUS_WARNING, "캘린더가 연결되지 않았습니다.");
             return;
         }
 
-        addItem(items, area, name, calendarIDs.Contains(calendarIDOrNull) ? STATUS_HEALTHY : STATUS_ERROR, calendarIDs.Contains(calendarIDOrNull) ? "Google Calendar 목록에서 확인되었습니다." : "연결된 계정에서 이 캘린더를 찾을 수 없습니다.");
+        addItem(items, area, name, calendarIDs.Contains(calendarIDOrNull) ? STATUS_HEALTHY : STATUS_ERROR, calendarIDs.Contains(calendarIDOrNull) ? "연결된 계정에서 확인되었습니다." : "연결된 계정에서 이 캘린더를 찾을 수 없습니다.");
     }
 
     private async Task addTaskListItemsAsync(List<GoogleHealthCheckItem> items, GlobalSetting setting, List<Team> teams, CancellationToken cancellationToken)
     {
         IReadOnlyList<GoogleTaskListItem> taskLists = await mGoogleWorkspaceBrowserService.ListTaskListsAsync(cancellationToken);
         HashSet<string> taskListIDs = new HashSet<string>(taskLists.Select(taskList => taskList.ID));
-        addTaskListItem(items, "Tasks", OrganizationHubWorkspaceDefaults.ORGANIZATION_TASK_LIST_NAME + " 목록", setting.OrganizationTaskListID, taskListIDs);
-        addTaskListItem(items, "Tasks", OrganizationHubWorkspaceDefaults.RESPONSIBLE_TASK_LIST_NAME + " 목록", setting.ResponsibleTaskListID, taskListIDs);
+        addTaskListItem(items, "할 일", OrganizationHubWorkspaceDefaults.ORGANIZATION_TASK_LIST_NAME + " 목록", setting.OrganizationTaskListID, taskListIDs);
+        addTaskListItem(items, "할 일", OrganizationHubWorkspaceDefaults.RESPONSIBLE_TASK_LIST_NAME + " 목록", setting.ResponsibleTaskListID, taskListIDs);
         foreach (Team team in teams)
         {
-            addTaskListItem(items, "팀 Tasks", team.DisplayName + " 할 일 목록", team.TaskListID, taskListIDs);
+            addTaskListItem(items, "팀 할 일", team.DisplayName + " 할 일 목록", team.TaskListID, taskListIDs);
         }
     }
 
@@ -208,11 +208,11 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
     {
         if (string.IsNullOrWhiteSpace(taskListIDOrNull))
         {
-            addItem(items, area, name, STATUS_WARNING, "할 일 목록 ID가 설정되지 않았습니다.");
+            addItem(items, area, name, STATUS_WARNING, "할 일 목록이 연결되지 않았습니다.");
             return;
         }
 
-        addItem(items, area, name, taskListIDs.Contains(taskListIDOrNull) ? STATUS_HEALTHY : STATUS_ERROR, taskListIDs.Contains(taskListIDOrNull) ? "Google Tasks 목록에서 확인되었습니다." : "연결된 계정에서 이 할 일 목록을 찾을 수 없습니다.");
+        addItem(items, area, name, taskListIDs.Contains(taskListIDOrNull) ? STATUS_HEALTHY : STATUS_ERROR, taskListIDs.Contains(taskListIDOrNull) ? "연결된 계정에서 확인되었습니다." : "연결된 계정에서 이 할 일 목록을 찾을 수 없습니다.");
     }
 
     private async Task addFileItemsAsync(List<GoogleHealthCheckItem> items, GlobalSetting setting, CancellationToken cancellationToken)
@@ -225,12 +225,12 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
     {
         if (string.IsNullOrWhiteSpace(fileIDOrNull))
         {
-            addItem(items, area, name, STATUS_WARNING, "파일 ID가 설정되지 않았습니다.");
+            addItem(items, area, name, STATUS_WARNING, "파일이 연결되지 않았습니다.");
             return;
         }
 
         DriveFileMetadata? metadataOrNull = await mDriveService.GetFileOrNullAsync(fileIDOrNull, cancellationToken);
-        addItem(items, area, name, metadataOrNull == null ? STATUS_ERROR : STATUS_HEALTHY, metadataOrNull == null ? "Google Drive에서 파일을 찾을 수 없습니다." : metadataOrNull.Name + " 파일에 접근할 수 있습니다.");
+        addItem(items, area, name, metadataOrNull == null ? STATUS_ERROR : STATUS_HEALTHY, metadataOrNull == null ? "연결된 계정에서 파일을 찾을 수 없습니다." : metadataOrNull.Name + " 파일에 접근할 수 있습니다.");
     }
 
     private void addItem(List<GoogleHealthCheckItem> items, string area, string name, string status, string message)
@@ -245,7 +245,7 @@ public sealed class GoogleHealthCheckService : IGoogleHealthCheckService
 
     private string createGoogleTasksErrorMessage(Exception exception)
     {
-        return GoogleApiExceptionMessageFormatter.CreateGoogleTasksMessage(exception, "Google Tasks 진단 중 오류가 발생했습니다.");
+        return GoogleApiExceptionMessageFormatter.CreateGoogleTasksMessage(exception, "할 일 목록 진단 중 오류가 발생했습니다.");
     }
 
     private string getNullAsEmpty(string? valueOrNull)

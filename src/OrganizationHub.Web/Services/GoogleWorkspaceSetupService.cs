@@ -61,7 +61,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     public async Task<IReadOnlyList<GoogleFolderAssignmentOption>> GetFolderAssignmentOptionsAsync(CancellationToken cancellationToken)
     {
         List<GoogleFolderAssignmentOption> options = new List<GoogleFolderAssignmentOption>();
-        options.Add(createFolderAssignmentOption("OfficialRoot", "공식 루트", EGoogleFolderAssignmentKind.OfficialRoot, null));
+        options.Add(createFolderAssignmentOption("OfficialRoot", "기본 자료 위치", EGoogleFolderAssignmentKind.OfficialRoot, null));
         options.Add(createFolderAssignmentOption("Public", OrganizationHubWorkspaceDefaults.PUBLIC_FOLDER_NAME, EGoogleFolderAssignmentKind.Public, null));
         options.Add(createFolderAssignmentOption("Common", OrganizationHubWorkspaceDefaults.COMMON_FOLDER_NAME, EGoogleFolderAssignmentKind.Common, null));
         options.Add(createFolderAssignmentOption("Leader", OrganizationHubWorkspaceDefaults.RESPONSIBLE_RESOURCES_FOLDER_NAME, EGoogleFolderAssignmentKind.ResponsibleResources, null));
@@ -148,12 +148,12 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
         }
         catch (Exception exception)
         {
-            failureMessages.Add("기본 Drive 구조를 준비하지 못했습니다. " + exception.Message);
+            failureMessages.Add("기본 자료 폴더를 준비하지 못했습니다. " + exception.Message);
         }
 
         if (failureMessages.Count > 0)
         {
-            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("Drive 폴더", failureMessages));
+            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("자료 폴더", failureMessages));
         }
 
         return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Succeed(summary);
@@ -163,7 +163,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     {
         if (mCredentialFactoryOrNull == null || mOptionsOrNull == null)
         {
-            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail("Google Calendar 생성 서비스를 사용할 수 없습니다.");
+            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail("캘린더 생성 서비스를 사용할 수 없습니다.");
         }
 
         GoogleWorkspaceResourceSetupSummary summary = new GoogleWorkspaceResourceSetupSummary();
@@ -202,7 +202,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         if (failureMessages.Count > 0)
         {
-            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("Calendar", failureMessages));
+            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("캘린더", failureMessages));
         }
 
         return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Succeed(summary);
@@ -231,7 +231,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         if (summary.TargetCount == 0)
         {
-            return ServiceResultOfT<GoogleDriveFolderNameSyncSummary>.Fail("표준 이름을 적용할 Drive 폴더 ID가 아직 설정되지 않았습니다.");
+            return ServiceResultOfT<GoogleDriveFolderNameSyncSummary>.Fail("표준 이름을 적용할 자료 폴더가 아직 설정되지 않았습니다.");
         }
 
         return ServiceResultOfT<GoogleDriveFolderNameSyncSummary>.Succeed(summary);
@@ -241,7 +241,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     {
         if (mCredentialFactoryOrNull == null || mOptionsOrNull == null)
         {
-            return ServiceResultOfT<GoogleTaskListSetupSummary>.Fail("Google Tasks 목록 생성 서비스를 사용할 수 없습니다.");
+            return ServiceResultOfT<GoogleTaskListSetupSummary>.Fail("할 일 목록 생성 서비스를 사용할 수 없습니다.");
         }
 
         GoogleTaskListSetupSummary summary = new GoogleTaskListSetupSummary();
@@ -296,7 +296,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         if (string.IsNullOrWhiteSpace(folderID))
         {
-            return ServiceResult.Fail("Google Drive 폴더를 선택해 주세요.");
+            return ServiceResult.Fail("자료 폴더를 선택해 주세요.");
         }
 
         IReadOnlyList<GoogleFolderAssignmentOption> options = await GetFolderAssignmentOptionsAsync(cancellationToken);
@@ -338,7 +338,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         if (string.IsNullOrWhiteSpace(calendarID))
         {
-            return ServiceResult.Fail("Google Calendar를 선택해 주세요.");
+            return ServiceResult.Fail("캘린더를 선택해 주세요.");
         }
 
         IReadOnlyList<GoogleCalendarAssignmentOption> options = await GetCalendarAssignmentOptionsAsync(cancellationToken);
@@ -391,7 +391,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         if (string.IsNullOrWhiteSpace(taskListID))
         {
-            return ServiceResult.Fail("Google Tasks 목록을 선택해 주세요.");
+            return ServiceResult.Fail("할 일 목록을 선택해 주세요.");
         }
 
         IReadOnlyList<GoogleTaskListAssignmentOption> options = await GetTaskListAssignmentOptionsAsync(cancellationToken);
@@ -628,7 +628,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
             DriveFileMetadata? metadataOrNull = await mDriveService.GetFileOrNullAsync(folderID, cancellationToken);
             if (metadataOrNull == null)
             {
-                failureMessages.Add(standardName + " 폴더를 Google Drive에서 찾지 못했습니다.");
+                failureMessages.Add(standardName + " 폴더를 찾지 못했습니다.");
                 return null;
             }
 
@@ -707,7 +707,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     private string createFolderNameFailureMessage(IReadOnlyList<string> failureMessages)
     {
         List<string> visibleMessages = failureMessages.Take(3).ToList();
-        string message = "일부 Drive 폴더명을 변경하지 못했습니다. " + string.Join(" / ", visibleMessages);
+        string message = "일부 자료 폴더명을 변경하지 못했습니다. " + string.Join(" / ", visibleMessages);
         if (failureMessages.Count > visibleMessages.Count)
         {
             message = message + " 외 " + (failureMessages.Count - visibleMessages.Count).ToString(System.Globalization.CultureInfo.InvariantCulture) + "건";
@@ -768,7 +768,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     {
         if (mCredentialFactoryOrNull == null || mOptionsOrNull == null)
         {
-            throw new InvalidOperationException("Google Calendar 생성 서비스를 사용할 수 없습니다.");
+            throw new InvalidOperationException("캘린더 생성 서비스를 사용할 수 없습니다.");
         }
 
         IConfigurableHttpClientInitializer credential = await mCredentialFactoryOrNull.CreateHttpClientInitializerAsync(CALENDAR_SCOPES, cancellationToken);
@@ -896,7 +896,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     {
         if (mCredentialFactoryOrNull == null || mOptionsOrNull == null)
         {
-            throw new InvalidOperationException("Google Tasks 목록 생성 서비스를 사용할 수 없습니다.");
+            throw new InvalidOperationException("할 일 목록 생성 서비스를 사용할 수 없습니다.");
         }
 
         IConfigurableHttpClientInitializer credential = await mCredentialFactoryOrNull.CreateHttpClientInitializerAsync(TASK_SCOPES, cancellationToken);
@@ -1024,7 +1024,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     {
         if (string.IsNullOrWhiteSpace(setting.OfficialRootFolderID))
         {
-            return ServiceResult.Fail("먼저 공식 루트 폴더를 지정해 주세요.");
+            return ServiceResult.Fail("먼저 기본 자료 위치를 지정해 주세요.");
         }
 
         string officialRootFolderID = setting.OfficialRootFolderID.Trim();
@@ -1039,7 +1039,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
             return ServiceResult.Succeed();
         }
 
-        return ServiceResult.Fail("공식 루트 폴더 아래의 폴더만 저장 대상으로 지정할 수 있습니다.");
+        return ServiceResult.Fail("기본 자료 위치 안의 폴더만 저장 대상으로 지정할 수 있습니다.");
     }
 
     private async Task<ServiceResult> applyFolderAssignmentAsync(OrganizationHubDbContext dbContext, GlobalSetting setting, GoogleFolderAssignmentOption option, string folderID, CancellationToken cancellationToken)
