@@ -8,7 +8,7 @@
 <div class="hub-page-header">
     <div>
         <h1 class="hub-page-title">메뉴 보이기 설정</h1>
-        <div class="hub-page-description">왼쪽 메뉴를 어떤 사용자와 팀에 보여줄지 정합니다. 메뉴 이름, 표시 순서, 사용 여부도 함께 관리합니다.</div>
+        <div class="hub-page-description">왼쪽 메뉴의 이름, 표시 대상, 팀 범위, 표시 순서를 관리합니다.</div>
     </div>
 </div>
 
@@ -18,7 +18,7 @@
 }
 
 <MudGrid Spacing="6" Class="hub-management-grid hub-admin-page-grid">
-    <MudItem xs="12" lg="4" xl="3">
+    <MudItem xs="12" lg="5" xl="4">
         <MudPaper Class="hub-card hub-form-card pa-4">
             @if (mSelectedMenuItemOrNull == null)
             {
@@ -26,11 +26,14 @@
             }
             else
             {
-                <MudText Typo="Typo.h6">@mSelectedMenuItemOrNull.DisplayName</MudText>
-                <MudText Typo="Typo.body2" Class="hub-muted mb-3">화면 주소 @mSelectedMenuItemOrNull.Href · 현재 대상 @MenuAccessLevelUtility.GetDisplayName(mFormModel.AccessLevel)</MudText>
+                <div class="hub-admin-form-heading">
+                    <MudText Typo="Typo.h6">@mSelectedMenuItemOrNull.DisplayName</MudText>
+                    <span>@MenuAccessLevelUtility.GetDisplayName(mFormModel.AccessLevel)</span>
+                </div>
+                <div class="hub-form-hint">선택한 메뉴가 누구에게 보일지 정합니다. 화면 주소는 시스템이 관리하므로 일반 목록에는 표시하지 않습니다.</div>
                 <MudTextField @bind-Value="mFormModel.DisplayName" Label="메뉴 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-                <MudNumericField T="int" @bind-Value="mFormModel.SortOrder" Label="왼쪽 메뉴 순서" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-                <MudSelect T="EMenuAccessLevel" Label="누가 볼 수 있나요" Value="mFormModel.AccessLevel" ValueChanged="setAccessLevel" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@mSelectedMenuItemOrNull.IsLocked">
+                <MudNumericField T="int" @bind-Value="mFormModel.SortOrder" Label="메뉴 표시 순서" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" HelperText="숫자가 낮을수록 왼쪽 메뉴 위쪽에 표시됩니다." />
+                <MudSelect T="EMenuAccessLevel" Label="표시 대상" Value="mFormModel.AccessLevel" ValueChanged="setAccessLevel" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@mSelectedMenuItemOrNull.IsLocked">
                     <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Authenticated">로그인한 모든 사용자</MudSelectItem>
                     <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.TeamMember">선택한 팀의 구성원</MudSelectItem>
                     <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.TeamLeader">선택한 팀의 책임자 이상</MudSelectItem>
@@ -46,8 +49,8 @@
                 @if (MenuAccessLevelUtility.IsTeamScoped(mFormModel.AccessLevel))
                 {
                     <MudDivider Class="my-4" />
-                    <MudText Typo="Typo.h6">보여줄 팀</MudText>
-                    <MudSwitch T="bool" Value="mFormModel.IsVisibleToAllTeams" ValueChanged="@(value => setVisibleToAllTeams(value ? EMenuTeamVisibility.AllTeams : EMenuTeamVisibility.SelectedTeams))" Label="모든 팀에 보이기" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6">팀 표시 범위</MudText>
+                    <MudSwitch T="bool" Value="mFormModel.IsVisibleToAllTeams" ValueChanged="@(value => setVisibleToAllTeams(value ? EMenuTeamVisibility.AllTeams : EMenuTeamVisibility.SelectedTeams))" Label="모든 팀에 표시" Color="Color.Primary" />
                     <div class="hub-team-check-grid">
                         @foreach (Team team in mTeams)
                         {
@@ -57,33 +60,32 @@
                 }
                 else
                 {
-                    <MudAlert Severity="Severity.Info" Class="mt-4">이 메뉴는 맡은 역할만 확인하므로 팀을 따로 고르지 않습니다.</MudAlert>
+                    <MudAlert Severity="Severity.Info" Class="mt-4">이 메뉴는 표시 대상만으로 관리되며 팀 범위를 따로 고르지 않습니다.</MudAlert>
                 }
+                <div class="hub-menu-technical-note">화면 주소: @mSelectedMenuItemOrNull.Href</div>
                 <div class="hub-submit-row">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveMenuAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
                 </div>
             }
         </MudPaper>
     </MudItem>
-    <MudItem xs="12" lg="8" xl="9">
+    <MudItem xs="12" lg="7" xl="8">
         <MudPaper Class="hub-card hub-list-card pa-4">
             <MudText Typo="Typo.h6">메뉴 목록</MudText>
             <MudTable Items="mMenuItems" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table hub-menu-table">
                 <HeaderContent>
-                    <MudTh>순서</MudTh>
+                    <MudTh>표시 순서</MudTh>
                     <MudTh>메뉴</MudTh>
-                    <MudTh>화면 주소</MudTh>
-                    <MudTh>보이는 대상</MudTh>
-                    <MudTh>팀 제한</MudTh>
+                    <MudTh>표시 대상</MudTh>
+                    <MudTh>팀 범위</MudTh>
                     <MudTh>사용 여부</MudTh>
                     <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate Context="menuItem">
-                    <MudTd DataLabel="순서">@menuItem.SortOrder</MudTd>
+                    <MudTd DataLabel="표시 순서">@menuItem.SortOrder</MudTd>
                     <MudTd DataLabel="메뉴">@menuItem.DisplayName</MudTd>
-                    <MudTd DataLabel="화면 주소">@menuItem.Href</MudTd>
-                    <MudTd DataLabel="보이는 대상">@MenuAccessLevelUtility.GetDisplayName(menuItem.AccessLevel)</MudTd>
-                    <MudTd DataLabel="팀 제한">@getTeamPermissionText(menuItem)</MudTd>
+                    <MudTd DataLabel="표시 대상">@MenuAccessLevelUtility.GetDisplayName(menuItem.AccessLevel)</MudTd>
+                    <MudTd DataLabel="팀 범위">@getTeamPermissionText(menuItem)</MudTd>
                     <MudTd DataLabel="사용 여부"><span class="@(menuItem.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(menuItem.IsActive ? "사용 중" : "숨김")</span></MudTd>
                     <MudTd DataLabel="작업" Class="hub-action-cell">
                         <div class="hub-table-actions">

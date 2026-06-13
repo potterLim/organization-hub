@@ -228,7 +228,7 @@ else
                 <MudPaper Class="hub-card hub-form-card hub-approval-line-card pa-4">
                     <div class="hub-approval-line-head">
                         <MudText Typo="Typo.h6">결재 경로</MudText>
-                        <MudText Typo="Typo.body2" Class="hub-muted">요청 후 아래 순서대로 검토와 승인이 진행됩니다.</MudText>
+                        <MudText Typo="Typo.body2" Class="hub-muted">요청 후 아래 순서대로 결재가 진행됩니다.</MudText>
                     </div>
                     <MudTextField T="string" Value="@mFormModel.Title" ValueChanged="handleTitleChangedAsync" Label="요청 제목" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     <MudSelect T="int" Label="결재 방식" Value="mFormModel.StepCount" ValueChanged="handleStepCountChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@getApprovalStepDescription()">
@@ -252,7 +252,7 @@ else
                     <div class="hub-approval-approver-fields">
                         @if (mFormModel.StepCount >= 2)
                         {
-                            <MudSelect @key="@("first-" + mFormModel.StepCount)" T="int" Label="팀 검토자" Value="mFormModel.FirstApproverUserID" ValueChanged="handleFirstApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudSelect @key="@("first-" + mFormModel.StepCount)" T="int" Label="1차 결재자" Value="mFormModel.FirstApproverUserID" ValueChanged="handleFirstApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
                                 @foreach (ApprovalUserOption userOption in getFirstApproverOptions())
                                 {
                                     <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -261,7 +261,7 @@ else
                         }
                         @if (mFormModel.StepCount == 3)
                         {
-                            <MudSelect @key="@("second-" + mFormModel.StepCount)" T="int" Label="추가 검토자" Value="mFormModel.SecondApproverUserID" ValueChanged="handleSecondApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudSelect @key="@("second-" + mFormModel.StepCount)" T="int" Label="2차 결재자" Value="mFormModel.SecondApproverUserID" ValueChanged="handleSecondApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
                                 @foreach (ApprovalUserOption userOption in getSecondApproverOptions())
                                 {
                                     <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -270,11 +270,11 @@ else
                         }
                         @if (mCreateContext.FinalApproverOptions.Count == 1)
                         {
-                            <MudTextField Value="@mCreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="최종 승인자" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
+                            <MudTextField Value="@mCreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="최종 결재자" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
                         }
                         else
                         {
-                            <MudSelect @key="@("final-" + mFormModel.StepCount)" T="int" Label="최종 승인자" Value="mFormModel.FinalApproverUserID" ValueChanged="handleFinalApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudSelect @key="@("final-" + mFormModel.StepCount)" T="int" Label="최종 결재자" Value="mFormModel.FinalApproverUserID" ValueChanged="handleFinalApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
                                 @foreach (ApprovalUserOption userOption in getFinalApproverOptions())
                                 {
                                     <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -936,12 +936,12 @@ else
     {
         if (stepCount == 2)
         {
-            return "팀 검토 + 최종 승인";
+            return "1차 결재 + 최종 결재";
         }
 
         if (stepCount == 3)
         {
-            return "팀 검토 + 추가 검토 + 최종 승인";
+            return "1차 결재 + 2차 결재 + 최종 결재";
         }
 
         return stepCount.ToString(CultureInfo.InvariantCulture) + "단계";
@@ -951,10 +951,10 @@ else
     {
         if (mFormModel.StepCount == 3)
         {
-            return "중요 문서처럼 중간 검토가 한 번 더 필요한 요청에 적합합니다.";
+            return "중간 결재자를 한 명 더 거친 뒤 최종 결재를 받습니다.";
         }
 
-        return "일반 문서처럼 팀 검토 후 바로 최종 승인을 받는 요청에 적합합니다.";
+        return "1차 결재 후 최종 결재를 받습니다.";
     }
 
     private IReadOnlyList<ApprovalFlowPreviewItem> getApprovalFlowPreviewItems()
@@ -962,15 +962,15 @@ else
         List<ApprovalFlowPreviewItem> previewItems = new List<ApprovalFlowPreviewItem>();
         if (mFormModel.StepCount >= 2)
         {
-            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "팀 검토", mFormModel.FirstApproverUserID));
+            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "1차 결재", mFormModel.FirstApproverUserID));
         }
 
         if (mFormModel.StepCount == 3)
         {
-            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "추가 검토", mFormModel.SecondApproverUserID));
+            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "2차 결재", mFormModel.SecondApproverUserID));
         }
 
-        previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "최종 승인", mFormModel.FinalApproverUserID));
+        previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "최종 결재", mFormModel.FinalApproverUserID));
         return previewItems;
     }
 

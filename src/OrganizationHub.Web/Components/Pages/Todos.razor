@@ -99,7 +99,7 @@ else
                         <section class="hub-todo-column hub-todo-column-muted">
                             <div class="hub-todo-column-head">
                                 <MudText Typo="Typo.h6">완료됨</MudText>
-                                <span class="hub-status-pill">@getCompletedTasks().Count.ToString(CultureInfo.InvariantCulture)</span>
+                                <span class="hub-status-pill hub-status-completed">@getCompletedTasks().Count.ToString(CultureInfo.InvariantCulture)</span>
                             </div>
                             @if (getCompletedTasks().Count == 0)
                             {

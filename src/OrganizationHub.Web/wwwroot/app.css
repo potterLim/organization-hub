@@ -975,6 +975,13 @@ h1:focus {
     min-height: 20px;
 }
 
+.hub-calendar-day-badges {
+    align-items: center;
+    display: inline-flex;
+    gap: 5px;
+    min-width: 0;
+}
+
 .hub-calendar-today-pill {
     background: var(--hub-brand-soft);
     border-radius: 999px;
@@ -985,56 +992,51 @@ h1:focus {
     padding: 5px 7px;
 }
 
-.hub-calendar-day-summary {
+.hub-calendar-day-time-list {
     background: rgba(255, 255, 255, .64);
     border: 1px solid rgba(78, 104, 145, .12);
     border-radius: 14px;
     color: var(--hub-text-strong);
     cursor: pointer;
     display: grid;
-    gap: 8px;
+    gap: 5px;
     margin-top: 10px;
-    min-height: 62px;
-    padding: 10px;
+    min-height: 68px;
+    padding: 9px 10px;
     text-align: left;
     width: 100%;
 }
 
-.hub-calendar-day-summary:hover {
+.hub-calendar-day-time-list:hover {
     background: rgba(33, 107, 255, .08);
     border-color: rgba(33, 107, 255, .2);
 }
 
 .hub-calendar-day-count {
-    color: var(--hub-text-strong);
-    font-size: 13px;
+    background: rgba(33, 107, 255, .09);
+    border: 1px solid rgba(33, 107, 255, .12);
+    border-radius: 999px;
+    color: var(--hub-brand-deep);
+    font-size: 10px;
     font-weight: 900;
     line-height: 1;
+    padding: 5px 7px;
+    white-space: nowrap;
 }
 
-.hub-calendar-day-time {
+.hub-calendar-day-time-line {
     color: var(--hub-text-muted);
-    font-size: 11px;
+    display: block;
+    font-size: 12px;
     font-weight: 850;
-    line-height: 1;
+    line-height: 1.15;
 }
 
-.hub-calendar-day-dots {
-    display: flex;
-    gap: 5px;
-    min-height: 7px;
-}
-
-.hub-calendar-day-dot {
-    background: rgba(78, 104, 145, .36);
-    border-radius: 999px;
-    display: inline-block;
-    height: 7px;
-    width: 7px;
-}
-
-.hub-calendar-day-dot-editable {
-    background: var(--hub-brand-deep);
+.hub-calendar-day-more {
+    color: var(--hub-brand-deep);
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.15;
 }
 
 .hub-calendar-row-button {
@@ -1165,8 +1167,10 @@ h1:focus {
 .hub-admin-form-heading {
     align-items: center;
     display: flex;
+    gap: 12px;
     justify-content: space-between;
     margin-bottom: 8px;
+    min-width: 0;
 }
 
 .hub-admin-form-heading .mud-typography-h6 {
@@ -1180,8 +1184,10 @@ h1:focus {
     color: var(--hub-brand-deep);
     font-size: 12px;
     font-weight: 900;
+    flex: 0 0 auto;
     line-height: 1;
     padding: 8px 10px;
+    white-space: nowrap;
 }
 
 .hub-form-hint {
@@ -1191,12 +1197,28 @@ h1:focus {
     color: var(--hub-text-muted);
     font-size: 13px;
     font-weight: 800;
-    line-height: 1.55;
+    line-height: 1.45;
     margin-bottom: 10px;
     margin-top: -2px;
     padding: 10px 12px;
     text-wrap: pretty;
     word-break: keep-all;
+}
+
+.hub-menu-technical-note {
+    background: rgba(248, 250, 255, .72);
+    border: 1px solid rgba(200, 211, 231, .72);
+    border-radius: 12px;
+    color: var(--hub-text-muted);
+    font-family: Consolas, "SFMono-Regular", "Roboto Mono", monospace;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.35;
+    margin-top: 12px;
+    overflow: hidden;
+    padding: 10px 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .hub-admin-section-heading {
@@ -1429,10 +1451,39 @@ h1:focus {
     margin-top: 12px;
 }
 
+.hub-workflow-designer-card {
+    display: grid;
+    gap: 16px;
+}
+
+.hub-workflow-section {
+    background: rgba(248, 250, 255, .72);
+    border: 1px solid rgba(200, 211, 231, .72);
+    border-radius: 14px;
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+}
+
+.hub-workflow-section .mud-input-control {
+    margin-bottom: 0 !important;
+}
+
+.hub-workflow-section-title {
+    color: var(--hub-text-strong);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.hub-workflow-designer-card .hub-google-panel-heading {
+    margin-bottom: 0;
+}
+
 .hub-workflow-step {
-    background: rgba(15, 23, 42, .025);
-    border: 1px solid var(--hub-border);
-    border-radius: 8px;
+    background: rgba(255, 255, 255, .7);
+    border: 1px solid rgba(78, 104, 145, .13);
+    border-radius: 14px;
 }
 
 .hub-workflow-step-heading {
@@ -1450,7 +1501,7 @@ h1:focus {
 .hub-workflow-step-fields {
     display: grid;
     gap: 10px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
 }
 
 .hub-workflow-step-fields .mud-input-control {
@@ -2040,6 +2091,10 @@ h1:focus {
     padding: 10px 14px !important;
 }
 
+.hub-menu-table table {
+    min-width: 560px;
+}
+
 .hub-menu-table td {
     line-height: 1.45;
     max-width: none;
@@ -2086,6 +2141,11 @@ h1:focus {
 .hub-status-active {
     background: rgba(20, 150, 109, .12);
     color: #087554;
+}
+
+.hub-status-completed {
+    background: rgba(78, 104, 145, .12);
+    color: #4e6891;
 }
 
 .hub-status-inactive {
@@ -4324,7 +4384,7 @@ h1:focus {
     }
 
     .hub-calendar-day-date {
-        justify-content: flex-start;
+        justify-content: space-between;
         margin-bottom: 8px;
     }
 
@@ -4332,14 +4392,8 @@ h1:focus {
         content: "일";
     }
 
-    .hub-calendar-day-summary {
-        align-items: center;
-        grid-template-columns: auto minmax(0, 1fr) auto;
+    .hub-calendar-day-time-list {
         min-height: 48px;
-    }
-
-    .hub-calendar-day-dots {
-        justify-content: flex-end;
     }
 
     .hub-login-panel {

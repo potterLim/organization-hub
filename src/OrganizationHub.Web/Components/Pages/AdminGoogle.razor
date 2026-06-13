@@ -139,8 +139,8 @@
             <div class="hub-google-panel-heading">
                 <MudText Typo="Typo.h6">Drive 폴더 선택</MudText>
                 <div class="hub-google-panel-actions">
-                    <MudTooltip Text="기본 Drive 폴더 구조를 만들고 설정에 연결합니다.">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsEnsuringStandardDriveFolders)" OnClick="ensureStandardDriveFoldersAsync" StartIcon="@Icons.Material.Filled.CreateNewFolder">기본 폴더 만들기</MudButton>
+                    <MudTooltip Text="표준 Drive 폴더가 없으면 만들고 설정에 연결합니다.">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsEnsuringStandardDriveFolders)" OnClick="ensureStandardDriveFoldersAsync" StartIcon="@Icons.Material.Filled.CreateNewFolder">표준 Drive 폴더 준비</MudButton>
                     </MudTooltip>
                     <MudTooltip Text="저장된 Drive 폴더 이름과 기본 자료 위치를 정리합니다.">
                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsApplyingStandardDriveFolderNames)" OnClick="applyStandardDriveFolderNamesAsync" StartIcon="@Icons.Material.Filled.DriveFileRenameOutline">폴더 이름 정리</MudButton>
@@ -200,8 +200,8 @@
             <div class="hub-google-panel-heading">
                 <MudText Typo="Typo.h6">Calendar 선택</MudText>
                 <div class="hub-google-panel-actions">
-                    <MudTooltip Text="조직, 책임자, 팀별 기본 Calendar를 만들고 설정에 연결합니다.">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsEnsuringStandardCalendars)" OnClick="ensureStandardCalendarsAsync" StartIcon="@Icons.Material.Filled.EventAvailable">기본 Calendar 만들기</MudButton>
+                    <MudTooltip Text="표준 Calendar가 없으면 만들고 설정에 연결합니다.">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsEnsuringStandardCalendars)" OnClick="ensureStandardCalendarsAsync" StartIcon="@Icons.Material.Filled.EventAvailable">표준 Calendar 준비</MudButton>
                     </MudTooltip>
                 </div>
             </div>
@@ -243,7 +243,7 @@
         <MudPaper Class="hub-card hub-list-card pa-4">
             <div class="hub-google-panel-heading">
                 <MudText Typo="Typo.h6">Google Tasks 목록 선택</MudText>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsEnsuringStandardTaskLists)" OnClick="ensureStandardTaskListsAsync" StartIcon="@Icons.Material.Filled.AutoAwesomeMotion">기본 Google Tasks 목록 만들기</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsEnsuringStandardTaskLists)" OnClick="ensureStandardTaskListsAsync" StartIcon="@Icons.Material.Filled.AutoAwesomeMotion">표준 Google Tasks 목록 준비</MudButton>
             </div>
             <div class="hub-google-toolbar">
                 <MudSelect T="string" Label="저장 대상" Value="mSelectedTaskListTargetKey" ValueChanged="setTaskListTarget" Variant="Variant.Outlined" Margin="Margin.Dense">

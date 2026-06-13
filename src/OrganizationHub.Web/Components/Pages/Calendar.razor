@@ -244,22 +244,28 @@ else
                                 <div class="@getCalendarDayCellClass(dayCell)">
                                     <div class="hub-calendar-day-date">
                                         <span>@dayCell.Date.Day</span>
-                                        @if (dayCell.IsToday)
-                                        {
-                                            <span class="hub-calendar-today-pill">오늘</span>
-                                        }
+                                        <span class="hub-calendar-day-badges">
+                                            @if (dayCell.Events.Count > 0)
+                                            {
+                                                <span class="hub-calendar-day-count">@getDayEventCountText(dayCell)</span>
+                                            }
+                                            @if (dayCell.IsToday)
+                                            {
+                                                <span class="hub-calendar-today-pill">오늘</span>
+                                            }
+                                        </span>
                                     </div>
                                     @if (dayCell.Events.Count > 0)
                                     {
-                                        <button type="button" class="hub-calendar-day-summary" @onclick="@(() => selectDay(dayCell))" aria-label="@getDaySummaryLabel(dayCell)">
-                                            <span class="hub-calendar-day-count">@getDayEventCountText(dayCell)</span>
-                                            <span class="hub-calendar-day-time">@getDayTimePreview(dayCell)</span>
-                                            <span class="hub-calendar-day-dots" aria-hidden="true">
-                                                @foreach (CalendarEventItem calendarEvent in getPreviewDayEvents(dayCell))
-                                                {
-                                                    <span class="@getCalendarDayDotClass(calendarEvent)"></span>
-                                                }
-                                            </span>
+                                        <button type="button" class="hub-calendar-day-time-list" @onclick="@(() => selectDay(dayCell))" aria-label="@getDaySummaryLabel(dayCell)">
+                                            @foreach (CalendarEventItem calendarEvent in getPreviewDayEvents(dayCell))
+                                            {
+                                                <span class="hub-calendar-day-time-line">@formatCalendarChipTime(calendarEvent)</span>
+                                            }
+                                            @if (getHiddenDayEventCount(dayCell) > 0)
+                                            {
+                                                <span class="hub-calendar-day-more">+@getHiddenDayEventCount(dayCell).ToString(CultureInfo.InvariantCulture)</span>
+                                            }
                                         </button>
                                     }
                                 </div>
@@ -590,6 +596,11 @@ else
         return dayCell.Events.Take(4).ToList();
     }
 
+    private int getHiddenDayEventCount(CalendarDayCell dayCell)
+    {
+        return Math.Max(0, dayCell.Events.Count - getPreviewDayEvents(dayCell).Count);
+    }
+
     private IReadOnlyList<CalendarEventItem> getSelectedDayEvents()
     {
         if (mSelectedDayOrNull.HasValue == false)
@@ -610,36 +621,9 @@ else
         return dayCell.Events.Count.ToString(CultureInfo.InvariantCulture) + "건";
     }
 
-    private string getDayTimePreview(CalendarDayCell dayCell)
-    {
-        CalendarEventItem? firstEventOrNull = dayCell.Events.FirstOrDefault();
-        if (firstEventOrNull == null)
-        {
-            return string.Empty;
-        }
-
-        string firstTimeText = formatCalendarChipTime(firstEventOrNull);
-        if (dayCell.Events.Count == 1)
-        {
-            return firstTimeText;
-        }
-
-        return firstTimeText + " 외 " + (dayCell.Events.Count - 1).ToString(CultureInfo.InvariantCulture);
-    }
-
     private string getDaySummaryLabel(CalendarDayCell dayCell)
     {
         return dayCell.Date.ToString("M월 d일", CultureInfo.InvariantCulture) + " 일정 " + getDayEventCountText(dayCell) + " 보기";
-    }
-
-    private string getCalendarDayDotClass(CalendarEventItem calendarEvent)
-    {
-        if (calendarEvent.CanEdit)
-        {
-            return "hub-calendar-day-dot hub-calendar-day-dot-editable";
-        }
-
-        return "hub-calendar-day-dot";
     }
 
     private string getCalendarDayDetailItemClass(CalendarEventItem calendarEvent)
