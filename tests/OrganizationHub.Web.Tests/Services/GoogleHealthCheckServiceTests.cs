@@ -33,8 +33,8 @@ public sealed class GoogleHealthCheckServiceTests
             Assert.DoesNotContain(items, item => item.Name.Contains(OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_DISPLAY_NAME, StringComparison.Ordinal));
             Assert.Contains(items, item => item.Name == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " 자료");
             Assert.Contains(items, item => item.Name == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " " + OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME);
-            Assert.Contains(items, item => item.Name == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " 캘린더");
-            Assert.Contains(items, item => item.Name == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " 할 일 목록");
+            Assert.Contains(items, item => item.Name == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " Calendar");
+            Assert.Contains(items, item => item.Name == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " Google Tasks 목록");
         }
     }
 

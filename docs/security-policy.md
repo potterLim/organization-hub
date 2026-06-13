@@ -28,7 +28,7 @@ Organization Hub의 핵심 보안 목표는 사용자가 자신에게 부여된 
 
 ## Google 데이터
 
-Organization Hub는 연결된 Google 계정의 자료, 일정, 할 일에 접근합니다. 앱 DB에는 원본 파일이나 일정 본문 전체를 복제 저장하지 않고, 운영에 필요한 식별자와 상태 정보를 저장합니다.
+Organization Hub는 연결된 Google 계정의 자료, Calendar, Google Tasks에 접근합니다. 앱 DB에는 원본 파일이나 일정 본문 전체를 복제 저장하지 않고, 운영에 필요한 식별자와 상태 정보를 저장합니다.
 
 자료 권한은 기본 자료 위치와 관리자가 연결한 폴더를 기준으로 계산합니다. 요청자가 folder ID나 file ID를 직접 바꿔도 서버 권한 검사를 통과해야 합니다.
 

@@ -83,15 +83,15 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     public async Task<IReadOnlyList<GoogleCalendarAssignmentOption>> GetCalendarAssignmentOptionsAsync(CancellationToken cancellationToken)
     {
         List<GoogleCalendarAssignmentOption> options = new List<GoogleCalendarAssignmentOption>();
-        options.Add(createCalendarAssignmentOption("Management", OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME + " 캘린더", EGoogleCalendarAssignmentKind.Organization, null));
-        options.Add(createCalendarAssignmentOption("Leader", OrganizationHubWorkspaceDefaults.RESPONSIBLE_CALENDAR_NAME + " 캘린더", EGoogleCalendarAssignmentKind.Leader, null));
+        options.Add(createCalendarAssignmentOption("Management", OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME + " Calendar", EGoogleCalendarAssignmentKind.Organization, null));
+        options.Add(createCalendarAssignmentOption("Leader", OrganizationHubWorkspaceDefaults.RESPONSIBLE_CALENDAR_NAME + " Calendar", EGoogleCalendarAssignmentKind.Leader, null));
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             List<Team> teams = await getWorkspaceTeamsAsync(dbContext, cancellationToken);
             foreach (Team team in teams)
             {
-                options.Add(createCalendarAssignmentOption("Team:" + team.ID.ToString(System.Globalization.CultureInfo.InvariantCulture), team.DisplayName + " 캘린더", EGoogleCalendarAssignmentKind.Team, team.ID));
+                options.Add(createCalendarAssignmentOption("Team:" + team.ID.ToString(System.Globalization.CultureInfo.InvariantCulture), team.DisplayName + " Calendar", EGoogleCalendarAssignmentKind.Team, team.ID));
             }
         }
 
@@ -101,15 +101,15 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     public async Task<IReadOnlyList<GoogleTaskListAssignmentOption>> GetTaskListAssignmentOptionsAsync(CancellationToken cancellationToken)
     {
         List<GoogleTaskListAssignmentOption> options = new List<GoogleTaskListAssignmentOption>();
-        options.Add(createTaskListAssignmentOption("Management", OrganizationHubWorkspaceDefaults.ORGANIZATION_TASK_LIST_NAME + " 목록", EGoogleTaskListAssignmentKind.Organization, null));
-        options.Add(createTaskListAssignmentOption("Leader", OrganizationHubWorkspaceDefaults.RESPONSIBLE_TASK_LIST_NAME + " 목록", EGoogleTaskListAssignmentKind.Leader, null));
+        options.Add(createTaskListAssignmentOption("Management", "조직 공용 Google Tasks 목록", EGoogleTaskListAssignmentKind.Organization, null));
+        options.Add(createTaskListAssignmentOption("Leader", "책임자 Google Tasks 목록", EGoogleTaskListAssignmentKind.Leader, null));
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             List<Team> teams = await getWorkspaceTeamsAsync(dbContext, cancellationToken);
             foreach (Team team in teams)
             {
-                options.Add(createTaskListAssignmentOption("Team:" + team.ID.ToString(System.Globalization.CultureInfo.InvariantCulture), team.DisplayName + " 할 일 목록", EGoogleTaskListAssignmentKind.Team, team.ID));
+                options.Add(createTaskListAssignmentOption("Team:" + team.ID.ToString(System.Globalization.CultureInfo.InvariantCulture), team.DisplayName + " Google Tasks 목록", EGoogleTaskListAssignmentKind.Team, team.ID));
             }
         }
 
@@ -148,12 +148,12 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
         }
         catch (Exception exception)
         {
-            failureMessages.Add("기본 자료 폴더를 준비하지 못했습니다. " + exception.Message);
+            failureMessages.Add("기본 Drive 폴더를 준비하지 못했습니다. " + exception.Message);
         }
 
         if (failureMessages.Count > 0)
         {
-            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("자료 폴더", failureMessages));
+            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("Drive 폴더", failureMessages));
         }
 
         return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Succeed(summary);
@@ -163,7 +163,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     {
         if (mCredentialFactoryOrNull == null || mOptionsOrNull == null)
         {
-            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail("캘린더 생성 서비스를 사용할 수 없습니다.");
+            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail("Calendar 생성 서비스를 사용할 수 없습니다.");
         }
 
         GoogleWorkspaceResourceSetupSummary summary = new GoogleWorkspaceResourceSetupSummary();
@@ -179,7 +179,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
                 GoogleCalendarData calendar = await getOrCreateGoogleCalendarAsync(calendarService, googleCalendars, standardName, summary, cancellationToken);
                 if (string.IsNullOrWhiteSpace(calendar.Id))
                 {
-                    failureMessages.Add(standardName + " 캘린더 ID를 받지 못했습니다.");
+                    failureMessages.Add(standardName + " Calendar ID를 받지 못했습니다.");
                     continue;
                 }
 
@@ -190,7 +190,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
                     continue;
                 }
 
-                failureMessages.Add(standardName + " 캘린더를 저장하지 못했습니다. " + assignResult.ErrorMessage);
+                failureMessages.Add(standardName + " Calendar를 저장하지 못했습니다. " + assignResult.ErrorMessage);
             }
 
             clearCalendarListCache();
@@ -202,7 +202,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         if (failureMessages.Count > 0)
         {
-            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("캘린더", failureMessages));
+            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("Calendar", failureMessages));
         }
 
         return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Succeed(summary);
@@ -231,7 +231,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         if (summary.TargetCount == 0)
         {
-            return ServiceResultOfT<GoogleDriveFolderNameSyncSummary>.Fail("표준 이름을 적용할 자료 폴더가 아직 설정되지 않았습니다.");
+            return ServiceResultOfT<GoogleDriveFolderNameSyncSummary>.Fail("표준 이름을 적용할 Drive 폴더가 아직 설정되지 않았습니다.");
         }
 
         return ServiceResultOfT<GoogleDriveFolderNameSyncSummary>.Succeed(summary);
@@ -241,7 +241,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     {
         if (mCredentialFactoryOrNull == null || mOptionsOrNull == null)
         {
-            return ServiceResultOfT<GoogleTaskListSetupSummary>.Fail("할 일 목록 생성 서비스를 사용할 수 없습니다.");
+            return ServiceResultOfT<GoogleTaskListSetupSummary>.Fail("Google Tasks 목록 생성 서비스를 사용할 수 없습니다.");
         }
 
         GoogleTaskListSetupSummary summary = new GoogleTaskListSetupSummary();
@@ -296,7 +296,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         if (string.IsNullOrWhiteSpace(folderID))
         {
-            return ServiceResult.Fail("자료 폴더를 선택해 주세요.");
+            return ServiceResult.Fail("Drive 폴더를 선택해 주세요.");
         }
 
         IReadOnlyList<GoogleFolderAssignmentOption> options = await GetFolderAssignmentOptionsAsync(cancellationToken);
@@ -338,7 +338,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         if (string.IsNullOrWhiteSpace(calendarID))
         {
-            return ServiceResult.Fail("캘린더를 선택해 주세요.");
+            return ServiceResult.Fail("Calendar를 선택해 주세요.");
         }
 
         IReadOnlyList<GoogleCalendarAssignmentOption> options = await GetCalendarAssignmentOptionsAsync(cancellationToken);
@@ -364,7 +364,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
             {
                 if (optionOrNull.TeamID.HasValue == false)
                 {
-                    return ServiceResult.Fail("팀 캘린더 대상을 찾을 수 없습니다.");
+                    return ServiceResult.Fail("팀 Calendar 대상을 찾을 수 없습니다.");
                 }
 
                 int teamID = optionOrNull.TeamID.Value;
@@ -391,7 +391,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
         if (string.IsNullOrWhiteSpace(taskListID))
         {
-            return ServiceResult.Fail("할 일 목록을 선택해 주세요.");
+            return ServiceResult.Fail("Google Tasks 목록을 선택해 주세요.");
         }
 
         IReadOnlyList<GoogleTaskListAssignmentOption> options = await GetTaskListAssignmentOptionsAsync(cancellationToken);
@@ -417,7 +417,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
             {
                 if (optionOrNull.TeamID.HasValue == false)
                 {
-                    return ServiceResult.Fail("팀 할 일 목록 대상을 찾을 수 없습니다.");
+                    return ServiceResult.Fail("팀 Google Tasks 목록 대상을 찾을 수 없습니다.");
                 }
 
                 int teamID = optionOrNull.TeamID.Value;
@@ -707,7 +707,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     private string createFolderNameFailureMessage(IReadOnlyList<string> failureMessages)
     {
         List<string> visibleMessages = failureMessages.Take(3).ToList();
-        string message = "일부 자료 폴더명을 변경하지 못했습니다. " + string.Join(" / ", visibleMessages);
+        string message = "일부 Drive 폴더명을 변경하지 못했습니다. " + string.Join(" / ", visibleMessages);
         if (failureMessages.Count > visibleMessages.Count)
         {
             message = message + " 외 " + (failureMessages.Count - visibleMessages.Count).ToString(System.Globalization.CultureInfo.InvariantCulture) + "건";
@@ -768,7 +768,7 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
     {
         if (mCredentialFactoryOrNull == null || mOptionsOrNull == null)
         {
-            throw new InvalidOperationException("캘린더 생성 서비스를 사용할 수 없습니다.");
+            throw new InvalidOperationException("Calendar 생성 서비스를 사용할 수 없습니다.");
         }
 
         IConfigurableHttpClientInitializer credential = await mCredentialFactoryOrNull.CreateHttpClientInitializerAsync(CALENDAR_SCOPES, cancellationToken);
@@ -840,9 +840,9 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
         }
 
         string displayName = option.DisplayName;
-        if (displayName.EndsWith(" 캘린더", StringComparison.Ordinal))
+        if (displayName.EndsWith(" Calendar", StringComparison.Ordinal))
         {
-            displayName = displayName.Substring(0, displayName.Length - " 캘린더".Length);
+            displayName = displayName.Substring(0, displayName.Length - " Calendar".Length);
         }
 
         return displayName;
@@ -889,14 +889,14 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
     private string createGoogleCalendarSetupErrorMessage(Exception exception)
     {
-        return GoogleApiExceptionMessageFormatter.CreateGoogleCalendarMessage(exception, "표준 캘린더를 만들지 못했습니다.");
+        return GoogleApiExceptionMessageFormatter.CreateGoogleCalendarMessage(exception, "표준 Calendar를 만들지 못했습니다.");
     }
 
     private async Task<GoogleTasksApi> createTasksServiceAsync(CancellationToken cancellationToken)
     {
         if (mCredentialFactoryOrNull == null || mOptionsOrNull == null)
         {
-            throw new InvalidOperationException("할 일 목록 생성 서비스를 사용할 수 없습니다.");
+            throw new InvalidOperationException("Google Tasks 목록 생성 서비스를 사용할 수 없습니다.");
         }
 
         IConfigurableHttpClientInitializer credential = await mCredentialFactoryOrNull.CreateHttpClientInitializerAsync(TASK_SCOPES, cancellationToken);
@@ -963,12 +963,12 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
         }
 
         string displayName = option.DisplayName;
-        if (displayName.EndsWith(" 할 일 목록", StringComparison.Ordinal))
+        if (displayName.EndsWith(" Google Tasks 목록", StringComparison.Ordinal))
         {
-            displayName = displayName.Substring(0, displayName.Length - " 할 일 목록".Length);
+            displayName = displayName.Substring(0, displayName.Length - " Google Tasks 목록".Length);
         }
 
-        return displayName + " 할 일";
+        return displayName + " Google Tasks";
     }
 
     private void clearTaskListCache()
@@ -983,13 +983,13 @@ public sealed class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 
     private string createGoogleTasksSetupErrorMessage(Exception exception)
     {
-        return GoogleApiExceptionMessageFormatter.CreateGoogleTasksMessage(exception, "기본 할 일 목록을 만들지 못했습니다.");
+        return GoogleApiExceptionMessageFormatter.CreateGoogleTasksMessage(exception, "기본 Google Tasks 목록을 만들지 못했습니다.");
     }
 
     private string createTaskListSetupFailureMessage(IReadOnlyList<string> failureMessages)
     {
         List<string> visibleMessages = failureMessages.Take(3).ToList();
-        string message = "일부 할 일 목록을 저장하지 못했습니다. " + string.Join(" / ", visibleMessages);
+        string message = "일부 Google Tasks 목록을 저장하지 못했습니다. " + string.Join(" / ", visibleMessages);
         if (failureMessages.Count > visibleMessages.Count)
         {
             message = message + " 외 " + (failureMessages.Count - visibleMessages.Count).ToString(System.Globalization.CultureInfo.InvariantCulture) + "건";

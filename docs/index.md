@@ -7,7 +7,7 @@ Organization Hub 문서는 배포 후 실제 조직을 설정하고 운영하는
 | [배포 가이드](deployment-guide.md) | 서버 준비, 환경 변수, 실행, 백업, 업데이트, 배포 점검 |
 | [운영 가이드](operation-guide.md) | 팀, 직책, 권한, 자료 위치, 일정, 할 일, 결재 경로 설정 절차 |
 | [권한 정책](permission-policy.md) | 시스템 관리자, 관리팀, 팀별 직책, 권한 범위, 메뉴 접근 원칙 |
-| [Google 연동 가이드](google-integration-guide.md) | 자료 폴더, 캘린더, 할 일 목록 연결 방법 |
+| [Google 연동 가이드](google-integration-guide.md) | Drive 폴더, Calendar, Google Tasks 목록 연결 방법 |
 | [보안 정책](security-policy.md) | 인증, 서버 권한 검증, Google 데이터, 비밀값, 운영 점검 |
 | [기술 개요](technical-overview.md) | 배포자가 알아야 할 런타임 구조, 데이터 위치, 캐시와 변경 감지 |
 | [유지보수 가이드](development-guide.md) | 로컬 실행, 검증, 마이그레이션, QA 산출물 관리 |

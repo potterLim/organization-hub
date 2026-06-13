@@ -11,7 +11,7 @@
 <div class="hub-page-header">
     <div>
         <h1 class="hub-page-title">Google 연결</h1>
-        <div class="hub-page-description">Google 계정을 연결하고 자료 폴더, 캘린더, 할 일 목록을 운영 화면에 연결합니다.</div>
+        <div class="hub-page-description">Google 계정을 연결하고 Drive 폴더, Calendar, Google Tasks 목록을 운영 화면에 연결합니다.</div>
     </div>
 </div>
 
@@ -137,12 +137,12 @@
     <div class="hub-google-panel-stack">
         <MudPaper Class="hub-card hub-list-card pa-4">
             <div class="hub-google-panel-heading">
-                <MudText Typo="Typo.h6">자료 폴더 선택</MudText>
+                <MudText Typo="Typo.h6">Drive 폴더 선택</MudText>
                 <div class="hub-google-panel-actions">
-                    <MudTooltip Text="기본 자료 폴더 구조를 만들고 설정에 연결합니다.">
+                    <MudTooltip Text="기본 Drive 폴더 구조를 만들고 설정에 연결합니다.">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsEnsuringStandardDriveFolders)" OnClick="ensureStandardDriveFoldersAsync" StartIcon="@Icons.Material.Filled.CreateNewFolder">기본 폴더 만들기</MudButton>
                     </MudTooltip>
-                    <MudTooltip Text="저장된 폴더 이름과 기본 자료 위치를 정리합니다.">
+                    <MudTooltip Text="저장된 Drive 폴더 이름과 기본 자료 위치를 정리합니다.">
                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsApplyingStandardDriveFolderNames)" OnClick="applyStandardDriveFolderNamesAsync" StartIcon="@Icons.Material.Filled.DriveFileRenameOutline">폴더 이름 정리</MudButton>
                     </MudTooltip>
                 </div>
@@ -198,10 +198,10 @@
         </MudPaper>
         <MudPaper Class="hub-card hub-list-card pa-4">
             <div class="hub-google-panel-heading">
-                <MudText Typo="Typo.h6">캘린더 선택</MudText>
+                <MudText Typo="Typo.h6">Calendar 선택</MudText>
                 <div class="hub-google-panel-actions">
-                    <MudTooltip Text="조직, 책임자, 팀별 기본 캘린더를 만들고 설정에 연결합니다.">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsEnsuringStandardCalendars)" OnClick="ensureStandardCalendarsAsync" StartIcon="@Icons.Material.Filled.EventAvailable">기본 캘린더 만들기</MudButton>
+                    <MudTooltip Text="조직, 책임자, 팀별 기본 Calendar를 만들고 설정에 연결합니다.">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsEnsuringStandardCalendars)" OnClick="ensureStandardCalendarsAsync" StartIcon="@Icons.Material.Filled.EventAvailable">기본 Calendar 만들기</MudButton>
                     </MudTooltip>
                 </div>
             </div>
@@ -216,23 +216,23 @@
             </div>
             @if (mCalendars.Count == 0)
             {
-                <div class="hub-empty">표시할 캘린더가 없습니다.</div>
+                <div class="hub-empty">표시할 Calendar가 없습니다.</div>
             }
             else
             {
                 <MudTable Items="mCalendars" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
                     <HeaderContent>
-                        <MudTh>캘린더</MudTh>
+                        <MudTh>Calendar</MudTh>
                         <MudTh>권한</MudTh>
                         <MudTh></MudTh>
                     </HeaderContent>
                     <RowTemplate Context="calendar">
-                        <MudTd DataLabel="캘린더">@calendar.Summary</MudTd>
+                        <MudTd DataLabel="Calendar">@calendar.Summary</MudTd>
                         <MudTd DataLabel="권한">@getCalendarAccessDisplayName(calendar)</MudTd>
                         <MudTd DataLabel="작업" Class="hub-action-cell">
                             <div class="hub-table-actions">
-                                <MudTooltip Text="이 캘린더로 연결">
-                                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => assignCalendarAsync(calendar))" aria-label="이 캘린더로 연결" />
+                                <MudTooltip Text="이 Calendar로 연결">
+                                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => assignCalendarAsync(calendar))" aria-label="이 Calendar로 연결" />
                                 </MudTooltip>
                             </div>
                         </MudTd>
@@ -242,8 +242,8 @@
         </MudPaper>
         <MudPaper Class="hub-card hub-list-card pa-4">
             <div class="hub-google-panel-heading">
-                <MudText Typo="Typo.h6">할 일 목록 선택</MudText>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsEnsuringStandardTaskLists)" OnClick="ensureStandardTaskListsAsync" StartIcon="@Icons.Material.Filled.AutoAwesomeMotion">기본 할 일 목록 만들기</MudButton>
+                <MudText Typo="Typo.h6">Google Tasks 목록 선택</MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(mStatus.IsConnected == false || mIsEnsuringStandardTaskLists)" OnClick="ensureStandardTaskListsAsync" StartIcon="@Icons.Material.Filled.AutoAwesomeMotion">기본 Google Tasks 목록 만들기</MudButton>
             </div>
             <div class="hub-google-toolbar">
                 <MudSelect T="string" Label="저장 대상" Value="mSelectedTaskListTargetKey" ValueChanged="setTaskListTarget" Variant="Variant.Outlined" Margin="Margin.Dense">
@@ -256,7 +256,7 @@
             </div>
             @if (mTaskLists.Count == 0)
             {
-                <div class="hub-empty">표시할 할 일 목록이 없습니다.</div>
+                <div class="hub-empty">표시할 Google Tasks 목록이 없습니다.</div>
             }
             else
             {
@@ -268,7 +268,7 @@
                     </HeaderContent>
                     <RowTemplate Context="taskList">
                         <MudTd DataLabel="목록">@taskList.Title</MudTd>
-                        <MudTd DataLabel="종류">할 일 목록</MudTd>
+                        <MudTd DataLabel="종류">Google Tasks</MudTd>
                         <MudTd DataLabel="작업" Class="hub-action-cell">
                             <div class="hub-table-actions">
                                 <MudTooltip Text="이 목록으로 연결">
@@ -365,7 +365,7 @@
         }
         catch (Exception exception)
         {
-            mMessage = "자료 폴더를 불러오지 못했습니다. " + exception.Message;
+            mMessage = "Drive 폴더를 불러오지 못했습니다. " + exception.Message;
             mMessageSeverity = Severity.Error;
         }
     }
@@ -379,7 +379,7 @@
         }
         catch (Exception exception)
         {
-            mMessage = "캘린더 목록을 불러오지 못했습니다. " + exception.Message;
+            mMessage = "Calendar 목록을 불러오지 못했습니다. " + exception.Message;
             mMessageSeverity = Severity.Error;
         }
     }
@@ -439,14 +439,14 @@
     private async Task assignCalendarAsync(GoogleCalendarListItem calendar)
     {
         ServiceResult result = await GoogleWorkspaceSetupService.AssignCalendarAsync(mSelectedCalendarTargetKey, calendar.ID, CancellationToken.None);
-        showResult(result, result.IsSuccess ? calendar.Summary + " 캘린더를 저장했습니다." : string.Empty);
+        showResult(result, result.IsSuccess ? calendar.Summary + " Calendar를 저장했습니다." : string.Empty);
         await loadHealthCheckAsync();
     }
 
     private async Task assignTaskListAsync(GoogleTaskListItem taskList)
     {
         ServiceResult result = await GoogleWorkspaceSetupService.AssignTaskListAsync(mSelectedTaskListTargetKey, taskList.ID, CancellationToken.None);
-        showResult(result, result.IsSuccess ? taskList.Title + " 할 일 목록을 저장했습니다." : string.Empty);
+        showResult(result, result.IsSuccess ? taskList.Title + " Google Tasks 목록을 저장했습니다." : string.Empty);
         await loadHealthCheckAsync();
     }
 
@@ -459,7 +459,7 @@
             if (result.IsSuccess && result.ValueOrNull != null)
             {
                 GoogleWorkspaceResourceSetupSummary summary = result.ValueOrNull;
-                mMessage = createSetupSummaryMessage("기본 자료 폴더 준비 완료", summary);
+                mMessage = createSetupSummaryMessage("기본 Drive 폴더 준비 완료", summary);
                 mMessageSeverity = Severity.Success;
                 resetFolderPath();
                 await loadAssignmentOptionsAsync();
@@ -486,7 +486,7 @@
             if (result.IsSuccess && result.ValueOrNull != null)
             {
                 GoogleWorkspaceResourceSetupSummary summary = result.ValueOrNull;
-                mMessage = createSetupSummaryMessage("기본 캘린더 준비 완료", summary);
+                mMessage = createSetupSummaryMessage("기본 Calendar 준비 완료", summary);
                 mMessageSeverity = Severity.Success;
                 await loadAssignmentOptionsAsync();
                 await loadCalendarsAsync();
@@ -512,7 +512,7 @@
             if (result.IsSuccess && result.ValueOrNull != null)
             {
                 GoogleDriveFolderNameSyncSummary summary = result.ValueOrNull;
-                mMessage = "자료 폴더 정리 완료: 이름 변경 " + summary.RenamedCount.ToString(CultureInfo.InvariantCulture) + "개, 위치 정리 " + summary.MovedCount.ToString(CultureInfo.InvariantCulture) + "개, 폴더 생성 " + summary.CreatedCount.ToString(CultureInfo.InvariantCulture) + "개, 이미 표준 " + summary.AlreadyStandardCount.ToString(CultureInfo.InvariantCulture) + "개";
+                mMessage = "Drive 폴더 정리 완료: 이름 변경 " + summary.RenamedCount.ToString(CultureInfo.InvariantCulture) + "개, 위치 정리 " + summary.MovedCount.ToString(CultureInfo.InvariantCulture) + "개, 폴더 생성 " + summary.CreatedCount.ToString(CultureInfo.InvariantCulture) + "개, 이미 표준 " + summary.AlreadyStandardCount.ToString(CultureInfo.InvariantCulture) + "개";
                 mMessageSeverity = Severity.Success;
                 await loadCurrentFolderAsync();
                 await loadHealthCheckAsync();
@@ -537,7 +537,7 @@
             if (result.IsSuccess && result.ValueOrNull != null)
             {
                 GoogleTaskListSetupSummary summary = result.ValueOrNull;
-                mMessage = "기본 할 일 목록 준비 완료: 생성 " + summary.CreatedCount.ToString(CultureInfo.InvariantCulture) + "개, 재사용 " + summary.ReusedCount.ToString(CultureInfo.InvariantCulture) + "개, 매핑 " + summary.AssignedCount.ToString(CultureInfo.InvariantCulture) + "개";
+                mMessage = "기본 Google Tasks 목록 준비 완료: 생성 " + summary.CreatedCount.ToString(CultureInfo.InvariantCulture) + "개, 재사용 " + summary.ReusedCount.ToString(CultureInfo.InvariantCulture) + "개, 매핑 " + summary.AssignedCount.ToString(CultureInfo.InvariantCulture) + "개";
                 mMessageSeverity = Severity.Success;
                 await loadTaskListsAsync();
                 await loadHealthCheckAsync();
@@ -665,7 +665,7 @@
 
     private string createGoogleTasksErrorMessage(Exception exception)
     {
-        return GoogleApiExceptionMessageFormatter.CreateGoogleTasksMessage(exception, "할 일 목록을 불러오지 못했습니다.");
+        return GoogleApiExceptionMessageFormatter.CreateGoogleTasksMessage(exception, "Google Tasks 목록을 불러오지 못했습니다.");
     }
 
     private string createSetupSummaryMessage(string prefix, GoogleWorkspaceResourceSetupSummary summary)
@@ -690,7 +690,7 @@
     {
         GoogleDriveFolderPathItem rootPathItem = new GoogleDriveFolderPathItem();
         rootPathItem.ID = "root";
-        rootPathItem.Name = "내 드라이브";
+        rootPathItem.Name = "내 Drive";
         mFolderPath = new List<GoogleDriveFolderPathItem>();
         mFolderPath.Add(rootPathItem);
     }
@@ -740,7 +740,7 @@
     {
         if (calendar.IsPrimary)
         {
-            return "기본 캘린더";
+            return "기본 Calendar";
         }
 
         switch (calendar.AccessRole)

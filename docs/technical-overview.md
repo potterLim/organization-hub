@@ -28,10 +28,10 @@ src/OrganizationHub.Web
 - 팀별 직책
 - 직책별 권한 부여
 - 결재 워크플로와 결재 단계
-- Google 폴더, 캘린더, 할 일 목록 ID
+- Google Drive 폴더, Calendar, Google Tasks 목록 ID
 - 업로드 기록과 일정 삭제 기록
 
-Google Drive 파일 원본, 캘린더 원본, 할 일 원본은 연결된 Google 계정에 남습니다.
+Google Drive 파일 원본, Calendar 원본, Google Tasks 원본은 연결된 Google 계정에 남습니다.
 
 ## 권한 처리
 
@@ -55,7 +55,7 @@ Google 연동은 서비스 계층에서 캡슐화합니다.
 - `GoogleWorkspaceSetupService`
 - `GoogleHealthCheckService`
 
-운영자는 Google 연결 화면의 진단 결과를 기준으로 Google 승인 범위, 자료 폴더, 캘린더, 할 일 목록 연결 상태를 확인합니다.
+운영자는 Google 연결 화면의 진단 결과를 기준으로 Google 승인 범위, Drive 폴더, Calendar, Google Tasks 목록 연결 상태를 확인합니다.
 
 ## 캐시와 변경 감지
 

@@ -9,7 +9,7 @@ It is designed for one organization per deployment. A system administrator confi
 - Configurable teams and team-specific positions
 - Permission grants for documents, schedules, tasks, approvals, users, menus, and system settings
 - Google Drive folder mapping through administrator-selected folders
-- Google Calendar and task-list mapping for organization-wide and team-specific work
+- Google Calendar and Google Tasks mapping for organization-wide and team-specific work
 - Approval workflows configured by requester team, requester position, step, approver rule, and final approval rule
 - Server-side permission checks for direct file, calendar, task, and approval requests
 

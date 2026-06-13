@@ -45,7 +45,7 @@ SQLite 데이터베이스와 Data Protection key는 운영 데이터 볼륨에 �
 - reverse proxy 설정
 - Google OAuth 설정
 
-파일, 일정, 할 일 원본은 연결된 Google 계정에 남습니다.
+파일, Calendar, Google Tasks 원본은 연결된 Google 계정에 남습니다.
 
 ## 업데이트
 
@@ -64,7 +64,7 @@ docker compose up -d --build
 - 초기 시스템 관리자 계정으로 로그인되는가
 - Google 계정 연결과 연결 진단이 정상인가
 - 관리팀과 일반 팀을 만들고 각 팀의 직책 권한을 설정할 수 있는가
-- 자료 폴더, 캘린더, 할 일 목록을 연결할 수 있는가
+- Drive 폴더, Calendar, Google Tasks 목록을 연결할 수 있는가
 - 권한 없는 사용자가 관리자 메뉴와 다른 팀 자료에 접근할 수 없는가
 - 파일 업로드, PDF 보기, 일정, 할 일, 결재 요청이 정상 동작하는가
 - 백업 복구 절차를 운영자가 알고 있는가
