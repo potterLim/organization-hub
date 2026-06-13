@@ -1,0 +1,878 @@
+@media (max-height: 820px) and (min-width: 961px) {
+    .hub-drawer .mud-drawer {
+        padding: 96px 12px 14px 18px;
+    }
+
+    .hub-drawer .mud-drawer-content {
+        height: calc(100vh - 14px);
+        padding: 10px 8px;
+    }
+
+    .hub-nav-brand {
+        margin: 0 6px 6px;
+        padding: 0 4px 8px;
+    }
+
+    .hub-nav-menu .mud-nav-link {
+        margin: 0;
+        min-height: 32px;
+        padding: 0 9px;
+    }
+
+    .hub-nav-menu .mud-nav-link .mud-nav-link-icon {
+        flex-basis: 24px;
+        margin-inline-end: 6px;
+        min-width: 24px;
+        width: 24px;
+    }
+
+    .hub-nav-section-label {
+        font-size: 10.5px;
+        margin: 8px 8px 4px;
+    }
+
+    .hub-nav-divider {
+        margin: 10px 6px 8px;
+    }
+
+    .hub-container {
+        padding-top: 112px;
+    }
+
+    .hub-page-header {
+        margin-bottom: 18px;
+    }
+
+    .hub-card.pa-4 {
+        padding: 20px !important;
+    }
+
+    .hub-card .mud-typography-h6 {
+        margin-bottom: 12px;
+    }
+
+    .hub-google-layout {
+        gap: 20px;
+    }
+
+    .hub-google-panel-stack {
+        gap: 18px;
+    }
+
+    .hub-google-toolbar {
+        margin-bottom: 14px;
+    }
+
+    .hub-google-layout .hub-empty {
+        min-height: 72px;
+        padding: 16px;
+    }
+}
+
+@media (max-width: 960px) {
+    .hub-drawer .mud-drawer {
+        padding: 94px 14px 16px;
+    }
+
+    .hub-drawer .mud-drawer-content {
+        height: calc(100vh - 16px);
+    }
+
+    .hub-container {
+        padding-top: 118px;
+    }
+
+    .hub-page-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .hub-document-meta {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .hub-google-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-settings-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-admin-section-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .hub-position-selection-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-permission-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-permission-controls {
+        grid-template-columns: minmax(88px, .45fr) minmax(140px, 1fr);
+    }
+
+    .hub-permission-toolbar,
+    .hub-resource-picker-grid,
+    .hub-selected-resource-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-permission-scope,
+    .hub-permission-target,
+    .hub-permission-disabled-hint {
+        grid-column: 1 / -1;
+    }
+
+    .hub-workflow-step-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 720px) {
+    :root {
+        --hub-frame: min(1180px, calc(100vw - 24px));
+    }
+
+    .hub-appbar .mud-toolbar {
+        min-height: 82px;
+        padding: 10px 12px;
+    }
+
+    .hub-topbar-shell {
+        height: 58px;
+        padding: 6px 10px;
+    }
+
+    .hub-session-pill {
+        display: none;
+    }
+
+    .hub-logout-button-wide {
+        display: none !important;
+    }
+
+    .hub-logout-button-compact {
+        display: inline-flex !important;
+    }
+
+    .hub-brand-title {
+        font-size: 15px;
+    }
+
+    .hub-brand-mark {
+        border-radius: 16px;
+        height: 38px;
+        width: 38px;
+    }
+
+    .hub-brand-mark img {
+        height: 38px;
+        width: 38px;
+    }
+
+    .hub-container {
+        padding: 108px 12px 36px;
+    }
+
+    .hub-page-title {
+        font-size: 25px;
+    }
+
+    .hub-permission-controls {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-permission-allow {
+        min-height: 42px;
+    }
+
+    .hub-pdfjs-viewer {
+        border-radius: 16px;
+        max-height: none;
+        min-height: 420px;
+        padding: 10px;
+    }
+
+    .hub-pdfjs-toolbar {
+        padding: 8px;
+    }
+
+    .hub-pdfjs-status {
+        min-height: 300px;
+    }
+
+    .hub-page-description {
+        font-size: 14px;
+    }
+
+    .hub-calendar-month-heading {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+        justify-content: flex-start;
+    }
+
+    .hub-calendar-view-switch {
+        width: 100%;
+    }
+
+    .hub-calendar-view-button {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .hub-page-header .mud-stack-row {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .hub-page-header .mud-input-control {
+        flex: 1 1 180px;
+    }
+
+    .hub-page-actions {
+        justify-content: stretch;
+        width: 100%;
+    }
+
+    .hub-page-actions .mud-button-root {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .hub-page-actions .mud-button-label {
+        white-space: nowrap;
+    }
+
+    .hub-search-actions .mud-input-control {
+        flex-basis: 100%;
+        width: 100%;
+    }
+
+    .hub-browser-toolbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-browser-root-select,
+    .hub-browser-search {
+        justify-self: stretch;
+        max-width: none;
+        width: 100%;
+    }
+
+    .hub-control-select-width {
+        max-width: none;
+    }
+
+    .hub-browser-location {
+        align-items: stretch;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-browser-location-actions {
+        justify-content: space-between;
+    }
+
+    .hub-browser-count {
+        white-space: normal;
+    }
+
+    .hub-browser-search {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+
+    .hub-approval-card-head {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .hub-approval-file-row {
+        align-items: center;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .hub-approval-log-row {
+        align-items: start;
+        gap: 4px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-file-desktop-table,
+    .hub-calendar-desktop-table {
+        display: none;
+    }
+
+    .hub-file-mobile-list,
+    .hub-calendar-mobile-list,
+    .hub-approved-mobile-list {
+        display: grid;
+        gap: 12px;
+    }
+
+    .hub-dashboard-recent-desktop {
+        display: none;
+    }
+
+    .hub-dashboard-recent-mobile {
+        display: grid;
+        gap: 12px;
+    }
+
+    .hub-dashboard-more-button {
+        justify-self: stretch;
+        width: 100%;
+    }
+
+    .hub-dashboard-card-head {
+        align-items: center;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 10px;
+    }
+
+    .hub-dashboard-card-action {
+        justify-content: flex-end !important;
+        width: auto;
+    }
+
+    .hub-dashboard-priority-card {
+        margin-bottom: 18px;
+    }
+
+    .hub-dashboard-card-error {
+        align-items: stretch;
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .hub-dashboard-card-error .mud-button-root {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .hub-dashboard-approval-row {
+        align-items: stretch;
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
+    }
+
+    .hub-dashboard-material-row {
+        border-radius: 18px;
+        padding: 14px;
+    }
+
+    .hub-dashboard-material-title-row {
+        gap: 9px;
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .hub-dashboard-material-name {
+        display: -webkit-box;
+        line-height: 1.38 !important;
+        white-space: normal;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .hub-dashboard-material-meta-row {
+        align-items: start;
+        gap: 5px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-dashboard-material-location {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .hub-dashboard-material-path {
+        line-height: 1.55;
+        white-space: normal;
+    }
+
+    .hub-dashboard-material-uploader {
+        justify-self: start;
+        max-width: 100%;
+        text-align: left;
+        white-space: normal;
+    }
+
+    .hub-dashboard-material-actions .mud-icon-button {
+        height: 36px;
+        padding: 6px;
+        width: 36px;
+    }
+
+    .hub-todo-toolbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-todo-create {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-todo-create-bar {
+        grid-template-columns: 24px minmax(0, 1fr);
+        padding: 10px;
+    }
+
+    .hub-todo-create-button {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .hub-todo-column {
+        min-height: 0;
+        padding: 14px;
+    }
+
+    .hub-todo-row {
+        align-items: start;
+        padding: 12px;
+    }
+
+    .hub-todo-row-draggable {
+        grid-template-columns: 22px 34px minmax(0, 1fr);
+    }
+
+    .hub-todo-row-static {
+        grid-template-columns: 34px minmax(0, 1fr);
+    }
+
+    .hub-todo-row-draggable .hub-todo-actions {
+        grid-column: 3 / -1;
+        justify-content: flex-start;
+        min-width: 0;
+    }
+
+    .hub-todo-row-static .hub-todo-actions {
+        grid-column: 2 / -1;
+        justify-content: flex-start;
+        min-width: 0;
+    }
+
+    .hub-todo-delete-confirm {
+        width: 100%;
+    }
+
+    .hub-rule-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-file-compact-row {
+        align-items: flex-start;
+        border-radius: 18px;
+        gap: 12px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        min-height: 0;
+        padding: 14px;
+    }
+
+    .hub-file-compact-name {
+        line-height: 1.38 !important;
+        white-space: normal;
+    }
+
+    .hub-file-compact-meta {
+        gap: 6px 10px;
+        margin-top: 8px;
+    }
+
+    .hub-file-compact-actions .mud-icon-button {
+        height: 36px;
+        padding: 6px;
+        width: 36px;
+    }
+
+    .hub-calendar-grid {
+        gap: 18px !important;
+    }
+
+    .hub-calendar-toolbar-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-calendar-toolbar-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .hub-calendar-period-control {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .hub-calendar-view-switch {
+        align-self: stretch;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+    }
+
+    .hub-calendar-grid .hub-card.pa-4 {
+        padding: 18px !important;
+    }
+
+    .hub-calendar-month-grid {
+        gap: 10px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-calendar-weekday {
+        display: none;
+    }
+
+    .hub-calendar-day {
+        min-height: 0;
+        padding: 14px;
+    }
+
+    .hub-calendar-day:not(.hub-calendar-day-has-events) {
+        display: none;
+    }
+
+    .hub-calendar-day-muted {
+        display: none;
+    }
+
+    .hub-calendar-day-date {
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .hub-calendar-day-date span:first-child::after {
+        content: "일";
+    }
+
+    .hub-calendar-day-time-list {
+        min-height: 48px;
+    }
+
+    .hub-login-panel {
+        border-radius: 28px;
+        padding: 28px;
+    }
+
+    .hub-team-check-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hub-card {
+        border-radius: 24px !important;
+    }
+
+    .hub-admin-page-grid .hub-card,
+    .hub-settings-layout .hub-card,
+    .hub-google-layout .hub-card {
+        border-radius: 12px !important;
+    }
+
+    .hub-card.pa-4 {
+        padding: 18px !important;
+    }
+
+    .hub-settings-tabs .mud-tabs-toolbar {
+        margin-bottom: 12px;
+    }
+
+    .hub-settings-tabs .mud-tab {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    .hub-settings-tabs .mud-tabs-tabbar-wrapper > .mud-tooltip-root {
+        margin-right: 4px;
+    }
+
+    .hub-resource-summary-grid,
+    .hub-permission-card-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-permission-save-bar {
+        bottom: 8px;
+    }
+
+    .hub-management-grid {
+        margin-top: 0;
+    }
+
+    .hub-form-actions {
+        gap: 8px !important;
+        margin-top: 18px !important;
+    }
+
+    .hub-form-actions .mud-button-root {
+        flex: 1 1 132px;
+    }
+
+    .hub-google-connect-actions .mud-button-root {
+        flex: 1 1 180px;
+    }
+
+    .hub-file-picker-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-file-picker-actions .mud-button-root,
+    .hub-file-picker-control {
+        width: 100%;
+    }
+
+    .hub-calendar-detail-actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-google-toolbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-google-panel-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .hub-google-panel-heading .mud-button-root {
+        width: 100%;
+    }
+
+    .hub-google-panel-actions {
+        align-items: stretch;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .hub-health-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-health-pill {
+        justify-self: start;
+    }
+
+    .hub-health-summary {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .hub-setting-id-tools {
+        grid-template-columns: minmax(0, 1fr) 36px;
+        min-height: 44px;
+    }
+
+    .hub-delete-confirm {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .hub-upload-log-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-folder-actionbar {
+        justify-content: stretch;
+    }
+
+    .hub-folder-actionbar .mud-button-root {
+        width: 100%;
+    }
+
+    .hub-folder-create-panel {
+        align-items: stretch;
+    }
+
+    .hub-folder-create-head {
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+    }
+
+    .hub-folder-create-actions {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: 1fr;
+    }
+
+    .hub-folder-tile-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-uploaded-by {
+        justify-self: start;
+        max-width: 100%;
+    }
+
+    .hub-file-table .mud-table-container,
+    .hub-calendar-table .mud-table-container {
+        overflow: visible;
+    }
+
+    .hub-file-table table,
+    .hub-file-table thead,
+    .hub-file-table tbody,
+    .hub-file-table tr,
+    .hub-file-table td,
+    .hub-calendar-table table,
+    .hub-calendar-table thead,
+    .hub-calendar-table tbody,
+    .hub-calendar-table tr,
+    .hub-calendar-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .hub-file-table thead,
+    .hub-calendar-table thead {
+        display: none;
+    }
+
+    .hub-file-table tr,
+    .hub-calendar-table tr {
+        background: rgba(255, 255, 255, .54);
+        border: 1px solid rgba(78, 104, 145, .12);
+        border-radius: 18px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .65);
+        margin: 14px 0;
+        padding: 14px;
+    }
+
+    .hub-file-table td,
+    .hub-calendar-table td {
+        align-items: center;
+        border-bottom: 0 !important;
+        display: grid;
+        gap: 14px;
+        grid-template-columns: minmax(80px, 34%) minmax(0, 1fr);
+        min-height: 40px;
+        overflow: visible;
+        padding: 8px 0 !important;
+        text-align: right;
+        white-space: normal;
+    }
+
+    .hub-file-table td::before,
+    .hub-calendar-table td::before {
+        color: var(--hub-text-soft);
+        content: attr(data-label);
+        font-size: 12px;
+        font-weight: 900;
+        text-align: left;
+    }
+
+    .hub-file-table .hub-action-cell {
+        display: flex;
+        justify-content: flex-end;
+        min-height: 40px;
+    }
+
+    .hub-file-table .hub-action-cell::before {
+        content: "";
+        display: none;
+    }
+
+    .hub-file-table .hub-table-actions {
+        justify-content: flex-end;
+        width: 100%;
+    }
+
+    .hub-file-name .mud-typography-body2 {
+        white-space: normal;
+    }
+
+    .hub-admin-table .mud-table-container {
+        overflow: visible;
+    }
+
+    .hub-admin-table table {
+        min-width: 0;
+    }
+
+    .hub-google-layout .hub-admin-table table {
+        min-width: 0;
+    }
+
+    .hub-admin-table table,
+    .hub-admin-table thead,
+    .hub-admin-table tbody,
+    .hub-admin-table tr,
+    .hub-admin-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .hub-admin-table thead {
+        display: none;
+    }
+
+    .hub-admin-table tr {
+        background: rgba(255, 255, 255, .54);
+        border: 1px solid rgba(78, 104, 145, .12);
+        border-radius: 18px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .65);
+        margin: 16px 0;
+        padding: 14px 14px;
+    }
+
+    .hub-admin-table td {
+        align-items: center;
+        border-bottom: 0 !important;
+        display: grid;
+        gap: 16px;
+        grid-template-columns: minmax(84px, 38%) minmax(0, 1fr);
+        max-width: none;
+        min-height: 42px;
+        overflow: visible;
+        padding: 9px 2px !important;
+        text-align: right;
+        text-overflow: clip;
+        white-space: normal;
+    }
+
+    .hub-admin-table td::before {
+        color: var(--hub-text-soft);
+        content: attr(data-label);
+        font-size: 12px;
+        font-weight: 900;
+        text-align: left;
+    }
+
+    .hub-admin-table .hub-action-cell {
+        display: flex;
+        justify-content: flex-end;
+        min-height: 42px;
+        text-align: right;
+    }
+
+    .hub-admin-table .hub-action-cell::before {
+        content: "";
+        display: none;
+    }
+
+    .hub-admin-table .hub-table-actions {
+        justify-content: flex-end;
+        width: 100%;
+    }
+
+    .hub-calendar-audit-table .hub-audit-title,
+    .hub-calendar-audit-table .hub-audit-subtitle {
+        overflow-wrap: anywhere;
+        text-align: right;
+        white-space: normal;
+    }
+
+    .hub-appbar .mud-button-root {
+        min-width: 0;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    .hub-appbar .mud-button-label {
+        white-space: nowrap;
+    }
+}

@@ -1,0 +1,146 @@
+.hub-empty {
+    align-items: center;
+    background: rgba(255, 255, 255, .46);
+    border: 1px dashed rgba(78, 104, 145, .28);
+    border-radius: var(--hub-radius-md);
+    color: var(--hub-text-muted);
+    display: flex;
+    font-size: 14px;
+    font-weight: 750;
+    justify-content: center;
+    min-height: 104px;
+    padding: 22px;
+    text-align: center;
+    word-break: keep-all;
+}
+
+.hub-empty-state {
+    flex-direction: column;
+    gap: 10px;
+    min-height: 136px;
+}
+
+.hub-empty-copy {
+    display: grid;
+    gap: 5px;
+    max-width: 460px;
+}
+
+.hub-empty-title {
+    color: var(--hub-text-strong);
+    font-size: 14px;
+    font-weight: 850;
+    line-height: 1.35;
+}
+
+.hub-empty-description {
+    color: var(--hub-text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.hub-card .hub-empty-state {
+    min-height: 96px;
+}
+
+.mud-button-root {
+    border-radius: 999px !important;
+    font-weight: 850 !important;
+    letter-spacing: 0 !important;
+    min-height: 42px;
+    text-transform: none !important;
+    white-space: nowrap;
+}
+
+.mud-button-label {
+    white-space: nowrap;
+}
+
+.mud-button-filled-primary {
+    background: linear-gradient(135deg, var(--hub-brand), var(--hub-brand-deep)) !important;
+    box-shadow: 0 9px 18px rgba(33, 107, 255, .16) !important;
+    color: #ffffff !important;
+}
+
+.mud-button-outlined-primary {
+    background: rgba(255, 255, 255, .58) !important;
+    border-color: rgba(33, 107, 255, .24) !important;
+    color: var(--hub-brand-deep) !important;
+}
+
+.mud-button-outlined-default {
+    background: rgba(255, 255, 255, .52) !important;
+    border-color: var(--hub-line-strong) !important;
+    color: var(--hub-text) !important;
+}
+
+.mud-icon-button-root {
+    border-radius: 999px !important;
+}
+
+.mud-icon-button-root:hover {
+    background: var(--hub-brand-soft) !important;
+}
+
+.mud-input-control {
+    margin-top: 0 !important;
+}
+
+.mud-input-control .mud-input-root {
+    align-items: center;
+    min-height: 44px;
+}
+
+.mud-input-control input.mud-input-slot {
+    line-height: 1.4;
+    padding-bottom: 0;
+    padding-top: 0;
+}
+
+.mud-input-control textarea.mud-input-slot {
+    line-height: 1.45;
+    padding-top: 10px;
+}
+
+.mud-input-control .mud-input-label {
+    line-height: 1.25;
+}
+
+.mud-input-outlined .mud-input-outlined-border {
+    border-color: rgba(78, 104, 145, .22) !important;
+    border-radius: var(--hub-radius-sm) !important;
+}
+
+.mud-input-outlined:hover .mud-input-outlined-border {
+    border-color: rgba(33, 107, 255, .42) !important;
+}
+
+.mud-input-adornment .mud-icon-root {
+    color: var(--hub-text-soft);
+}
+
+.mud-table {
+    background: transparent !important;
+}
+
+.mud-table-container {
+    border-radius: var(--hub-radius-md);
+}
+
+.mud-table thead {
+    background: rgba(255, 255, 255, .52);
+}
+
+.mud-table th {
+    color: var(--hub-text-muted) !important;
+    font-size: 12px;
+    font-weight: 900 !important;
+}
+
+.mud-table td {
+    border-bottom-color: rgba(78, 104, 145, .11) !important;
+    color: var(--hub-text);
+    font-weight: 650;
+}
+

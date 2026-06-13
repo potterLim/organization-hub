@@ -1,0 +1,96 @@
+.mud-alert {
+    border-radius: var(--hub-radius-md) !important;
+    font-weight: 700;
+    line-height: 1.45;
+    word-break: keep-all;
+}
+
+.hub-login-shell {
+    align-items: center;
+    background: linear-gradient(135deg, #f8fbff 0%, #eff5fc 56%, #e7eff9 100%);
+    display: flex;
+    min-height: 100vh;
+    padding: 24px;
+}
+
+.hub-login-panel {
+    backdrop-filter: blur(24px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .84), rgba(255, 255, 255, .68));
+    border: 1px solid rgba(255, 255, 255, .7);
+    border-radius: 32px;
+    box-shadow: var(--hub-shadow-strong);
+    margin: 0 auto;
+    max-width: 440px;
+    padding: 34px;
+    width: 100%;
+}
+
+.hub-login-title {
+    color: var(--hub-text-strong);
+    font-size: 32px;
+    font-weight: 950;
+    line-height: 1.12;
+    margin: 0 0 8px 0;
+}
+
+.hub-login-subtitle {
+    color: var(--hub-text-muted);
+    font-size: 15px;
+    font-weight: 750;
+    margin: 0 0 28px 0;
+}
+
+.hub-login-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.hub-login-field label {
+    color: var(--hub-text);
+    font-size: 14px;
+    font-weight: 850;
+}
+
+.hub-login-field input {
+    background: rgba(255, 255, 255, .66);
+    border: 1px solid rgba(78, 104, 145, .24);
+    border-radius: var(--hub-radius-sm);
+    color: var(--hub-text-strong);
+    font-size: 15px;
+    font-weight: 650;
+    height: 48px;
+    padding: 0 15px;
+}
+
+.hub-login-field input:focus {
+    border-color: rgba(33, 107, 255, .62);
+    box-shadow: 0 0 0 4px rgba(33, 107, 255, .12);
+    outline: none;
+}
+
+.hub-login-button {
+    background: linear-gradient(135deg, var(--hub-brand), var(--hub-brand-deep));
+    border: 0;
+    border-radius: 999px;
+    box-shadow: 0 16px 32px rgba(33, 107, 255, .25);
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 900;
+    height: 48px;
+    width: 100%;
+}
+
+.hub-login-error {
+    background: rgba(255, 241, 243, .78);
+    border: 1px solid rgba(255, 211, 220, .9);
+    border-radius: var(--hub-radius-sm);
+    color: var(--hub-danger);
+    font-size: 14px;
+    font-weight: 750;
+    margin-bottom: 18px;
+    padding: 12px;
+}
+
