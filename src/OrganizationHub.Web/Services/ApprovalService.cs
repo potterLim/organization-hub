@@ -849,15 +849,20 @@ public sealed class ApprovalService : IApprovalService
         }
 
         int nextStepNumber = request.CurrentStepNumber + 1;
-        if (nextStepNumber >= request.StepCount)
-        {
-            return ServiceResult.Fail("최종 결재권자는 변경할 수 없습니다.");
-        }
-
         ApprovalStep? nextStepOrNull = request.Steps.FirstOrDefault(step => step.StepNumber == nextStepNumber);
         if (nextStepOrNull == null)
         {
             return ServiceResult.Fail("다음 결재 단계를 찾을 수 없습니다.");
+        }
+
+        if (nextStepNumber >= request.StepCount)
+        {
+            if (nextStepOrNull.ApproverUserID == nextApproverUserID)
+            {
+                return ServiceResult.Succeed();
+            }
+
+            return ServiceResult.Fail("최종 결재권자는 변경할 수 없습니다.");
         }
 
         UserAccount? nextApproverOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.ID == nextApproverUserID && user.IsActive, cancellationToken);

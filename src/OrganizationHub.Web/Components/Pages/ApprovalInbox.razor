@@ -112,7 +112,7 @@ else
                 mCommentsByApprovalID[approvalRequest.ID] = string.Empty;
             }
 
-            if (mNextApproverUserIDByApprovalID.ContainsKey(approvalRequest.ID) == false)
+            if (canChangeNextApprover(approvalRequest) && mNextApproverUserIDByApprovalID.ContainsKey(approvalRequest.ID) == false)
             {
                 ApprovalStepItem? nextStepOrNull = approvalRequest.Steps.FirstOrDefault(step => step.StepNumber == approvalRequest.CurrentStepNumber + 1);
                 if (nextStepOrNull != null)
@@ -130,7 +130,8 @@ else
             return;
         }
 
-        ServiceResult result = await ApprovalService.ApproveRequestAsync(CurrentUserSessionOrNull, approvalRequest.ID, getNextApproverValue(approvalRequest.ID), getCommentValue(approvalRequest.ID), CancellationToken.None);
+        int nextApproverUserID = canChangeNextApprover(approvalRequest) ? getNextApproverValue(approvalRequest.ID) : 0;
+        ServiceResult result = await ApprovalService.ApproveRequestAsync(CurrentUserSessionOrNull, approvalRequest.ID, nextApproverUserID, getCommentValue(approvalRequest.ID), CancellationToken.None);
         showResult(result, "승인되었습니다.");
         if (result.IsSuccess)
         {

@@ -109,6 +109,42 @@ public sealed class ApprovalServiceTests
     }
 
     [Fact]
+    public async Task ConfiguredWorkflowFirstApprovalAllowsUnchangedFinalApproverValueAsync()
+    {
+        using (TestDbContextFactory dbContextFactory = createApprovalDbContextFactory(EFinalApproverSeedMode.SingleFinalApprover))
+        {
+            await seedConfiguredApprovalWorkflowAsync(dbContextFactory);
+            using (MemoryCache memoryCache = new MemoryCache(new MemoryCacheOptions()))
+            {
+                FakeDriveService driveService = createApprovalDriveService();
+                PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache);
+                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService);
+                UserSession requesterSession = createSession(1, "planning.member", "기획팀원", EUserRole.TeamUser, 1);
+                UserSession responsibleSession = createSession(2, "planning.lead", "기획 책임자", EUserRole.TeamLeader, 1);
+                UserSession finalApproverSession = createSession(3, "manager", "관리팀 매니저", EUserRole.ManagementManager, null);
+                ApprovalRequestFormModel formModel = new ApprovalRequestFormModel();
+                formModel.Title = "직책 기반 결재";
+                formModel.SourceFolderID = "planning-materials-folder";
+                formModel.DestinationFolderID = "planning-approved-folder";
+                formModel.FileID = "planning-file";
+                formModel.StepCount = 2;
+                formModel.FirstApproverUserID = 2;
+
+                ApprovalCreateContext createContext = await approvalService.GetCreateContextAsync(requesterSession, CancellationToken.None);
+                ServiceResult submitResult = await approvalService.SubmitRequestAsync(requesterSession, formModel, CancellationToken.None);
+                IReadOnlyList<ApprovalRequestItem> responsibleApprovals = await approvalService.GetPendingApprovalsAsync(responsibleSession, CancellationToken.None);
+                int unchangedFinalApproverUserID = createContext.FinalApproverOptions.Single().UserID;
+                ServiceResult firstApprovalResult = await approvalService.ApproveRequestAsync(responsibleSession, responsibleApprovals.Single().ID, unchangedFinalApproverUserID, "확인", CancellationToken.None);
+                IReadOnlyList<ApprovalRequestItem> finalApprovals = await approvalService.GetPendingApprovalsAsync(finalApproverSession, CancellationToken.None);
+
+                Assert.True(submitResult.IsSuccess);
+                Assert.True(firstApprovalResult.IsSuccess);
+                Assert.Single(finalApprovals);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ApprovedRequestsAreFilteredByApprovedDestinationPermissionAsync()
     {
         using (TestDbContextFactory dbContextFactory = createApprovalDbContextFactory(EFinalApproverSeedMode.SingleFinalApprover))
