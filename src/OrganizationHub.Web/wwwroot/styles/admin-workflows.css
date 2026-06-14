@@ -1,0 +1,127 @@
+.hub-workflow-step-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.hub-workflow-designer-card {
+    display: grid;
+    gap: 16px;
+}
+
+.hub-workflow-section {
+    background: rgba(248, 250, 255, .72);
+    border: 1px solid rgba(200, 211, 231, .72);
+    border-radius: 14px;
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+}
+
+.hub-workflow-section .mud-input-control {
+    margin-bottom: 0 !important;
+}
+
+.hub-workflow-section-title {
+    color: var(--hub-text-strong);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.hub-workflow-designer-card .hub-google-panel-heading {
+    margin-bottom: 0;
+}
+
+.hub-workflow-step {
+    background: rgba(255, 255, 255, .7);
+    border: 1px solid rgba(78, 104, 145, .13);
+    border-radius: 14px;
+}
+
+.hub-workflow-step-heading {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.hub-workflow-step-heading .mud-typography-subtitle1 {
+    color: var(--hub-text-strong);
+    font-weight: 900;
+}
+
+.hub-workflow-step-fields {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.hub-workflow-step-fields .mud-input-control {
+    margin-bottom: 0 !important;
+}
+
+.hub-workflow-preview {
+    background: rgba(248, 250, 255, .76);
+    border: 1px solid rgba(200, 211, 231, .78);
+    border-radius: 14px;
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 14px;
+}
+
+.hub-workflow-preview-heading {
+    align-items: center;
+    color: var(--hub-text-strong);
+    display: flex;
+    font-size: 14px;
+    font-weight: 900;
+    gap: 8px;
+    line-height: 1.3;
+}
+
+.hub-workflow-preview-steps {
+    display: grid;
+    gap: 8px;
+}
+
+.hub-workflow-preview-step {
+    align-items: flex-start;
+    background: rgba(255, 255, 255, .72);
+    border: 1px solid rgba(78, 104, 145, .12);
+    border-radius: 12px;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 30px minmax(0, 1fr);
+    padding: 10px 12px;
+}
+
+.hub-workflow-preview-step > span {
+    align-items: center;
+    background: var(--hub-brand-soft);
+    border-radius: 999px;
+    color: var(--hub-brand-deep);
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 900;
+    height: 28px;
+    justify-content: center;
+    width: 28px;
+}
+
+.hub-workflow-preview-step strong {
+    color: var(--hub-text-strong);
+    display: block;
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.35;
+}
+
+.hub-workflow-preview-step div div {
+    color: var(--hub-text-muted);
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.4;
+    margin-top: 2px;
+}

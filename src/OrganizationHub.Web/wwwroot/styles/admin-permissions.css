@@ -1,0 +1,174 @@
+.hub-permission-workspace {
+    overflow: visible;
+}
+
+.hub-position-selection-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(180px, .85fr) minmax(220px, 1.15fr);
+    margin-bottom: 14px;
+}
+
+.hub-position-selection-summary {
+    align-items: center;
+    background: rgba(33, 107, 255, .06);
+    border: 1px solid rgba(33, 107, 255, .12);
+    border-radius: 14px;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    min-width: 0;
+    padding: 12px 14px;
+}
+
+.hub-position-selection-title {
+    color: var(--hub-text-strong);
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.hub-position-switch-row {
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.hub-position-switch-row .mud-input-control {
+    flex: 0 1 auto;
+    margin-bottom: 0 !important;
+    min-width: 0;
+    width: auto;
+}
+
+.hub-permission-editor {
+    display: grid;
+    gap: 16px;
+}
+
+.hub-permission-toolbar {
+    align-items: center;
+    background: rgba(248, 250, 255, .74);
+    border: 1px solid rgba(200, 211, 231, .72);
+    border-radius: 14px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(190px, .72fr) minmax(180px, max-content);
+    margin-bottom: 14px;
+    padding: 12px;
+}
+
+.hub-permission-toolbar .mud-input-control {
+    margin-bottom: 0 !important;
+}
+
+.hub-permission-group {
+    background: rgba(255, 255, 255, .46);
+    border: 1px solid var(--hub-border);
+    border-radius: 12px;
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+}
+
+.hub-permission-group-title {
+    color: var(--hub-text-strong);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.hub-permission-card-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.hub-permission-row {
+    align-items: stretch;
+    background: rgba(255, 255, 255, .66);
+    border: 1px solid rgba(78, 104, 145, .12);
+    border-radius: 10px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+    padding: 11px;
+}
+
+.hub-permission-row-active {
+    background: rgba(244, 248, 255, .82);
+    border-color: rgba(33, 107, 255, .18);
+}
+
+.hub-permission-copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.hub-permission-name {
+    color: var(--hub-text-strong);
+    font-weight: 850;
+    line-height: 1.35;
+}
+
+.hub-permission-copy .hub-muted {
+    display: -webkit-box;
+    line-height: 1.45;
+    overflow: hidden;
+    text-wrap: pretty;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.hub-permission-controls {
+    align-items: center;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(92px, max-content) minmax(190px, 1fr);
+    min-width: 0;
+    width: 100%;
+}
+
+.hub-permission-controls .mud-input-control {
+    margin-bottom: 0 !important;
+}
+
+.hub-permission-allow {
+    justify-self: start;
+    margin: 0 !important;
+    white-space: nowrap;
+}
+
+.hub-permission-allow .mud-checkbox-content {
+    white-space: nowrap;
+}
+
+.hub-permission-scope,
+.hub-permission-target,
+.hub-permission-disabled-hint {
+    grid-column: 2;
+}
+
+.hub-permission-disabled-hint {
+    background: rgba(255, 255, 255, .62);
+    border: 1px dashed rgba(116, 139, 178, .3);
+    border-radius: 10px;
+    color: var(--hub-text-muted);
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.35;
+    min-height: 40px;
+    padding: 11px 12px;
+}
+
+.hub-permission-save-bar {
+    background: transparent;
+    border-top: 1px solid rgba(200, 211, 231, .68);
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 16px 0 0;
+    width: 100%;
+}

@@ -1,0 +1,153 @@
+.hub-dashboard-action-head {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+.hub-dashboard-actions {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
+}
+
+.hub-dashboard-actions .mud-button-root {
+    justify-content: flex-start;
+    min-height: 44px;
+    width: 100%;
+}
+
+.hub-shortcut-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.hub-shortcut-grid .mud-button-root {
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.hub-management-grid {
+    align-items: flex-start;
+    box-sizing: border-box;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+}
+
+.hub-management-grid > .mud-grid-item {
+    min-width: 0;
+}
+
+.hub-admin-page-grid {
+    row-gap: 22px;
+}
+
+.hub-form-card {
+    min-height: 0;
+}
+
+.hub-admin-form-heading {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    min-width: 0;
+}
+
+.hub-admin-form-heading .mud-typography-h6 {
+    margin-bottom: 0;
+}
+
+.hub-admin-form-heading span {
+    background: rgba(33, 107, 255, .08);
+    border: 1px solid rgba(33, 107, 255, .14);
+    border-radius: 999px;
+    color: var(--hub-brand-deep);
+    font-size: 12px;
+    font-weight: 900;
+    flex: 0 0 auto;
+    line-height: 1;
+    padding: 8px 10px;
+    white-space: nowrap;
+}
+
+.hub-form-hint {
+    background: rgba(33, 107, 255, .06);
+    border: 1px solid rgba(33, 107, 255, .12);
+    border-radius: 14px;
+    color: var(--hub-text-muted);
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.45;
+    margin-bottom: 10px;
+    margin-top: -2px;
+    padding: 10px 12px;
+    text-wrap: pretty;
+    word-break: keep-all;
+}
+
+.hub-menu-technical-note {
+    background: rgba(248, 250, 255, .72);
+    border: 1px solid rgba(200, 211, 231, .72);
+    border-radius: 12px;
+    color: var(--hub-text-muted);
+    font-family: Consolas, "SFMono-Regular", "Roboto Mono", monospace;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.35;
+    margin-top: 12px;
+    overflow: hidden;
+    padding: 10px 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-admin-section-heading {
+    align-items: flex-start;
+    display: flex;
+    gap: 18px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.hub-admin-section-heading > div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.hub-admin-section-heading .mud-typography-h6 {
+    margin-bottom: 0;
+}
+
+.hub-list-card {
+    min-height: 0;
+}
+
+.hub-form-actions {
+    flex-wrap: wrap;
+    margin-top: 18px !important;
+}
+
+.hub-form-actions .mud-button-root {
+    min-width: 112px;
+}
+
+.hub-form-actions-centered {
+    justify-content: center;
+}
+
+.hub-primary-action-button {
+    min-width: 172px !important;
+}
+
+.hub-secondary-action-button {
+    min-width: 148px !important;
+}
+
+.hub-submit-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 18px;
+}
