@@ -35,30 +35,27 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         }
     }
 
-    public async Task<bool> HasPermissionAsync(UserSession userSession, string permissionKey, int? targetTeamIDOrNull, CancellationToken cancellationToken)
+    public async Task<bool> HasPermissionAsync(UserSession userSession, PermissionKey permissionKey, int? targetTeamIDOrNull, CancellationToken cancellationToken)
     {
         PermissionDecision decision = await DecidePermissionAsync(userSession, permissionKey, targetTeamIDOrNull, cancellationToken);
         return decision.IsAllowed;
     }
 
-    public async Task<PermissionDecision> DecidePermissionAsync(UserSession userSession, string permissionKey, int? targetTeamIDOrNull, CancellationToken cancellationToken)
+    public async Task<PermissionDecision> DecidePermissionAsync(UserSession userSession, PermissionKey permissionKey, int? targetTeamIDOrNull, CancellationToken cancellationToken)
     {
         return await DecidePermissionAsync(userSession, permissionKey, targetTeamIDOrNull, null, cancellationToken);
     }
 
-    public async Task<PermissionDecision> DecidePermissionAsync(UserSession userSession, string permissionKey, int? targetTeamIDOrNull, int? ownerUserIDOrNull, CancellationToken cancellationToken)
+    public async Task<PermissionDecision> DecidePermissionAsync(UserSession userSession, PermissionKey permissionKey, int? targetTeamIDOrNull, int? ownerUserIDOrNull, CancellationToken cancellationToken)
     {
-        if (PermissionCatalog.GetDefinitions().Any(definition => definition.Key == permissionKey) == false)
+        if (PermissionCatalog.GetDefinitions().Any(definition => definition.Key == permissionKey.Value) == false)
         {
             return PermissionDecision.Deny("알 수 없는 권한입니다.", "권한");
         }
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            UserAccount? userAccountOrNull = await dbContext.UserAccounts
-                .Include(userAccount => userAccount.Position)
-                .ThenInclude(position => position!.PermissionGrants)
-                .FirstOrDefaultAsync(userAccount => userAccount.ID == userSession.UserID && userAccount.IsActive, cancellationToken);
+            UserAccount? userAccountOrNull = await loadActiveUserAccountOrNullAsync(dbContext, userSession, cancellationToken);
             if (userAccountOrNull == null)
             {
                 return PermissionDecision.Deny("활성 사용자를 찾을 수 없습니다.", "권한");
@@ -80,7 +77,7 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
             }
 
             List<PositionPermissionGrant> permissionGrants = userAccountOrNull.Position.PermissionGrants
-                .Where(permissionGrant => permissionGrant.IsAllowed && permissionGrant.PermissionKey == permissionKey)
+                .Where(permissionGrant => permissionGrant.IsAllowed && permissionGrant.PermissionKey == permissionKey.Value)
                 .ToList();
             foreach (PositionPermissionGrant permissionGrant in permissionGrants)
             {
@@ -95,14 +92,31 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         }
     }
 
-    private PermissionDecision decideUnpositionedAdministratorPermission(UserAccount userAccount, string permissionKey)
+    private static async Task<UserAccount?> loadActiveUserAccountOrNullAsync(OrganizationHubDbContext dbContext, UserSession userSession, CancellationToken cancellationToken)
+    {
+        UserAccount? userAccountOrNull = await dbContext.UserAccounts
+            .Include(userAccount => userAccount.Position)
+            .FirstOrDefaultAsync(userAccount => userAccount.ID == userSession.UserID && userAccount.IsActive, cancellationToken);
+        if (userAccountOrNull == null || userAccountOrNull.PositionID.HasValue == false)
+        {
+            return userAccountOrNull;
+        }
+
+        await dbContext.PositionPermissionGrants
+            .Where(permissionGrant => permissionGrant.PositionID == userAccountOrNull.PositionID.Value)
+            .LoadAsync(cancellationToken);
+
+        return userAccountOrNull;
+    }
+
+    private PermissionDecision decideUnpositionedAdministratorPermission(UserAccount userAccount, PermissionKey permissionKey)
     {
         if (userAccount.Role == EUserRole.Admin)
         {
             return PermissionDecision.Allow("시스템 관리자");
         }
 
-        return PermissionDecision.Deny("사용자에게 직책이 배정되지 않았습니다.", permissionKey);
+        return PermissionDecision.Deny("사용자에게 직책이 배정되지 않았습니다.", permissionKey.Value);
     }
 
     private bool isGrantAllowed(PositionPermissionGrant permissionGrant, UserAccount userAccount, int? targetTeamIDOrNull, int? ownerUserIDOrNull)

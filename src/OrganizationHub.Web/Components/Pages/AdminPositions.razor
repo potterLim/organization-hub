@@ -78,7 +78,10 @@ else
                     </MudSelect>
                 </div>
 
-                @if (getSelectedPositionOrNull() == null)
+                @{
+                    OrganizationPosition? selectedPositionOrNull = getSelectedPositionOrNull();
+                }
+                @if (selectedPositionOrNull == null)
                 {
                     <div class="hub-empty hub-empty-state">
                         <div class="hub-empty-copy">
@@ -89,7 +92,7 @@ else
                 }
                 else
                 {
-                    OrganizationPosition selectedPosition = getSelectedPositionOrNull()!;
+                    OrganizationPosition selectedPosition = selectedPositionOrNull;
                     <div class="hub-position-selection-summary">
                         <div>
                             <div class="hub-muted">선택한 직책</div>

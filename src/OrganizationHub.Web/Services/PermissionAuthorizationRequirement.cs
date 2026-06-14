@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
+using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Services;
 
 public sealed class PermissionAuthorizationRequirement : IAuthorizationRequirement
 {
-    public IReadOnlyList<string> PermissionKeys
+    public IReadOnlyList<PermissionKey> PermissionKeys
     {
         get; private init;
     }
@@ -14,7 +15,7 @@ public sealed class PermissionAuthorizationRequirement : IAuthorizationRequireme
         get; private init;
     }
 
-    public PermissionAuthorizationRequirement(IReadOnlyList<string> permissionKeys, IReadOnlyList<string> fallbackRoleNames)
+    public PermissionAuthorizationRequirement(IReadOnlyList<PermissionKey> permissionKeys, IReadOnlyList<string> fallbackRoleNames)
     {
         PermissionKeys = permissionKeys;
         FallbackRoleNames = fallbackRoleNames;

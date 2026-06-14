@@ -113,7 +113,7 @@ public sealed partial class GoogleDriveService
     {
         List<string> keys = new List<string>();
         keys.Add(ChangeVersionKeys.DRIVE_FILES);
-        keys.Add(ChangeVersionKeys.CreateDriveFolderKey(folderID));
+        keys.Add(ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID(folderID)));
         return keys;
     }
 
@@ -125,13 +125,13 @@ public sealed partial class GoogleDriveService
         {
             foreach (string parentFolderID in metadataOrNull.ParentFolderIDs)
             {
-                keys.Add(ChangeVersionKeys.CreateDriveFolderKey(parentFolderID));
+                keys.Add(ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID(parentFolderID)));
             }
         }
 
         if (string.IsNullOrWhiteSpace(additionalFolderID) == false)
         {
-            keys.Add(ChangeVersionKeys.CreateDriveFolderKey(additionalFolderID));
+            keys.Add(ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID(additionalFolderID)));
         }
 
         return keys.Distinct().ToList();
@@ -144,7 +144,7 @@ public sealed partial class GoogleDriveService
 
     private string createFolderListCacheKey(string folderID)
     {
-        long folderVersion = mChangeVersionService.GetVersion(ChangeVersionKeys.CreateDriveFolderKey(folderID));
+        long folderVersion = mChangeVersionService.GetVersion(ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID(folderID)));
         return "OrganizationHub:Drive:FolderList:" + folderID + ":" + folderVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 

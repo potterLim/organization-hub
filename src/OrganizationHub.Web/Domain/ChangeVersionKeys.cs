@@ -7,19 +7,19 @@ public static class ChangeVersionKeys
     public const string TODO = "Todo";
     public const string APPROVAL = "Approval";
 
-    public static string CreateDriveFolderKey(string folderID)
+    public static string CreateDriveFolderKey(DriveFolderID folderID)
     {
-        return "DriveFolder:" + normalizeKeyPart(folderID);
+        return "DriveFolder:" + normalizeKeyPart(folderID.Value);
     }
 
-    public static string CreateCalendarKey(string calendarID)
+    public static string CreateCalendarKey(CalendarID calendarID)
     {
-        return "Calendar:" + normalizeKeyPart(calendarID);
+        return "Calendar:" + normalizeKeyPart(calendarID.Value);
     }
 
-    public static string CreateTodoTaskListKey(string taskListID)
+    public static string CreateTodoTaskListKey(TodoTaskListID taskListID)
     {
-        return "TodoTaskList:" + normalizeKeyPart(taskListID);
+        return "TodoTaskList:" + normalizeKeyPart(taskListID.Value);
     }
 
     private static string normalizeKeyPart(string value)

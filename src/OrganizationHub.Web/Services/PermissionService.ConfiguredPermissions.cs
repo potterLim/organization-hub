@@ -7,7 +7,7 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class PermissionService
 {
-    private async Task<bool> canUseConfiguredOrFallbackPermissionAsync(UserSession userSession, string permissionKey, int? targetTeamIDOrNull, bool usesConfiguredPermissions, bool fallbackPermission, CancellationToken cancellationToken)
+    private async Task<bool> canUseConfiguredOrFallbackPermissionAsync(UserSession userSession, PermissionKey permissionKey, int? targetTeamIDOrNull, bool usesConfiguredPermissions, bool fallbackPermission, CancellationToken cancellationToken)
     {
         if (usesConfiguredPermissions)
         {
@@ -24,18 +24,18 @@ public sealed partial class PermissionService
             return fallbackPermission;
         }
 
-        bool canCreate = await mOrganizationPermissionService.HasPermissionAsync(userSession, PermissionKeys.CALENDAR_CREATE, targetTeamIDOrNull, cancellationToken);
+        bool canCreate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_CREATE), targetTeamIDOrNull, cancellationToken);
         if (canCreate)
         {
             return true;
         }
 
-        bool canUpdate = await mOrganizationPermissionService.HasPermissionAsync(userSession, PermissionKeys.CALENDAR_UPDATE, targetTeamIDOrNull, cancellationToken);
+        bool canUpdate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_UPDATE), targetTeamIDOrNull, cancellationToken);
         if (canUpdate)
         {
             return true;
         }
 
-        return await mOrganizationPermissionService.HasPermissionAsync(userSession, PermissionKeys.CALENDAR_DELETE, targetTeamIDOrNull, cancellationToken);
+        return await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_DELETE), targetTeamIDOrNull, cancellationToken);
     }
 }

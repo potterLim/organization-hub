@@ -23,7 +23,7 @@ public sealed class PermissionAuthorizationHandlerTests
             await seedConfiguredUserAsync(dbContextFactory, PermissionKeys.USERS_MANAGE);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
             PermissionAuthorizationHandler handler = new PermissionAuthorizationHandler(permissionService);
-            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(new[] { PermissionKeys.USERS_MANAGE }, new List<string>());
+            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(new[] { new PermissionKey(PermissionKeys.USERS_MANAGE) }, new List<string>());
             AuthorizationHandlerContext context = new AuthorizationHandlerContext(new[] { requirement }, createPrincipal(1, EUserRole.TeamUser, 1), null);
 
             await handler.HandleAsync(context);
@@ -40,7 +40,7 @@ public sealed class PermissionAuthorizationHandlerTests
             await seedUserWithoutPositionAsync(dbContextFactory);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
             PermissionAuthorizationHandler handler = new PermissionAuthorizationHandler(permissionService);
-            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(new[] { PermissionKeys.USERS_MANAGE }, new[] { OrganizationHubRoles.ADMIN });
+            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(new[] { new PermissionKey(PermissionKeys.USERS_MANAGE) }, new[] { OrganizationHubRoles.ADMIN });
             AuthorizationHandlerContext context = new AuthorizationHandlerContext(new[] { requirement }, createPrincipal(2, EUserRole.Admin, null), null);
 
             await handler.HandleAsync(context);

@@ -92,22 +92,22 @@ public sealed partial class GoogleTasksTodoService
 
         if (accessMode != ETodoTaskListAccessMode.Writable)
         {
-            return await mOrganizationPermissionService.HasPermissionAsync(userSession, PermissionKeys.TODOS_READ, targetTeamIDOrNull, cancellationToken);
+            return await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.TODOS_READ), targetTeamIDOrNull, cancellationToken);
         }
 
-        bool canCreate = await mOrganizationPermissionService.HasPermissionAsync(userSession, PermissionKeys.TODOS_CREATE, targetTeamIDOrNull, cancellationToken);
+        bool canCreate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.TODOS_CREATE), targetTeamIDOrNull, cancellationToken);
         if (canCreate)
         {
             return true;
         }
 
-        bool canUpdate = await mOrganizationPermissionService.HasPermissionAsync(userSession, PermissionKeys.TODOS_UPDATE, targetTeamIDOrNull, cancellationToken);
+        bool canUpdate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.TODOS_UPDATE), targetTeamIDOrNull, cancellationToken);
         if (canUpdate)
         {
             return true;
         }
 
-        return await mOrganizationPermissionService.HasPermissionAsync(userSession, PermissionKeys.TODOS_DELETE, targetTeamIDOrNull, cancellationToken);
+        return await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.TODOS_DELETE), targetTeamIDOrNull, cancellationToken);
     }
 
     private bool canUseTeamTaskListFallback(UserSession userSession, Team team, ETodoTaskListAccessMode accessMode)

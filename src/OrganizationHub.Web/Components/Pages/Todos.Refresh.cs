@@ -84,7 +84,7 @@ public partial class Todos
         keys.Add(ChangeVersionKeys.TODO);
         if (TodoTaskListReference.IsAggregateTaskListID(mSelectedTaskListID) == false)
         {
-            keys.Add(ChangeVersionKeys.CreateTodoTaskListKey(mSelectedTaskListID));
+            keys.Add(ChangeVersionKeys.CreateTodoTaskListKey(new TodoTaskListID(mSelectedTaskListID)));
         }
 
         return keys;

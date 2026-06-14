@@ -40,8 +40,8 @@ public sealed class ChangeVersionServiceTests
     public void SnapshotTracksSpecificFolderKeySeparately()
     {
         ChangeVersionService service = new ChangeVersionService();
-        string planningFolderKey = ChangeVersionKeys.CreateDriveFolderKey("planning-folder");
-        string operationFolderKey = ChangeVersionKeys.CreateDriveFolderKey("operation-folder");
+        string planningFolderKey = ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID("planning-folder"));
+        string operationFolderKey = ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID("operation-folder"));
         List<string> keys = new List<string>();
         keys.Add(planningFolderKey);
 
@@ -147,7 +147,7 @@ public sealed class ChangeVersionServiceTests
     public async Task ReadWithStableSnapshotCanBypassLateStaleCacheWhenCacheKeyUsesVersionAsync()
     {
         ChangeVersionService service = new ChangeVersionService();
-        string folderKey = ChangeVersionKeys.CreateDriveFolderKey("planning-folder");
+        string folderKey = ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID("planning-folder"));
         List<string> keys = new List<string>();
         keys.Add(folderKey);
         Dictionary<string, string> cache = new Dictionary<string, string>();

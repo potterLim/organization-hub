@@ -82,9 +82,8 @@ public sealed class ChangeVersionService : IChangeVersionService
     public async Task<ChangeVersionReadResult<T>> ReadWithStableSnapshotAsync<T>(IReadOnlyList<string> keys, Func<CancellationToken, Task<T>> readValue, CancellationToken cancellationToken)
     {
         List<string> normalizedKeys = normalizeKeys(keys);
-        T latestValue = default!;
         ChangeVersionSnapshot latestSnapshot = GetSnapshot(normalizedKeys);
-        bool hasValue = false;
+        ChangeVersionReadResult<T>? latestReadResultOrNull = null;
         DateTime activeChangeWaitDeadline = DateTime.UtcNow.Add(MAX_ACTIVE_CHANGE_WAIT);
 
         int readAttemptCount = 0;
@@ -103,25 +102,26 @@ public sealed class ChangeVersionService : IChangeVersionService
             }
 
             latestSnapshot = GetSnapshot(normalizedKeys);
-            latestValue = await readValue(cancellationToken);
-            hasValue = true;
+            T readValueResult = await readValue(cancellationToken);
+            latestReadResultOrNull = new ChangeVersionReadResult<T>(readValueResult, latestSnapshot, EChangeVersionStability.Unstable);
             readAttemptCount++;
 
             if (HasChanged(latestSnapshot) == false && HasActiveChange(normalizedKeys) == false)
             {
-                return new ChangeVersionReadResult<T>(latestValue, latestSnapshot, EChangeVersionStability.Stable);
+                return new ChangeVersionReadResult<T>(readValueResult, latestSnapshot, EChangeVersionStability.Stable);
             }
 
             await Task.Delay(STABLE_READ_RETRY_DELAY, cancellationToken);
         }
 
-        if (hasValue == false)
+        if (latestReadResultOrNull != null)
         {
-            latestSnapshot = GetSnapshot(normalizedKeys);
-            latestValue = await readValue(cancellationToken);
+            return latestReadResultOrNull;
         }
 
-        return new ChangeVersionReadResult<T>(latestValue, latestSnapshot, EChangeVersionStability.Unstable);
+        latestSnapshot = GetSnapshot(normalizedKeys);
+        T finalReadValue = await readValue(cancellationToken);
+        return new ChangeVersionReadResult<T>(finalReadValue, latestSnapshot, EChangeVersionStability.Unstable);
     }
 
     public void Bump(string key)

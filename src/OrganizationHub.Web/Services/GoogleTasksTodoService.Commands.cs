@@ -116,7 +116,7 @@ public sealed partial class GoogleTasksTodoService
     {
         List<string> keys = new List<string>();
         keys.Add(ChangeVersionKeys.TODO);
-        keys.Add(ChangeVersionKeys.CreateTodoTaskListKey(taskListID));
+        keys.Add(ChangeVersionKeys.CreateTodoTaskListKey(new TodoTaskListID(taskListID)));
         return keys;
     }
 }

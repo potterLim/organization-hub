@@ -69,6 +69,6 @@ else
             return false;
         }
 
-        return await OrganizationPermissionService.HasPermissionAsync(userSession, PermissionKeys.FILES_READ, managementTeamOrNull.ID, CancellationToken.None);
+        return await OrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.FILES_READ), managementTeamOrNull.ID, CancellationToken.None);
     }
 }

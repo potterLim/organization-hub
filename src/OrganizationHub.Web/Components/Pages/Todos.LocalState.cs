@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MudBlazor;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -78,10 +79,10 @@ public partial class Todos
         mTasks.RemoveAll(existingTask => existingTask.TaskListID == taskListID && existingTask.ID == taskID);
     }
 
-    private void moveTaskInLocalList(TodoTaskItem movedTask, string previousTaskID)
+    private void moveTaskInLocalList(TodoTaskItem movedTask, TodoTaskID previousTaskID)
     {
         removeTaskFromLocalList(movedTask.TaskListID, movedTask.ID);
-        if (string.IsNullOrWhiteSpace(previousTaskID))
+        if (previousTaskID.HasValue == false)
         {
             int firstPendingTaskIndex = mTasks.FindIndex(existingTask => existingTask.IsCompleted == false);
             if (firstPendingTaskIndex < 0)
@@ -94,7 +95,7 @@ public partial class Todos
             return;
         }
 
-        int previousTaskIndex = mTasks.FindIndex(existingTask => existingTask.TaskListID == movedTask.TaskListID && existingTask.ID == previousTaskID);
+        int previousTaskIndex = mTasks.FindIndex(existingTask => existingTask.TaskListID == movedTask.TaskListID && existingTask.ID == previousTaskID.Value);
         if (previousTaskIndex < 0)
         {
             mTasks.Insert(0, movedTask);

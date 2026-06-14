@@ -65,7 +65,7 @@ public partial class Calendar
         keys.Add(ChangeVersionKeys.CALENDAR);
         if (mSelectedCalendarID != "all")
         {
-            keys.Add(ChangeVersionKeys.CreateCalendarKey(mSelectedCalendarID));
+            keys.Add(ChangeVersionKeys.CreateCalendarKey(new CalendarID(mSelectedCalendarID)));
         }
 
         return keys;

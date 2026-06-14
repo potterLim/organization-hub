@@ -12,7 +12,7 @@ public sealed partial class GoogleCalendarService
     {
         List<string> keys = new List<string>();
         keys.Add(ChangeVersionKeys.CALENDAR);
-        keys.Add(ChangeVersionKeys.CreateCalendarKey(calendarID));
+        keys.Add(ChangeVersionKeys.CreateCalendarKey(new CalendarID(calendarID)));
         return keys;
     }
 

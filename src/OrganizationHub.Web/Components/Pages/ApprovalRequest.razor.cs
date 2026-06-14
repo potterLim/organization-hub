@@ -10,6 +10,7 @@ public partial class ApprovalRequest
 {
     private ApprovalCreateContext mCreateContext = new ApprovalCreateContext();
     private ApprovalRequestFormModel mFormModel = new ApprovalRequestFormModel();
+    private ApprovalApproverSelectionState? mApproverSelectionStateOrNull;
     private List<DriveFolderPathItem> mSourceFolderPath = new List<DriveFolderPathItem>();
     private List<DriveFolderPathItem> mDestinationFolderPath = new List<DriveFolderPathItem>();
     private List<DriveFileItem> mFiles = new List<DriveFileItem>();
@@ -27,9 +28,6 @@ public partial class ApprovalRequest
     private bool mIsCreatingDestinationFolder;
     private bool mIsSubmitting;
     private bool mHasCustomTitle;
-    private int mLastDefaultFirstApproverUserID;
-    private int mLastDefaultSecondApproverUserID;
-    private int mLastDefaultFinalApproverUserID;
     private bool mIsDestinationFolderCreateOpen;
 
     protected override async Task OnInitializedAsync()

@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
@@ -25,7 +26,7 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
         bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSessionOrNull, CancellationToken.None);
         if (usesConfiguredPermissions)
         {
-            foreach (string permissionKey in requirement.PermissionKeys)
+            foreach (PermissionKey permissionKey in requirement.PermissionKeys)
             {
                 bool hasPermission = await mOrganizationPermissionService.HasPermissionAsync(userSessionOrNull, permissionKey, null, CancellationToken.None);
                 if (hasPermission)

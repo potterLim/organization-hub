@@ -52,7 +52,7 @@ public partial class DriveFileBrowser
     private IReadOnlyList<string> getChangeVersionKeys()
     {
         List<string> keys = new List<string>();
-        keys.Add(ChangeVersionKeys.CreateDriveFolderKey(getCurrentFolderID()));
+        keys.Add(ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID(getCurrentFolderID())));
         return keys;
     }
 

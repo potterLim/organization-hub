@@ -21,7 +21,7 @@ public sealed class OrganizationPermissionServiceTests
             SeededUser seededUser = await seedUserWithGrantAsync(dbContextFactory, EPermissionScopeType.Global, null);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
 
-            PermissionDecision decision = await permissionService.DecidePermissionAsync(seededUser.Session, PermissionKeys.FILES_UPLOAD, 999, CancellationToken.None);
+            PermissionDecision decision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), 999, CancellationToken.None);
 
             Assert.True(decision.IsAllowed);
         }
@@ -35,8 +35,8 @@ public sealed class OrganizationPermissionServiceTests
             SeededUser seededUser = await seedUserWithGrantAsync(dbContextFactory, EPermissionScopeType.OwnTeam, null);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
 
-            PermissionDecision ownTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, PermissionKeys.FILES_UPLOAD, seededUser.TeamID, CancellationToken.None);
-            PermissionDecision otherTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, PermissionKeys.FILES_UPLOAD, seededUser.TeamID + 100, CancellationToken.None);
+            PermissionDecision ownTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), seededUser.TeamID, CancellationToken.None);
+            PermissionDecision otherTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), seededUser.TeamID + 100, CancellationToken.None);
 
             Assert.True(ownTeamDecision.IsAllowed);
             Assert.False(otherTeamDecision.IsAllowed);
@@ -52,8 +52,8 @@ public sealed class OrganizationPermissionServiceTests
             SeededUser seededUser = await seedUserWithGrantAsync(dbContextFactory, EPermissionScopeType.SelectedTeam, targetTeamID);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
 
-            PermissionDecision targetTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, PermissionKeys.FILES_UPLOAD, targetTeamID, CancellationToken.None);
-            PermissionDecision ownTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, PermissionKeys.FILES_UPLOAD, seededUser.TeamID, CancellationToken.None);
+            PermissionDecision targetTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), targetTeamID, CancellationToken.None);
+            PermissionDecision ownTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), seededUser.TeamID, CancellationToken.None);
 
             Assert.True(targetTeamDecision.IsAllowed);
             Assert.False(ownTeamDecision.IsAllowed);
@@ -69,7 +69,7 @@ public sealed class OrganizationPermissionServiceTests
             UserSession userSession = await seedUserWithoutPositionAsync(dbContextFactory, teamID);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
 
-            PermissionDecision decision = await permissionService.DecidePermissionAsync(userSession, PermissionKeys.FILES_UPLOAD, teamID, CancellationToken.None);
+            PermissionDecision decision = await permissionService.DecidePermissionAsync(userSession, new PermissionKey(PermissionKeys.FILES_UPLOAD), teamID, CancellationToken.None);
 
             Assert.False(decision.IsAllowed);
         }
