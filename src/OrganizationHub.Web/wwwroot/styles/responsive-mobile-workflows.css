@@ -1,0 +1,30 @@
+@media (max-width: 720px) {
+    .hub-approval-card-head {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .hub-approval-file-row {
+        align-items: center;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .hub-approval-log-row {
+        align-items: start;
+        gap: 4px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-file-desktop-table,
+    .hub-calendar-desktop-table {
+        display: none;
+    }
+
+    .hub-file-mobile-list,
+    .hub-calendar-mobile-list,
+    .hub-approved-mobile-list {
+        display: grid;
+        gap: 12px;
+    }
+}

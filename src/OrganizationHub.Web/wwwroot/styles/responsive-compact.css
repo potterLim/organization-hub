@@ -1,0 +1,70 @@
+@media (max-height: 820px) and (min-width: 961px) {
+    .hub-drawer .mud-drawer {
+        padding: 96px 12px 14px 18px;
+    }
+
+    .hub-drawer .mud-drawer-content {
+        height: calc(100vh - 14px);
+        padding: 10px 8px;
+    }
+
+    .hub-nav-brand {
+        margin: 0 6px 6px;
+        padding: 0 4px 8px;
+    }
+
+    .hub-nav-menu .mud-nav-link {
+        margin: 0;
+        min-height: 32px;
+        padding: 0 9px;
+    }
+
+    .hub-nav-menu .mud-nav-link .mud-nav-link-icon {
+        flex-basis: 24px;
+        margin-inline-end: 6px;
+        min-width: 24px;
+        width: 24px;
+    }
+
+    .hub-nav-section-label {
+        font-size: 10.5px;
+        margin: 8px 8px 4px;
+    }
+
+    .hub-nav-divider {
+        margin: 10px 6px 8px;
+    }
+
+    .hub-container {
+        padding-top: 112px;
+    }
+
+    .hub-page-header {
+        margin-bottom: 18px;
+    }
+
+    .hub-card.pa-4 {
+        padding: 20px !important;
+    }
+
+    .hub-card .mud-typography-h6 {
+        margin-bottom: 12px;
+    }
+
+    .hub-google-layout {
+        gap: 20px;
+    }
+
+    .hub-google-panel-stack {
+        gap: 18px;
+    }
+
+    .hub-google-toolbar {
+        margin-bottom: 14px;
+    }
+
+    .hub-google-layout .hub-empty {
+        min-height: 72px;
+        padding: 16px;
+    }
+}

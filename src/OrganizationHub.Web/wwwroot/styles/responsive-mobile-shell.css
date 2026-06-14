@@ -1,0 +1,153 @@
+@media (max-width: 720px) {
+    :root {
+        --hub-frame: min(1180px, calc(100vw - 24px));
+    }
+
+    .hub-appbar .mud-toolbar {
+        min-height: 82px;
+        padding: 10px 12px;
+    }
+
+    .hub-topbar-shell {
+        height: 58px;
+        padding: 6px 10px;
+    }
+
+    .hub-session-pill {
+        display: none;
+    }
+
+    .hub-logout-button-wide {
+        display: none !important;
+    }
+
+    .hub-logout-button-compact {
+        display: inline-flex !important;
+    }
+
+    .hub-brand-title {
+        font-size: 15px;
+    }
+
+    .hub-brand-mark {
+        border-radius: 16px;
+        height: 38px;
+        width: 38px;
+    }
+
+    .hub-brand-mark img {
+        height: 38px;
+        width: 38px;
+    }
+
+    .hub-container {
+        padding: 108px 12px 36px;
+    }
+
+    .hub-page-title {
+        font-size: 25px;
+    }
+
+    .hub-permission-controls {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-permission-allow {
+        min-height: 42px;
+    }
+
+    .hub-pdfjs-viewer {
+        border-radius: 16px;
+        max-height: none;
+        min-height: 420px;
+        padding: 10px;
+    }
+
+    .hub-pdfjs-toolbar {
+        padding: 8px;
+    }
+
+    .hub-pdfjs-status {
+        min-height: 300px;
+    }
+
+    .hub-page-description {
+        font-size: 14px;
+    }
+
+    .hub-calendar-month-heading {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+        justify-content: flex-start;
+    }
+
+    .hub-calendar-view-switch {
+        width: 100%;
+    }
+
+    .hub-calendar-view-button {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .hub-page-header .mud-stack-row {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .hub-page-header .mud-input-control {
+        flex: 1 1 180px;
+    }
+
+    .hub-page-actions {
+        justify-content: stretch;
+        width: 100%;
+    }
+
+    .hub-page-actions .mud-button-root {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .hub-page-actions .mud-button-label {
+        white-space: nowrap;
+    }
+
+    .hub-search-actions .mud-input-control {
+        flex-basis: 100%;
+        width: 100%;
+    }
+
+    .hub-browser-toolbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-browser-root-select,
+    .hub-browser-search {
+        justify-self: stretch;
+        max-width: none;
+        width: 100%;
+    }
+
+    .hub-control-select-width {
+        max-width: none;
+    }
+
+    .hub-browser-location {
+        align-items: stretch;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-browser-location-actions {
+        justify-content: space-between;
+    }
+
+    .hub-browser-count {
+        white-space: normal;
+    }
+
+    .hub-browser-search {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+}

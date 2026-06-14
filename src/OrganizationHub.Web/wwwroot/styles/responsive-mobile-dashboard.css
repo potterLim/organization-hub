@@ -1,0 +1,94 @@
+@media (max-width: 720px) {
+    .hub-dashboard-recent-desktop {
+        display: none;
+    }
+
+    .hub-dashboard-recent-mobile {
+        display: grid;
+        gap: 12px;
+    }
+
+    .hub-dashboard-more-button {
+        justify-self: stretch;
+        width: 100%;
+    }
+
+    .hub-dashboard-card-head {
+        align-items: center;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 10px;
+    }
+
+    .hub-dashboard-card-action {
+        justify-content: flex-end !important;
+        width: auto;
+    }
+
+    .hub-dashboard-priority-card {
+        margin-bottom: 18px;
+    }
+
+    .hub-dashboard-card-error {
+        align-items: stretch;
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .hub-dashboard-card-error .mud-button-root {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .hub-dashboard-approval-row {
+        align-items: stretch;
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
+    }
+
+    .hub-dashboard-material-row {
+        border-radius: 18px;
+        padding: 14px;
+    }
+
+    .hub-dashboard-material-title-row {
+        gap: 9px;
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .hub-dashboard-material-name {
+        display: -webkit-box;
+        line-height: 1.38 !important;
+        white-space: normal;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .hub-dashboard-material-meta-row {
+        align-items: start;
+        gap: 5px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-dashboard-material-location {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .hub-dashboard-material-path {
+        line-height: 1.55;
+        white-space: normal;
+    }
+
+    .hub-dashboard-material-uploader {
+        justify-self: start;
+        max-width: 100%;
+        text-align: left;
+        white-space: normal;
+    }
+
+    .hub-dashboard-material-actions .mud-icon-button {
+        height: 36px;
+        padding: 6px;
+        width: 36px;
+    }
+}

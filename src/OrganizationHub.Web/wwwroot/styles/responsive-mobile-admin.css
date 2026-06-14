@@ -1,0 +1,151 @@
+@media (max-width: 720px) {
+    .hub-team-check-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hub-card {
+        border-radius: 24px !important;
+    }
+
+    .hub-admin-page-grid .hub-card,
+    .hub-settings-layout .hub-card,
+    .hub-google-layout .hub-card {
+        border-radius: 12px !important;
+    }
+
+    .hub-card.pa-4 {
+        padding: 18px !important;
+    }
+
+    .hub-settings-tabs .mud-tabs-toolbar {
+        margin-bottom: 12px;
+    }
+
+    .hub-settings-tabs .mud-tab {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    .hub-settings-tabs .mud-tabs-tabbar-wrapper > .mud-tooltip-root {
+        margin-right: 4px;
+    }
+
+    .hub-resource-summary-grid,
+    .hub-permission-card-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-permission-save-bar {
+        bottom: 8px;
+    }
+
+    .hub-management-grid {
+        margin-top: 0;
+    }
+
+    .hub-form-actions {
+        gap: 8px !important;
+        margin-top: 18px !important;
+    }
+
+    .hub-form-actions .mud-button-root {
+        flex: 1 1 132px;
+    }
+
+    .hub-google-connect-actions .mud-button-root {
+        flex: 1 1 180px;
+    }
+
+    .hub-file-picker-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-file-picker-actions .mud-button-root,
+    .hub-file-picker-control {
+        width: 100%;
+    }
+
+    .hub-calendar-detail-actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-google-toolbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-google-panel-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .hub-google-panel-heading .mud-button-root {
+        width: 100%;
+    }
+
+    .hub-google-panel-actions {
+        align-items: stretch;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .hub-health-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-health-pill {
+        justify-self: start;
+    }
+
+    .hub-health-summary {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .hub-setting-id-tools {
+        grid-template-columns: minmax(0, 1fr) 36px;
+        min-height: 44px;
+    }
+
+    .hub-delete-confirm {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .hub-upload-log-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-folder-actionbar {
+        justify-content: stretch;
+    }
+
+    .hub-folder-actionbar .mud-button-root {
+        width: 100%;
+    }
+
+    .hub-folder-create-panel {
+        align-items: stretch;
+    }
+
+    .hub-folder-create-head {
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+    }
+
+    .hub-folder-create-actions {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: 1fr;
+    }
+
+    .hub-folder-tile-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-uploaded-by {
+        justify-self: start;
+        max-width: 100%;
+    }
+
+}

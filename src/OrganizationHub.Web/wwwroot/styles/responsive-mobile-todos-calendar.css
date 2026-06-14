@@ -1,0 +1,151 @@
+@media (max-width: 720px) {
+    .hub-todo-toolbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-todo-create {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-todo-create-bar {
+        grid-template-columns: 24px minmax(0, 1fr);
+        padding: 10px;
+    }
+
+    .hub-todo-create-button {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .hub-todo-column {
+        min-height: 0;
+        padding: 14px;
+    }
+
+    .hub-todo-row {
+        align-items: start;
+        padding: 12px;
+    }
+
+    .hub-todo-row-draggable {
+        grid-template-columns: 22px 34px minmax(0, 1fr);
+    }
+
+    .hub-todo-row-static {
+        grid-template-columns: 34px minmax(0, 1fr);
+    }
+
+    .hub-todo-row-draggable .hub-todo-actions {
+        grid-column: 3 / -1;
+        justify-content: flex-start;
+        min-width: 0;
+    }
+
+    .hub-todo-row-static .hub-todo-actions {
+        grid-column: 2 / -1;
+        justify-content: flex-start;
+        min-width: 0;
+    }
+
+    .hub-todo-delete-confirm {
+        width: 100%;
+    }
+
+    .hub-rule-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-file-compact-row {
+        align-items: flex-start;
+        border-radius: 18px;
+        gap: 12px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        min-height: 0;
+        padding: 14px;
+    }
+
+    .hub-file-compact-name {
+        line-height: 1.38 !important;
+        white-space: normal;
+    }
+
+    .hub-file-compact-meta {
+        gap: 6px 10px;
+        margin-top: 8px;
+    }
+
+    .hub-file-compact-actions .mud-icon-button {
+        height: 36px;
+        padding: 6px;
+        width: 36px;
+    }
+
+    .hub-calendar-grid {
+        gap: 18px !important;
+    }
+
+    .hub-calendar-toolbar-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-calendar-toolbar-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .hub-calendar-period-control {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .hub-calendar-view-switch {
+        align-self: stretch;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+    }
+
+    .hub-calendar-grid .hub-card.pa-4 {
+        padding: 18px !important;
+    }
+
+    .hub-calendar-month-grid {
+        gap: 10px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-calendar-weekday {
+        display: none;
+    }
+
+    .hub-calendar-day {
+        min-height: 0;
+        padding: 14px;
+    }
+
+    .hub-calendar-day:not(.hub-calendar-day-has-events) {
+        display: none;
+    }
+
+    .hub-calendar-day-muted {
+        display: none;
+    }
+
+    .hub-calendar-day-date {
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .hub-calendar-day-date span:first-child::after {
+        content: "일";
+    }
+
+    .hub-calendar-day-time-list {
+        min-height: 48px;
+    }
+
+    .hub-login-panel {
+        border-radius: 28px;
+        padding: 28px;
+    }
+}

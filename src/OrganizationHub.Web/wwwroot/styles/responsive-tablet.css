@@ -1,0 +1,64 @@
+@media (max-width: 960px) {
+    .hub-drawer .mud-drawer {
+        padding: 94px 14px 16px;
+    }
+
+    .hub-drawer .mud-drawer-content {
+        height: calc(100vh - 16px);
+    }
+
+    .hub-container {
+        padding-top: 118px;
+    }
+
+    .hub-page-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .hub-document-meta {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .hub-google-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-settings-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-admin-section-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .hub-position-selection-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-permission-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-permission-controls {
+        grid-template-columns: minmax(88px, .45fr) minmax(140px, 1fr);
+    }
+
+    .hub-permission-toolbar,
+    .hub-resource-picker-grid,
+    .hub-selected-resource-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-permission-scope,
+    .hub-permission-target,
+    .hub-permission-disabled-hint {
+        grid-column: 1 / -1;
+    }
+
+    .hub-workflow-step-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
