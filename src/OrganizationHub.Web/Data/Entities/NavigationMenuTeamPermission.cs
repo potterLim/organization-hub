@@ -2,7 +2,7 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class NavigationMenuTeamPermission
 {
-    public int NavigationMenuItemID
+    public int NavigationMenuItemId
     {
         get; set;
     }
@@ -10,7 +10,7 @@ public class NavigationMenuTeamPermission
     {
         get; set;
     }
-    public int TeamID
+    public int TeamId
     {
         get; set;
     }

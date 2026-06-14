@@ -44,19 +44,19 @@ else
                     <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" />
                     <span>@approvalRequest.FileName</span>
                     <MudTooltip Text="다운로드">
-                        <MudIconButton Href="@("/files/" + approvalRequest.FileID + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
+                        <MudIconButton Href="@("/files/" + approvalRequest.FileId + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
                     </MudTooltip>
                 </div>
                 @if (canChangeNextApprover(approvalRequest))
                 {
-                    <MudSelect T="int" Label="다음 결재권자" Value="@getNextApproverValue(approvalRequest.ID)" ValueChanged="@((int value) => setNextApproverValue(approvalRequest.ID, value))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-approval-select">
+                    <MudSelect T="int" Label="다음 결재권자" Value="@getNextApproverValue(approvalRequest.Id)" ValueChanged="@((int selectedUserId) => setNextApproverValue(approvalRequest.Id, selectedUserId))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-approval-select">
                         @foreach (ApprovalUserOption userOption in mApproverOptions)
                         {
-                            <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
+                            <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
                         }
                     </MudSelect>
                 }
-                <MudTextField Value="@getCommentValue(approvalRequest.ID)" ValueChanged="@((string value) => setCommentValue(approvalRequest.ID, value))" Label="코멘트" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudTextField Value="@getCommentValue(approvalRequest.Id)" ValueChanged="@((string comment) => setCommentValue(approvalRequest.Id, comment))" Label="코멘트" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 <div class="hub-approval-steps">
                     @foreach (ApprovalStepItem step in approvalRequest.Steps)
                     {
@@ -76,8 +76,8 @@ else
 {
     private List<ApprovalRequestItem> mPendingApprovals = new List<ApprovalRequestItem>();
     private List<ApprovalUserOption> mApproverOptions = new List<ApprovalUserOption>();
-    private Dictionary<int, string> mCommentsByApprovalID = new Dictionary<int, string>();
-    private Dictionary<int, int> mNextApproverUserIDByApprovalID = new Dictionary<int, int>();
+    private Dictionary<int, string> mCommentsByApprovalId = new Dictionary<int, string>();
+    private Dictionary<int, int> mNextApproverUserIdByApprovalId = new Dictionary<int, int>();
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
     private bool mIsLoading = true;
@@ -107,17 +107,17 @@ else
         mPendingApprovals = pendingApprovals.ToList();
         foreach (ApprovalRequestItem approvalRequest in mPendingApprovals)
         {
-            if (mCommentsByApprovalID.ContainsKey(approvalRequest.ID) == false)
+            if (mCommentsByApprovalId.ContainsKey(approvalRequest.Id) == false)
             {
-                mCommentsByApprovalID[approvalRequest.ID] = string.Empty;
+                mCommentsByApprovalId[approvalRequest.Id] = string.Empty;
             }
 
-            if (canChangeNextApprover(approvalRequest) && mNextApproverUserIDByApprovalID.ContainsKey(approvalRequest.ID) == false)
+            if (canChangeNextApprover(approvalRequest) && mNextApproverUserIdByApprovalId.ContainsKey(approvalRequest.Id) == false)
             {
                 ApprovalStepItem? nextStepOrNull = approvalRequest.Steps.FirstOrDefault(step => step.StepNumber == approvalRequest.CurrentStepNumber + 1);
                 if (nextStepOrNull != null)
                 {
-                    mNextApproverUserIDByApprovalID[approvalRequest.ID] = nextStepOrNull.ApproverUserID;
+                    mNextApproverUserIdByApprovalId[approvalRequest.Id] = nextStepOrNull.ApproverUserId;
                 }
             }
         }
@@ -130,10 +130,18 @@ else
             return;
         }
 
-        int nextApproverUserID = canChangeNextApprover(approvalRequest) ? getNextApproverValue(approvalRequest.ID) : 0;
-        ServiceResult result = await ApprovalService.ApproveRequestAsync(CurrentUserSessionOrNull, approvalRequest.ID, nextApproverUserID, getCommentValue(approvalRequest.ID), CancellationToken.None);
-        showResult(result, "승인되었습니다.");
-        if (result.IsSuccess)
+        int nextApproverUserId = canChangeNextApprover(approvalRequest) ? getNextApproverValue(approvalRequest.Id) : 0;
+        ApprovalRequestId approvalRequestId = ApprovalRequestId.CreateExisting(approvalRequest.Id);
+        ApprovalUserId nextApproverId = ApprovalUserId.CreateOptional(nextApproverUserId);
+        string comment = getCommentValue(approvalRequest.Id);
+        ServiceResult approvalResult = await ApprovalService.ApproveRequestAsync(
+            CurrentUserSessionOrNull,
+            approvalRequestId,
+            nextApproverId,
+            comment,
+            CancellationToken.None);
+        showOperationResult(approvalResult, "승인되었습니다.");
+        if (approvalResult.IsSuccess)
         {
             await loadDataAsync();
         }
@@ -146,9 +154,15 @@ else
             return;
         }
 
-        ServiceResult result = await ApprovalService.RejectRequestAsync(CurrentUserSessionOrNull, approvalRequest.ID, getCommentValue(approvalRequest.ID), CancellationToken.None);
-        showResult(result, "반려되었습니다.");
-        if (result.IsSuccess)
+        ApprovalRequestId approvalRequestId = ApprovalRequestId.CreateExisting(approvalRequest.Id);
+        string comment = getCommentValue(approvalRequest.Id);
+        ServiceResult rejectionResult = await ApprovalService.RejectRequestAsync(
+            CurrentUserSessionOrNull,
+            approvalRequestId,
+            comment,
+            CancellationToken.None);
+        showOperationResult(rejectionResult, "반려되었습니다.");
+        if (rejectionResult.IsSuccess)
         {
             await loadDataAsync();
         }
@@ -159,10 +173,10 @@ else
         return approvalRequest.CurrentStepNumber + 1 < approvalRequest.StepCount;
     }
 
-    private string getCommentValue(int approvalRequestID)
+    private string getCommentValue(int approvalRequestId)
     {
         string? commentOrNull;
-        if (mCommentsByApprovalID.TryGetValue(approvalRequestID, out commentOrNull))
+        if (mCommentsByApprovalId.TryGetValue(approvalRequestId, out commentOrNull))
         {
             return commentOrNull;
         }
@@ -170,37 +184,37 @@ else
         return string.Empty;
     }
 
-    private void setCommentValue(int approvalRequestID, string comment)
+    private void setCommentValue(int approvalRequestId, string comment)
     {
-        mCommentsByApprovalID[approvalRequestID] = comment;
+        mCommentsByApprovalId[approvalRequestId] = comment;
     }
 
-    private int getNextApproverValue(int approvalRequestID)
+    private int getNextApproverValue(int approvalRequestId)
     {
-        int nextApproverUserID;
-        if (mNextApproverUserIDByApprovalID.TryGetValue(approvalRequestID, out nextApproverUserID))
+        int nextApproverUserId;
+        if (mNextApproverUserIdByApprovalId.TryGetValue(approvalRequestId, out nextApproverUserId))
         {
-            return nextApproverUserID;
+            return nextApproverUserId;
         }
 
         return 0;
     }
 
-    private void setNextApproverValue(int approvalRequestID, int nextApproverUserID)
+    private void setNextApproverValue(int approvalRequestId, int nextApproverUserId)
     {
-        mNextApproverUserIDByApprovalID[approvalRequestID] = nextApproverUserID;
+        mNextApproverUserIdByApprovalId[approvalRequestId] = nextApproverUserId;
     }
 
-    private void showResult(ServiceResult result, string successMessage)
+    private void showOperationResult(ServiceResult operationResult, string successMessage)
     {
-        if (result.IsSuccess)
+        if (operationResult.IsSuccess)
         {
             mMessage = successMessage;
             mMessageSeverity = Severity.Success;
             return;
         }
 
-        mMessage = result.ErrorMessage;
+        mMessage = operationResult.ErrorMessage;
         mMessageSeverity = Severity.Error;
     }
 

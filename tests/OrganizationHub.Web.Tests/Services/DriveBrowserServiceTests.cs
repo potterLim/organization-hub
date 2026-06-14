@@ -17,7 +17,7 @@ public sealed class DriveBrowserServiceTests
     [Fact]
     public async Task GetFolderFilesMergesRecentUploadAuditWhenDriveListIsNotCaughtUpAsync()
     {
-        DriveFolderReference planningFolder = new DriveFolderReference("planning-materials-folder", "기획팀 자료", EDriveFolderKind.TeamMaterials, 1, "기획팀", EDriveFolderUploadAccess.UploadAllowed);
+        DriveFolderReference planningFolder = createTeamFolderReference("planning-materials-folder", "기획팀 자료", 1, "기획팀", EDriveFolderUploadAccess.UploadAllowed);
         FakePermissionService permissionService = new FakePermissionService(planningFolder);
         FakeUploadAuditLogService uploadAuditLogService = new FakeUploadAuditLogService();
         uploadAuditLogService.RecentUploadsForFolder.Add(createRecentUpload("fresh-file", "방금올린자료.pdf"));
@@ -26,10 +26,11 @@ public sealed class DriveBrowserServiceTests
             DriveBrowserService driveBrowserService = new DriveBrowserService(permissionService, new FakeDriveService(), uploadAuditLogService, memoryCache, new ChangeVersionService());
             UserSession userSession = createUserSession();
 
-            IReadOnlyList<DriveFileItem> files = await driveBrowserService.GetFolderFilesAsync(userSession, EDriveFolderKind.TeamMaterials, planningFolder.FolderID, planningFolder.FolderID, string.Empty, CancellationToken.None);
+            DriveFolderBrowseRequest request = new DriveFolderBrowseRequest(userSession, EDriveFolderKind.TeamMaterials, planningFolder.FolderId, planningFolder.FolderId);
+            IReadOnlyList<DriveFileItem> files = await driveBrowserService.GetFolderFilesAsync(request, CancellationToken.None);
 
             DriveFileItem file = Assert.Single(files);
-            Assert.Equal("fresh-file", file.ID);
+            Assert.Equal("fresh-file", file.Id);
             Assert.Equal("방금올린자료.pdf", file.Name);
             Assert.Equal("application/pdf", file.MimeType);
             Assert.True(file.CanPreviewInSite);
@@ -41,7 +42,7 @@ public sealed class DriveBrowserServiceTests
     [Fact]
     public async Task GetFolderFilesDoesNotMergeRecentUploadAuditWhenKeywordDoesNotMatchAsync()
     {
-        DriveFolderReference planningFolder = new DriveFolderReference("planning-materials-folder", "기획팀 자료", EDriveFolderKind.TeamMaterials, 1, "기획팀", EDriveFolderUploadAccess.UploadAllowed);
+        DriveFolderReference planningFolder = createTeamFolderReference("planning-materials-folder", "기획팀 자료", 1, "기획팀", EDriveFolderUploadAccess.UploadAllowed);
         FakePermissionService permissionService = new FakePermissionService(planningFolder);
         FakeUploadAuditLogService uploadAuditLogService = new FakeUploadAuditLogService();
         uploadAuditLogService.RecentUploadsForFolder.Add(createRecentUpload("fresh-file", "방금올린자료.pdf"));
@@ -50,7 +51,10 @@ public sealed class DriveBrowserServiceTests
             DriveBrowserService driveBrowserService = new DriveBrowserService(permissionService, new FakeDriveService(), uploadAuditLogService, memoryCache, new ChangeVersionService());
             UserSession userSession = createUserSession();
 
-            IReadOnlyList<DriveFileItem> files = await driveBrowserService.GetFolderFilesAsync(userSession, EDriveFolderKind.TeamMaterials, planningFolder.FolderID, planningFolder.FolderID, "다른자료", CancellationToken.None);
+            DriveFolderBrowseRequest request = new DriveFolderBrowseRequest(userSession, EDriveFolderKind.TeamMaterials, planningFolder.FolderId, planningFolder.FolderId);
+            request.Keyword = SearchKeyword.CreateOptional("다른자료");
+
+            IReadOnlyList<DriveFileItem> files = await driveBrowserService.GetFolderFilesAsync(request, CancellationToken.None);
 
             Assert.Empty(files);
         }
@@ -59,8 +63,8 @@ public sealed class DriveBrowserServiceTests
     [Fact]
     public async Task GetFilesUsesFolderKindScopedPermissionLookupAsync()
     {
-        DriveFolderReference planningMaterialsFolder = new DriveFolderReference("planning-materials-folder", "기획팀 자료", EDriveFolderKind.TeamMaterials, 1, "기획팀", EDriveFolderUploadAccess.UploadAllowed);
-        DriveFolderReference commonFolder = new DriveFolderReference("common-folder", "공통 자료", EDriveFolderKind.Common, null, string.Empty, EDriveFolderUploadAccess.UploadAllowed);
+        DriveFolderReference planningMaterialsFolder = createTeamFolderReference("planning-materials-folder", "기획팀 자료", 1, "기획팀", EDriveFolderUploadAccess.UploadAllowed);
+        DriveFolderReference commonFolder = createGlobalFolderReference("common-folder", "공통 자료", EDriveFolderKind.Common, EDriveFolderUploadAccess.UploadAllowed);
         FakePermissionService permissionService = new FakePermissionService(planningMaterialsFolder, commonFolder);
         FakeUploadAuditLogService uploadAuditLogService = new FakeUploadAuditLogService();
         using (MemoryCache memoryCache = new MemoryCache(new MemoryCacheOptions()))
@@ -68,7 +72,7 @@ public sealed class DriveBrowserServiceTests
             DriveBrowserService driveBrowserService = new DriveBrowserService(permissionService, new FakeDriveService(), uploadAuditLogService, memoryCache, new ChangeVersionService());
             UserSession userSession = createUserSession();
 
-            await driveBrowserService.GetFilesAsync(userSession, EDriveFolderKind.TeamMaterials, string.Empty, CancellationToken.None);
+            await driveBrowserService.GetFilesAsync(userSession, EDriveFolderKind.TeamMaterials, SearchKeyword.Empty, CancellationToken.None);
 
             Assert.Equal(0, permissionService.AllReadableFolderCallCount);
             EDriveFolderKind requestedFolderKind = Assert.Single(permissionService.KindScopedReadableFolderCallKinds);
@@ -78,13 +82,26 @@ public sealed class DriveBrowserServiceTests
 
     private static UserSession createUserSession()
     {
-        return new UserSession(1, "planning.member", "테스트 사용자", EUserRole.TeamUser, 1, "planning", "기획팀");
+        return new UserSession(UserAccountId.CreateExisting(1), "planning.member", "테스트 사용자", EUserRole.TeamUser, OrganizationTeamId.CreateExisting(1), new OrganizationTeamKey("planning"), "기획팀");
     }
 
-    private static UploadAuditLogItem createRecentUpload(string fileID, string fileName)
+    private static DriveFolderReference createTeamFolderReference(string folderId, string displayName, int teamId, string teamName, EDriveFolderUploadAccess uploadAccess)
+    {
+        DriveFolderOwnerContext ownerContext = new DriveFolderOwnerContext(OrganizationTeamId.CreateExisting(teamId), OrganizationTeamKey.Empty, teamName);
+        DriveFolderReferenceCreationRequest request = new DriveFolderReferenceCreationRequest(DriveFolderId.CreateOptional(folderId), displayName, EDriveFolderKind.TeamMaterials, uploadAccess, ownerContext);
+        return new DriveFolderReference(request);
+    }
+
+    private static DriveFolderReference createGlobalFolderReference(string folderId, string displayName, EDriveFolderKind folderKind, EDriveFolderUploadAccess uploadAccess)
+    {
+        DriveFolderReferenceCreationRequest request = new DriveFolderReferenceCreationRequest(DriveFolderId.CreateOptional(folderId), displayName, folderKind, uploadAccess);
+        return new DriveFolderReference(request);
+    }
+
+    private static UploadAuditLogItem createRecentUpload(string fileId, string fileName)
     {
         UploadAuditLogItem item = new UploadAuditLogItem();
-        item.FileID = fileID;
+        item.FileId = fileId;
         item.FileName = fileName;
         item.FolderDisplayName = "기획팀 자료";
         item.FolderKind = EDriveFolderKind.TeamMaterials;
@@ -144,42 +161,42 @@ public sealed class DriveBrowserServiceTests
             return Task.FromResult(calendars);
         }
 
-        public Task<bool> CanReadFileAsync(UserSession userSession, string fileID, CancellationToken cancellationToken)
+        public Task<bool> CanReadFileAsync(UserSession userSession, DriveItemId fileId, CancellationToken cancellationToken)
         {
             return Task.FromResult(false);
         }
 
-        public Task<PermissionDecision> DecideReadFileAsync(UserSession userSession, string fileID, CancellationToken cancellationToken)
+        public Task<PermissionDecision> DecideReadFileAsync(UserSession userSession, DriveItemId fileId, CancellationToken cancellationToken)
         {
             return Task.FromResult(PermissionDecision.Deny("테스트 권한 없음", "테스트"));
         }
 
-        public Task<bool> CanUploadToFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+        public Task<bool> CanUploadToFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken)
         {
             return Task.FromResult(false);
         }
 
-        public Task<PermissionDecision> DecideUploadToFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+        public Task<PermissionDecision> DecideUploadToFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken)
         {
             return Task.FromResult(PermissionDecision.Deny("테스트 권한 없음", "테스트"));
         }
 
-        public Task<bool> CanCreateFolderInFolderAsync(UserSession userSession, string parentFolderID, CancellationToken cancellationToken)
+        public Task<bool> CanCreateFolderInFolderAsync(UserSession userSession, DriveFolderId parentFolderId, CancellationToken cancellationToken)
         {
             return Task.FromResult(false);
         }
 
-        public Task<PermissionDecision> DecideCreateFolderInFolderAsync(UserSession userSession, string parentFolderID, CancellationToken cancellationToken)
+        public Task<PermissionDecision> DecideCreateFolderInFolderAsync(UserSession userSession, DriveFolderId parentFolderId, CancellationToken cancellationToken)
         {
             return Task.FromResult(PermissionDecision.Deny("테스트 권한 없음", "테스트"));
         }
 
-        public Task<bool> CanDeleteInFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+        public Task<bool> CanDeleteInFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken)
         {
             return Task.FromResult(false);
         }
 
-        public Task<PermissionDecision> DecideDeleteInFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+        public Task<PermissionDecision> DecideDeleteInFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken)
         {
             return Task.FromResult(PermissionDecision.Deny("테스트 권한 없음", "테스트"));
         }
@@ -194,32 +211,32 @@ public sealed class DriveBrowserServiceTests
             return PermissionDecision.Deny("테스트 권한 없음", "테스트");
         }
 
-        public Task<bool> CanStoreApprovedFileToFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+        public Task<bool> CanStoreApprovedFileToFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken)
         {
             return Task.FromResult(false);
         }
 
-        public Task<PermissionDecision> DecideStoreApprovedFileToFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+        public Task<PermissionDecision> DecideStoreApprovedFileToFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken)
         {
             return Task.FromResult(PermissionDecision.Deny("테스트 권한 없음", "테스트"));
         }
 
-        public Task<bool> CanReadCalendarAsync(UserSession userSession, string calendarID, CancellationToken cancellationToken)
+        public Task<bool> CanReadCalendarAsync(UserSession userSession, CalendarId calendarId, CancellationToken cancellationToken)
         {
             return Task.FromResult(false);
         }
 
-        public Task<PermissionDecision> DecideReadCalendarAsync(UserSession userSession, string calendarID, CancellationToken cancellationToken)
+        public Task<PermissionDecision> DecideReadCalendarAsync(UserSession userSession, CalendarId calendarId, CancellationToken cancellationToken)
         {
             return Task.FromResult(PermissionDecision.Deny("테스트 권한 없음", "테스트"));
         }
 
-        public Task<bool> CanWriteCalendarAsync(UserSession userSession, string calendarID, CancellationToken cancellationToken)
+        public Task<bool> CanWriteCalendarAsync(UserSession userSession, CalendarId calendarId, CancellationToken cancellationToken)
         {
             return Task.FromResult(false);
         }
 
-        public Task<PermissionDecision> DecideWriteCalendarAsync(UserSession userSession, string calendarID, CancellationToken cancellationToken)
+        public Task<PermissionDecision> DecideWriteCalendarAsync(UserSession userSession, CalendarId calendarId, CancellationToken cancellationToken)
         {
             return Task.FromResult(PermissionDecision.Deny("테스트 권한 없음", "테스트"));
         }
@@ -239,25 +256,25 @@ public sealed class DriveBrowserServiceTests
             return Task.CompletedTask;
         }
 
-        public Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsAsync(UserSession userSession, int maximumCount, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsAsync(UserSession userSession, RecentItemLimit maximumCount, CancellationToken cancellationToken)
         {
             IReadOnlyList<UploadAuditLogItem> items = new List<UploadAuditLogItem>();
             return Task.FromResult(items);
         }
 
-        public Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsForReadableRootsAsync(UserSession userSession, EDriveFolderKind folderKind, int maximumCount, EManagementTeamFilter managementTeamFilter, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsForReadableRootsAsync(UserSession userSession, EDriveFolderKind folderKind, RecentItemLimit maximumCount, EManagementTeamFilter managementTeamFilter, CancellationToken cancellationToken)
         {
             IReadOnlyList<UploadAuditLogItem> items = new List<UploadAuditLogItem>();
             return Task.FromResult(items);
         }
 
-        public Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsForRootAsync(UserSession userSession, DriveFolderReference rootFolder, int maximumCount, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsForRootAsync(UserSession userSession, DriveFolderReference rootFolder, RecentItemLimit maximumCount, CancellationToken cancellationToken)
         {
             IReadOnlyList<UploadAuditLogItem> items = new List<UploadAuditLogItem>();
             return Task.FromResult(items);
         }
 
-        public Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsForFolderAsync(string folderID, TimeSpan maximumAge, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsForFolderAsync(DriveFolderId folderId, TimeSpan maximumAge, CancellationToken cancellationToken)
         {
             IReadOnlyList<UploadAuditLogItem> items = RecentUploadsForFolder;
             return Task.FromResult(items);

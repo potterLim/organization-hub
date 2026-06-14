@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -13,33 +12,52 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class UserManagementService
 {
-    private async Task<int?> getAllowedTeamIDAsync(OrganizationHubDbContext dbContext, UserAccountFormModel formModel, EUserRole role, CancellationToken cancellationToken)
+    private async Task<OrganizationTeamId?> getAllowedTeamIdOrNullAsync(
+        OrganizationHubDbContext dbContext,
+        UserAccountFormModel formModel,
+        EUserRole role,
+        CancellationToken cancellationToken)
     {
         if (role == EUserRole.Admin)
         {
-            return await getSystemAdministrationTeamIDAsync(dbContext, cancellationToken);
+            return await getSystemAdministrationTeamIdAsync(dbContext, cancellationToken);
         }
 
-        return formModel.TeamID;
-    }
-
-    private async Task<OrganizationPosition?> getAllowedPositionOrNullAsync(OrganizationHubDbContext dbContext, UserAccountFormModel formModel, EUserRole role, int? teamIDOrNull, CancellationToken cancellationToken)
-    {
-        if (teamIDOrNull.HasValue == false)
+        OrganizationTeamId teamId = formModel.TeamIdOrNull.GetValueOrDefault();
+        if (teamId.HasValue == false)
         {
             return null;
         }
 
-        if (role == EUserRole.Admin)
+        return teamId;
+    }
+
+    private async Task<OrganizationPosition?> getAllowedPositionOrNullAsync(
+        OrganizationHubDbContext dbContext,
+        UserAccountFormModel formModel,
+        EUserRole role,
+        OrganizationTeamId? teamIdOrNull,
+        CancellationToken cancellationToken)
+    {
+        OrganizationTeamId teamId = teamIdOrNull.GetValueOrDefault();
+        if (teamId.HasValue == false)
         {
-            return await getSystemAdministratorPositionOrNullAsync(dbContext, teamIDOrNull.Value, cancellationToken);
+            return null;
         }
 
-        if (formModel.PositionID.HasValue)
+        int requiredTeamId = teamId.GetRequiredValue();
+        if (role == EUserRole.Admin)
+        {
+            return await getSystemAdministratorPositionOrNullAsync(dbContext, teamId, cancellationToken);
+        }
+
+        OrganizationPositionId? positionIdOrNull = formModel.PositionIdOrNull;
+        int? positionIdValueOrNull = OrganizationPositionId.GetValueOrNull(positionIdOrNull);
+        if (positionIdValueOrNull.HasValue)
         {
             OrganizationPosition? selectedPositionOrNull = await dbContext.Positions.FirstOrDefaultAsync(position =>
-                position.ID == formModel.PositionID.Value &&
-                position.TeamID == teamIDOrNull.Value &&
+                position.Id == positionIdValueOrNull.GetValueOrDefault() &&
+                position.TeamId == requiredTeamId &&
                 position.IsActive &&
                 position.IsSystemAdministrator == false,
                 cancellationToken);
@@ -50,22 +68,26 @@ public sealed partial class UserManagementService
         }
 
         OrganizationPosition? defaultPositionOrNull = await dbContext.Positions
-            .Where(position => position.TeamID == teamIDOrNull.Value && position.IsActive && position.IsSystemAdministrator == false)
+            .Where(position => position.TeamId == requiredTeamId && position.IsActive && position.IsSystemAdministrator == false)
             .OrderBy(position => position.SortOrder)
             .ThenBy(position => position.Name)
             .FirstOrDefaultAsync(cancellationToken);
         return defaultPositionOrNull;
     }
 
-    private async Task<OrganizationPosition?> getSystemAdministratorPositionOrNullAsync(OrganizationHubDbContext dbContext, int teamID, CancellationToken cancellationToken)
+    private async Task<OrganizationPosition?> getSystemAdministratorPositionOrNullAsync(
+        OrganizationHubDbContext dbContext,
+        OrganizationTeamId teamId,
+        CancellationToken cancellationToken)
     {
+        int requiredTeamId = teamId.GetRequiredValue();
         OrganizationPosition? positionOrNull = await dbContext.Positions
             .Include(position => position.PermissionGrants)
-            .FirstOrDefaultAsync(position => position.TeamID == teamID && position.IsSystemAdministrator, cancellationToken);
+            .FirstOrDefaultAsync(position => position.TeamId == requiredTeamId && position.IsSystemAdministrator, cancellationToken);
         if (positionOrNull == null)
         {
             positionOrNull = new OrganizationPosition();
-            positionOrNull.TeamID = teamID;
+            positionOrNull.TeamId = requiredTeamId;
             positionOrNull.Name = "시스템 관리자";
             positionOrNull.Description = "조직 전체 설정과 운영 데이터를 관리하는 기본 관리자 직책입니다.";
             positionOrNull.SortOrder = 0;
@@ -82,7 +104,7 @@ public sealed partial class UserManagementService
     private void addMissingSystemAdministratorPermissionGrants(OrganizationHubDbContext dbContext, OrganizationPosition position)
     {
         List<string> existingPermissionKeys = position.PermissionGrants
-            .Where(permissionGrant => permissionGrant.ScopeType == EPermissionScopeType.Global && permissionGrant.TargetTeamID.HasValue == false)
+            .Where(permissionGrant => permissionGrant.ScopeType == EPermissionScopeType.Global && permissionGrant.TargetTeamId.HasValue == false)
             .Select(permissionGrant => permissionGrant.PermissionKey)
             .ToList();
         IReadOnlyList<PermissionDefinition> permissionDefinitions = PermissionCatalog.GetDefinitions();
@@ -107,16 +129,18 @@ public sealed partial class UserManagementService
         userAccount.Position = positionOrNull;
         if (positionOrNull == null)
         {
-            userAccount.PositionID = null;
+            userAccount.PositionId = null;
         }
     }
 
     private static bool isSystemAdministrationTeam(Team team)
     {
-        return string.Equals(team.TeamKey, OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_KEY, StringComparison.OrdinalIgnoreCase);
+        return new OrganizationTeamKey(team.TeamKey).IsSystemAdministrationTeamKey;
     }
 
-    private async Task<int> getSystemAdministrationTeamIDAsync(OrganizationHubDbContext dbContext, CancellationToken cancellationToken)
+    private async Task<OrganizationTeamId> getSystemAdministrationTeamIdAsync(
+        OrganizationHubDbContext dbContext,
+        CancellationToken cancellationToken)
     {
         Team? systemAdministrationTeamOrNull = await dbContext.Teams.FirstOrDefaultAsync(team =>
             team.TeamKey == OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_KEY,
@@ -126,7 +150,7 @@ public sealed partial class UserManagementService
             systemAdministrationTeamOrNull.DisplayName = OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_DISPLAY_NAME;
             systemAdministrationTeamOrNull.SortOrder = 0;
             systemAdministrationTeamOrNull.IsActive = true;
-            return systemAdministrationTeamOrNull.ID;
+            return OrganizationTeamId.CreateExisting(systemAdministrationTeamOrNull.Id);
         }
 
         Team systemAdministrationTeam = new Team();
@@ -136,6 +160,6 @@ public sealed partial class UserManagementService
         systemAdministrationTeam.IsActive = true;
         dbContext.Teams.Add(systemAdministrationTeam);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return systemAdministrationTeam.ID;
+        return OrganizationTeamId.CreateExisting(systemAdministrationTeam.Id);
     }
 }

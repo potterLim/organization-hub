@@ -19,22 +19,12 @@ public partial class Calendar
 
     private string getCalendarListItemClass(CalendarEventItem calendarEvent)
     {
-        if (mSelectedEventOrNull != null && mSelectedEventOrNull.ID == calendarEvent.ID && mSelectedEventOrNull.CalendarID == calendarEvent.CalendarID)
+        if (mSelectedEventOrNull != null && mSelectedEventOrNull.Id == calendarEvent.Id && mSelectedEventOrNull.CalendarId == calendarEvent.CalendarId)
         {
             return "hub-calendar-list-item hub-calendar-list-item-selected";
         }
 
         return "hub-calendar-list-item";
-    }
-
-    private string getCalendarMobileCardClass(CalendarEventItem calendarEvent)
-    {
-        if (mSelectedEventOrNull != null && mSelectedEventOrNull.ID == calendarEvent.ID && mSelectedEventOrNull.CalendarID == calendarEvent.CalendarID)
-        {
-            return "hub-calendar-mobile-card hub-calendar-mobile-card-selected";
-        }
-
-        return "hub-calendar-mobile-card";
     }
 
     private string formatCalendarEventMeta(CalendarEventItem calendarEvent)

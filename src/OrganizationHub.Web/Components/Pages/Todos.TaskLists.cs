@@ -23,10 +23,10 @@ public partial class Todos
             IReadOnlyList<TodoTaskListReference> taskLists = await TodoService.GetReadableTaskListsAsync(CurrentUserSessionOrNull, CancellationToken.None);
             IReadOnlyList<TodoTaskListReference> writableTaskLists = await TodoService.GetWritableTaskListsAsync(CurrentUserSessionOrNull, CancellationToken.None);
             mTaskLists = taskLists.ToList();
-            mWritableTaskListIDs = writableTaskLists.Select(taskList => taskList.TaskListID).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            mWritableTaskListIds = writableTaskLists.Select(taskList => taskList.TaskListId.GetRequiredValue()).ToHashSet(StringComparer.OrdinalIgnoreCase);
             if (mTaskLists.Count > 0)
             {
-                mSelectedTaskListID = getInitialTaskListID();
+                mSelectedTaskListId = getInitialTaskListId();
                 await loadTasksAsync();
             }
         }
@@ -38,18 +38,18 @@ public partial class Todos
         mIsLoadingLists = false;
     }
 
-    private async Task handleTaskListChangedAsync(string taskListID)
+    private async Task handleTaskListChangedAsync(string taskListId)
     {
-        mSelectedTaskListID = taskListID;
-        mEditingTaskID = string.Empty;
+        mSelectedTaskListId = taskListId;
+        mEditingTaskId = string.Empty;
         mEditingTitle = string.Empty;
-        mDeletingTaskID = string.Empty;
+        mDeletingTaskId = string.Empty;
         await loadTasksAsync();
     }
 
     private async Task loadTasksAsync()
     {
-        if (CurrentUserSessionOrNull == null || string.IsNullOrWhiteSpace(mSelectedTaskListID))
+        if (CurrentUserSessionOrNull == null || string.IsNullOrWhiteSpace(mSelectedTaskListId))
         {
             return;
         }
@@ -59,14 +59,14 @@ public partial class Todos
         bool shouldInitializeSortable = false;
         try
         {
-            IReadOnlyList<string> changeVersionKeys = getChangeVersionKeys();
+            IReadOnlyList<ChangeVersionKey> changeVersionKeys = getChangeVersionKeys();
             ChangeVersionReadResult<IReadOnlyList<TodoTaskItem>> readResult = await ChangeVersionService.ReadWithStableSnapshotAsync(
                 changeVersionKeys,
-                cancellationToken => TodoService.GetTasksAsync(CurrentUserSessionOrNull, mSelectedTaskListID, cancellationToken),
+                cancellationToken => TodoService.GetTasksAsync(CurrentUserSessionOrNull, TodoTaskListId.CreateOptional(mSelectedTaskListId), cancellationToken),
                 CancellationToken.None);
             mTasks = readResult.Value.ToList();
             mMessage = string.Empty;
-            mDeletingTaskID = string.Empty;
+            mDeletingTaskId = string.Empty;
             EChangeVersionStability stability = readResult.IsStable ? EChangeVersionStability.Stable : EChangeVersionStability.Unstable;
             recordLoadedChangeSnapshot(readResult.Snapshot, stability);
             shouldInitializeSortable = true;

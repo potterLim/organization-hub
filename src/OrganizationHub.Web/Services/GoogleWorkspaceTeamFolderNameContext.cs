@@ -1,14 +1,20 @@
 using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
 internal sealed class GoogleWorkspaceTeamFolderNameContext
 {
-    public GoogleWorkspaceTeamFolderNameContext(Team team, string teamParentFolderID, DriveFileMetadata? materialsMetadataOrNull, DriveFileMetadata? approvedMetadataOrNull)
+    public GoogleWorkspaceTeamFolderNameContext(
+        Team team,
+        DriveFolderId teamParentFolderId,
+        DriveFileMetadata? materialsMetadataOrNull,
+        DriveFileMetadata? approvedMetadataOrNull
+    )
     {
         Team = team;
-        TeamParentFolderID = teamParentFolderID;
+        TeamParentFolderId = teamParentFolderId;
         MaterialsMetadataOrNull = materialsMetadataOrNull;
         ApprovedMetadataOrNull = approvedMetadataOrNull;
     }
@@ -18,7 +24,7 @@ internal sealed class GoogleWorkspaceTeamFolderNameContext
         get; private init;
     }
 
-    public string TeamParentFolderID
+    public DriveFolderId TeamParentFolderId
     {
         get; private init;
     }

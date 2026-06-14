@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -26,7 +27,7 @@ public partial class Upload
         mRecentUploadsErrorMessage = string.Empty;
         try
         {
-            IReadOnlyList<UploadAuditLogItem> recentUploads = await UploadAuditLogService.GetRecentUploadsForRootAsync(CurrentUserSessionOrNull, selectedRootFolderOrNull, 6, CancellationToken.None);
+            IReadOnlyList<UploadAuditLogItem> recentUploads = await UploadAuditLogService.GetRecentUploadsForRootAsync(CurrentUserSessionOrNull, selectedRootFolderOrNull, new RecentItemLimit(6), CancellationToken.None);
             mRecentUploads = recentUploads.ToList();
         }
         catch

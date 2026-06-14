@@ -40,6 +40,10 @@
     line-height: 1.45;
 }
 
+.hub-muted {
+    color: var(--hub-text-muted);
+}
+
 .hub-card .hub-empty-state {
     min-height: 96px;
 }
@@ -143,4 +147,3 @@
     color: var(--hub-text);
     font-weight: 650;
 }
-

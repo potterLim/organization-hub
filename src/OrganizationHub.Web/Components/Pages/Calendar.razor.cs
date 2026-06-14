@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -12,7 +13,7 @@ namespace OrganizationHub.Web.Components.Pages;
 public partial class Calendar
 {
     [SupplyParameterFromQuery(Name = "calendar")]
-    public string? CalendarIDOrNull
+    public string? CalendarIdOrNull
     {
         get; set;
     }
@@ -26,10 +27,10 @@ public partial class Calendar
     private CalendarEventItem? mDeleteCandidateOrNull;
     private CalendarEventItem? mSelectedEventOrNull;
     private DateTime? mSelectedDayOrNull;
-    private string mSelectedCalendarID = "all";
+    private string mSelectedCalendarId = "all";
     private string mErrorMessage = string.Empty;
-    private string mEditorCalendarID = string.Empty;
-    private string mEditorEventID = string.Empty;
+    private string mEditorCalendarId = string.Empty;
+    private string mEditorEventId = string.Empty;
     private string mEditorSummary = string.Empty;
     private string mEditorDescription = string.Empty;
     private string mEditorLocation = string.Empty;
@@ -63,13 +64,13 @@ public partial class Calendar
         mShowCalendarAuthor = globalSetting.ShowCalendarAuthor;
         mCalendars = calendars.ToList();
         mWritableCalendars = writableCalendars.ToList();
-        if (string.IsNullOrWhiteSpace(CalendarIDOrNull) == false && mCalendars.Any(calendar => calendar.CalendarID == CalendarIDOrNull))
+        if (string.IsNullOrWhiteSpace(CalendarIdOrNull) == false && mCalendars.Any(calendar => calendar.CalendarId == CalendarId.CreateOptional(CalendarIdOrNull)))
         {
-            mSelectedCalendarID = CalendarIDOrNull;
+            mSelectedCalendarId = CalendarIdOrNull;
         }
         else if (mCalendars.Count > 0)
         {
-            mSelectedCalendarID = mCalendars[0].CalendarID;
+            mSelectedCalendarId = mCalendars[0].CalendarId.GetRequiredValue();
         }
 
         await loadEventsAsync();
@@ -78,24 +79,7 @@ public partial class Calendar
 
     private void applyWritableState(CalendarEventItem calendarEvent)
     {
-        calendarEvent.CanEdit = mWritableCalendars.Any(calendar => calendar.CalendarID == calendarEvent.CalendarID);
-    }
-
-    private sealed class CalendarDayCell
-    {
-        public DateTime Date
-        {
-            get; set;
-        }
-        public bool IsCurrentMonth
-        {
-            get; set;
-        }
-        public bool IsToday
-        {
-            get; set;
-        }
-        public List<CalendarEventItem> Events { get; set; } = new List<CalendarEventItem>();
+        calendarEvent.CanEdit = mWritableCalendars.Any(calendar => calendar.CalendarId == CalendarId.CreateOptional(calendarEvent.CalendarId));
     }
 
 }

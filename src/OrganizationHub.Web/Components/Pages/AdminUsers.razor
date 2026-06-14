@@ -24,11 +24,11 @@
         <MudPaper Class="hub-card hub-form-card pa-4">
             <div class="hub-admin-form-heading">
                 <MudText Typo="Typo.h6">@mFormTitle</MudText>
-                <span>@(mFormModel.ID == 0 ? "새 계정" : "수정 중")</span>
+                <span>@(mFormModel.Id == 0 ? "새 계정" : "수정 중")</span>
             </div>
             <MudTextField @bind-Value="mFormModel.Username" Label="아이디" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             <MudTextField @bind-Value="mFormModel.DisplayName" Label="표시 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-            @if (mFormModel.ID == 0)
+            @if (mFormModel.Id == 0)
             {
                 <MudTextField @bind-Value="mFormModel.Password" Label="초기 비밀번호" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password" Immediate="true" />
             }
@@ -38,16 +38,16 @@
             }
             @if (mIsSystemAdmin == false)
             {
-                <MudSelect T="int?" Label="팀" Value="mFormModel.TeamID" ValueChanged="handleTeamChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelect T="int?" Label="팀" Value="mFormModel.TeamId" ValueChanged="handleTeamChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
                     @foreach (Team team in getSelectableTeams())
                     {
-                        <MudSelectItem T="int?" Value="@team.ID">@team.DisplayName</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@team.Id">@team.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
-                <MudSelect T="int?" Label="직책" Value="mFormModel.PositionID" ValueChanged="handlePositionChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(getSelectablePositions().Count == 0)">
+                <MudSelect T="int?" Label="직책" Value="mFormModel.PositionId" ValueChanged="handlePositionChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(getSelectablePositions().Count == 0)">
                     @foreach (OrganizationPosition position in getSelectablePositions())
                     {
-                        <MudSelectItem T="int?" Value="@position.ID">@position.Name</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@position.Id">@position.Name</MudSelectItem>
                     }
                 </MudSelect>
                 @if (getSelectablePositions().Count == 0)
@@ -58,12 +58,12 @@
             <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="활성 상태" Color="Color.Primary" />
             <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveUserAsync" Class="hub-primary-action-button">저장</MudButton>
-                @if (mFormModel.ID != 0)
+                @if (mFormModel.Id != 0)
                 {
                     <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="clearForm">새 사용자</MudButton>
                 }
             </MudStack>
-            @if (mFormModel.ID != 0)
+            @if (mFormModel.Id != 0)
             {
                 <MudDivider Class="my-4" />
                 <MudTextField @bind-Value="mResetPassword" Label="새 비밀번호" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password" Immediate="true" />

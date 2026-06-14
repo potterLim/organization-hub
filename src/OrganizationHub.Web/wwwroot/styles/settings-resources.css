@@ -1,0 +1,111 @@
+.hub-resource-summary-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(188px, 1fr));
+}
+
+.hub-resource-summary-card {
+    background: rgba(255, 255, 255, .66);
+    border: 1px solid rgba(78, 104, 145, .12);
+    border-radius: 14px;
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px;
+}
+
+.hub-resource-summary-heading {
+    align-items: center;
+    color: var(--hub-text-muted);
+    display: flex;
+    font-size: 12px;
+    font-weight: 900;
+    gap: 8px;
+    justify-content: space-between;
+    line-height: 1.3;
+}
+
+.hub-resource-summary-title {
+    color: var(--hub-text-strong);
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.hub-resource-picker-grid,
+.hub-selected-resource-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 14px;
+}
+
+.hub-selected-resource {
+    background: rgba(248, 250, 255, .74);
+    border: 1px solid rgba(200, 211, 231, .72);
+    border-radius: 14px;
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    padding: 12px;
+}
+
+.hub-selected-resource strong {
+    color: var(--hub-text-strong);
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.hub-selected-resource span {
+    color: var(--hub-text-muted);
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.hub-resource-picker-table td {
+    max-width: 280px;
+}
+
+.hub-resource-name-cell {
+    align-items: center;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 22px minmax(0, 1fr);
+    min-width: 0;
+}
+
+.hub-resource-name-cell span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-resource-card-list {
+    display: grid;
+    gap: 10px;
+}
+
+.hub-resource-choice-card {
+    align-items: center;
+    background: rgba(255, 255, 255, .68);
+    border: 1px solid rgba(78, 104, 145, .12);
+    border-radius: 14px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    min-width: 0;
+    padding: 12px;
+}
+
+.hub-resource-choice-title {
+    color: var(--hub-text-strong);
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}

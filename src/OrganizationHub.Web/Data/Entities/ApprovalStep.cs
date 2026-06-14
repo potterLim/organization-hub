@@ -5,11 +5,11 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class ApprovalStep
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
-    public int ApprovalRequestID
+    public int ApprovalRequestId
     {
         get; set;
     }
@@ -21,7 +21,7 @@ public class ApprovalStep
     {
         get; set;
     }
-    public int ApproverUserID
+    public int ApproverUserId
     {
         get; set;
     }

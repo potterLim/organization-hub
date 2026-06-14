@@ -22,7 +22,13 @@ public sealed partial class GoogleCalendarService : ICalendarService
     private readonly ILogger<GoogleCalendarService> mLogger;
     private readonly IChangeVersionService mChangeVersionService;
 
-    public GoogleCalendarService(IGoogleApiCredentialFactory credentialFactory, IOptions<GoogleApiOptions> options, IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IMemoryCache memoryCache, ILogger<GoogleCalendarService> logger, IChangeVersionService changeVersionService)
+    public GoogleCalendarService(
+        IGoogleApiCredentialFactory credentialFactory,
+        IOptions<GoogleApiOptions> options,
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IMemoryCache memoryCache,
+        ILogger<GoogleCalendarService> logger,
+        IChangeVersionService changeVersionService)
     {
         mCredentialFactory = credentialFactory;
         mOptions = options.Value;

@@ -42,13 +42,17 @@ public partial class Todos
         mIsSaving = false;
     }
 
-    private async Task<TodoTaskItem> saveTaskCompletionStateAsync(UserSession userSession, TodoTaskItem task, ETodoTaskCompletionState completionState)
+    private async Task<TodoTaskItem> saveTaskCompletionStateAsync(
+        UserSession userSession,
+        TodoTaskItem task,
+        ETodoTaskCompletionState completionState
+    )
     {
         if (completionState == ETodoTaskCompletionState.Completed)
         {
-            return await TodoService.CompleteTaskAsync(userSession, task.TaskListID, task.ID, CancellationToken.None);
+            return await TodoService.CompleteTaskAsync(userSession, TodoTaskListId.CreateOptional(task.TaskListId), TodoTaskId.CreateOptional(task.Id), CancellationToken.None);
         }
 
-        return await TodoService.ReopenTaskAsync(userSession, task.TaskListID, task.ID, CancellationToken.None);
+        return await TodoService.ReopenTaskAsync(userSession, TodoTaskListId.CreateOptional(task.TaskListId), TodoTaskId.CreateOptional(task.Id), CancellationToken.None);
     }
 }

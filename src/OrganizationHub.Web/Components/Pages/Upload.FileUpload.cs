@@ -37,7 +37,8 @@ public partial class Upload
             return;
         }
 
-        PermissionDecision uploadDecision = await PermissionService.DecideUploadToFolderAsync(CurrentUserSessionOrNull, getCurrentFolderID(), CancellationToken.None);
+        DriveFolderId currentFolderId = DriveFolderId.CreateOptional(getCurrentFolderId());
+        PermissionDecision uploadDecision = await PermissionService.DecideUploadToFolderAsync(CurrentUserSessionOrNull, currentFolderId, CancellationToken.None);
         if (uploadDecision.IsAllowed == false)
         {
             showMessage(uploadDecision.Reason, Severity.Error);
@@ -65,11 +66,14 @@ public partial class Upload
             string contentType = FilePolicyService.GetContentType(mSelectedFileOrNull.Name);
             using (Stream fileStream = mSelectedFileOrNull.OpenReadStream(uploadPolicy.MaximumUploadBytes))
             {
-                string currentFolderID = getCurrentFolderID();
-                DriveFileItem uploadedFile = await DriveService.UploadFileAsync(currentFolderID, fileStream, mSelectedFileOrNull.Name, contentType, CancellationToken.None);
-                DriveFolderReference targetFolder = new DriveFolderReference(currentFolderID, getCurrentFolderDisplayName(), rootFolderOrNull.FolderKind, rootFolderOrNull.TeamID, rootFolderOrNull.TeamKey, rootFolderOrNull.TeamName, EDriveFolderUploadAccess.UploadAllowed);
+                string currentFolderIdValue = getCurrentFolderId();
+                DriveFolderId uploadFolderId = DriveFolderId.CreateOptional(currentFolderIdValue);
+                DriveFileItem uploadedFile = await DriveService.UploadFileAsync(uploadFolderId, fileStream, mSelectedFileOrNull.Name, contentType, CancellationToken.None);
+                DriveFolderOwnerContext ownerContext = new DriveFolderOwnerContext(rootFolderOrNull.TeamIdOrNull, rootFolderOrNull.TeamKey, rootFolderOrNull.TeamName);
+                DriveFolderReferenceCreationRequest referenceRequest = new DriveFolderReferenceCreationRequest(uploadFolderId, getCurrentFolderDisplayName(), rootFolderOrNull.FolderKind, EDriveFolderUploadAccess.UploadAllowed, ownerContext);
+                DriveFolderReference targetFolder = new DriveFolderReference(referenceRequest);
                 await UploadAuditLogService.RecordUploadAsync(CurrentUserSessionOrNull, targetFolder, uploadedFile, CancellationToken.None);
-                DriveBrowserService.InvalidateRecentFiles(currentFolderID);
+                DriveBrowserService.InvalidateRecentFiles(uploadFolderId);
                 await loadRecentUploadsAsync();
                 showMessage("파일 올리기 완료: " + uploadedFile.Name, Severity.Success);
             }

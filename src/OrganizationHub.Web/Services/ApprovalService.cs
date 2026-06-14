@@ -12,12 +12,23 @@ public sealed partial class ApprovalService : IApprovalService
     private readonly IChangeVersionService? mChangeVersionServiceOrNull;
     private readonly IOrganizationPermissionService mOrganizationPermissionService;
 
-    public ApprovalService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IPermissionService permissionService, IDriveService driveService, IDriveBrowserService? driveBrowserServiceOrNull = null, IChangeVersionService? changeVersionServiceOrNull = null)
+    public ApprovalService(
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IPermissionService permissionService,
+        IDriveService driveService,
+        IDriveBrowserService? driveBrowserServiceOrNull = null,
+        IChangeVersionService? changeVersionServiceOrNull = null)
         : this(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory), driveBrowserServiceOrNull, changeVersionServiceOrNull)
     {
     }
 
-    public ApprovalService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IPermissionService permissionService, IDriveService driveService, IOrganizationPermissionService organizationPermissionService, IDriveBrowserService? driveBrowserServiceOrNull = null, IChangeVersionService? changeVersionServiceOrNull = null)
+    public ApprovalService(
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IPermissionService permissionService,
+        IDriveService driveService,
+        IOrganizationPermissionService organizationPermissionService,
+        IDriveBrowserService? driveBrowserServiceOrNull = null,
+        IChangeVersionService? changeVersionServiceOrNull = null)
     {
         mDbContextFactory = dbContextFactory;
         mPermissionService = permissionService;

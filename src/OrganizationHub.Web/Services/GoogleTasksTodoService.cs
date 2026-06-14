@@ -20,12 +20,23 @@ public sealed partial class GoogleTasksTodoService : ITodoService
     private readonly IChangeVersionService mChangeVersionService;
     private readonly IOrganizationPermissionService mOrganizationPermissionService;
 
-    public GoogleTasksTodoService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IGoogleApiCredentialFactory credentialFactory, ILogger<GoogleTasksTodoService> logger, IOptions<Configuration.GoogleApiOptions> options, IChangeVersionService changeVersionService)
+    public GoogleTasksTodoService(
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IGoogleApiCredentialFactory credentialFactory,
+        ILogger<GoogleTasksTodoService> logger,
+        IOptions<Configuration.GoogleApiOptions> options,
+        IChangeVersionService changeVersionService)
         : this(dbContextFactory, credentialFactory, logger, options, changeVersionService, new OrganizationPermissionService(dbContextFactory))
     {
     }
 
-    public GoogleTasksTodoService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IGoogleApiCredentialFactory credentialFactory, ILogger<GoogleTasksTodoService> logger, IOptions<Configuration.GoogleApiOptions> options, IChangeVersionService changeVersionService, IOrganizationPermissionService organizationPermissionService)
+    public GoogleTasksTodoService(
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IGoogleApiCredentialFactory credentialFactory,
+        ILogger<GoogleTasksTodoService> logger,
+        IOptions<Configuration.GoogleApiOptions> options,
+        IChangeVersionService changeVersionService,
+        IOrganizationPermissionService organizationPermissionService)
     {
         mDbContextFactory = dbContextFactory;
         mCredentialFactory = credentialFactory;

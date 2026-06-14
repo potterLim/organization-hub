@@ -6,28 +6,28 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminPositions
 {
-    private void setNewPositionTeamID(int teamID)
+    private void setNewPositionTeamId(int teamId)
     {
-        mNewPositionFormModel.TeamID = teamID;
+        mNewPositionFormModel.TeamId = teamId;
     }
 
-    private void setPermissionTeamID(int teamID)
+    private void setPermissionTeamId(int teamId)
     {
-        mSelectedPermissionTeamID = teamID;
+        mSelectedPermissionTeamId = teamId;
         ensurePositionSelectionForSelectedTeam();
         loadSelectedPositionForm();
     }
 
-    private void setSelectedPositionID(int? positionIDOrNull)
+    private void setSelectedPositionId(int? positionIdOrNull)
     {
-        mSelectedPositionIDOrNull = positionIDOrNull;
+        mSelectedPositionIdOrNull = positionIdOrNull;
         loadSelectedPositionForm();
     }
 
     private void selectPositionForPermissions(OrganizationPosition position)
     {
-        mSelectedPermissionTeamID = position.TeamID;
-        mSelectedPositionIDOrNull = position.ID;
+        mSelectedPermissionTeamId = position.TeamId;
+        mSelectedPositionIdOrNull = position.Id;
         loadSelectedPositionForm();
     }
 
@@ -35,20 +35,20 @@ public partial class AdminPositions
     {
         if (mActiveTeams.Count == 0)
         {
-            mSelectedPermissionTeamID = 0;
+            mSelectedPermissionTeamId = 0;
             return;
         }
 
-        bool hasSelectedTeam = mActiveTeams.Any(team => team.ID == mSelectedPermissionTeamID);
+        bool hasSelectedTeam = mActiveTeams.Any(team => team.Id == mSelectedPermissionTeamId);
         if (hasSelectedTeam == false)
         {
-            mSelectedPermissionTeamID = mActiveTeams[0].ID;
+            mSelectedPermissionTeamId = mActiveTeams[0].Id;
         }
 
-        bool hasNewPositionTeam = mActiveTeams.Any(team => team.ID == mNewPositionFormModel.TeamID);
+        bool hasNewPositionTeam = mActiveTeams.Any(team => team.Id == mNewPositionFormModel.TeamId);
         if (hasNewPositionTeam == false)
         {
-            mNewPositionFormModel.TeamID = mSelectedPermissionTeamID;
+            mNewPositionFormModel.TeamId = mSelectedPermissionTeamId;
         }
     }
 
@@ -56,10 +56,10 @@ public partial class AdminPositions
     {
         ensurePermissionTeamSelection();
         IReadOnlyList<OrganizationPosition> positions = getPositionsForSelectedPermissionTeam();
-        bool hasSelectedPosition = mSelectedPositionIDOrNull.HasValue && positions.Any(position => position.ID == mSelectedPositionIDOrNull.Value);
+        bool hasSelectedPosition = mSelectedPositionIdOrNull.HasValue && positions.Any(position => position.Id == mSelectedPositionIdOrNull.Value);
         if (hasSelectedPosition == false)
         {
-            mSelectedPositionIDOrNull = positions.Count == 0 ? null : positions[0].ID;
+            mSelectedPositionIdOrNull = positions.Count == 0 ? null : positions[0].Id;
         }
     }
 
@@ -68,27 +68,27 @@ public partial class AdminPositions
         OrganizationPosition? selectedPositionOrNull = getSelectedPositionOrNull();
         if (selectedPositionOrNull == null)
         {
-            mPermissionFormModel = createEmptyFormModel(mSelectedPermissionTeamID);
+            mPermissionFormModel = createEmptyFormModel(mSelectedPermissionTeamId);
             return;
         }
 
         mPermissionFormModel = createFormModelFromPosition(selectedPositionOrNull);
     }
 
-    private int getDefaultTeamID()
+    private int getDefaultTeamId()
     {
         if (mActiveTeams.Count == 0)
         {
             return 0;
         }
 
-        return mActiveTeams[0].ID;
+        return mActiveTeams[0].Id;
     }
 
     private List<OrganizationPosition> getPositionsForSelectedPermissionTeam()
     {
         return mPositions
-            .Where(position => position.TeamID == mSelectedPermissionTeamID)
+            .Where(position => position.TeamId == mSelectedPermissionTeamId)
             .OrderBy(position => position.SortOrder)
             .ThenBy(position => position.Name)
             .ToList();
@@ -96,11 +96,11 @@ public partial class AdminPositions
 
     private OrganizationPosition? getSelectedPositionOrNull()
     {
-        if (mSelectedPositionIDOrNull.HasValue == false)
+        if (mSelectedPositionIdOrNull.HasValue == false)
         {
             return null;
         }
 
-        return mPositions.FirstOrDefault(position => position.ID == mSelectedPositionIDOrNull.Value);
+        return mPositions.FirstOrDefault(position => position.Id == mSelectedPositionIdOrNull.Value);
     }
 }

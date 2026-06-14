@@ -8,20 +8,20 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleCalendarService
 {
-    private static IReadOnlyList<string> createCalendarChangeKeys(string calendarID)
+    private static IReadOnlyList<ChangeVersionKey> createCalendarChangeKeys(CalendarId calendarId)
     {
-        List<string> keys = new List<string>();
-        keys.Add(ChangeVersionKeys.CALENDAR);
-        keys.Add(ChangeVersionKeys.CreateCalendarKey(new CalendarID(calendarID)));
-        return keys;
+        List<ChangeVersionKey> changeVersionKeys = new List<ChangeVersionKey>();
+        changeVersionKeys.Add(ChangeVersionKeys.CALENDAR);
+        changeVersionKeys.Add(ChangeVersionKeys.CreateCalendarKey(calendarId));
+        return changeVersionKeys;
     }
 
     private Event createGoogleEvent(CalendarEventFormModel formModel)
     {
         Event googleEvent = new Event();
         googleEvent.Summary = formModel.Summary.Trim();
-        googleEvent.Description = getEmptyAsNull(formModel.Description);
-        googleEvent.Location = getEmptyAsNull(formModel.Location);
+        googleEvent.Description = getTrimmedTextOrNullIfBlank(formModel.Description);
+        googleEvent.Location = getTrimmedTextOrNullIfBlank(formModel.Location);
         googleEvent.Start = createEventDateTime(formModel, ECalendarEventDateKind.Start);
         googleEvent.End = createEventDateTime(formModel, ECalendarEventDateKind.End);
         return googleEvent;
@@ -44,7 +44,7 @@ public sealed partial class GoogleCalendarService
         }
 
         eventDateTime.DateTimeDateTimeOffset = new DateTimeOffset(DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified), getCalendarUtcOffset(localDateTime));
-        eventDateTime.TimeZone = getCalendarTimeZoneID();
+        eventDateTime.TimeZone = getCalendarTimeZoneId();
         return eventDateTime;
     }
 
@@ -52,7 +52,7 @@ public sealed partial class GoogleCalendarService
     {
         try
         {
-            TimeZoneInfo timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(getCalendarTimeZoneID());
+            TimeZoneInfo timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(getCalendarTimeZoneId());
             return timeZoneInfo.GetUtcOffset(localDateTime);
         }
         catch (TimeZoneNotFoundException)
@@ -65,7 +65,7 @@ public sealed partial class GoogleCalendarService
         }
     }
 
-    private string getCalendarTimeZoneID()
+    private string getCalendarTimeZoneId()
     {
         if (string.IsNullOrWhiteSpace(mOptions.CalendarTimeZone))
         {
@@ -75,7 +75,7 @@ public sealed partial class GoogleCalendarService
         return mOptions.CalendarTimeZone;
     }
 
-    private IReadOnlyList<CalendarEventItem> createCalendarEventItems(Events events, string calendarID, string calendarName)
+    private IReadOnlyList<CalendarEventItem> createCalendarEventItems(Events events, CalendarId calendarId, string calendarName)
     {
         List<CalendarEventItem> items = new List<CalendarEventItem>();
         if (events.Items == null)
@@ -85,7 +85,7 @@ public sealed partial class GoogleCalendarService
 
         foreach (Event googleEvent in events.Items)
         {
-            CalendarEventItem item = createCalendarEventItem(googleEvent, calendarID, calendarName);
+            CalendarEventItem item = createCalendarEventItem(googleEvent, calendarId, calendarName);
             items.Add(item);
         }
 
@@ -106,8 +106,8 @@ public sealed partial class GoogleCalendarService
     private CalendarEventItem cloneCalendarEvent(CalendarEventItem calendarEvent)
     {
         CalendarEventItem clonedEvent = new CalendarEventItem();
-        clonedEvent.ID = calendarEvent.ID;
-        clonedEvent.CalendarID = calendarEvent.CalendarID;
+        clonedEvent.Id = calendarEvent.Id;
+        clonedEvent.CalendarId = calendarEvent.CalendarId;
         clonedEvent.CalendarName = calendarEvent.CalendarName;
         clonedEvent.Summary = calendarEvent.Summary;
         clonedEvent.Description = calendarEvent.Description;
@@ -121,15 +121,15 @@ public sealed partial class GoogleCalendarService
         return clonedEvent;
     }
 
-    private CalendarEventItem createCalendarEventItem(Event googleEvent, string calendarID, string calendarName)
+    private CalendarEventItem createCalendarEventItem(Event googleEvent, CalendarId calendarId, string calendarName)
     {
         CalendarEventItem item = new CalendarEventItem();
-        item.ID = getNullAsEmpty(googleEvent.Id);
-        item.CalendarID = calendarID;
+        item.Id = getTextOrEmpty(googleEvent.Id);
+        item.CalendarId = calendarId.GetRequiredValue();
         item.CalendarName = calendarName;
-        item.Summary = getNullAsEmpty(googleEvent.Summary);
-        item.Description = getNullAsEmpty(googleEvent.Description);
-        item.Location = getNullAsEmpty(googleEvent.Location);
+        item.Summary = getTextOrEmpty(googleEvent.Summary);
+        item.Description = getTextOrEmpty(googleEvent.Description);
+        item.Location = getTextOrEmpty(googleEvent.Location);
         item.Start = getEventTimeOrNull(googleEvent.Start);
         item.End = getEventTimeOrNull(googleEvent.End);
         item.IsAllDay = googleEvent.Start != null && string.IsNullOrWhiteSpace(googleEvent.Start.Date) == false;
@@ -161,23 +161,23 @@ public sealed partial class GoogleCalendarService
         return null;
     }
 
-    private string getNullAsEmpty(string? valueOrNull)
+    private string getTextOrEmpty(string? textOrNull)
     {
-        if (valueOrNull == null)
+        if (textOrNull == null)
         {
             return string.Empty;
         }
 
-        return valueOrNull;
+        return textOrNull;
     }
 
-    private string? getEmptyAsNull(string value)
+    private string? getTrimmedTextOrNullIfBlank(string text)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrWhiteSpace(text))
         {
             return null;
         }
 
-        return value.Trim();
+        return text.Trim();
     }
 }

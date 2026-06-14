@@ -1,4 +1,4 @@
-@page "/files/{FileID}/viewer"
+@page "/files/{FileId}/viewer"
 @attribute [Authorize]
 @inherits OrganizationHubComponentBase
 @implements IAsyncDisposable
@@ -15,7 +15,7 @@
     </div>
     <div class="hub-page-actions">
         <MudTooltip Text="다운로드">
-            <MudIconButton Href="@("/files/" + FileID + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" aria-label="다운로드" />
+            <MudIconButton Href="@("/files/" + FileId + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" aria-label="다운로드" />
         </MudTooltip>
     </div>
 </div>
@@ -42,7 +42,7 @@ else
 @code
 {
     [Parameter]
-    public string FileID { get; set; } = string.Empty;
+    public string FileId { get; set; } = string.Empty;
 
     private ElementReference mViewerElement;
     private IJSObjectReference? mViewerModuleOrNull;
@@ -62,7 +62,8 @@ else
             return;
         }
 
-        bool canReadFile = await PermissionService.CanReadFileAsync(CurrentUserSessionOrNull, FileID, CancellationToken.None);
+        DriveItemId fileId = DriveItemId.CreateOptional(FileId);
+        bool canReadFile = await PermissionService.CanReadFileAsync(CurrentUserSessionOrNull, fileId, CancellationToken.None);
         if (canReadFile == false)
         {
             mErrorMessage = "이 PDF를 볼 권한이 없습니다.";
@@ -70,7 +71,7 @@ else
             return;
         }
 
-        DriveFileMetadata? metadataOrNull = await DriveService.GetFileOrNullAsync(FileID, CancellationToken.None);
+        DriveFileMetadata? metadataOrNull = await DriveService.GetFileOrNullAsync(fileId, CancellationToken.None);
         if (metadataOrNull != null && string.IsNullOrWhiteSpace(metadataOrNull.Name) == false)
         {
             mFileName = metadataOrNull.Name;
@@ -89,7 +90,7 @@ else
         try
         {
             mViewerModuleOrNull = await JavaScriptRuntime.InvokeAsync<IJSObjectReference>("import", "/js/organizationHubPdfViewer.js");
-            await mViewerModuleOrNull.InvokeVoidAsync("renderPdf", mViewerElement, "/files/" + Uri.EscapeDataString(FileID) + "/stream");
+            await mViewerModuleOrNull.InvokeVoidAsync("renderPdf", mViewerElement, "/files/" + Uri.EscapeDataString(FileId) + "/stream");
             mIsViewerRendered = true;
         }
         catch

@@ -50,10 +50,10 @@ else
 {
     <MudPaper Class="hub-card hub-todo-shell pa-4">
         <div class="hub-todo-toolbar">
-            <MudSelect T="string" Label="할 일 목록" Value="mSelectedTaskListID" ValueChanged="handleTaskListChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-todo-list-select hub-control-select-width">
+            <MudSelect T="string" Label="할 일 목록" Value="mSelectedTaskListId" ValueChanged="handleTaskListChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-todo-list-select hub-control-select-width">
                 @foreach (TodoTaskListReference taskList in mTaskLists)
                 {
-                    <MudSelectItem T="string" Value="@taskList.TaskListID">@taskList.DisplayName</MudSelectItem>
+                    <MudSelectItem T="string" Value="@taskList.TaskListId.Value">@taskList.DisplayName</MudSelectItem>
                 }
             </MudSelect>
             <div class="hub-todo-create">
@@ -90,15 +90,15 @@ else
                                 <div class="hub-todo-list">
                                     @foreach (TodoTaskItem task in getPendingTasks())
                                     {
-                                        <TodoTaskRow @key="task.ID"
+                                        <TodoTaskRow @key="task.Id"
                                                      Task="task"
                                                      CompletionState="ETodoTaskCompletionState.NeedsAction"
                                                      CanDrag="canDragTask(ETodoTaskCompletionState.NeedsAction)"
                                                      CanWrite="canWriteTask(task)"
-                                                     IsEditing="@(mEditingTaskID == task.ID)"
+                                                     IsEditing="@(mEditingTaskId == task.Id)"
                                                      EditingTitle="mEditingTitle"
                                                      EditingTitleChanged="setEditingTitle"
-                                                     IsDeleting="@(mDeletingTaskID == task.ID)"
+                                                     IsDeleting="@(mDeletingTaskId == task.Id)"
                                                      TaskMeta="@formatTaskMeta(task)"
                                                      CompletionChanged="@((bool isCompleted) => setTaskCompletionStateAsync(task, isCompleted ? ETodoTaskCompletionState.Completed : ETodoTaskCompletionState.NeedsAction))"
                                                      EditStarted="@(() => beginEdit(task))"
@@ -127,15 +127,15 @@ else
                                 <div class="hub-todo-list">
                                     @foreach (TodoTaskItem task in getCompletedTasks())
                                     {
-                                        <TodoTaskRow @key="task.ID"
+                                        <TodoTaskRow @key="task.Id"
                                                      Task="task"
                                                      CompletionState="ETodoTaskCompletionState.Completed"
                                                      CanDrag="canDragTask(ETodoTaskCompletionState.Completed)"
                                                      CanWrite="canWriteTask(task)"
-                                                     IsEditing="@(mEditingTaskID == task.ID)"
+                                                     IsEditing="@(mEditingTaskId == task.Id)"
                                                      EditingTitle="mEditingTitle"
                                                      EditingTitleChanged="setEditingTitle"
-                                                     IsDeleting="@(mDeletingTaskID == task.ID)"
+                                                     IsDeleting="@(mDeletingTaskId == task.Id)"
                                                      TaskMeta="@formatTaskMeta(task)"
                                                      CompletionChanged="@((bool isCompleted) => setTaskCompletionStateAsync(task, isCompleted ? ETodoTaskCompletionState.Completed : ETodoTaskCompletionState.NeedsAction))"
                                                      EditStarted="@(() => beginEdit(task))"

@@ -1,11 +1,17 @@
 using System.Collections.Generic;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
 internal sealed class ConfiguredApprovalLine
 {
-    public ConfiguredApprovalLine(int stepCount, IReadOnlyList<ApprovalUserOption> intermediateApprovers, IReadOnlyList<ApprovalUserOption> finalApprovers, ApprovalDefaultLineOption defaultLine)
+    public ConfiguredApprovalLine(
+        ApprovalStepCount stepCount,
+        IReadOnlyList<ApprovalUserOption> intermediateApprovers,
+        IReadOnlyList<ApprovalUserOption> finalApprovers,
+        ApprovalDefaultLineOption defaultLine
+    )
     {
         StepCount = stepCount;
         IntermediateApprovers = intermediateApprovers;
@@ -13,7 +19,7 @@ internal sealed class ConfiguredApprovalLine
         DefaultLine = defaultLine;
     }
 
-    public int StepCount
+    public ApprovalStepCount StepCount
     {
         get; private init;
     }

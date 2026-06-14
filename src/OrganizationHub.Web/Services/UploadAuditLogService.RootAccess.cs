@@ -9,7 +9,11 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class UploadAuditLogService
 {
-    private async Task<DriveFolderReference?> getReadableRootOrNullAsync(UserSession userSession, DriveFolderReference rootFolder, CancellationToken cancellationToken)
+    private async Task<DriveFolderReference?> getReadableRootOrNullAsync(
+        UserSession userSession,
+        DriveFolderReference rootFolder,
+        CancellationToken cancellationToken
+    )
     {
         IReadOnlyList<DriveFolderReference> readableFolders = await mPermissionService.GetReadableDriveFoldersAsync(userSession, rootFolder.FolderKind, cancellationToken);
         foreach (DriveFolderReference readableFolder in readableFolders)
@@ -25,7 +29,7 @@ public sealed partial class UploadAuditLogService
 
     private static bool isSameRoot(DriveFolderReference left, DriveFolderReference right)
     {
-        if (left.FolderID != right.FolderID)
+        if (left.FolderId != right.FolderId)
         {
             return false;
         }
@@ -35,21 +39,25 @@ public sealed partial class UploadAuditLogService
             return false;
         }
 
-        return left.TeamID == right.TeamID;
+        return left.TeamIdOrNull == right.TeamIdOrNull;
     }
 
-    private async Task<bool> isUploadInsideRootAsync(DriveItemID itemID, DriveFolderID rootFolderID, CancellationToken cancellationToken)
+    private async Task<bool> isUploadInsideRootAsync(DriveItemId itemId, DriveFolderId rootFolderId, CancellationToken cancellationToken)
     {
-        if (itemID.Value == rootFolderID.Value)
+        if (itemId.GetRequiredValue() == rootFolderId.GetRequiredValue())
         {
             return true;
         }
 
-        IReadOnlySet<string> ancestorFolderIDs = await mDriveService.GetAncestorFolderIDsAsync(itemID.Value, cancellationToken);
-        return ancestorFolderIDs.Contains(rootFolderID.Value);
+        IReadOnlySet<DriveFolderId> ancestorFolderIds = await mDriveService.GetAncestorFolderIdsAsync(itemId, cancellationToken);
+        return ancestorFolderIds.Contains(rootFolderId);
     }
 
-    private async Task<DriveFolderReference?> getMatchingReadableRootOrNullAsync(UploadAuditLog auditLog, IReadOnlyList<DriveFolderReference> readableRoots, CancellationToken cancellationToken)
+    private async Task<DriveFolderReference?> getMatchingReadableRootOrNullAsync(
+        UploadAuditLog auditLog,
+        IReadOnlyList<DriveFolderReference> readableRoots,
+        CancellationToken cancellationToken
+    )
     {
         foreach (DriveFolderReference readableRoot in readableRoots)
         {
@@ -58,7 +66,7 @@ public sealed partial class UploadAuditLogService
                 continue;
             }
 
-            bool isFolderInsideRoot = await isUploadInsideRootAsync(new DriveItemID(auditLog.FolderID), new DriveFolderID(readableRoot.FolderID), cancellationToken);
+            bool isFolderInsideRoot = await isUploadInsideRootAsync(DriveItemId.CreateOptional(auditLog.FolderId), readableRoot.FolderId, cancellationToken);
             if (isFolderInsideRoot)
             {
                 return readableRoot;
@@ -75,11 +83,12 @@ public sealed partial class UploadAuditLogService
             return false;
         }
 
-        if (readableRoot.TeamID.HasValue)
+        int? readableRootTeamIdValueOrNull = OrganizationTeamId.GetValueOrNull(readableRoot.TeamIdOrNull);
+        if (readableRootTeamIdValueOrNull.HasValue)
         {
-            return auditLog.TeamID.HasValue && auditLog.TeamID.Value == readableRoot.TeamID.Value;
+            return auditLog.TeamId == readableRootTeamIdValueOrNull;
         }
 
-        return auditLog.TeamID.HasValue == false;
+        return auditLog.TeamId.HasValue == false;
     }
 }

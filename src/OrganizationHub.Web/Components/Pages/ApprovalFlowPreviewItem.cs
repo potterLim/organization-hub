@@ -1,6 +1,6 @@
 namespace OrganizationHub.Web.Components.Pages;
 
-internal sealed class ApprovalFlowPreviewItem
+public sealed class ApprovalFlowPreviewItem
 {
     public string StepNumber { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;

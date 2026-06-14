@@ -21,7 +21,7 @@ public sealed partial class PermissionService
     private static IReadOnlyList<DriveFolderReference> deduplicateFolderReferences(IReadOnlyList<DriveFolderReference> folders)
     {
         List<DriveFolderReference> deduplicatedFolders = new List<DriveFolderReference>();
-        foreach (IGrouping<string, DriveFolderReference> folderGroup in folders.GroupBy(folder => folder.FolderID))
+        foreach (IGrouping<DriveFolderId, DriveFolderReference> folderGroup in folders.GroupBy(folder => folder.FolderId))
         {
             DriveFolderReference selectedFolder = folderGroup.OrderBy(getFolderReferencePriority).ThenByDescending(folder => folder.CanUpload).ThenBy(folder => folder.DisplayName).First();
             deduplicatedFolders.Add(selectedFolder);

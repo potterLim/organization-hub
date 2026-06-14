@@ -1,0 +1,119 @@
+.hub-file-table {
+    backdrop-filter: blur(18px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .82), rgba(255, 255, 255, .66)) !important;
+    border: 1px solid rgba(255, 255, 255, .68) !important;
+    border-radius: 24px !important;
+    box-shadow: var(--hub-shadow-soft) !important;
+    overflow: hidden;
+}
+
+.hub-file-mobile-list,
+.hub-calendar-mobile-list,
+.hub-approved-mobile-list {
+    display: none;
+}
+
+.hub-approved-mobile-card {
+    display: grid;
+    gap: 16px;
+    padding: 18px;
+}
+
+.hub-approved-mobile-main {
+    align-items: flex-start;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: auto minmax(0, 1fr);
+    min-width: 0;
+}
+
+.hub-approved-mobile-title {
+    color: var(--hub-text-strong);
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.hub-approved-mobile-file {
+    color: var(--hub-text-muted);
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.35;
+    margin-top: 4px;
+    overflow-wrap: anywhere;
+}
+
+.hub-approved-mobile-meta {
+    display: grid;
+    gap: 12px;
+}
+
+.hub-approved-mobile-meta div {
+    display: grid;
+    gap: 4px;
+}
+
+.hub-approved-mobile-meta span {
+    color: var(--hub-text-muted);
+    font-size: 12px;
+    font-weight: 850;
+}
+
+.hub-approved-mobile-meta strong {
+    color: var(--hub-text);
+    font-size: 14px;
+    font-weight: 850;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.hub-card .hub-file-table {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.hub-file-table .mud-table-container,
+.hub-calendar-table .mud-table-container {
+    overflow-x: auto;
+}
+
+.hub-file-table th,
+.hub-calendar-table th {
+    padding: 12px 16px !important;
+    vertical-align: middle;
+}
+
+.hub-file-table td,
+.hub-calendar-table td {
+    padding: 14px 16px !important;
+    vertical-align: middle;
+}
+
+.hub-calendar-time-cell {
+    min-width: 104px;
+    white-space: nowrap;
+}
+
+.hub-calendar-summary-cell {
+    max-width: 210px;
+    min-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-calendar-calendar-cell {
+    min-width: 72px;
+    white-space: nowrap;
+}
+
+.hub-calendar-location-cell {
+    line-height: 1.35;
+    min-width: 100px;
+}
+
+.hub-calendar-action-cell {
+    min-width: 76px;
+}

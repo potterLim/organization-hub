@@ -1,0 +1,61 @@
+<MudPaper Class="hub-card hub-list-card pa-4">
+    <div class="hub-google-panel-heading">
+        <div>
+            <MudText Typo="Typo.h6">Calendar 선택</MudText>
+            <div class="hub-muted">일정을 표시하거나 작성할 Calendar를 목록에서 연결합니다.</div>
+        </div>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Actions.RefreshRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(State.Status.IsConnected == false)">새로고침</MudButton>
+    </div>
+    @if (State.Status.IsConnected == false)
+    {
+        <div class="hub-empty">Google 계정을 연결하면 Calendar 목록을 선택할 수 있습니다.</div>
+    }
+    else
+    {
+        <div class="hub-google-toolbar">
+            <MudSelect T="string" Label="Calendar를 연결할 대상" Value="State.SelectedCalendarTargetKey.GetSelectionValue()" ValueChanged="handleCalendarTargetSelectionChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (GoogleCalendarAssignmentOption option in State.CalendarAssignmentOptions)
+                {
+                    <MudSelectItem T="string" Value="@option.TargetSelectionValue">@option.DisplayName</MudSelectItem>
+                }
+            </MudSelect>
+            <div class="hub-selected-resource">
+                <div class="hub-muted">현재 연결</div>
+                <strong>@State.SelectedCalendarAssignmentDisplayName</strong>
+                <span>@State.SelectedCalendarAssignmentDetail</span>
+            </div>
+        </div>
+        <div class="hub-resource-card-list">
+            @foreach (GoogleCalendarListItem calendar in State.Calendars)
+            {
+                <div class="hub-resource-choice-card">
+                    <div>
+                        <div class="hub-resource-choice-title">@calendar.Summary</div>
+                        <div class="hub-muted">@State.GetCalendarAccessDisplayName(calendar)</div>
+                    </div>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Actions.AssignCalendarRequested.InvokeAsync(calendar))" StartIcon="@Icons.Material.Filled.CheckCircle">연결</MudButton>
+                </div>
+            }
+        </div>
+    }
+</MudPaper>
+
+@code {
+    [Parameter]
+    public AdminSettingsCalendarPanelState State
+    {
+        get; set;
+    } = new AdminSettingsCalendarPanelState();
+
+    [Parameter]
+    public AdminSettingsCalendarPanelActions Actions
+    {
+        get; set;
+    } = new AdminSettingsCalendarPanelActions();
+
+    private async Task handleCalendarTargetSelectionChangedAsync(string targetSelectionValue)
+    {
+        GoogleWorkspaceAssignmentTargetKey targetKey = GoogleWorkspaceAssignmentTargetKey.FromSelectionValue(targetSelectionValue);
+        await Actions.SelectedCalendarTargetKeyChanged.InvokeAsync(targetKey);
+    }
+}

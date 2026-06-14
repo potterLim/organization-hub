@@ -2,6 +2,7 @@
 @attribute [Authorize(Policy = OrganizationHubPolicies.CALENDAR_AUDIT_READ)]
 @inherits OrganizationHubComponentBase
 @inject ICalendarEventDeletionAuditLogService CalendarEventDeletionAuditLogService
+@using OrganizationHub.Web.Domain
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("일정 삭제 기록")</PageTitle>
 
@@ -87,7 +88,7 @@
 
         mIsLoading = true;
         UserSession currentUserSession = currentUserSessionOrNull;
-        IReadOnlyList<CalendarEventDeletionAuditLogItem> auditLogs = await CalendarEventDeletionAuditLogService.GetRecentDeletedEventsAsync(currentUserSession, 100, CancellationToken.None);
+        IReadOnlyList<CalendarEventDeletionAuditLogItem> auditLogs = await CalendarEventDeletionAuditLogService.GetRecentDeletedEventsAsync(currentUserSession, new RecentItemLimit(100), CancellationToken.None);
         mAuditLogs = auditLogs.ToList();
         mIsLoading = false;
     }

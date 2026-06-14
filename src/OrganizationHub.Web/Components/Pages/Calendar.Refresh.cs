@@ -45,7 +45,10 @@ public partial class Calendar
         await InvokeAsync(StateHasChanged);
     }
 
-    private void recordLoadedChangeSnapshot(ChangeVersionSnapshot? loadedSnapshotOrNull = null, EChangeVersionStability stability = EChangeVersionStability.Stable)
+    private void recordLoadedChangeSnapshot(
+        ChangeVersionSnapshot? loadedSnapshotOrNull = null,
+        EChangeVersionStability stability = EChangeVersionStability.Stable
+    )
     {
         if (loadedSnapshotOrNull == null)
         {
@@ -59,16 +62,16 @@ public partial class Calendar
         mHasExternalChanges = stability == EChangeVersionStability.Unstable;
     }
 
-    private IReadOnlyList<string> getChangeVersionKeys()
+    private IReadOnlyList<ChangeVersionKey> getChangeVersionKeys()
     {
-        List<string> keys = new List<string>();
-        keys.Add(ChangeVersionKeys.CALENDAR);
-        if (mSelectedCalendarID != "all")
+        List<ChangeVersionKey> changeVersionKeys = new List<ChangeVersionKey>();
+        changeVersionKeys.Add(ChangeVersionKeys.CALENDAR);
+        if (mSelectedCalendarId != "all")
         {
-            keys.Add(ChangeVersionKeys.CreateCalendarKey(new CalendarID(mSelectedCalendarID)));
+            changeVersionKeys.Add(ChangeVersionKeys.CreateCalendarKey(CalendarId.CreateOptional(mSelectedCalendarId)));
         }
 
-        return keys;
+        return changeVersionKeys;
     }
 
     public async ValueTask DisposeAsync()

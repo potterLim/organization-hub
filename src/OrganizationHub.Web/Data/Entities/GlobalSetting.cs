@@ -2,55 +2,55 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class GlobalSetting
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
-    public string? OfficialRootFolderID
+    public string? OfficialRootFolderId
     {
         get; set;
     }
-    public string? PublicFolderID
+    public string? PublicFolderId
     {
         get; set;
     }
-    public string? CommonFolderID
+    public string? CommonFolderId
     {
         get; set;
     }
-    public string? ResponsibleResourcesFolderID
+    public string? ResponsibleResourcesFolderId
     {
         get; set;
     }
-    public string? WorkResourcesFolderID
+    public string? WorkResourcesFolderId
     {
         get; set;
     }
-    public string? ArchiveFolderID
+    public string? ArchiveFolderId
     {
         get; set;
     }
-    public string? OrganizationCalendarID
+    public string? OrganizationCalendarId
     {
         get; set;
     }
-    public string? ResponsibleCalendarID
+    public string? ResponsibleCalendarId
     {
         get; set;
     }
-    public string? OrganizationTaskListID
+    public string? OrganizationTaskListId
     {
         get; set;
     }
-    public string? ResponsibleTaskListID
+    public string? ResponsibleTaskListId
     {
         get; set;
     }
-    public string? NoticeFileID
+    public string? NoticeFileId
     {
         get; set;
     }
-    public string? WorkGuidelineFileID
+    public string? WorkGuidelineFileId
     {
         get; set;
     }

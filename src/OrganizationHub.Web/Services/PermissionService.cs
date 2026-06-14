@@ -24,7 +24,12 @@ public sealed partial class PermissionService : IPermissionService
     {
     }
 
-    public PermissionService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IDriveService driveService, IMemoryCache memoryCache, IOrganizationPermissionService organizationPermissionService)
+    public PermissionService(
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IDriveService driveService,
+        IMemoryCache memoryCache,
+        IOrganizationPermissionService organizationPermissionService
+    )
     {
         mDbContextFactory = dbContextFactory;
         mDriveService = driveService;
@@ -38,19 +43,29 @@ public sealed partial class PermissionService : IPermissionService
         return folders;
     }
 
-    public async Task<IReadOnlyList<DriveFolderReference>> GetReadableDriveFoldersAsync(UserSession userSession, EDriveFolderKind folderKind, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DriveFolderReference>> GetReadableDriveFoldersAsync(
+        UserSession userSession,
+        EDriveFolderKind folderKind,
+        CancellationToken cancellationToken
+    )
     {
         IReadOnlyList<DriveFolderReference> folders = await getDriveFoldersAsync(userSession, EDriveFolderAccessMode.Readable, folderKind, cancellationToken);
         return folders;
     }
 
-    public async Task<IReadOnlyList<DriveFolderReference>> GetUploadableDriveFoldersAsync(UserSession userSession, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DriveFolderReference>> GetUploadableDriveFoldersAsync(
+        UserSession userSession,
+        CancellationToken cancellationToken
+    )
     {
         IReadOnlyList<DriveFolderReference> folders = await getDriveFoldersAsync(userSession, EDriveFolderAccessMode.Uploadable, null, cancellationToken);
         return folders;
     }
 
-    public async Task<IReadOnlyList<DriveFolderReference>> GetApprovalDestinationDriveFoldersAsync(UserSession userSession, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DriveFolderReference>> GetApprovalDestinationDriveFoldersAsync(
+        UserSession userSession,
+        CancellationToken cancellationToken
+    )
     {
         IReadOnlyList<DriveFolderReference> folders = await getDriveFoldersAsync(userSession, EDriveFolderAccessMode.Readable, EDriveFolderKind.TeamApproved, cancellationToken);
         if (UserPermissionPolicy.CanUseOnlyManagementApprovalFolders(userSession.Role))
@@ -58,59 +73,65 @@ public sealed partial class PermissionService : IPermissionService
             folders = folders.Where(isManagementApprovedFolder).ToList();
         }
 
-        List<DriveFolderReference> destinationFolders = folders.Where(folder => folder.FolderKind == EDriveFolderKind.TeamApproved).OrderBy(folder => getApprovalDestinationSortOrder(folder)).ThenBy(folder => folder.TeamName).ThenBy(folder => folder.DisplayName).ToList();
+        List<DriveFolderReference> destinationFolders = folders
+            .Where(folder => folder.FolderKind == EDriveFolderKind.TeamApproved)
+            .OrderBy(folder => getApprovalDestinationSortOrder(folder))
+            .ThenBy(folder => folder.TeamName)
+            .ThenBy(folder => folder.DisplayName)
+            .ToList();
         return destinationFolders;
     }
 
-    public async Task<bool> CanReadFileAsync(UserSession userSession, string fileID, CancellationToken cancellationToken)
+    public async Task<bool> CanReadFileAsync(UserSession userSession, DriveItemId fileId, CancellationToken cancellationToken)
     {
-        PermissionDecision decision = await DecideReadFileAsync(userSession, fileID, cancellationToken);
+        PermissionDecision decision = await DecideReadFileAsync(userSession, fileId, cancellationToken);
         return decision.IsAllowed;
     }
 
-    public async Task<PermissionDecision> DecideReadFileAsync(UserSession userSession, string fileID, CancellationToken cancellationToken)
+    public async Task<PermissionDecision> DecideReadFileAsync(UserSession userSession, DriveItemId fileId, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(fileID))
+        if (fileId.HasValue == false)
         {
             return PermissionDecision.Deny("파일을 찾을 수 없습니다.", "자료 파일");
         }
 
-        string officialRootFolderID = string.Empty;
+        string officialRootFolderId = string.Empty;
         bool isConfiguredSpecialFile = false;
+        string requiredFileId = fileId.GetRequiredValue();
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.ID).FirstOrDefaultAsync(cancellationToken);
+            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
             if (settingOrNull != null)
             {
-                officialRootFolderID = getNullAsEmpty(settingOrNull.OfficialRootFolderID);
-                if (settingOrNull.NoticeFileID == fileID || settingOrNull.WorkGuidelineFileID == fileID)
+                officialRootFolderId = getTextOrEmpty(settingOrNull.OfficialRootFolderId);
+                if (settingOrNull.NoticeFileId == requiredFileId || settingOrNull.WorkGuidelineFileId == requiredFileId)
                 {
                     isConfiguredSpecialFile = true;
                 }
             }
         }
 
-        IReadOnlySet<string> ancestorFolderIDs = await mDriveService.GetAncestorFolderIDsAsync(fileID, cancellationToken);
-        if (isInsideOfficialRoot(ancestorFolderIDs, officialRootFolderID) == false)
+        IReadOnlySet<DriveFolderId> ancestorFolderIds = await mDriveService.GetAncestorFolderIdsAsync(fileId, cancellationToken);
+        if (isInsideOfficialRoot(ancestorFolderIds, DriveFolderId.CreateOptional(officialRootFolderId)) == false)
         {
             return PermissionDecision.Deny("공식 자료 영역 밖의 파일입니다.", "자료 파일");
         }
 
         if (isConfiguredSpecialFile)
         {
-            return PermissionDecision.Allow("공지/운영 규칙");
+            return PermissionDecision.Allow("공지/업무 기준");
         }
 
         IReadOnlyList<DriveFolderReference> readableFolders = await GetReadableDriveFoldersAsync(userSession, cancellationToken);
         foreach (DriveFolderReference folder in readableFolders)
         {
-            if (ancestorFolderIDs.Contains(folder.FolderID))
+            if (ancestorFolderIds.Contains(folder.FolderId))
             {
                 return PermissionDecision.Allow(folder.DisplayName);
             }
         }
 
-        bool hasApprovalFileAccess = await canReadApprovalFileAsync(userSession, fileID, cancellationToken);
+        bool hasApprovalFileAccess = await canReadApprovalFileAsync(userSession, fileId, cancellationToken);
         if (hasApprovalFileAccess)
         {
             return PermissionDecision.Allow("결재 관련 자료");
@@ -119,15 +140,19 @@ public sealed partial class PermissionService : IPermissionService
         return PermissionDecision.Deny("이 파일을 볼 수 있는 자료 영역이나 결재 기록이 없습니다.", "자료 파일");
     }
 
-    public async Task<bool> CanUploadToFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+    public async Task<bool> CanUploadToFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken)
     {
-        PermissionDecision decision = await DecideUploadToFolderAsync(userSession, folderID, cancellationToken);
+        PermissionDecision decision = await DecideUploadToFolderAsync(userSession, folderId, cancellationToken);
         return decision.IsAllowed;
     }
 
-    public async Task<PermissionDecision> DecideUploadToFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+    public async Task<PermissionDecision> DecideUploadToFolderAsync(
+        UserSession userSession,
+        DriveFolderId folderId,
+        CancellationToken cancellationToken
+    )
     {
-        DriveFolderReference? folderOrNull = await getAllowedFolderRootForFolderAsync(userSession, folderID, EDriveFolderRootSelection.Uploadable, cancellationToken);
+        DriveFolderReference? folderOrNull = await getAllowedFolderRootForFolderAsync(userSession, folderId, EDriveFolderRootSelection.Uploadable, cancellationToken);
         if (folderOrNull == null)
         {
             return PermissionDecision.Deny("선택한 위치에 파일을 올릴 권한이 없습니다.", "파일 올리기");
@@ -136,15 +161,19 @@ public sealed partial class PermissionService : IPermissionService
         return PermissionDecision.Allow(folderOrNull.DisplayName);
     }
 
-    public async Task<bool> CanCreateFolderInFolderAsync(UserSession userSession, string parentFolderID, CancellationToken cancellationToken)
+    public async Task<bool> CanCreateFolderInFolderAsync(UserSession userSession, DriveFolderId parentFolderId, CancellationToken cancellationToken)
     {
-        PermissionDecision decision = await DecideCreateFolderInFolderAsync(userSession, parentFolderID, cancellationToken);
+        PermissionDecision decision = await DecideCreateFolderInFolderAsync(userSession, parentFolderId, cancellationToken);
         return decision.IsAllowed;
     }
 
-    public async Task<PermissionDecision> DecideCreateFolderInFolderAsync(UserSession userSession, string parentFolderID, CancellationToken cancellationToken)
+    public async Task<PermissionDecision> DecideCreateFolderInFolderAsync(
+        UserSession userSession,
+        DriveFolderId parentFolderId,
+        CancellationToken cancellationToken
+    )
     {
-        PermissionDecision uploadDecision = await DecideUploadToFolderAsync(userSession, parentFolderID, cancellationToken);
+        PermissionDecision uploadDecision = await DecideUploadToFolderAsync(userSession, parentFolderId, cancellationToken);
         if (uploadDecision.IsAllowed)
         {
             return PermissionDecision.Allow(uploadDecision.ScopeLabel);
@@ -153,15 +182,19 @@ public sealed partial class PermissionService : IPermissionService
         return PermissionDecision.Deny("이 위치에 폴더를 만들 권한이 없습니다.", uploadDecision.ScopeLabel);
     }
 
-    public async Task<bool> CanDeleteInFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+    public async Task<bool> CanDeleteInFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken)
     {
-        PermissionDecision decision = await DecideDeleteInFolderAsync(userSession, folderID, cancellationToken);
+        PermissionDecision decision = await DecideDeleteInFolderAsync(userSession, folderId, cancellationToken);
         return decision.IsAllowed;
     }
 
-    public async Task<PermissionDecision> DecideDeleteInFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+    public async Task<PermissionDecision> DecideDeleteInFolderAsync(
+        UserSession userSession,
+        DriveFolderId folderId,
+        CancellationToken cancellationToken
+    )
     {
-        DriveFolderReference? rootFolderOrNull = await getReadableFolderRootForFolderAsync(userSession, folderID, cancellationToken);
+        DriveFolderReference? rootFolderOrNull = await getReadableFolderRootForFolderAsync(userSession, folderId, cancellationToken);
         if (rootFolderOrNull == null)
         {
             return PermissionDecision.Deny("이 위치의 파일을 삭제할 권한이 없습니다.", "자료 삭제");
@@ -180,15 +213,23 @@ public sealed partial class PermissionService : IPermissionService
         return UserPermissionPolicy.DecideMaterialDelete(userSession, rootFolder);
     }
 
-    private async Task<PermissionDecision> decideDeleteInsideRootAsync(UserSession userSession, DriveFolderReference rootFolder, CancellationToken cancellationToken)
+    private async Task<PermissionDecision> decideDeleteInsideRootAsync(
+        UserSession userSession,
+        DriveFolderReference rootFolder,
+        CancellationToken cancellationToken
+    )
     {
-        bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSession, cancellationToken);
-        if (usesConfiguredPermissions == false)
+        EPermissionConfigurationMode configurationMode = await getPermissionConfigurationModeAsync(userSession, cancellationToken);
+        if (configurationMode == EPermissionConfigurationMode.FallbackPolicy)
         {
             return DecideDeleteInsideRoot(userSession, rootFolder);
         }
 
-        PermissionDecision permissionDecision = await mOrganizationPermissionService.DecidePermissionAsync(userSession, new PermissionKey(PermissionKeys.FILES_DELETE), rootFolder.TeamID, cancellationToken);
+        PermissionDecision permissionDecision = await mOrganizationPermissionService.DecidePermissionAsync(
+            userSession,
+            new PermissionKey(PermissionKeys.FILES_DELETE),
+            rootFolder.TeamIdOrNull,
+            cancellationToken);
         if (permissionDecision.IsAllowed)
         {
             return PermissionDecision.Allow(rootFolder.DisplayName);
@@ -197,15 +238,19 @@ public sealed partial class PermissionService : IPermissionService
         return PermissionDecision.Deny("이 위치의 파일을 삭제할 권한이 없습니다.", rootFolder.DisplayName);
     }
 
-    public async Task<bool> CanStoreApprovedFileToFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+    public async Task<bool> CanStoreApprovedFileToFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken)
     {
-        PermissionDecision decision = await DecideStoreApprovedFileToFolderAsync(userSession, folderID, cancellationToken);
+        PermissionDecision decision = await DecideStoreApprovedFileToFolderAsync(userSession, folderId, cancellationToken);
         return decision.IsAllowed;
     }
 
-    public async Task<PermissionDecision> DecideStoreApprovedFileToFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+    public async Task<PermissionDecision> DecideStoreApprovedFileToFolderAsync(
+        UserSession userSession,
+        DriveFolderId folderId,
+        CancellationToken cancellationToken
+    )
     {
-        DriveFolderReference? folderOrNull = await getAllowedFolderRootForFolderAsync(userSession, folderID, EDriveFolderRootSelection.ApprovalDestination, cancellationToken);
+        DriveFolderReference? folderOrNull = await getAllowedFolderRootForFolderAsync(userSession, folderId, EDriveFolderRootSelection.ApprovalDestination, cancellationToken);
         if (folderOrNull == null)
         {
             return PermissionDecision.Deny("이 위치에 승인본을 저장할 권한이 없습니다.", "승인본 저장");
@@ -214,13 +259,14 @@ public sealed partial class PermissionService : IPermissionService
         return PermissionDecision.Allow(folderOrNull.DisplayName);
     }
 
-    private string getNullAsEmpty(string? valueOrNull)
+    private string getTextOrEmpty(string? textOrNull)
     {
-        if (valueOrNull == null)
+        if (textOrNull == null)
         {
             return string.Empty;
         }
 
-        return valueOrNull;
+        return textOrNull;
     }
+
 }

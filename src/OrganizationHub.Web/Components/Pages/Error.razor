@@ -6,9 +6,9 @@
 
 <MudPaper Class="hub-card pa-4">
     <MudText Typo="Typo.h4">요청을 처리하는 중 오류가 발생했습니다.</MudText>
-    @if (mHasRequestID)
+    @if (mHasRequestId)
     {
-        <MudText Typo="Typo.body2" Class="hub-muted">Request ID: @mRequestID</MudText>
+        <MudText Typo="Typo.body2" Class="hub-muted">Request Id: @mRequestId</MudText>
     }
 </MudPaper>
 
@@ -17,22 +17,22 @@
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
 
-    private string mRequestID = string.Empty;
-    private bool mHasRequestID;
+    private string mRequestId = string.Empty;
+    private bool mHasRequestId;
 
     protected override void OnInitialized()
     {
         if (Activity.Current != null && string.IsNullOrWhiteSpace(Activity.Current.Id) == false)
         {
-            mRequestID = Activity.Current.Id;
-            mHasRequestID = true;
+            mRequestId = Activity.Current.Id;
+            mHasRequestId = true;
             return;
         }
 
         if (HttpContext != null && string.IsNullOrWhiteSpace(HttpContext.TraceIdentifier) == false)
         {
-            mRequestID = HttpContext.TraceIdentifier;
-            mHasRequestID = true;
+            mRequestId = HttpContext.TraceIdentifier;
+            mHasRequestId = true;
         }
     }
 }

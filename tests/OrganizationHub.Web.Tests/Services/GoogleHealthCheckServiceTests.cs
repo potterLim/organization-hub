@@ -44,10 +44,10 @@ public sealed class GoogleHealthCheckServiceTests
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             GlobalSetting setting = new GlobalSetting();
-            setting.ID = 1;
+            setting.Id = 1;
             dbContext.GlobalSettings.Add(setting);
             GoogleStorageConnection connection = new GoogleStorageConnection();
-            connection.ID = 1;
+            connection.Id = 1;
             connection.ConnectedEmail = "operations@example.com";
             connection.EncryptedRefreshToken = "encrypted-refresh-token";
             connection.Scopes = GoogleCalendarApi.Scope.Calendar + " " + GoogleTasksApi.Scope.Tasks;
@@ -66,7 +66,7 @@ public sealed class GoogleHealthCheckServiceTests
     private static Team createTeam(int id, string teamKey, string displayName)
     {
         Team team = new Team();
-        team.ID = id;
+        team.Id = id;
         team.TeamKey = teamKey;
         team.DisplayName = displayName;
         team.IsActive = true;
@@ -86,12 +86,12 @@ public sealed class GoogleHealthCheckServiceTests
             return Task.FromResult(status);
         }
 
-        public string CreateAuthorizationUrl(string redirectUri)
+        public string CreateAuthorizationUrl(GoogleOAuthRedirectUri redirectUri)
         {
             return string.Empty;
         }
 
-        public Task<ServiceResult> CompleteConnectionAsync(string code, string state, string redirectUri, CancellationToken cancellationToken)
+        public Task<ServiceResult> CompleteConnectionAsync(GoogleOAuthAuthorizationCode authorizationCode, GoogleOAuthState state, GoogleOAuthRedirectUri redirectUri, CancellationToken cancellationToken)
         {
             return Task.FromResult(ServiceResult.Succeed());
         }
@@ -104,7 +104,7 @@ public sealed class GoogleHealthCheckServiceTests
 
     private sealed class EmptyGoogleWorkspaceBrowserService : IGoogleWorkspaceBrowserService
     {
-        public Task<IReadOnlyList<GoogleDriveFolderItem>> ListDriveFoldersAsync(string parentFolderID, CancellationToken cancellationToken)
+        public Task<IReadOnlyList<GoogleDriveFolderItem>> ListDriveFoldersAsync(DriveFolderId parentFolderId, CancellationToken cancellationToken)
         {
             IReadOnlyList<GoogleDriveFolderItem> folders = new List<GoogleDriveFolderItem>();
             return Task.FromResult(folders);

@@ -11,9 +11,15 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    private async Task<ServiceResult> changeNextApproverIfRequestedAsync(OrganizationHubDbContext dbContext, ApprovalRequest request, UserSession userSession, ApprovalUserID nextApproverUserID, CancellationToken cancellationToken)
+    private async Task<ServiceResult> changeNextApproverIfRequestedAsync(
+        OrganizationHubDbContext dbContext,
+        ApprovalRequest request,
+        UserSession userSession,
+        ApprovalUserId nextApproverUserId,
+        CancellationToken cancellationToken
+    )
     {
-        if (nextApproverUserID.HasValue == false)
+        if (nextApproverUserId.HasValue == false)
         {
             return ServiceResult.Succeed();
         }
@@ -27,7 +33,7 @@ public sealed partial class ApprovalService
 
         if (nextStepNumber >= request.StepCount)
         {
-            if (nextStepOrNull.ApproverUserID == nextApproverUserID.Value)
+            if (nextStepOrNull.ApproverUserId == nextApproverUserId.Value)
             {
                 return ServiceResult.Succeed();
             }
@@ -35,13 +41,13 @@ public sealed partial class ApprovalService
             return ServiceResult.Fail("최종 결재권자는 변경할 수 없습니다.");
         }
 
-        UserAccount? nextApproverOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.ID == nextApproverUserID.Value && user.IsActive, cancellationToken);
+        UserAccount? nextApproverOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Id == nextApproverUserId.Value && user.IsActive, cancellationToken);
         if (nextApproverOrNull == null || canUseAsChangedIntermediateApprover(request, nextApproverOrNull) == false)
         {
             return ServiceResult.Fail("변경할 결재권자를 찾을 수 없습니다.");
         }
 
-        if (nextApproverOrNull.ID == userSession.UserID)
+        if (nextApproverOrNull.Id == userSession.UserId)
         {
             return ServiceResult.Fail("다음 결재권자를 자기 자신으로 지정할 수 없습니다.");
         }
@@ -53,22 +59,22 @@ public sealed partial class ApprovalService
                 continue;
             }
 
-            if (step.ApproverUserID == nextApproverOrNull.ID)
+            if (step.ApproverUserId == nextApproverOrNull.Id)
             {
                 return ServiceResult.Fail("결재권자는 중복될 수 없습니다.");
             }
         }
 
         string previousApproverDisplayName = nextStepOrNull.ApproverDisplayName;
-        nextStepOrNull.ApproverUserID = nextApproverOrNull.ID;
+        nextStepOrNull.ApproverUserId = nextApproverOrNull.Id;
         nextStepOrNull.ApproverDisplayName = nextApproverOrNull.DisplayName;
-        request.AuditLogs.Add(createAuditLog(userSession, EApprovalAuditAction.ApproverChanged, nextStepNumber, "결재선 변경", previousApproverDisplayName, nextApproverOrNull.DisplayName));
+        request.AuditLogs.Add(createAuditLog(createApproverChangedAuditLogRequest(userSession, nextStepNumber, previousApproverDisplayName, nextApproverOrNull.DisplayName)));
         return ServiceResult.Succeed();
     }
 
     private bool canUseAsChangedIntermediateApprover(ApprovalRequest request, UserAccount nextApprover)
     {
-        if (nextApprover.ID == request.RequesterUserID)
+        if (nextApprover.Id == request.RequesterUserId)
         {
             return false;
         }

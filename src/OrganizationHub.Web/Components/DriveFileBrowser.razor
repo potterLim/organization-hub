@@ -25,10 +25,10 @@
             <div class="hub-browser-toolbar">
                 @if (mRootFolders.Count > 1)
                 {
-                    <MudSelect T="string" Label="@RootFolderLabel" Value="mSelectedRootFolderID" ValueChanged="handleRootFolderChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
+                    <MudSelect T="string" Label="@RootFolderLabel" Value="mSelectedRootFolderId" ValueChanged="handleRootFolderChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
                         @foreach (DriveFolderReference folder in mRootFolders)
                         {
-                            <MudSelectItem T="string" Value="@folder.FolderID">@folder.DisplayName</MudSelectItem>
+                            <MudSelectItem T="string" Value="@folder.FolderId.Value">@folder.DisplayName</MudSelectItem>
                         }
                     </MudSelect>
                 }

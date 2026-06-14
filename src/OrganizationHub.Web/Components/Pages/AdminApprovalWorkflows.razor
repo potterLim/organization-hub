@@ -23,16 +23,16 @@
         <MudPaper Class="hub-card hub-form-card hub-workflow-designer-card pa-4">
             <div class="hub-admin-form-heading">
                 <MudText Typo="Typo.h6">@mFormTitle</MudText>
-                <span>@(mFormModel.ID == 0 ? "새 경로" : "수정 중")</span>
+                <span>@(mFormModel.Id == 0 ? "새 경로" : "수정 중")</span>
             </div>
             <section class="hub-workflow-section">
                 <div class="hub-workflow-section-title">적용 조건</div>
                 <MudTextField @bind-Value="mFormModel.Name" Label="결재 경로 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                 <MudTextField @bind-Value="mFormModel.Description" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Immediate="true" />
-                <MudSelect T="int?" Label="요청 팀" Value="mFormModel.AppliesToTeamID" ValueChanged="setAppliesToTeamID" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                <MudSelect T="int?" Label="요청 팀" Value="mFormModel.AppliesToTeamId" ValueChanged="setAppliesToTeamId" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
                     @foreach (Team team in mTeams)
                     {
-                        <MudSelectItem T="int?" Value="@((int?)team.ID)">@team.DisplayName</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
                 <MudNumericField T="int" @bind-Value="mFormModel.Priority" Label="적용 우선순위" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" HelperText="숫자가 낮을수록 먼저 적용됩니다." />
@@ -67,30 +67,30 @@
 
                             @if (step.ApproverSelectionType == EApproverSelectionType.SpecificUser)
                             {
-                                <MudSelect T="int?" Label="결재자" Value="step.ApproverUserID" ValueChanged="@(userID => step.ApproverUserID = userID)" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect T="int?" Label="결재자" Value="step.ApproverUserId" ValueChanged="@(userId => step.ApproverUserId = userId)" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (UserAccount user in mUsers)
                                     {
-                                        <MudSelectItem T="int?" Value="@((int?)user.ID)">@getUserDisplayName(user)</MudSelectItem>
+                                        <MudSelectItem T="int?" Value="@((int?)user.Id)">@getUserDisplayName(user)</MudSelectItem>
                                     }
                                 </MudSelect>
                             }
 
-                            @if (usesPosition(step.ApproverSelectionType))
+                            @if (requiresPositionSelection(step.ApproverSelectionType))
                             {
-                                <MudSelect T="int?" Label="결재 직책" Value="step.ApproverPositionID" ValueChanged="@(positionID => step.ApproverPositionID = positionID)" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect T="int?" Label="결재 직책" Value="step.ApproverPositionId" ValueChanged="@(positionId => step.ApproverPositionId = positionId)" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (OrganizationPosition position in mPositions)
                                     {
-                                        <MudSelectItem T="int?" Value="@((int?)position.ID)">@getPositionDisplayName(position)</MudSelectItem>
+                                        <MudSelectItem T="int?" Value="@((int?)position.Id)">@getPositionDisplayName(position)</MudSelectItem>
                                     }
                                 </MudSelect>
                             }
 
                             @if (step.ApproverSelectionType == EApproverSelectionType.PositionInSelectedTeam)
                             {
-                                <MudSelect T="int?" Label="결재 팀" Value="step.ApproverTeamID" ValueChanged="@(teamID => step.ApproverTeamID = teamID)" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect T="int?" Label="결재 팀" Value="step.ApproverTeamId" ValueChanged="@(teamId => step.ApproverTeamId = teamId)" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (Team team in mTeams)
                                     {
-                                        <MudSelectItem T="int?" Value="@((int?)team.ID)">@team.DisplayName</MudSelectItem>
+                                        <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
                                     }
                                 </MudSelect>
                             }
@@ -138,7 +138,7 @@
 
             <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveWorkflowAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
-                @if (mFormModel.ID != 0)
+                @if (mFormModel.Id != 0)
                 {
                     <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="clearForm">새 경로</MudButton>
                 }

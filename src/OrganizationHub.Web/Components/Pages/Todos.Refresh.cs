@@ -43,7 +43,7 @@ public partial class Todos
 
     public async Task CheckForExternalChangesAsync()
     {
-        if (mIsLoadingLists || mIsLoadingTasks || CurrentUserSessionOrNull == null || string.IsNullOrWhiteSpace(mSelectedTaskListID))
+        if (mIsLoadingLists || mIsLoadingTasks || CurrentUserSessionOrNull == null || string.IsNullOrWhiteSpace(mSelectedTaskListId))
         {
             return;
         }
@@ -53,7 +53,7 @@ public partial class Todos
             return;
         }
 
-        if (mIsSaving || string.IsNullOrWhiteSpace(mEditingTaskID) == false || string.IsNullOrWhiteSpace(mDeletingTaskID) == false)
+        if (mIsSaving || string.IsNullOrWhiteSpace(mEditingTaskId) == false || string.IsNullOrWhiteSpace(mDeletingTaskId) == false)
         {
             mHasExternalChanges = true;
             await InvokeAsync(StateHasChanged);
@@ -64,7 +64,10 @@ public partial class Todos
         await InvokeAsync(StateHasChanged);
     }
 
-    private void recordLoadedChangeSnapshot(ChangeVersionSnapshot? loadedSnapshotOrNull = null, EChangeVersionStability stability = EChangeVersionStability.Stable)
+    private void recordLoadedChangeSnapshot(
+        ChangeVersionSnapshot? loadedSnapshotOrNull = null,
+        EChangeVersionStability stability = EChangeVersionStability.Stable
+    )
     {
         if (loadedSnapshotOrNull == null)
         {
@@ -78,16 +81,17 @@ public partial class Todos
         mHasExternalChanges = stability == EChangeVersionStability.Unstable;
     }
 
-    private IReadOnlyList<string> getChangeVersionKeys()
+    private IReadOnlyList<ChangeVersionKey> getChangeVersionKeys()
     {
-        List<string> keys = new List<string>();
-        keys.Add(ChangeVersionKeys.TODO);
-        if (TodoTaskListReference.IsAggregateTaskListID(mSelectedTaskListID) == false)
+        List<ChangeVersionKey> changeVersionKeys = new List<ChangeVersionKey>();
+        changeVersionKeys.Add(ChangeVersionKeys.TASKS);
+        TodoTaskListId selectedTaskListId = TodoTaskListId.CreateOptional(mSelectedTaskListId);
+        if (selectedTaskListId.IsAggregate == false)
         {
-            keys.Add(ChangeVersionKeys.CreateTodoTaskListKey(new TodoTaskListID(mSelectedTaskListID)));
+            changeVersionKeys.Add(ChangeVersionKeys.CreateTodoTaskListKey(selectedTaskListId));
         }
 
-        return keys;
+        return changeVersionKeys;
     }
 
     private async ValueTask disposeSortableAsync()

@@ -16,7 +16,10 @@ public sealed partial class NavigationMenuService
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<NavigationMenuItem> menuItems = await dbContext.NavigationMenuItems.Include(menuItem => menuItem.TeamPermissions).ThenInclude(menuPermission => menuPermission.Team).ToListAsync(cancellationToken);
+            List<NavigationMenuItem> menuItems = await dbContext.NavigationMenuItems
+                .Include(menuItem => menuItem.TeamPermissions)
+                .ThenInclude(menuPermission => menuPermission.Team)
+                .ToListAsync(cancellationToken);
             List<NavigationMenuItem> manageableMenuItems = menuItems
                 .Where(menuItem => NavigationMenuRetirementPolicy.IsRetired(menuItem.MenuKey, menuItem.Href) == false)
                 .OrderBy(menuItem => menuItem.SortOrder)
@@ -35,7 +38,11 @@ public sealed partial class NavigationMenuService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            NavigationMenuItem? menuItemOrNull = await dbContext.NavigationMenuItems.Include(menuItem => menuItem.TeamPermissions).FirstOrDefaultAsync(menuItem => menuItem.ID == formModel.ID, cancellationToken);
+            NavigationMenuItemId menuItemId = formModel.NavigationMenuItemIdValue;
+            int requiredMenuItemId = menuItemId.GetRequiredValue();
+            NavigationMenuItem? menuItemOrNull = await dbContext.NavigationMenuItems
+                .Include(menuItem => menuItem.TeamPermissions)
+                .FirstOrDefaultAsync(menuItem => menuItem.Id == requiredMenuItemId, cancellationToken);
             if (menuItemOrNull == null)
             {
                 return ServiceResult.Fail("메뉴 항목을 찾을 수 없습니다.");
@@ -49,12 +56,16 @@ public sealed partial class NavigationMenuService
             dbContext.NavigationMenuTeamPermissions.RemoveRange(menuItemOrNull.TeamPermissions);
             if (MenuAccessLevelUtility.IsTeamScoped(menuItemOrNull.AccessLevel) && menuItemOrNull.IsVisibleToAllTeams == false)
             {
-                List<int> activeTeamIDs = await dbContext.Teams.Where(team => team.IsActive && formModel.TeamIDs.Contains(team.ID)).Select(team => team.ID).ToListAsync(cancellationToken);
-                foreach (int teamID in activeTeamIDs.Distinct())
+                IReadOnlyList<int> selectedTeamIdValues = formModel.TeamIdValues.Select(teamId => teamId.GetRequiredValue()).ToList();
+                List<int> activeTeamIdValues = await dbContext.Teams
+                    .Where(team => team.IsActive && selectedTeamIdValues.Contains(team.Id))
+                    .Select(team => team.Id)
+                    .ToListAsync(cancellationToken);
+                foreach (int teamIdValue in activeTeamIdValues.Distinct())
                 {
                     NavigationMenuTeamPermission permission = new NavigationMenuTeamPermission();
-                    permission.NavigationMenuItemID = menuItemOrNull.ID;
-                    permission.TeamID = teamID;
+                    permission.NavigationMenuItemId = menuItemOrNull.Id;
+                    permission.TeamId = teamIdValue;
                     dbContext.NavigationMenuTeamPermissions.Add(permission);
                 }
             }

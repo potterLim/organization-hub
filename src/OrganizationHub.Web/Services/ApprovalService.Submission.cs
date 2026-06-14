@@ -10,7 +10,7 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    public async Task<ServiceResult> SubmitRequestAsync(UserSession userSession, ApprovalRequestFormModel formModel, CancellationToken cancellationToken)
+    public async Task<ServiceResult> SubmitRequestAsync(UserSession userSession, ApprovalRequestCommand command, CancellationToken cancellationToken)
     {
         ApprovalCreateContext context = await GetCreateContextAsync(userSession, cancellationToken);
         if (context.CanCreateRequest == false)
@@ -18,37 +18,40 @@ public sealed partial class ApprovalService
             return ServiceResult.Fail(context.BlockReason);
         }
 
-        ServiceResult validationResult = validateSubmitForm(formModel, context);
+        ServiceResult validationResult = validateSubmitCommand(command, context);
         if (validationResult.IsSuccess == false)
         {
             return validationResult;
         }
 
-        DriveFolderReference? sourceFolderOrNull = context.SourceFolders.FirstOrDefault(folder => folder.FolderID == formModel.SourceFolderID);
+        DriveFolderId sourceFolderId = command.SourceFolderId;
+        DriveFolderId destinationFolderId = command.DestinationFolderId;
+        DriveItemId fileId = command.FileId;
+        DriveFolderReference? sourceFolderOrNull = context.SourceFolders.FirstOrDefault(folder => folder.FolderId == sourceFolderId);
         if (sourceFolderOrNull == null)
         {
             return ServiceResult.Fail("결재 요청을 만들 수 없습니다.");
         }
 
-        ServiceResult destinationValidationResult = await validateDestinationFolderAsync(userSession, formModel, context, cancellationToken);
+        ServiceResult destinationValidationResult = await validateDestinationFolderAsync(userSession, command, context, cancellationToken);
         if (destinationValidationResult.IsSuccess == false)
         {
             return destinationValidationResult;
         }
 
-        DriveFileMetadata? fileMetadataOrNull = await mDriveService.GetFileOrNullAsync(formModel.FileID, cancellationToken);
+        DriveFileMetadata? fileMetadataOrNull = await mDriveService.GetFileOrNullAsync(fileId, cancellationToken);
         if (fileMetadataOrNull == null || fileMetadataOrNull.MimeType == "application/vnd.google-apps.folder")
         {
             return ServiceResult.Fail("결재할 파일을 선택해 주세요.");
         }
 
-        DriveFileMetadata? destinationFolderMetadataOrNull = await mDriveService.GetFileOrNullAsync(formModel.DestinationFolderID, cancellationToken);
+        DriveFileMetadata? destinationFolderMetadataOrNull = await mDriveService.GetFileOrNullAsync(DriveItemId.CreateRequired(destinationFolderId.GetRequiredValue()), cancellationToken);
         if (destinationFolderMetadataOrNull == null || destinationFolderMetadataOrNull.MimeType != "application/vnd.google-apps.folder")
         {
             return ServiceResult.Fail("승인 완료 후 저장할 위치를 선택해 주세요.");
         }
 
-        bool isFileInsideSourceFolder = await isFileInsideFolderAsync(fileMetadataOrNull, sourceFolderOrNull.FolderID, cancellationToken);
+        bool isFileInsideSourceFolder = await isFileInsideFolderAsync(fileMetadataOrNull, sourceFolderOrNull.FolderId, cancellationToken);
         if (isFileInsideSourceFolder == false)
         {
             return ServiceResult.Fail("선택한 파일을 결재 요청 위치에서 찾을 수 없습니다.");
@@ -56,7 +59,7 @@ public sealed partial class ApprovalService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            ApprovalRequest request = createPendingApprovalRequest(userSession, formModel, context, sourceFolderOrNull, fileMetadataOrNull, destinationFolderMetadataOrNull);
+            ApprovalRequest request = createPendingApprovalRequest(userSession, command, context, sourceFolderOrNull, fileMetadataOrNull, destinationFolderMetadataOrNull);
             dbContext.ApprovalRequests.Add(request);
             await dbContext.SaveChangesAsync(cancellationToken);
             bumpApprovalVersion();
@@ -64,15 +67,20 @@ public sealed partial class ApprovalService
         }
     }
 
-    private async Task<ServiceResult> validateDestinationFolderAsync(UserSession userSession, ApprovalRequestFormModel formModel, ApprovalCreateContext context, CancellationToken cancellationToken)
+    private async Task<ServiceResult> validateDestinationFolderAsync(
+        UserSession userSession,
+        ApprovalRequestCommand command,
+        ApprovalCreateContext context,
+        CancellationToken cancellationToken)
     {
-        DriveFolderReference? destinationRootFolderOrNull = context.DestinationFolders.FirstOrDefault(folder => folder.FolderID == formModel.DestinationFolderID);
+        DriveFolderId destinationFolderId = command.DestinationFolderId;
+        DriveFolderReference? destinationRootFolderOrNull = context.DestinationFolders.FirstOrDefault(folder => folder.FolderId == destinationFolderId);
         if (destinationRootFolderOrNull != null)
         {
             return ServiceResult.Succeed();
         }
 
-        bool canStoreApprovedFile = await mPermissionService.CanStoreApprovedFileToFolderAsync(userSession, formModel.DestinationFolderID, cancellationToken);
+        bool canStoreApprovedFile = await mPermissionService.CanStoreApprovedFileToFolderAsync(userSession, destinationFolderId, cancellationToken);
         if (canStoreApprovedFile == false)
         {
             return ServiceResult.Fail("승인 완료 후 저장할 위치를 선택해 주세요.");
@@ -81,24 +89,32 @@ public sealed partial class ApprovalService
         return ServiceResult.Succeed();
     }
 
-    private ApprovalRequest createPendingApprovalRequest(UserSession userSession, ApprovalRequestFormModel formModel, ApprovalCreateContext context, DriveFolderReference sourceFolder, DriveFileMetadata fileMetadata, DriveFileMetadata destinationFolderMetadata)
+    private ApprovalRequest createPendingApprovalRequest(
+        UserSession userSession,
+        ApprovalRequestCommand command,
+        ApprovalCreateContext context,
+        DriveFolderReference sourceFolder,
+        DriveFileMetadata fileMetadata,
+        DriveFileMetadata destinationFolderMetadata)
     {
-        ApprovalUserOption? firstApproverOrNull = getFirstApproverOrNull(context.ApproverOptions, formModel);
-        ApprovalUserOption? secondApproverOrNull = getSecondApproverOrNull(context.ApproverOptions, formModel);
-        ApprovalUserOption finalApprover = getRequiredUserOption(context.FinalApproverOptions, resolveFinalApproverUserID(context.FinalApproverOptions, formModel.FinalApproverUserID));
-        ApprovalRequest request = createApprovalRequest(userSession, formModel, sourceFolder, fileMetadata, destinationFolderMetadata);
-        if (formModel.StepCount >= 2 && firstApproverOrNull != null)
+        ApprovalUserOption? firstApproverOrNull = getFirstApproverOrNull(context.ApproverOptions, command);
+        ApprovalUserOption? secondApproverOrNull = getSecondApproverOrNull(context.ApproverOptions, command);
+        ApprovalUserId requestedFinalApproverUserId = command.FinalApproverUserId;
+        ApprovalUserId finalApproverUserId = resolveFinalApproverUserId(context.FinalApproverOptions, requestedFinalApproverUserId);
+        ApprovalUserOption finalApprover = getRequiredUserOption(context.FinalApproverOptions, finalApproverUserId);
+        ApprovalRequest request = createApprovalRequest(userSession, command, sourceFolder, fileMetadata, destinationFolderMetadata);
+        if (command.StepCount.RequiresFirstApprover && firstApproverOrNull != null)
         {
             request.Steps.Add(createApprovalStep(1, firstApproverOrNull));
         }
 
-        if (formModel.StepCount == 3 && secondApproverOrNull != null)
+        if (command.StepCount.RequiresSecondApprover && secondApproverOrNull != null)
         {
             request.Steps.Add(createApprovalStep(2, secondApproverOrNull));
         }
 
-        request.Steps.Add(createApprovalStep(formModel.StepCount, finalApprover));
-        request.AuditLogs.Add(createAuditLog(userSession, EApprovalAuditAction.Submitted, null, "결재 요청", string.Empty, string.Empty));
+        request.Steps.Add(createApprovalStep(command.StepCount.Value, finalApprover));
+        request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Submitted, null, "결재 요청")));
         return request;
     }
 }

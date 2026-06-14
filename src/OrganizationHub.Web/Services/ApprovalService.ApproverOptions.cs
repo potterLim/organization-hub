@@ -11,7 +11,7 @@ public sealed partial class ApprovalService
     private List<ApprovalUserOption> createApproverOptions(IReadOnlyList<UserAccount> users, UserSession userSession)
     {
         List<ApprovalUserOption> options = new List<ApprovalUserOption>();
-        List<UserAccount> approverUsers = users.Where(user => user.ID != userSession.UserID && UserPermissionPolicy.CanUseAsIntermediateApprovalApprover(userSession.Role, user.Role)).OrderBy(user => getApproverSortOrder(user, userSession)).ThenBy(user => user.DisplayName).ToList();
+        List<UserAccount> approverUsers = users.Where(user => user.Id != userSession.UserId && UserPermissionPolicy.CanUseAsIntermediateApprovalApprover(userSession.Role, user.Role)).OrderBy(user => getApproverSortOrder(user, userSession)).ThenBy(user => user.DisplayName).ToList();
         foreach (UserAccount user in approverUsers)
         {
             options.Add(createApprovalUserOption(user));
@@ -41,7 +41,7 @@ public sealed partial class ApprovalService
         List<UserAccount> finalApproverUsers = new List<UserAccount>();
         foreach (UserAccount user in users)
         {
-            if (user.ID == userSession.UserID)
+            if (user.Id == userSession.UserId)
             {
                 continue;
             }
@@ -68,7 +68,7 @@ public sealed partial class ApprovalService
     private ApprovalUserOption createApprovalUserOption(UserAccount user)
     {
         ApprovalUserOption option = new ApprovalUserOption();
-        option.UserID = user.ID;
+        option.UserId = user.Id;
         option.DisplayName = user.DisplayName;
         if (user.Position != null)
         {
@@ -80,7 +80,7 @@ public sealed partial class ApprovalService
         }
 
         option.Role = user.Role;
-        option.TeamID = user.TeamID;
+        option.TeamId = user.TeamId;
         if (user.Team == null)
         {
             option.TeamName = string.Empty;

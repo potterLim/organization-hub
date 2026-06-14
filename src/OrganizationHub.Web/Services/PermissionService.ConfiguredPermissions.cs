@@ -7,35 +7,57 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class PermissionService
 {
-    private async Task<bool> canUseConfiguredOrFallbackPermissionAsync(UserSession userSession, PermissionKey permissionKey, int? targetTeamIDOrNull, bool usesConfiguredPermissions, bool fallbackPermission, CancellationToken cancellationToken)
+    private async Task<EPermissionConfigurationMode> getPermissionConfigurationModeAsync(UserSession userSession, CancellationToken cancellationToken)
     {
+        bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSession, cancellationToken);
         if (usesConfiguredPermissions)
         {
-            return await mOrganizationPermissionService.HasPermissionAsync(userSession, permissionKey, targetTeamIDOrNull, cancellationToken);
+            return EPermissionConfigurationMode.ConfiguredPermissions;
         }
 
-        return fallbackPermission;
+        return EPermissionConfigurationMode.FallbackPolicy;
     }
 
-    private async Task<bool> canUseAnyConfiguredOrFallbackCalendarWritePermissionAsync(UserSession userSession, int? targetTeamIDOrNull, bool usesConfiguredPermissions, bool fallbackPermission, CancellationToken cancellationToken)
+    private async Task<bool> canUseConfiguredOrFallbackPermissionAsync(
+        UserSession userSession,
+        PermissionKey permissionKey,
+        OrganizationTeamId? targetTeamIdOrNull,
+        EPermissionConfigurationMode configurationMode,
+        EPermissionFallback fallbackPermission,
+        CancellationToken cancellationToken)
     {
-        if (usesConfiguredPermissions == false)
+        if (configurationMode == EPermissionConfigurationMode.ConfiguredPermissions)
         {
-            return fallbackPermission;
+            return await mOrganizationPermissionService.HasPermissionAsync(userSession, permissionKey, targetTeamIdOrNull, cancellationToken);
         }
 
-        bool canCreate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_CREATE), targetTeamIDOrNull, cancellationToken);
+        return PermissionFallbackUtility.IsAllowed(fallbackPermission);
+    }
+
+    private async Task<bool> canUseAnyConfiguredOrFallbackCalendarWritePermissionAsync(
+        UserSession userSession,
+        OrganizationTeamId? targetTeamIdOrNull,
+        EPermissionConfigurationMode configurationMode,
+        EPermissionFallback fallbackPermission,
+        CancellationToken cancellationToken)
+    {
+        if (configurationMode == EPermissionConfigurationMode.FallbackPolicy)
+        {
+            return PermissionFallbackUtility.IsAllowed(fallbackPermission);
+        }
+
+        bool canCreate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_CREATE), targetTeamIdOrNull, cancellationToken);
         if (canCreate)
         {
             return true;
         }
 
-        bool canUpdate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_UPDATE), targetTeamIDOrNull, cancellationToken);
+        bool canUpdate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_UPDATE), targetTeamIdOrNull, cancellationToken);
         if (canUpdate)
         {
             return true;
         }
 
-        return await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_DELETE), targetTeamIDOrNull, cancellationToken);
+        return await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_DELETE), targetTeamIdOrNull, cancellationToken);
     }
 }

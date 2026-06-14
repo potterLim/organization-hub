@@ -13,7 +13,10 @@ public sealed partial class NavigationMenuService : INavigationMenuService
     {
     }
 
-    public NavigationMenuService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IOrganizationPermissionService organizationPermissionService)
+    public NavigationMenuService(
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IOrganizationPermissionService organizationPermissionService
+    )
     {
         mDbContextFactory = dbContextFactory;
         mOrganizationPermissionService = organizationPermissionService;

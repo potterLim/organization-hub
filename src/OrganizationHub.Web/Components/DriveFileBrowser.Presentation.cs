@@ -8,7 +8,7 @@ public partial class DriveFileBrowser
 {
     private string getSelectedRootDisplayName()
     {
-        DriveFolderReference? rootFolderOrNull = mRootFolders.FirstOrDefault(folder => folder.FolderID == mSelectedRootFolderID);
+        DriveFolderReference? rootFolderOrNull = mRootFolders.FirstOrDefault(folder => folder.FolderId.GetRequiredValue() == mSelectedRootFolderId);
         if (rootFolderOrNull == null)
         {
             return RootFolderLabel;

@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class Team
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
@@ -18,19 +18,19 @@ public class Team
     {
         get; set;
     }
-    public string? MaterialsFolderID
+    public string? MaterialsFolderId
     {
         get; set;
     }
-    public string? ApprovedFolderID
+    public string? ApprovedFolderId
     {
         get; set;
     }
-    public string? CalendarID
+    public string? CalendarId
     {
         get; set;
     }
-    public string? TaskListID
+    public string? TaskListId
     {
         get; set;
     }

@@ -10,89 +10,89 @@ public partial class AdminSettings
     private IReadOnlyList<SettingResourceSummary> getPrimaryResourceSummaries()
     {
         List<SettingResourceSummary> summaries = new List<SettingResourceSummary>();
-        summaries.Add(createDriveSummary("Drive", "기본 자료 위치", mFormModel.OfficialRootFolderID));
-        summaries.Add(createDriveSummary("Drive", "공통 자료", mFormModel.CommonFolderID));
-        summaries.Add(createDriveSummary("Drive", "외부 공유 자료", mFormModel.PublicFolderID));
-        summaries.Add(createDriveSummary("Drive", "책임자 자료", mFormModel.ResponsibleResourcesFolderID));
-        summaries.Add(createDriveSummary("Drive", "업무 지원 자료", mFormModel.WorkResourcesFolderID));
-        summaries.Add(createDriveSummary("파일", "공지 파일", mFormModel.NoticeFileID));
-        summaries.Add(createDriveSummary("파일", "업무 기준 파일", mFormModel.WorkGuidelineFileID));
-        summaries.Add(createCalendarSummary("Calendar", "조직 공용 Calendar", mFormModel.OrganizationCalendarID));
-        summaries.Add(createCalendarSummary("Calendar", "책임자 Calendar", mFormModel.ResponsibleCalendarID));
-        summaries.Add(createTaskListSummary("Google Tasks", "조직 공용 Google Tasks", mFormModel.OrganizationTaskListID));
-        summaries.Add(createTaskListSummary("Google Tasks", "책임자 Google Tasks", mFormModel.ResponsibleTaskListID));
+        summaries.Add(createDriveSummary("Drive", "기본 자료 위치", mFormModel.DriveResources.OfficialRootFolderId));
+        summaries.Add(createDriveSummary("Drive", "공통 자료", mFormModel.DriveResources.CommonFolderId));
+        summaries.Add(createDriveSummary("Drive", "외부 공유 자료", mFormModel.DriveResources.PublicFolderId));
+        summaries.Add(createDriveSummary("Drive", "책임자 자료", mFormModel.DriveResources.ResponsibleResourcesFolderId));
+        summaries.Add(createDriveSummary("Drive", "업무 지원 자료", mFormModel.DriveResources.WorkResourcesFolderId));
+        summaries.Add(createDriveSummary("파일", "공지 파일", mFormModel.FileResources.NoticeFileId));
+        summaries.Add(createDriveSummary("파일", "업무 기준 파일", mFormModel.FileResources.WorkGuidelineFileId));
+        summaries.Add(createCalendarSummary("Calendar", "조직 공용 Calendar", mFormModel.CalendarResources.OrganizationCalendarId));
+        summaries.Add(createCalendarSummary("Calendar", "책임자 Calendar", mFormModel.CalendarResources.ResponsibleCalendarId));
+        summaries.Add(createTaskListSummary("Google Tasks", "조직 공용 Google Tasks", mFormModel.TaskResources.OrganizationTaskListId));
+        summaries.Add(createTaskListSummary("Google Tasks", "책임자 Google Tasks", mFormModel.TaskResources.ResponsibleTaskListId));
         return summaries;
     }
 
-    private SettingResourceSummary createDriveSummary(string groupName, string displayName, string resourceID)
+    private SettingResourceSummary createDriveSummary(string groupName, string displayName, string resourceId)
     {
         SettingResourceSummary summary = new SettingResourceSummary();
         summary.GroupName = groupName;
         summary.DisplayName = displayName;
-        summary.IsConfigured = string.IsNullOrWhiteSpace(resourceID) == false;
-        summary.Detail = getDriveResourceName(resourceID);
+        summary.IsConfigured = string.IsNullOrWhiteSpace(resourceId) == false;
+        summary.Detail = getDriveResourceName(resourceId);
         return summary;
     }
 
-    private SettingResourceSummary createCalendarSummary(string groupName, string displayName, string calendarID)
+    private SettingResourceSummary createCalendarSummary(string groupName, string displayName, string calendarId)
     {
         SettingResourceSummary summary = new SettingResourceSummary();
         summary.GroupName = groupName;
         summary.DisplayName = displayName;
-        summary.IsConfigured = string.IsNullOrWhiteSpace(calendarID) == false;
-        summary.Detail = getCalendarName(calendarID);
+        summary.IsConfigured = string.IsNullOrWhiteSpace(calendarId) == false;
+        summary.Detail = getCalendarName(calendarId);
         return summary;
     }
 
-    private SettingResourceSummary createTaskListSummary(string groupName, string displayName, string taskListID)
+    private SettingResourceSummary createTaskListSummary(string groupName, string displayName, string taskListId)
     {
         SettingResourceSummary summary = new SettingResourceSummary();
         summary.GroupName = groupName;
         summary.DisplayName = displayName;
-        summary.IsConfigured = string.IsNullOrWhiteSpace(taskListID) == false;
-        summary.Detail = getTaskListName(taskListID);
+        summary.IsConfigured = string.IsNullOrWhiteSpace(taskListId) == false;
+        summary.Detail = getTaskListName(taskListId);
         return summary;
     }
 
-    private IEnumerable<string> getConfiguredDriveResourceIDs()
+    private IEnumerable<string> getConfiguredDriveResourceIds()
     {
-        List<string> ids = new List<string>();
-        addConfiguredID(ids, mFormModel.OfficialRootFolderID);
-        addConfiguredID(ids, mFormModel.PublicFolderID);
-        addConfiguredID(ids, mFormModel.CommonFolderID);
-        addConfiguredID(ids, mFormModel.ResponsibleResourcesFolderID);
-        addConfiguredID(ids, mFormModel.WorkResourcesFolderID);
-        addConfiguredID(ids, mFormModel.NoticeFileID);
-        addConfiguredID(ids, mFormModel.WorkGuidelineFileID);
+        List<string> configuredDriveResourceIds = new List<string>();
+        addConfiguredId(configuredDriveResourceIds, mFormModel.DriveResources.OfficialRootFolderId);
+        addConfiguredId(configuredDriveResourceIds, mFormModel.DriveResources.PublicFolderId);
+        addConfiguredId(configuredDriveResourceIds, mFormModel.DriveResources.CommonFolderId);
+        addConfiguredId(configuredDriveResourceIds, mFormModel.DriveResources.ResponsibleResourcesFolderId);
+        addConfiguredId(configuredDriveResourceIds, mFormModel.DriveResources.WorkResourcesFolderId);
+        addConfiguredId(configuredDriveResourceIds, mFormModel.FileResources.NoticeFileId);
+        addConfiguredId(configuredDriveResourceIds, mFormModel.FileResources.WorkGuidelineFileId);
         foreach (Team team in mTeams)
         {
-            addConfiguredID(ids, getNullAsEmpty(team.MaterialsFolderID));
-            addConfiguredID(ids, getNullAsEmpty(team.ApprovedFolderID));
+            addConfiguredId(configuredDriveResourceIds, getTextOrEmpty(team.MaterialsFolderId));
+            addConfiguredId(configuredDriveResourceIds, getTextOrEmpty(team.ApprovedFolderId));
         }
 
-        return ids.Distinct();
+        return configuredDriveResourceIds.Distinct();
     }
 
-    private void addConfiguredID(List<string> ids, string value)
+    private void addConfiguredId(List<string> configuredIds, string configuredId)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrWhiteSpace(configuredId))
         {
             return;
         }
 
-        ids.Add(value.Trim());
+        configuredIds.Add(configuredId.Trim());
     }
 
-    private string getDriveResourceName(string resourceID)
+    private string getDriveResourceName(string resourceId)
     {
-        if (string.IsNullOrWhiteSpace(resourceID))
+        if (string.IsNullOrWhiteSpace(resourceId))
         {
             return "아직 연결되지 않았습니다.";
         }
 
-        string trimmedResourceID = resourceID.Trim();
+        string trimmedResourceId = resourceId.Trim();
         string? nameOrNull;
-        if (mDriveResourceNameByID.TryGetValue(trimmedResourceID, out nameOrNull))
+        if (mDriveResourceNameById.TryGetValue(trimmedResourceId, out nameOrNull))
         {
             return nameOrNull;
         }
@@ -100,14 +100,14 @@ public partial class AdminSettings
         return "연결됨";
     }
 
-    private string getCalendarName(string calendarID)
+    private string getCalendarName(string calendarId)
     {
-        if (string.IsNullOrWhiteSpace(calendarID))
+        if (string.IsNullOrWhiteSpace(calendarId))
         {
             return "아직 연결되지 않았습니다.";
         }
 
-        GoogleCalendarListItem? calendarOrNull = mCalendars.FirstOrDefault(calendar => calendar.ID == calendarID);
+        GoogleCalendarListItem? calendarOrNull = mCalendars.FirstOrDefault(calendar => calendar.Id == calendarId);
         if (calendarOrNull == null)
         {
             return "연결됨";
@@ -116,14 +116,14 @@ public partial class AdminSettings
         return calendarOrNull.Summary;
     }
 
-    private string getTaskListName(string taskListID)
+    private string getTaskListName(string taskListId)
     {
-        if (string.IsNullOrWhiteSpace(taskListID))
+        if (string.IsNullOrWhiteSpace(taskListId))
         {
             return "아직 연결되지 않았습니다.";
         }
 
-        GoogleTaskListItem? taskListOrNull = mTaskLists.FirstOrDefault(taskList => taskList.ID == taskListID);
+        GoogleTaskListItem? taskListOrNull = mTaskLists.FirstOrDefault(taskList => taskList.Id == taskListId);
         if (taskListOrNull == null)
         {
             return "연결됨";
@@ -157,24 +157,14 @@ public partial class AdminSettings
         }
     }
 
-    private string getNullAsEmpty(string? valueOrNull)
+    private string getTextOrEmpty(string? textOrNull)
     {
-        if (valueOrNull == null)
+        if (textOrNull == null)
         {
             return string.Empty;
         }
 
-        return valueOrNull;
+        return textOrNull;
     }
 
-    private sealed class SettingResourceSummary
-    {
-        public string GroupName { get; set; } = string.Empty;
-        public string DisplayName { get; set; } = string.Empty;
-        public string Detail { get; set; } = string.Empty;
-        public bool IsConfigured
-        {
-            get; set;
-        }
-    }
 }

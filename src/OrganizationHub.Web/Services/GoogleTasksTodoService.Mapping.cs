@@ -22,15 +22,23 @@ public sealed partial class GoogleTasksTodoService
         return new GoogleTasksApi(initializer);
     }
 
-    private async Task<TodoTaskItem> getTaskAfterCompletionSettlesAsync(GoogleTasksApi tasksService, string taskListID, string taskID, ETodoTaskCompletionState expectedCompletionState, CancellationToken cancellationToken)
+    private async Task<TodoTaskItem> getTaskAfterCompletionSettlesAsync(
+        GoogleTasksApi tasksService,
+        TodoTaskListId taskListId,
+        TodoTaskId taskId,
+        ETodoTaskCompletionState expectedCompletionState,
+        CancellationToken cancellationToken
+    )
     {
+        string requiredTaskListId = taskListId.GetRequiredValue();
+        string requiredTaskId = taskId.GetRequiredValue();
         TodoTaskItem latestTask = new TodoTaskItem();
         for (int attempt = 0; attempt < 6; attempt++)
         {
-            Google.Apis.Tasks.v1.TasksResource.GetRequest getRequest = tasksService.Tasks.Get(taskListID, taskID);
+            Google.Apis.Tasks.v1.TasksResource.GetRequest getRequest = tasksService.Tasks.Get(requiredTaskListId, requiredTaskId);
             getRequest.Fields = TASK_FIELDS;
             GoogleTask googleTask = await getRequest.ExecuteAsync(cancellationToken);
-            latestTask = createTaskItem(taskListID, googleTask);
+            latestTask = createTaskItem(taskListId, googleTask);
             if (getCompletionState(latestTask) == expectedCompletionState)
             {
                 return latestTask;
@@ -53,28 +61,28 @@ public sealed partial class GoogleTasksTodoService
         return completionState == ETodoTaskCompletionState.Completed ? TASK_STATUS_COMPLETED : TASK_STATUS_NEEDS_ACTION;
     }
 
-    private TodoTaskItem createTaskItem(string taskListID, GoogleTask googleTask)
+    private TodoTaskItem createTaskItem(TodoTaskListId taskListId, GoogleTask googleTask)
     {
         TodoTaskItem item = new TodoTaskItem();
-        item.ID = getNullAsEmpty(googleTask.Id);
-        item.TaskListID = taskListID;
-        item.Title = getNullAsEmpty(googleTask.Title);
-        item.Position = getNullAsEmpty(googleTask.Position);
+        item.Id = getTextOrEmpty(googleTask.Id);
+        item.TaskListId = taskListId.GetRequiredValue();
+        item.Title = getTextOrEmpty(googleTask.Title);
+        item.Position = getTextOrEmpty(googleTask.Position);
         item.IsCompleted = googleTask.Status == TASK_STATUS_COMPLETED;
         item.UpdatedAt = parseGoogleDateTime(googleTask.Updated);
         item.CompletedAt = parseGoogleDateTime(googleTask.Completed);
         return item;
     }
 
-    private DateTimeOffset? parseGoogleDateTime(string? valueOrNull)
+    private DateTimeOffset? parseGoogleDateTime(string? dateTimeTextOrNull)
     {
-        if (string.IsNullOrWhiteSpace(valueOrNull))
+        if (string.IsNullOrWhiteSpace(dateTimeTextOrNull))
         {
             return null;
         }
 
         DateTimeOffset parsedValue;
-        bool isParsed = DateTimeOffset.TryParse(valueOrNull, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out parsedValue);
+        bool isParsed = DateTimeOffset.TryParse(dateTimeTextOrNull, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out parsedValue);
         if (isParsed == false)
         {
             return null;
@@ -83,13 +91,13 @@ public sealed partial class GoogleTasksTodoService
         return parsedValue;
     }
 
-    private string getNullAsEmpty(string? valueOrNull)
+    private string getTextOrEmpty(string? textOrNull)
     {
-        if (valueOrNull == null)
+        if (textOrNull == null)
         {
             return string.Empty;
         }
 
-        return valueOrNull;
+        return textOrNull;
     }
 }

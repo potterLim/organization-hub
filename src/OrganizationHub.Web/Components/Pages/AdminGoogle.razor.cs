@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -25,12 +26,12 @@ public partial class AdminGoogle
     private List<GoogleTaskListAssignmentOption> mTaskListAssignmentOptions = new List<GoogleTaskListAssignmentOption>();
     private List<GoogleDriveFolderPathItem> mFolderPath = new List<GoogleDriveFolderPathItem>();
     private List<GoogleHealthCheckItem> mHealthItems = new List<GoogleHealthCheckItem>();
-    private string mSelectedFolderTargetKey = string.Empty;
-    private string mSelectedCalendarTargetKey = string.Empty;
-    private string mSelectedTaskListTargetKey = string.Empty;
+    private GoogleWorkspaceAssignmentTargetKey mSelectedFolderTargetKey;
+    private GoogleWorkspaceAssignmentTargetKey mSelectedCalendarTargetKey;
+    private GoogleWorkspaceAssignmentTargetKey mSelectedTaskListTargetKey;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
-    private bool mShowHealthyHealthItems;
+    private bool mShouldShowHealthyHealthItems;
     private bool mIsEnsuringStandardDriveFolders;
     private bool mIsEnsuringStandardCalendars;
     private bool mIsApplyingStandardDriveFolderNames;
@@ -85,8 +86,8 @@ public partial class AdminGoogle
 
     private async Task disconnectGoogleAsync()
     {
-        ServiceResult result = await GoogleConnectionService.DisconnectAsync(CancellationToken.None);
-        showResult(result, "Google 계정 연결이 해제되었습니다.");
+        ServiceResult disconnectResult = await GoogleConnectionService.DisconnectAsync(CancellationToken.None);
+        showOperationResult(disconnectResult, "Google 계정 연결이 해제되었습니다.");
         await loadStatusAsync();
         mFolders = new List<GoogleDriveFolderItem>();
         mCalendars = new List<GoogleCalendarListItem>();

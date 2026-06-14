@@ -1,0 +1,42 @@
+<MudPaper Class="hub-card hub-list-card pa-4">
+    <div class="hub-admin-section-heading">
+        <div>
+            <MudText Typo="Typo.h6">현재 연결 요약</MudText>
+            <div class="hub-muted">운영 화면에서 실제로 사용할 연결 항목입니다.</div>
+        </div>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => RefreshRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Refresh" Disabled="IsRefreshing">새로고침</MudButton>
+    </div>
+    <div class="hub-resource-summary-grid">
+        @foreach (SettingResourceSummary summary in ResourceSummaries)
+        {
+            <div class="hub-resource-summary-card">
+                <div class="hub-resource-summary-heading">
+                    <span>@summary.GroupName</span>
+                    <span class="@(summary.IsConfigured ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(summary.IsConfigured ? "연결됨" : "미설정")</span>
+                </div>
+                <div class="hub-resource-summary-title">@summary.DisplayName</div>
+                <div class="hub-muted">@summary.Detail</div>
+            </div>
+        }
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<SettingResourceSummary> ResourceSummaries
+    {
+        get; set;
+    } = new List<SettingResourceSummary>();
+
+    [Parameter]
+    public bool IsRefreshing
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback RefreshRequested
+    {
+        get; set;
+    }
+}

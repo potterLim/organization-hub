@@ -26,7 +26,7 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
             bool hasConfiguredPosition = await dbContext.UserAccounts
                 .Include(userAccount => userAccount.Position)
                 .AnyAsync(userAccount =>
-                    userAccount.ID == userSession.UserID &&
+                    userAccount.Id == userSession.UserId &&
                     userAccount.IsActive &&
                     userAccount.Position != null &&
                     userAccount.Position.IsActive,
@@ -35,18 +35,34 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         }
     }
 
-    public async Task<bool> HasPermissionAsync(UserSession userSession, PermissionKey permissionKey, int? targetTeamIDOrNull, CancellationToken cancellationToken)
+    public async Task<bool> HasPermissionAsync(
+        UserSession userSession,
+        PermissionKey permissionKey,
+        OrganizationTeamId? targetTeamIdOrNull,
+        CancellationToken cancellationToken
+    )
     {
-        PermissionDecision decision = await DecidePermissionAsync(userSession, permissionKey, targetTeamIDOrNull, cancellationToken);
+        PermissionDecision decision = await DecidePermissionAsync(userSession, permissionKey, targetTeamIdOrNull, cancellationToken);
         return decision.IsAllowed;
     }
 
-    public async Task<PermissionDecision> DecidePermissionAsync(UserSession userSession, PermissionKey permissionKey, int? targetTeamIDOrNull, CancellationToken cancellationToken)
+    public async Task<PermissionDecision> DecidePermissionAsync(
+        UserSession userSession,
+        PermissionKey permissionKey,
+        OrganizationTeamId? targetTeamIdOrNull,
+        CancellationToken cancellationToken
+    )
     {
-        return await DecidePermissionAsync(userSession, permissionKey, targetTeamIDOrNull, null, cancellationToken);
+        return await DecidePermissionAsync(userSession, permissionKey, targetTeamIdOrNull, null, cancellationToken);
     }
 
-    public async Task<PermissionDecision> DecidePermissionAsync(UserSession userSession, PermissionKey permissionKey, int? targetTeamIDOrNull, int? ownerUserIDOrNull, CancellationToken cancellationToken)
+    public async Task<PermissionDecision> DecidePermissionAsync(
+        UserSession userSession,
+        PermissionKey permissionKey,
+        OrganizationTeamId? targetTeamIdOrNull,
+        UserAccountId? ownerUserIdOrNull,
+        CancellationToken cancellationToken
+    )
     {
         if (PermissionCatalog.GetDefinitions().Any(definition => definition.Key == permissionKey.Value) == false)
         {
@@ -81,7 +97,7 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
                 .ToList();
             foreach (PositionPermissionGrant permissionGrant in permissionGrants)
             {
-                bool isAllowed = isGrantAllowed(permissionGrant, userAccountOrNull, targetTeamIDOrNull, ownerUserIDOrNull);
+                bool isAllowed = isGrantAllowed(permissionGrant, userAccountOrNull, targetTeamIdOrNull, ownerUserIdOrNull);
                 if (isAllowed)
                 {
                     return PermissionDecision.Allow(getScopeLabel(permissionGrant, userAccountOrNull));
@@ -92,18 +108,22 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         }
     }
 
-    private static async Task<UserAccount?> loadActiveUserAccountOrNullAsync(OrganizationHubDbContext dbContext, UserSession userSession, CancellationToken cancellationToken)
+    private static async Task<UserAccount?> loadActiveUserAccountOrNullAsync(
+        OrganizationHubDbContext dbContext,
+        UserSession userSession,
+        CancellationToken cancellationToken
+    )
     {
         UserAccount? userAccountOrNull = await dbContext.UserAccounts
             .Include(userAccount => userAccount.Position)
-            .FirstOrDefaultAsync(userAccount => userAccount.ID == userSession.UserID && userAccount.IsActive, cancellationToken);
-        if (userAccountOrNull == null || userAccountOrNull.PositionID.HasValue == false)
+            .FirstOrDefaultAsync(userAccount => userAccount.Id == userSession.UserId && userAccount.IsActive, cancellationToken);
+        if (userAccountOrNull == null || userAccountOrNull.PositionId.HasValue == false)
         {
             return userAccountOrNull;
         }
 
         await dbContext.PositionPermissionGrants
-            .Where(permissionGrant => permissionGrant.PositionID == userAccountOrNull.PositionID.Value)
+            .Where(permissionGrant => permissionGrant.PositionId == userAccountOrNull.PositionId.Value)
             .LoadAsync(cancellationToken);
 
         return userAccountOrNull;
@@ -119,43 +139,50 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         return PermissionDecision.Deny("사용자에게 직책이 배정되지 않았습니다.", permissionKey.Value);
     }
 
-    private bool isGrantAllowed(PositionPermissionGrant permissionGrant, UserAccount userAccount, int? targetTeamIDOrNull, int? ownerUserIDOrNull)
+    private bool isGrantAllowed(
+        PositionPermissionGrant permissionGrant,
+        UserAccount userAccount,
+        OrganizationTeamId? targetTeamIdOrNull,
+        UserAccountId? ownerUserIdOrNull
+    )
     {
         switch (permissionGrant.ScopeType)
         {
             case EPermissionScopeType.Global:
                 return true;
             case EPermissionScopeType.OwnTeam:
-                return isOwnTeamTarget(userAccount, targetTeamIDOrNull);
+                return isOwnTeamTarget(userAccount, targetTeamIdOrNull);
             case EPermissionScopeType.OwnTeamAndChildren:
-                return isOwnTeamTarget(userAccount, targetTeamIDOrNull);
+                return isOwnTeamTarget(userAccount, targetTeamIdOrNull);
             case EPermissionScopeType.SelectedTeam:
-                return isSelectedTeamTarget(permissionGrant, targetTeamIDOrNull);
+                return isSelectedTeamTarget(permissionGrant, targetTeamIdOrNull);
             case EPermissionScopeType.OwnCreated:
-                return ownerUserIDOrNull.HasValue && ownerUserIDOrNull.Value == userAccount.ID;
+                return UserAccountId.GetValueOrNull(ownerUserIdOrNull) == userAccount.Id;
             default:
                 return false;
         }
     }
 
-    private bool isOwnTeamTarget(UserAccount userAccount, int? targetTeamIDOrNull)
+    private bool isOwnTeamTarget(UserAccount userAccount, OrganizationTeamId? targetTeamIdOrNull)
     {
-        if (userAccount.TeamID.HasValue == false)
+        int? targetTeamIdValueOrNull = OrganizationTeamId.GetValueOrNull(targetTeamIdOrNull);
+        if (userAccount.TeamId.HasValue == false || targetTeamIdValueOrNull.HasValue == false)
         {
             return false;
         }
 
-        return targetTeamIDOrNull.HasValue && targetTeamIDOrNull.Value == userAccount.TeamID.Value;
+        return targetTeamIdValueOrNull == userAccount.TeamId;
     }
 
-    private bool isSelectedTeamTarget(PositionPermissionGrant permissionGrant, int? targetTeamIDOrNull)
+    private bool isSelectedTeamTarget(PositionPermissionGrant permissionGrant, OrganizationTeamId? targetTeamIdOrNull)
     {
-        if (permissionGrant.TargetTeamID.HasValue == false || targetTeamIDOrNull.HasValue == false)
+        int? targetTeamIdValueOrNull = OrganizationTeamId.GetValueOrNull(targetTeamIdOrNull);
+        if (permissionGrant.TargetTeamId.HasValue == false || targetTeamIdValueOrNull.HasValue == false)
         {
             return false;
         }
 
-        return permissionGrant.TargetTeamID.Value == targetTeamIDOrNull.Value;
+        return permissionGrant.TargetTeamId == targetTeamIdValueOrNull;
     }
 
     private string getScopeLabel(PositionPermissionGrant permissionGrant, UserAccount userAccount)

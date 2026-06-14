@@ -4,13 +4,13 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class TodoTaskMetadata
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
-    public string TaskListID { get; set; } = string.Empty;
-    public string TaskID { get; set; } = string.Empty;
-    public int CreatedByUserID
+    public string TaskListId { get; set; } = string.Empty;
+    public string TaskId { get; set; } = string.Empty;
+    public int CreatedByUserId
     {
         get; set;
     }

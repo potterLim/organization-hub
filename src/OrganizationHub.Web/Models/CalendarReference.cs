@@ -4,23 +4,25 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class CalendarReference
 {
-    public string CalendarID { get; private init; } = string.Empty;
+    public CalendarId CalendarId
+    {
+        get; private init;
+    }
     public string DisplayName { get; private init; } = string.Empty;
     public ECalendarViewKind ViewKind
     {
         get; private init;
     }
-    public int? TeamID
+    public OrganizationTeamId? TeamIdOrNull
     {
         get; private init;
     }
 
-    public CalendarReference(string calendarID, string displayName, ECalendarViewKind viewKind, int? teamID)
+    public CalendarReference(CalendarId calendarId, string displayName, ECalendarViewKind viewKind, OrganizationTeamId? teamIdOrNull)
     {
-        CalendarID = calendarID;
+        CalendarId = calendarId;
         DisplayName = displayName;
         ViewKind = viewKind;
-        TeamID = teamID;
+        TeamIdOrNull = teamIdOrNull;
     }
 }
-

@@ -1,16 +1,16 @@
 interface DotNetTodoBoardReference {
-    invokeMethodAsync(methodName: string, sourceTaskID: string, targetTaskID: string): Promise<void>;
+    invokeMethodAsync(methodName: string, sourceTaskId: string, targetTaskId: string): Promise<void>;
 }
 
 interface TodoBoardState {
     abortController: AbortController;
     draggedRowHeight: number;
-    draggedTaskID: string;
+    draggedTaskId: string;
     dropAfter: boolean;
-    dropTargetTaskID: string;
+    dropTargetTaskId: string;
     isPointerDragging: boolean;
     placeholderElement: HTMLElement | null;
-    pointerID: number;
+    pointerId: number;
     previewElement: HTMLElement | null;
     previewOffsetX: number;
     previewOffsetY: number;
@@ -32,7 +32,7 @@ function isValidTodoContainer(containerElement: HTMLElement | null | undefined):
     return containerElement instanceof HTMLElement;
 }
 
-function getTaskID(element: Element | null): string {
+function getTaskId(element: Element | null): string {
     if (element === null) {
         return "";
     }
@@ -42,8 +42,8 @@ function getTaskID(element: Element | null): string {
         return "";
     }
 
-    const taskID: string | undefined = taskElement.dataset.taskId;
-    return taskID ?? "";
+    const taskId: string | undefined = taskElement.dataset.taskId;
+    return taskId ?? "";
 }
 
 function getTaskRow(element: Element | null): HTMLElement | null {
@@ -80,20 +80,20 @@ function shouldPlaceAfterByPosition(event: MouseEvent, targetRow: HTMLElement): 
     return event.clientY >= targetRect.top + targetRect.height / 2;
 }
 
-function shouldPlaceAfterByRowOrder(containerElement: HTMLElement, sourceTaskID: string, targetRow: HTMLElement): boolean {
+function shouldPlaceAfterByRowOrder(containerElement: HTMLElement, sourceTaskId: string, targetRow: HTMLElement): boolean {
     const rows: HTMLElement[] = Array.from(containerElement.querySelectorAll<HTMLElement>(".hub-todo-row"));
-    const sourceIndex: number = rows.findIndex((row: HTMLElement) => getTaskID(row) === sourceTaskID);
+    const sourceIndex: number = rows.findIndex((row: HTMLElement) => getTaskId(row) === sourceTaskId);
     const targetIndex: number = rows.indexOf(targetRow);
     return sourceIndex >= 0 && targetIndex >= 0 && sourceIndex < targetIndex;
 }
 
-function shouldPlaceAfter(event: MouseEvent, containerElement: HTMLElement, sourceTaskID: string, targetRow: HTMLElement): boolean {
+function shouldPlaceAfter(event: MouseEvent, containerElement: HTMLElement, sourceTaskId: string, targetRow: HTMLElement): boolean {
     const positionResult: boolean | null = shouldPlaceAfterByPosition(event, targetRow);
     if (positionResult !== null) {
         return positionResult;
     }
 
-    return shouldPlaceAfterByRowOrder(containerElement, sourceTaskID, targetRow);
+    return shouldPlaceAfterByRowOrder(containerElement, sourceTaskId, targetRow);
 }
 
 function clearDraggingRows(containerElement: HTMLElement): void {
@@ -126,13 +126,13 @@ function isPointerInsideSourceColumn(state: TodoBoardState, event: DragEvent | P
     return event.clientX >= sourceRect.left && event.clientX <= sourceRect.right && event.clientY >= sourceRect.top && event.clientY <= sourceRect.bottom;
 }
 
-function getDropPlacement(state: TodoBoardState, sourceTaskID: string, clientY: number): TodoDropPlacement | null {
+function getDropPlacement(state: TodoBoardState, sourceTaskId: string, clientY: number): TodoDropPlacement | null {
     if (state.sourceListElement === null) {
         return null;
     }
 
     const sourceListElement: HTMLElement = state.sourceListElement;
-    const rows: HTMLElement[] = Array.from(sourceListElement.querySelectorAll<HTMLElement>(".hub-todo-row")).filter((row: HTMLElement) => getTaskID(row) !== sourceTaskID);
+    const rows: HTMLElement[] = Array.from(sourceListElement.querySelectorAll<HTMLElement>(".hub-todo-row")).filter((row: HTMLElement) => getTaskId(row) !== sourceTaskId);
     if (rows.length === 0) {
         return null;
     }
@@ -147,9 +147,9 @@ function getDropPlacement(state: TodoBoardState, sourceTaskID: string, clientY: 
     return { dropAfter: true, targetRow: rows[rows.length - 1] };
 }
 
-function getSourceRow(containerElement: HTMLElement, sourceTaskID: string): HTMLElement | null {
+function getSourceRow(containerElement: HTMLElement, sourceTaskId: string): HTMLElement | null {
     const rows: HTMLElement[] = Array.from(containerElement.querySelectorAll<HTMLElement>(".hub-todo-row"));
-    return rows.find((row: HTMLElement) => getTaskID(row) === sourceTaskID) ?? null;
+    return rows.find((row: HTMLElement) => getTaskId(row) === sourceTaskId) ?? null;
 }
 
 function removeDragPreview(state: TodoBoardState): void {
@@ -206,7 +206,7 @@ function getPointerDistance(state: TodoBoardState, event: PointerEvent): number 
 }
 
 function beginPointerDrag(containerElement: HTMLElement, state: TodoBoardState, event: PointerEvent): boolean {
-    const sourceRow: HTMLElement | null = getSourceRow(containerElement, state.draggedTaskID);
+    const sourceRow: HTMLElement | null = getSourceRow(containerElement, state.draggedTaskId);
     if (sourceRow === null) {
         return false;
     }
@@ -228,26 +228,26 @@ function applyDropTarget(containerElement: HTMLElement, state: TodoBoardState, e
     removeDropPlaceholder(state);
     if (state.sourceListElement === null || isPointerInsideSourceColumn(state, event) == false) {
         clearDropTargets(containerElement);
-        state.dropTargetTaskID = "";
+        state.dropTargetTaskId = "";
         return;
     }
 
-    const placementOrNull: TodoDropPlacement | null = getDropPlacement(state, state.draggedTaskID, event.clientY);
+    const placementOrNull: TodoDropPlacement | null = getDropPlacement(state, state.draggedTaskId, event.clientY);
     if (placementOrNull === null) {
         return;
     }
 
     const targetRow: HTMLElement = placementOrNull.targetRow;
-    const targetTaskID: string = getTaskID(targetRow);
-    if (targetTaskID.length === 0 || targetTaskID === state.draggedTaskID) {
+    const targetTaskId: string = getTaskId(targetRow);
+    if (targetTaskId.length === 0 || targetTaskId === state.draggedTaskId) {
         return;
     }
 
     clearDropTargets(containerElement);
-    state.dropTargetTaskID = targetTaskID;
+    state.dropTargetTaskId = targetTaskId;
     state.dropAfter = placementOrNull.dropAfter;
     targetRow.classList.add("hub-todo-row-drop-target");
-    const placeholderElement: HTMLElement = createDropPlaceholder(state, getSourceRow(containerElement, state.draggedTaskID));
+    const placeholderElement: HTMLElement = createDropPlaceholder(state, getSourceRow(containerElement, state.draggedTaskId));
     if (state.dropAfter) {
         targetRow.classList.add("hub-todo-row-drop-after");
         targetRow.insertAdjacentElement("afterend", placeholderElement);
@@ -258,12 +258,12 @@ function applyDropTarget(containerElement: HTMLElement, state: TodoBoardState, e
 }
 
 function resetPointerDragState(containerElement: HTMLElement, state: TodoBoardState): void {
-    state.draggedTaskID = "";
+    state.draggedTaskId = "";
     state.draggedRowHeight = 0;
     state.dropAfter = false;
-    state.dropTargetTaskID = "";
+    state.dropTargetTaskId = "";
     state.isPointerDragging = false;
-    state.pointerID = -1;
+    state.pointerId = -1;
     state.sourceColumnElement = null;
     state.sourceListElement = null;
     state.startX = 0;
@@ -282,7 +282,7 @@ export function initializeTodoSortable(containerElement: HTMLElement | null | un
     disposeTodoSortable(containerElement);
 
     const abortController: AbortController = new AbortController();
-    const state: TodoBoardState = { abortController: abortController, draggedRowHeight: 0, draggedTaskID: "", dropAfter: false, dropTargetTaskID: "", isPointerDragging: false, placeholderElement: null, pointerID: -1, previewElement: null, previewOffsetX: 0, previewOffsetY: 0, sourceColumnElement: null, sourceListElement: null, startX: 0, startY: 0 };
+    const state: TodoBoardState = { abortController: abortController, draggedRowHeight: 0, draggedTaskId: "", dropAfter: false, dropTargetTaskId: "", isPointerDragging: false, placeholderElement: null, pointerId: -1, previewElement: null, previewOffsetX: 0, previewOffsetY: 0, sourceColumnElement: null, sourceListElement: null, startX: 0, startY: 0 };
     const signal: AbortSignal = abortController.signal;
 
     containerElement.addEventListener("pointerdown", (event: PointerEvent) => {
@@ -295,13 +295,13 @@ export function initializeTodoSortable(containerElement: HTMLElement | null | un
             return;
         }
 
-        const taskID: string = getTaskID(handleElement);
-        if (taskID.length === 0) {
+        const taskId: string = getTaskId(handleElement);
+        if (taskId.length === 0) {
             return;
         }
 
-        state.draggedTaskID = taskID;
-        state.pointerID = event.pointerId;
+        state.draggedTaskId = taskId;
+        state.pointerId = event.pointerId;
         state.startX = event.clientX;
         state.startY = event.clientY;
         handleElement.setPointerCapture(event.pointerId);
@@ -310,7 +310,7 @@ export function initializeTodoSortable(containerElement: HTMLElement | null | un
     }, { signal: signal });
 
     containerElement.addEventListener("pointermove", (event: PointerEvent) => {
-        if (state.pointerID !== event.pointerId || state.draggedTaskID.length === 0) {
+        if (state.pointerId !== event.pointerId || state.draggedTaskId.length === 0) {
             return;
         }
 
@@ -331,7 +331,7 @@ export function initializeTodoSortable(containerElement: HTMLElement | null | un
     }, { signal: signal });
 
     containerElement.addEventListener("pointerup", async (event: PointerEvent) => {
-        if (state.pointerID !== event.pointerId || state.draggedTaskID.length === 0) {
+        if (state.pointerId !== event.pointerId || state.draggedTaskId.length === 0) {
             return;
         }
 
@@ -340,39 +340,39 @@ export function initializeTodoSortable(containerElement: HTMLElement | null | un
             return;
         }
 
-        const sourceTaskID: string = state.draggedTaskID;
+        const sourceTaskId: string = state.draggedTaskId;
         const targetRow: HTMLElement | null = getPointerTargetRow(event);
-        let targetTaskID: string = state.dropTargetTaskID;
+        let targetTaskId: string = state.dropTargetTaskId;
         let shouldMoveAfter: boolean = state.dropAfter;
-        if (targetTaskID.length === 0 && state.sourceListElement !== null && isPointerInsideSourceColumn(state, event)) {
-            const placementOrNull: TodoDropPlacement | null = getDropPlacement(state, sourceTaskID, event.clientY);
+        if (targetTaskId.length === 0 && state.sourceListElement !== null && isPointerInsideSourceColumn(state, event)) {
+            const placementOrNull: TodoDropPlacement | null = getDropPlacement(state, sourceTaskId, event.clientY);
             if (placementOrNull !== null) {
-                targetTaskID = getTaskID(placementOrNull.targetRow);
+                targetTaskId = getTaskId(placementOrNull.targetRow);
                 shouldMoveAfter = placementOrNull.dropAfter;
             }
             else if (targetRow !== null) {
-                targetTaskID = getTaskID(targetRow);
-                shouldMoveAfter = shouldPlaceAfter(event, containerElement, sourceTaskID, targetRow);
+                targetTaskId = getTaskId(targetRow);
+                shouldMoveAfter = shouldPlaceAfter(event, containerElement, sourceTaskId, targetRow);
             }
         }
 
-        if (targetTaskID.length === 0) {
+        if (targetTaskId.length === 0) {
             resetPointerDragState(containerElement, state);
             return;
         }
 
         resetPointerDragState(containerElement, state);
-        if (targetTaskID.length === 0 || sourceTaskID === targetTaskID) {
+        if (targetTaskId.length === 0 || sourceTaskId === targetTaskId) {
             return;
         }
 
         const methodName: string = shouldMoveAfter ? "MoveTaskAfterFromScript" : "MoveTaskBeforeFromScript";
-        await dotNetReference.invokeMethodAsync(methodName, sourceTaskID, targetTaskID);
+        await dotNetReference.invokeMethodAsync(methodName, sourceTaskId, targetTaskId);
         event.preventDefault();
     }, { signal: signal });
 
     containerElement.addEventListener("pointercancel", (event: PointerEvent) => {
-        if (state.pointerID !== event.pointerId) {
+        if (state.pointerId !== event.pointerId) {
             return;
         }
 
@@ -386,13 +386,13 @@ export function initializeTodoSortable(containerElement: HTMLElement | null | un
             return;
         }
 
-        const taskID: string = getTaskID(handleElement);
-        if (taskID.length === 0) {
+        const taskId: string = getTaskId(handleElement);
+        if (taskId.length === 0) {
             event.preventDefault();
             return;
         }
 
-        state.draggedTaskID = taskID;
+        state.draggedTaskId = taskId;
         const taskRow: HTMLElement | null = getTaskRow(handleElement);
         if (taskRow !== null) {
             state.sourceColumnElement = getSourceColumn(taskRow);
@@ -402,7 +402,7 @@ export function initializeTodoSortable(containerElement: HTMLElement | null | un
         }
 
         event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/plain", taskID);
+        event.dataTransfer.setData("text/plain", taskId);
     }, { signal: signal });
 
     containerElement.addEventListener("dragover", (event: DragEvent) => {
@@ -411,8 +411,8 @@ export function initializeTodoSortable(containerElement: HTMLElement | null | un
             return;
         }
 
-        const targetTaskID: string = getTaskID(targetRow);
-        if (targetTaskID.length === 0 || targetTaskID === state.draggedTaskID) {
+        const targetTaskId: string = getTaskId(targetRow);
+        if (targetTaskId.length === 0 || targetTaskId === state.draggedTaskId) {
             return;
         }
 
@@ -426,24 +426,24 @@ export function initializeTodoSortable(containerElement: HTMLElement | null | un
             return;
         }
 
-        const sourceTaskID: string = event.dataTransfer.getData("text/plain") || state.draggedTaskID;
-        const placementOrNull: TodoDropPlacement | null = state.sourceListElement !== null && isPointerInsideSourceColumn(state, event) ? getDropPlacement(state, sourceTaskID, event.clientY) : null;
-        if (state.dropTargetTaskID.length === 0 && placementOrNull === null) {
+        const sourceTaskId: string = event.dataTransfer.getData("text/plain") || state.draggedTaskId;
+        const placementOrNull: TodoDropPlacement | null = state.sourceListElement !== null && isPointerInsideSourceColumn(state, event) ? getDropPlacement(state, sourceTaskId, event.clientY) : null;
+        if (state.dropTargetTaskId.length === 0 && placementOrNull === null) {
             resetPointerDragState(containerElement, state);
             return;
         }
 
-        const targetTaskID: string = state.dropTargetTaskID.length > 0 ? state.dropTargetTaskID : placementOrNull !== null ? getTaskID(placementOrNull.targetRow) : getTaskID(targetRow);
-        const shouldMoveAfter: boolean = state.dropTargetTaskID.length > 0 ? state.dropAfter : placementOrNull !== null ? placementOrNull.dropAfter : shouldPlaceAfter(event, containerElement, sourceTaskID, targetRow);
+        const targetTaskId: string = state.dropTargetTaskId.length > 0 ? state.dropTargetTaskId : placementOrNull !== null ? getTaskId(placementOrNull.targetRow) : getTaskId(targetRow);
+        const shouldMoveAfter: boolean = state.dropTargetTaskId.length > 0 ? state.dropAfter : placementOrNull !== null ? placementOrNull.dropAfter : shouldPlaceAfter(event, containerElement, sourceTaskId, targetRow);
         resetPointerDragState(containerElement, state);
 
-        if (sourceTaskID.length === 0 || targetTaskID.length === 0 || sourceTaskID === targetTaskID) {
+        if (sourceTaskId.length === 0 || targetTaskId.length === 0 || sourceTaskId === targetTaskId) {
             return;
         }
 
         event.preventDefault();
         const methodName: string = shouldMoveAfter ? "MoveTaskAfterFromScript" : "MoveTaskBeforeFromScript";
-        await dotNetReference.invokeMethodAsync(methodName, sourceTaskID, targetTaskID);
+        await dotNetReference.invokeMethodAsync(methodName, sourceTaskId, targetTaskId);
     }, { signal: signal });
 
     containerElement.addEventListener("dragend", () => {

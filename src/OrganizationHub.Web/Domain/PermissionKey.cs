@@ -9,14 +9,14 @@ public readonly record struct PermissionKey
         get;
     }
 
-    public PermissionKey(string value)
+    public PermissionKey(string permissionKey)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrWhiteSpace(permissionKey))
         {
-            throw new ArgumentException("Permission key is required.", nameof(value));
+            throw new ArgumentException("Permission key is required.", nameof(permissionKey));
         }
 
-        Value = value.Trim();
+        Value = permissionKey.Trim();
     }
 
     public override string ToString()

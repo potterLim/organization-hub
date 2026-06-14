@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -13,52 +12,64 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleTasksTodoService
 {
-    private async Task<IReadOnlyList<TodoTaskListReference>> getTaskListsAsync(UserSession userSession, ETodoTaskListAccessMode accessMode, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<TodoTaskListReference>> getTaskListsAsync(
+        UserSession userSession,
+        ETodoTaskListAccessMode accessMode,
+        CancellationToken cancellationToken)
     {
         List<TodoTaskListReference> taskLists = new List<TodoTaskListReference>();
-        bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSession, cancellationToken);
+        EPermissionConfigurationMode configurationMode = await getTaskPermissionConfigurationModeAsync(userSession, cancellationToken);
+        TodoTaskListAccessContext accessContext = new TodoTaskListAccessContext(userSession, accessMode, configurationMode);
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.ID).FirstOrDefaultAsync(cancellationToken);
+            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
             if (settingOrNull != null)
             {
-                await addGlobalTaskListsAsync(taskLists, settingOrNull, userSession, accessMode, usesConfiguredPermissions, cancellationToken);
+                await addGlobalTaskListsAsync(taskLists, settingOrNull, accessContext, cancellationToken);
             }
 
-            IQueryable<Team> teamQuery = dbContext.Teams.Where(team => team.IsActive && team.TaskListID != null && team.TaskListID != string.Empty).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName);
-            if (usesConfiguredPermissions == false && accessMode == ETodoTaskListAccessMode.Writable && UserPermissionPolicy.CanWriteAnyTeamWork(userSession.Role) == false)
+            IQueryable<Team> teamQuery = dbContext.Teams
+                .Where(team => team.IsActive && team.TaskListId != null && team.TaskListId != string.Empty)
+                .OrderBy(team => team.SortOrder)
+                .ThenBy(team => team.DisplayName);
+            bool shouldLimitWritableFallbackToOwnTeam = configurationMode == EPermissionConfigurationMode.FallbackPolicy &&
+                accessMode == ETodoTaskListAccessMode.Writable &&
+                UserPermissionPolicy.CanWriteAnyTeamWork(userSession.Role) == false;
+            if (shouldLimitWritableFallbackToOwnTeam)
             {
                 if (UserPermissionPolicy.CanWriteOwnTeamWork(userSession.Role) == false)
                 {
                     return taskLists;
                 }
 
-                if (userSession.TeamID.HasValue == false)
+                if (userSession.HasTeam == false)
                 {
                     return taskLists;
                 }
 
-                int teamID = userSession.TeamID.Value;
-                teamQuery = teamQuery.Where(team => team.ID == teamID);
+                int teamId = userSession.GetRequiredTeamIdValue();
+                teamQuery = teamQuery.Where(team => team.Id == teamId);
             }
-            else if (usesConfiguredPermissions == false && userSession.IsManagementRole() == false)
+            else if (configurationMode == EPermissionConfigurationMode.FallbackPolicy && userSession.IsManagementRole() == false)
             {
-                if (userSession.TeamID.HasValue == false)
+                if (userSession.HasTeam == false)
                 {
                     return taskLists;
                 }
 
-                int teamID = userSession.TeamID.Value;
-                teamQuery = teamQuery.Where(team => team.ID == teamID);
+                int teamId = userSession.GetRequiredTeamIdValue();
+                teamQuery = teamQuery.Where(team => team.Id == teamId);
             }
 
             List<Team> teams = await teamQuery.ToListAsync(cancellationToken);
             foreach (Team team in teams)
             {
-                bool canUseTaskList = await canUseTaskListAsync(userSession, team.ID, accessMode, usesConfiguredPermissions, canUseTeamTaskListFallback(userSession, team, accessMode), cancellationToken);
+                EPermissionFallback teamTaskListFallback = getTeamTaskListFallback(userSession, team, accessMode);
+                TodoTaskListPermissionRequest permissionRequest = new TodoTaskListPermissionRequest(accessContext, OrganizationTeamId.CreateExisting(team.Id), teamTaskListFallback);
+                bool canUseTaskList = await canUseTaskListAsync(permissionRequest, cancellationToken);
                 if (canUseTaskList)
                 {
-                    addTaskListIfConfigured(taskLists, team.TaskListID, team.DisplayName, team.ID);
+                    addTaskListIfConfigured(taskLists, team.TaskListId, team.DisplayName, OrganizationTeamId.CreateExisting(team.Id));
                 }
             }
         }
@@ -66,143 +77,197 @@ public sealed partial class GoogleTasksTodoService
         return taskLists;
     }
 
-    private async Task addGlobalTaskListsAsync(List<TodoTaskListReference> taskLists, GlobalSetting setting, UserSession userSession, ETodoTaskListAccessMode accessMode, bool usesConfiguredPermissions, CancellationToken cancellationToken)
+    private async Task addGlobalTaskListsAsync(
+        List<TodoTaskListReference> taskLists,
+        GlobalSetting setting,
+        TodoTaskListAccessContext accessContext,
+        CancellationToken cancellationToken)
     {
-        bool managementFallback = accessMode == ETodoTaskListAccessMode.Writable ? UserPermissionPolicy.CanWriteManagementWork(userSession.Role) : userSession.IsManagementRole();
-        bool canUseManagementTaskList = await canUseTaskListAsync(userSession, null, accessMode, usesConfiguredPermissions, managementFallback, cancellationToken);
+        EPermissionFallback managementFallback = getManagementTaskListFallback(accessContext.UserSession, accessContext.AccessMode);
+        TodoTaskListPermissionRequest managementRequest = new TodoTaskListPermissionRequest(accessContext, null, managementFallback);
+        bool canUseManagementTaskList = await canUseTaskListAsync(managementRequest, cancellationToken);
         if (canUseManagementTaskList)
         {
-            addTaskListIfConfigured(taskLists, setting.OrganizationTaskListID, OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME, null);
+            addTaskListIfConfigured(taskLists, setting.OrganizationTaskListId, OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME, null);
         }
 
-        bool responsibleFallback = accessMode == ETodoTaskListAccessMode.Writable ? UserPermissionPolicy.CanWriteResponsibleWork(userSession.Role) : userSession.IsManagementRole() || userSession.Role == Domain.EUserRole.TeamLeader;
-        bool canUseResponsibleTaskList = await canUseTaskListAsync(userSession, null, accessMode, usesConfiguredPermissions, responsibleFallback, cancellationToken);
+        EPermissionFallback responsibleFallback = getResponsibleTaskListFallback(accessContext.UserSession, accessContext.AccessMode);
+        TodoTaskListPermissionRequest responsibleRequest = new TodoTaskListPermissionRequest(accessContext, null, responsibleFallback);
+        bool canUseResponsibleTaskList = await canUseTaskListAsync(responsibleRequest, cancellationToken);
         if (canUseResponsibleTaskList)
         {
-            addTaskListIfConfigured(taskLists, setting.ResponsibleTaskListID, OrganizationHubWorkspaceDefaults.RESPONSIBLE_CALENDAR_NAME, null);
+            addTaskListIfConfigured(taskLists, setting.ResponsibleTaskListId, OrganizationHubWorkspaceDefaults.RESPONSIBLE_CALENDAR_NAME, null);
         }
     }
 
-    private async Task<bool> canUseTaskListAsync(UserSession userSession, int? targetTeamIDOrNull, ETodoTaskListAccessMode accessMode, bool usesConfiguredPermissions, bool fallbackPermission, CancellationToken cancellationToken)
+    private async Task<bool> canUseTaskListAsync(TodoTaskListPermissionRequest request, CancellationToken cancellationToken)
     {
-        if (usesConfiguredPermissions == false)
+        if (request.AccessContext.ConfigurationMode == EPermissionConfigurationMode.FallbackPolicy)
         {
-            return fallbackPermission;
+            return PermissionFallbackUtility.IsAllowed(request.FallbackPermission);
         }
 
-        if (accessMode != ETodoTaskListAccessMode.Writable)
+        if (request.AccessContext.AccessMode != ETodoTaskListAccessMode.Writable)
         {
-            return await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.TODOS_READ), targetTeamIDOrNull, cancellationToken);
+            return await mOrganizationPermissionService.HasPermissionAsync(request.AccessContext.UserSession, new PermissionKey(PermissionKeys.TODOS_READ), request.TargetTeamIdOrNull, cancellationToken);
         }
 
-        bool canCreate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.TODOS_CREATE), targetTeamIDOrNull, cancellationToken);
+        bool canCreate = await mOrganizationPermissionService.HasPermissionAsync(
+            request.AccessContext.UserSession,
+            new PermissionKey(PermissionKeys.TODOS_CREATE),
+            request.TargetTeamIdOrNull,
+            cancellationToken);
         if (canCreate)
         {
             return true;
         }
 
-        bool canUpdate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.TODOS_UPDATE), targetTeamIDOrNull, cancellationToken);
+        bool canUpdate = await mOrganizationPermissionService.HasPermissionAsync(
+            request.AccessContext.UserSession,
+            new PermissionKey(PermissionKeys.TODOS_UPDATE),
+            request.TargetTeamIdOrNull,
+            cancellationToken);
         if (canUpdate)
         {
             return true;
         }
 
-        return await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.TODOS_DELETE), targetTeamIDOrNull, cancellationToken);
+        return await mOrganizationPermissionService.HasPermissionAsync(request.AccessContext.UserSession, new PermissionKey(PermissionKeys.TODOS_DELETE), request.TargetTeamIdOrNull, cancellationToken);
     }
 
-    private bool canUseTeamTaskListFallback(UserSession userSession, Team team, ETodoTaskListAccessMode accessMode)
+    private EPermissionFallback getManagementTaskListFallback(UserSession userSession, ETodoTaskListAccessMode accessMode)
+    {
+        if (accessMode == ETodoTaskListAccessMode.Writable)
+        {
+            return PermissionFallbackUtility.FromDecision(UserPermissionPolicy.CanWriteManagementWork(userSession.Role));
+        }
+
+        return PermissionFallbackUtility.FromDecision(userSession.IsManagementRole());
+    }
+
+    private EPermissionFallback getResponsibleTaskListFallback(UserSession userSession, ETodoTaskListAccessMode accessMode)
+    {
+        if (accessMode == ETodoTaskListAccessMode.Writable)
+        {
+            return PermissionFallbackUtility.FromDecision(UserPermissionPolicy.CanWriteResponsibleWork(userSession.Role));
+        }
+
+        return PermissionFallbackUtility.FromDecision(userSession.IsManagementRole() || userSession.Role == EUserRole.TeamLeader);
+    }
+
+    private EPermissionFallback getTeamTaskListFallback(UserSession userSession, Team team, ETodoTaskListAccessMode accessMode)
     {
         if (accessMode == ETodoTaskListAccessMode.Writable)
         {
             if (UserPermissionPolicy.CanWriteAnyTeamWork(userSession.Role))
             {
-                return true;
+                return EPermissionFallback.Allow;
             }
 
             if (UserPermissionPolicy.CanWriteOwnTeamWork(userSession.Role) == false)
             {
-                return false;
+                return EPermissionFallback.Deny;
             }
         }
         else if (userSession.IsManagementRole())
         {
-            return true;
+            return EPermissionFallback.Allow;
         }
 
-        if (userSession.TeamID.HasValue == false)
+        if (userSession.HasTeam == false)
         {
-            return false;
+            return EPermissionFallback.Deny;
         }
 
-        return userSession.TeamID.Value == team.ID;
+        return PermissionFallbackUtility.FromDecision(userSession.GetRequiredTeamIdValue() == team.Id);
     }
 
-    private void addTaskListIfConfigured(List<TodoTaskListReference> taskLists, string? taskListIDOrNull, string displayName, int? teamID)
+    private async Task<EPermissionConfigurationMode> getTaskPermissionConfigurationModeAsync(
+        UserSession userSession,
+        CancellationToken cancellationToken
+    )
     {
-        if (string.IsNullOrWhiteSpace(taskListIDOrNull))
+        bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSession, cancellationToken);
+        if (usesConfiguredPermissions)
+        {
+            return EPermissionConfigurationMode.ConfiguredPermissions;
+        }
+
+        return EPermissionConfigurationMode.FallbackPolicy;
+    }
+
+    private void addTaskListIfConfigured(
+        List<TodoTaskListReference> taskLists,
+        string? taskListIdOrNull,
+        string displayName,
+        OrganizationTeamId? teamIdOrNull)
+    {
+        if (string.IsNullOrWhiteSpace(taskListIdOrNull))
         {
             return;
         }
 
-        bool alreadyAdded = taskLists.Any(taskList => taskList.TaskListID == taskListIDOrNull);
+        TodoTaskListId taskListId = TodoTaskListId.CreateOptional(taskListIdOrNull);
+        bool alreadyAdded = taskLists.Any(taskList => taskList.TaskListId == taskListId);
         if (alreadyAdded)
         {
             return;
         }
 
-        taskLists.Add(new TodoTaskListReference(taskListIDOrNull, displayName, teamID));
+        taskLists.Add(new TodoTaskListReference(taskListId, displayName, teamIdOrNull));
     }
 
-    private async Task ensureCanWriteTaskListAsync(UserSession userSession, string taskListID, CancellationToken cancellationToken)
+    private sealed class TodoTaskListAccessContext
     {
-        if (TodoTaskListReference.IsAggregateTaskListID(taskListID))
+        public TodoTaskListAccessContext(UserSession userSession, ETodoTaskListAccessMode accessMode, EPermissionConfigurationMode configurationMode)
         {
-            throw new InvalidOperationException("실제 할 일 목록을 선택해 주세요.");
+            UserSession = userSession;
+            AccessMode = accessMode;
+            ConfigurationMode = configurationMode;
         }
 
-        if (string.IsNullOrWhiteSpace(taskListID))
+        public UserSession UserSession
         {
-            throw new InvalidOperationException("할 일 목록을 선택해 주세요.");
+            get; private init;
         }
 
-        IReadOnlyList<TodoTaskListReference> taskLists = await getTaskListsAsync(userSession, ETodoTaskListAccessMode.Writable, cancellationToken);
-        bool canUseTaskList = taskLists.Any(taskList => taskList.TaskListID == taskListID);
-        if (canUseTaskList == false)
+        public ETodoTaskListAccessMode AccessMode
         {
-            throw new UnauthorizedAccessException("이 할 일 목록을 수정할 권한이 없습니다.");
-        }
-    }
-
-    private async Task<TodoTaskListReference> getAllowedTaskListAsync(UserSession userSession, string taskListID, ETodoTaskListAccessMode accessMode, CancellationToken cancellationToken)
-    {
-        IReadOnlyList<TodoTaskListReference> taskLists = await getTaskListsAsync(userSession, accessMode, cancellationToken);
-        TodoTaskListReference? taskListOrNull = taskLists.FirstOrDefault(taskList => taskList.TaskListID == taskListID);
-        if (taskListOrNull == null)
-        {
-            throw new UnauthorizedAccessException("이 할 일 목록에 접근할 권한이 없습니다.");
+            get; private init;
         }
 
-        return taskListOrNull;
-    }
-
-    private void validateTaskForm(TodoTaskFormModel formModel)
-    {
-        if (string.IsNullOrWhiteSpace(formModel.TaskListID))
+        public EPermissionConfigurationMode ConfigurationMode
         {
-            throw new InvalidOperationException("할 일 목록을 선택해 주세요.");
-        }
-
-        if (string.IsNullOrWhiteSpace(formModel.Title))
-        {
-            throw new InvalidOperationException("할 일을 입력해 주세요.");
+            get; private init;
         }
     }
 
-    private void validateTaskID(string taskID)
+    private sealed class TodoTaskListPermissionRequest
     {
-        if (string.IsNullOrWhiteSpace(taskID))
+        public TodoTaskListPermissionRequest(
+            TodoTaskListAccessContext accessContext,
+            OrganizationTeamId? targetTeamIdOrNull,
+            EPermissionFallback fallbackPermission
+        )
         {
-            throw new InvalidOperationException("할 일 항목을 찾을 수 없습니다.");
+            AccessContext = accessContext;
+            TargetTeamIdOrNull = targetTeamIdOrNull;
+            FallbackPermission = fallbackPermission;
+        }
+
+        public TodoTaskListAccessContext AccessContext
+        {
+            get; private init;
+        }
+
+        public OrganizationTeamId? TargetTeamIdOrNull
+        {
+            get; private init;
+        }
+
+        public EPermissionFallback FallbackPermission
+        {
+            get; private init;
         }
     }
 }

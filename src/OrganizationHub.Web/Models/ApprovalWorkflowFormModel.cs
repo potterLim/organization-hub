@@ -1,18 +1,33 @@
 using System.Collections.Generic;
+using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Models;
 
 public sealed class ApprovalWorkflowFormModel
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
+    public ApprovalWorkflowId WorkflowIdValue
+    {
+        get
+        {
+            return ApprovalWorkflowId.CreateOptional(Id);
+        }
+    }
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public int? AppliesToTeamID
+    public int? AppliesToTeamId
     {
         get; set;
+    }
+    public OrganizationTeamId? AppliesToTeamIdOrNull
+    {
+        get
+        {
+            return OrganizationTeamId.CreateExistingOrNull(AppliesToTeamId);
+        }
     }
     public int Priority
     {

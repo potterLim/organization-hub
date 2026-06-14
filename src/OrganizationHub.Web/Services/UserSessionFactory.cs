@@ -13,10 +13,10 @@ public static class UserSessionFactory
             return null;
         }
 
-        string userIDText = getClaimValue(principal, OrganizationHubClaimTypes.USER_ID);
-        int userID;
-        bool isUserIDParsed = int.TryParse(userIDText, out userID);
-        if (isUserIDParsed == false)
+        string userIdText = getClaimValue(principal, OrganizationHubClaimTypes.USER_ID);
+        int userId;
+        bool isUserIdParsed = int.TryParse(userIdText, out userId);
+        if (isUserIdParsed == false || userId <= 0)
         {
             return null;
         }
@@ -29,23 +29,14 @@ public static class UserSessionFactory
             return null;
         }
 
-        int? teamID = null;
-        string teamIDText = getClaimValue(principal, OrganizationHubClaimTypes.TEAM_ID);
-        if (string.IsNullOrWhiteSpace(teamIDText) == false)
-        {
-            int parsedTeamID;
-            bool isTeamIDParsed = int.TryParse(teamIDText, out parsedTeamID);
-            if (isTeamIDParsed)
-            {
-                teamID = parsedTeamID;
-            }
-        }
-
+        string teamIdText = getClaimValue(principal, OrganizationHubClaimTypes.TEAM_ID);
         string username = getClaimValue(principal, OrganizationHubClaimTypes.USERNAME);
         string displayName = getClaimValue(principal, OrganizationHubClaimTypes.DISPLAY_NAME);
         string teamKey = getClaimValue(principal, OrganizationHubClaimTypes.TEAM_KEY);
         string teamDisplayName = getClaimValue(principal, OrganizationHubClaimTypes.TEAM_DISPLAY_NAME);
-        return new UserSession(userID, username, displayName, role, teamID, teamKey, teamDisplayName);
+        UserAccountId userAccountId = UserAccountId.CreateExisting(userId);
+        OrganizationTeamId? organizationTeamIdOrNull = createOrganizationTeamIdOrNull(teamIdText);
+        return new UserSession(userAccountId, username, displayName, role, organizationTeamIdOrNull, new OrganizationTeamKey(teamKey), teamDisplayName);
     }
 
     private static string getClaimValue(ClaimsPrincipal principal, string claimType)
@@ -58,5 +49,21 @@ public static class UserSessionFactory
 
         return claimOrNull.Value;
     }
-}
 
+    private static OrganizationTeamId? createOrganizationTeamIdOrNull(string teamIdText)
+    {
+        if (string.IsNullOrWhiteSpace(teamIdText))
+        {
+            return null;
+        }
+
+        int teamId;
+        bool isTeamIdParsed = int.TryParse(teamIdText, out teamId);
+        if (isTeamIdParsed == false || teamId <= 0)
+        {
+            return null;
+        }
+
+        return OrganizationTeamId.CreateExisting(teamId);
+    }
+}

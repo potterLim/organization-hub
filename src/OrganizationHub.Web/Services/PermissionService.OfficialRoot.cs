@@ -14,44 +14,48 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class PermissionService
 {
-    private async Task<bool> canUseFolderInsideOfficialRootAsync(string folderID, CancellationToken cancellationToken)
+    private async Task<bool> canUseFolderInsideOfficialRootAsync(DriveFolderId folderId, CancellationToken cancellationToken)
     {
-        string officialRootFolderID = string.Empty;
+        string officialRootFolderId = string.Empty;
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.ID).FirstOrDefaultAsync(cancellationToken);
+            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
             if (settingOrNull != null)
             {
-                officialRootFolderID = getNullAsEmpty(settingOrNull.OfficialRootFolderID);
+                officialRootFolderId = getTextOrEmpty(settingOrNull.OfficialRootFolderId);
             }
         }
 
-        if (string.IsNullOrWhiteSpace(officialRootFolderID))
+        if (string.IsNullOrWhiteSpace(officialRootFolderId))
         {
             return false;
         }
 
-        if (folderID == officialRootFolderID)
+        DriveFolderId officialRootFolder = DriveFolderId.CreateOptional(officialRootFolderId);
+        if (folderId == officialRootFolder)
         {
             return true;
         }
 
-        return await isFolderInsideOfficialRootAsync(folderID, officialRootFolderID, cancellationToken);
+        return await isFolderInsideOfficialRootAsync(folderId, officialRootFolder, cancellationToken);
     }
 
-    private async Task<IReadOnlyList<DriveFolderReference>> filterFoldersInsideOfficialRootAsync(IReadOnlyList<DriveFolderReference> folders, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<DriveFolderReference>> filterFoldersInsideOfficialRootAsync(
+        IReadOnlyList<DriveFolderReference> folders,
+        CancellationToken cancellationToken
+    )
     {
-        string officialRootFolderID = string.Empty;
+        string officialRootFolderId = string.Empty;
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.ID).FirstOrDefaultAsync(cancellationToken);
+            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
             if (settingOrNull != null)
             {
-                officialRootFolderID = getNullAsEmpty(settingOrNull.OfficialRootFolderID);
+                officialRootFolderId = getTextOrEmpty(settingOrNull.OfficialRootFolderId);
             }
         }
 
-        if (string.IsNullOrWhiteSpace(officialRootFolderID))
+        if (string.IsNullOrWhiteSpace(officialRootFolderId))
         {
             return new List<DriveFolderReference>();
         }
@@ -59,7 +63,7 @@ public sealed partial class PermissionService
         List<Task<DriveFolderFilterResult>> filterTasks = new List<Task<DriveFolderFilterResult>>();
         foreach (DriveFolderReference folder in folders)
         {
-            filterTasks.Add(createDriveFolderFilterResultAsync(folder, officialRootFolderID, cancellationToken));
+            filterTasks.Add(createDriveFolderFilterResultAsync(folder, DriveFolderId.CreateOptional(officialRootFolderId), cancellationToken));
         }
 
         DriveFolderFilterResult[] filterResults = await Task.WhenAll(filterTasks);
@@ -75,42 +79,50 @@ public sealed partial class PermissionService
         return allowedFolders;
     }
 
-    private async Task<DriveFolderFilterResult> createDriveFolderFilterResultAsync(DriveFolderReference folder, string officialRootFolderID, CancellationToken cancellationToken)
+    private async Task<DriveFolderFilterResult> createDriveFolderFilterResultAsync(
+        DriveFolderReference folder,
+        DriveFolderId officialRootFolderId,
+        CancellationToken cancellationToken
+    )
     {
-        if (folder.FolderID == officialRootFolderID)
+        if (folder.FolderId == officialRootFolderId)
         {
             return new DriveFolderFilterResult(folder, EPermissionDecisionState.Allowed);
         }
 
-        bool isAllowed = await isFolderInsideOfficialRootAsync(folder.FolderID, officialRootFolderID, cancellationToken);
+        bool isAllowed = await isFolderInsideOfficialRootAsync(folder.FolderId, officialRootFolderId, cancellationToken);
         EPermissionDecisionState decisionState = isAllowed ? EPermissionDecisionState.Allowed : EPermissionDecisionState.Denied;
         return new DriveFolderFilterResult(folder, decisionState);
     }
 
-    private async Task<bool> isFolderInsideOfficialRootAsync(string folderID, string officialRootFolderID, CancellationToken cancellationToken)
+    private async Task<bool> isFolderInsideOfficialRootAsync(
+        DriveFolderId folderId,
+        DriveFolderId officialRootFolderId,
+        CancellationToken cancellationToken
+    )
     {
-        string cacheKey = "OrganizationHub:FolderInsideOfficialRoot:" + officialRootFolderID + ":" + folderID;
+        string cacheKey = "OrganizationHub:FolderInsideOfficialRoot:" + officialRootFolderId.GetRequiredValue() + ":" + folderId.GetRequiredValue();
         object? cachedValueOrNull;
         if (mMemoryCache.TryGetValue(cacheKey, out cachedValueOrNull) && cachedValueOrNull is bool cachedResult)
         {
             return cachedResult;
         }
 
-        IReadOnlySet<string> ancestorFolderIDs = await mDriveService.GetAncestorFolderIDsAsync(folderID, cancellationToken);
-        bool isInsideRoot = ancestorFolderIDs.Contains(officialRootFolderID);
+        IReadOnlySet<DriveFolderId> ancestorFolderIds = await mDriveService.GetAncestorFolderIdsAsync(DriveItemId.CreateRequired(folderId.GetRequiredValue()), cancellationToken);
+        bool isInsideRoot = ancestorFolderIds.Contains(officialRootFolderId);
         MemoryCacheEntryOptions cacheEntryOptions = new MemoryCacheEntryOptions();
         cacheEntryOptions.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
         mMemoryCache.Set(cacheKey, isInsideRoot, cacheEntryOptions);
         return isInsideRoot;
     }
 
-    private bool isInsideOfficialRoot(IReadOnlySet<string> ancestorFolderIDs, string officialRootFolderID)
+    private bool isInsideOfficialRoot(IReadOnlySet<DriveFolderId> ancestorFolderIds, DriveFolderId officialRootFolderId)
     {
-        if (string.IsNullOrWhiteSpace(officialRootFolderID))
+        if (officialRootFolderId.HasValue == false)
         {
             return false;
         }
 
-        return ancestorFolderIDs.Contains(officialRootFolderID);
+        return ancestorFolderIds.Contains(officialRootFolderId);
     }
 }

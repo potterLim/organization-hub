@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MudBlazor;
 using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -27,21 +28,21 @@ public partial class AdminSettings
     {
         IReadOnlyList<GoogleFolderAssignmentOption> folderOptions = await GoogleWorkspaceSetupService.GetFolderAssignmentOptionsAsync(CancellationToken.None);
         mFolderAssignmentOptions = folderOptions.ToList();
-        if (string.IsNullOrWhiteSpace(mSelectedFolderTargetKey) && mFolderAssignmentOptions.Count > 0)
+        if (mSelectedFolderTargetKey.HasValue == false && mFolderAssignmentOptions.Count > 0)
         {
             mSelectedFolderTargetKey = mFolderAssignmentOptions[0].TargetKey;
         }
 
         IReadOnlyList<GoogleCalendarAssignmentOption> calendarOptions = await GoogleWorkspaceSetupService.GetCalendarAssignmentOptionsAsync(CancellationToken.None);
         mCalendarAssignmentOptions = calendarOptions.ToList();
-        if (string.IsNullOrWhiteSpace(mSelectedCalendarTargetKey) && mCalendarAssignmentOptions.Count > 0)
+        if (mSelectedCalendarTargetKey.HasValue == false && mCalendarAssignmentOptions.Count > 0)
         {
             mSelectedCalendarTargetKey = mCalendarAssignmentOptions[0].TargetKey;
         }
 
         IReadOnlyList<GoogleTaskListAssignmentOption> taskListOptions = await GoogleWorkspaceSetupService.GetTaskListAssignmentOptionsAsync(CancellationToken.None);
         mTaskListAssignmentOptions = taskListOptions.ToList();
-        if (string.IsNullOrWhiteSpace(mSelectedTaskListTargetKey) && mTaskListAssignmentOptions.Count > 0)
+        if (mSelectedTaskListTargetKey.HasValue == false && mTaskListAssignmentOptions.Count > 0)
         {
             mSelectedTaskListTargetKey = mTaskListAssignmentOptions[0].TargetKey;
         }
@@ -83,7 +84,7 @@ public partial class AdminSettings
         mIsLoadingDriveItems = true;
         try
         {
-            IReadOnlyList<DriveFileItem> driveItems = await DriveService.ListFilesAsync(getCurrentFolderID(), CancellationToken.None);
+            IReadOnlyList<DriveFileItem> driveItems = await DriveService.ListFilesAsync(DriveFolderId.CreateOptional(getCurrentFolderId()), CancellationToken.None);
             mDriveItems = driveItems.ToList();
         }
         catch (Exception exception)
@@ -142,55 +143,55 @@ public partial class AdminSettings
             return;
         }
 
-        Dictionary<string, string> namesByID = new Dictionary<string, string>();
-        foreach (string driveResourceID in getConfiguredDriveResourceIDs())
+        Dictionary<string, string> namesById = new Dictionary<string, string>();
+        foreach (string driveResourceId in getConfiguredDriveResourceIds())
         {
-            if (namesByID.ContainsKey(driveResourceID))
+            if (namesById.ContainsKey(driveResourceId))
             {
                 continue;
             }
 
             try
             {
-                DriveFileMetadata? metadataOrNull = await DriveService.GetFileOrNullAsync(driveResourceID, CancellationToken.None);
+                DriveFileMetadata? metadataOrNull = await DriveService.GetFileOrNullAsync(DriveItemId.CreateOptional(driveResourceId), CancellationToken.None);
                 if (metadataOrNull == null)
                 {
-                    namesByID[driveResourceID] = "연결된 항목을 찾을 수 없음";
+                    namesById[driveResourceId] = "연결된 항목을 찾을 수 없음";
                     continue;
                 }
 
-                namesByID[driveResourceID] = metadataOrNull.Name;
+                namesById[driveResourceId] = metadataOrNull.Name;
             }
             catch
             {
-                namesByID[driveResourceID] = "이름을 확인하지 못함";
+                namesById[driveResourceId] = "이름을 확인하지 못함";
             }
         }
 
-        mDriveResourceNameByID = namesByID;
+        mDriveResourceNameById = namesById;
     }
 
     private async Task saveSettingAsync()
     {
-        ServiceResult result = await TeamManagementService.UpdateGlobalSettingAsync(mFormModel, CancellationToken.None);
-        showResult(result, "시스템 설정이 저장되었습니다.");
-        if (result.IsSuccess)
+        ServiceResult saveResult = await TeamManagementService.UpdateGlobalSettingAsync(mFormModel, CancellationToken.None);
+        showOperationResult(saveResult, "시스템 설정이 저장되었습니다.");
+        if (saveResult.IsSuccess)
         {
             await loadConfigurationAsync();
             await loadDriveResourceNamesAsync();
         }
     }
 
-    private void showResult(ServiceResult result, string successMessage)
+    private void showOperationResult(ServiceResult operationResult, string successMessage)
     {
-        if (result.IsSuccess)
+        if (operationResult.IsSuccess)
         {
             mMessage = successMessage;
             mMessageSeverity = Severity.Success;
             return;
         }
 
-        mMessage = result.ErrorMessage;
+        mMessage = operationResult.ErrorMessage;
         mMessageSeverity = Severity.Error;
     }
 }

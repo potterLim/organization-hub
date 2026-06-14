@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
@@ -14,7 +15,7 @@ public interface IGoogleWorkspaceSetupService
     Task<ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>> EnsureStandardCalendarsAsync(CancellationToken cancellationToken);
     Task<ServiceResultOfT<GoogleDriveFolderNameSyncSummary>> ApplyStandardDriveFolderNamesAsync(CancellationToken cancellationToken);
     Task<ServiceResultOfT<GoogleTaskListSetupSummary>> EnsureStandardTaskListsAsync(CancellationToken cancellationToken);
-    Task<ServiceResult> AssignFolderAsync(string targetKey, string folderID, CancellationToken cancellationToken);
-    Task<ServiceResult> AssignCalendarAsync(string targetKey, string calendarID, CancellationToken cancellationToken);
-    Task<ServiceResult> AssignTaskListAsync(string targetKey, string taskListID, CancellationToken cancellationToken);
+    Task<ServiceResult> AssignFolderAsync(GoogleWorkspaceAssignmentTargetKey targetKey, DriveFolderId folderId, CancellationToken cancellationToken);
+    Task<ServiceResult> AssignCalendarAsync(GoogleWorkspaceAssignmentTargetKey targetKey, CalendarId calendarId, CancellationToken cancellationToken);
+    Task<ServiceResult> AssignTaskListAsync(GoogleWorkspaceAssignmentTargetKey targetKey, TodoTaskListId taskListId, CancellationToken cancellationToken);
 }

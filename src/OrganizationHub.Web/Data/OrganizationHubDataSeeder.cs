@@ -20,7 +20,12 @@ public sealed partial class OrganizationHubDataSeeder
     private readonly OrganizationHubOptions mOptions;
     private readonly IWebHostEnvironment mWebHostEnvironment;
 
-    public OrganizationHubDataSeeder(IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IPasswordHashService passwordHashService, IOptions<OrganizationHubOptions> options, IWebHostEnvironment webHostEnvironment)
+    public OrganizationHubDataSeeder(
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IPasswordHashService passwordHashService,
+        IOptions<OrganizationHubOptions> options,
+        IWebHostEnvironment webHostEnvironment
+    )
     {
         mDbContextFactory = dbContextFactory;
         mPasswordHashService = passwordHashService;

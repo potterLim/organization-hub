@@ -160,14 +160,14 @@ public sealed class OrganizationHubDataSeederTests
 
     private sealed class FakePasswordHashService : IPasswordHashService
     {
-        public string HashPassword(string password)
+        public PasswordHash HashPassword(PlainPassword password)
         {
-            return "hashed:" + password;
+            return PasswordHash.CreateRequired("hashed:" + password.GetRequiredValue());
         }
 
-        public bool VerifyPassword(string password, string passwordHash)
+        public bool VerifyPassword(PlainPassword password, PasswordHash passwordHash)
         {
-            return passwordHash == "hashed:" + password;
+            return passwordHash.GetRequiredValue() == "hashed:" + password.GetRequiredValue();
         }
     }
 

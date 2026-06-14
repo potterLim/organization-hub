@@ -52,7 +52,10 @@ public sealed class PositionManagementService : IPositionManagementService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            bool hasDuplicateName = await dbContext.Positions.AnyAsync(position => position.TeamID == formModel.TeamID && position.Name == formModel.Name.Trim(), cancellationToken);
+            OrganizationTeamId teamId = formModel.TeamIdValue;
+            int requiredTeamId = teamId.GetRequiredValue();
+            string trimmedName = formModel.Name.Trim();
+            bool hasDuplicateName = await dbContext.Positions.AnyAsync(position => position.TeamId == requiredTeamId && position.Name == trimmedName, cancellationToken);
             if (hasDuplicateName)
             {
                 return ServiceResult.Fail("같은 팀에 이미 같은 이름의 직책이 있습니다.");
@@ -77,13 +80,23 @@ public sealed class PositionManagementService : IPositionManagementService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            OrganizationPosition? positionOrNull = await dbContext.Positions.Include(position => position.PermissionGrants).FirstOrDefaultAsync(position => position.ID == formModel.ID, cancellationToken);
+            OrganizationPositionId positionId = formModel.PositionIdValue;
+            OrganizationTeamId teamId = formModel.TeamIdValue;
+            int requiredPositionId = positionId.GetRequiredValue();
+            int requiredTeamId = teamId.GetRequiredValue();
+            OrganizationPosition? positionOrNull = await dbContext.Positions
+                .Include(position => position.PermissionGrants)
+                .FirstOrDefaultAsync(position => position.Id == requiredPositionId, cancellationToken);
             if (positionOrNull == null)
             {
                 return ServiceResult.Fail("직책을 찾을 수 없습니다.");
             }
 
-            bool hasDuplicateName = await dbContext.Positions.AnyAsync(position => position.ID != formModel.ID && position.TeamID == formModel.TeamID && position.Name == formModel.Name.Trim(), cancellationToken);
+            bool hasDuplicateName = await dbContext.Positions.AnyAsync(
+                position => position.Id != requiredPositionId &&
+                    position.TeamId == requiredTeamId &&
+                    position.Name == formModel.Name.Trim(),
+                cancellationToken);
             if (hasDuplicateName)
             {
                 return ServiceResult.Fail("같은 팀에 이미 같은 이름의 직책이 있습니다.");
@@ -97,21 +110,25 @@ public sealed class PositionManagementService : IPositionManagementService
         }
     }
 
-    public async Task<ServiceResult> ActivatePositionAsync(int positionID, CancellationToken cancellationToken)
+    public async Task<ServiceResult> ActivatePositionAsync(OrganizationPositionId positionId, CancellationToken cancellationToken)
     {
-        return await setPositionActivationStateAsync(positionID, EActivationState.Active, cancellationToken);
+        return await setPositionActivationStateAsync(positionId, EActivationState.Active, cancellationToken);
     }
 
-    public async Task<ServiceResult> DeactivatePositionAsync(int positionID, CancellationToken cancellationToken)
+    public async Task<ServiceResult> DeactivatePositionAsync(OrganizationPositionId positionId, CancellationToken cancellationToken)
     {
-        return await setPositionActivationStateAsync(positionID, EActivationState.Inactive, cancellationToken);
+        return await setPositionActivationStateAsync(positionId, EActivationState.Inactive, cancellationToken);
     }
 
-    private async Task<ServiceResult> setPositionActivationStateAsync(int positionID, EActivationState activationState, CancellationToken cancellationToken)
+    private async Task<ServiceResult> setPositionActivationStateAsync(
+        OrganizationPositionId positionId,
+        EActivationState activationState,
+        CancellationToken cancellationToken)
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            OrganizationPosition? positionOrNull = await dbContext.Positions.FirstOrDefaultAsync(position => position.ID == positionID, cancellationToken);
+            int requiredPositionId = positionId.GetRequiredValue();
+            OrganizationPosition? positionOrNull = await dbContext.Positions.FirstOrDefaultAsync(position => position.Id == requiredPositionId, cancellationToken);
             if (positionOrNull == null)
             {
                 return ServiceResult.Fail("직책을 찾을 수 없습니다.");
@@ -130,7 +147,8 @@ public sealed class PositionManagementService : IPositionManagementService
 
     private async Task<ServiceResult> validatePositionFormAsync(PositionFormModel formModel, CancellationToken cancellationToken)
     {
-        if (formModel.TeamID <= 0)
+        OrganizationTeamId teamId = formModel.TeamIdValue;
+        if (teamId.HasValue == false)
         {
             return ServiceResult.Fail("팀을 선택해 주세요.");
         }
@@ -140,9 +158,10 @@ public sealed class PositionManagementService : IPositionManagementService
             return ServiceResult.Fail("직책 이름을 입력해 주세요.");
         }
 
+        int requiredTeamId = teamId.GetRequiredValue();
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            bool hasTeam = await dbContext.Teams.AnyAsync(team => team.ID == formModel.TeamID && team.IsActive, cancellationToken);
+            bool hasTeam = await dbContext.Teams.AnyAsync(team => team.Id == requiredTeamId && team.IsActive, cancellationToken);
             if (hasTeam == false)
             {
                 return ServiceResult.Fail("활성 팀을 선택해 주세요.");
@@ -169,12 +188,13 @@ public sealed class PositionManagementService : IPositionManagementService
             return ServiceResult.Succeed();
         }
 
-        if (permissionKeys.Contains(grantFormModel.PermissionKey) == false)
+        PermissionKey permissionKey = grantFormModel.PermissionKeyValue;
+        if (permissionKeys.Contains(permissionKey.Value) == false)
         {
             return ServiceResult.Fail("알 수 없는 권한이 포함되어 있습니다.");
         }
 
-        if (grantFormModel.ScopeType == EPermissionScopeType.SelectedTeam && grantFormModel.TargetTeamID.HasValue == false)
+        if (grantFormModel.ScopeType == EPermissionScopeType.SelectedTeam && grantFormModel.TargetTeamIdOrNull.HasValue == false)
         {
             return ServiceResult.Fail("특정 팀 범위 권한에는 대상 팀이 필요합니다.");
         }
@@ -184,9 +204,10 @@ public sealed class PositionManagementService : IPositionManagementService
 
     private void applyPositionForm(OrganizationPosition position, PositionFormModel formModel)
     {
-        position.TeamID = formModel.TeamID;
+        OrganizationTeamId teamId = formModel.TeamIdValue;
+        position.TeamId = teamId.GetRequiredValue();
         position.Name = formModel.Name.Trim();
-        position.Description = getEmptyAsEmpty(formModel.Description);
+        position.Description = getTrimmedTextOrEmpty(formModel.Description);
         position.SortOrder = formModel.SortOrder;
         position.IsActive = formModel.IsActive;
         position.IsSystemAdministrator = formModel.IsSystemAdministrator;
@@ -203,21 +224,26 @@ public sealed class PositionManagementService : IPositionManagementService
 
             PositionPermissionGrant permissionGrant = new PositionPermissionGrant();
             permissionGrant.Position = position;
-            permissionGrant.PermissionKey = grantFormModel.PermissionKey;
+            permissionGrant.PermissionKey = grantFormModel.PermissionKeyValue.Value;
             permissionGrant.ScopeType = grantFormModel.ScopeType;
-            permissionGrant.TargetTeamID = grantFormModel.ScopeType == EPermissionScopeType.SelectedTeam ? grantFormModel.TargetTeamID : null;
+            permissionGrant.TargetTeamId = null;
+            if (grantFormModel.ScopeType == EPermissionScopeType.SelectedTeam)
+            {
+                permissionGrant.TargetTeamId = OrganizationTeamId.GetValueOrNull(grantFormModel.TargetTeamIdOrNull);
+            }
+
             permissionGrant.IsAllowed = true;
             dbContext.PositionPermissionGrants.Add(permissionGrant);
         }
     }
 
-    private string getEmptyAsEmpty(string value)
+    private string getTrimmedTextOrEmpty(string text)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrWhiteSpace(text))
         {
             return string.Empty;
         }
 
-        return value.Trim();
+        return text.Trim();
     }
 }

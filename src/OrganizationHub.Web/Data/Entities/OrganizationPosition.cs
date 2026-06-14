@@ -4,11 +4,11 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class OrganizationPosition
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
-    public int TeamID
+    public int TeamId
     {
         get; set;
     }

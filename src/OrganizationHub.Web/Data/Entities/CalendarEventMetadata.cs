@@ -4,13 +4,13 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class CalendarEventMetadata
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
-    public string CalendarID { get; set; } = string.Empty;
-    public string EventID { get; set; } = string.Empty;
-    public int CreatedByUserID
+    public string CalendarId { get; set; } = string.Empty;
+    public string EventId { get; set; } = string.Empty;
+    public int CreatedByUserId
     {
         get; set;
     }

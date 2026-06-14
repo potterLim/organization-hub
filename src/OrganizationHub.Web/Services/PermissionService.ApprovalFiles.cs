@@ -12,11 +12,12 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class PermissionService
 {
-    private async Task<bool> canReadApprovalFileAsync(UserSession userSession, string fileID, CancellationToken cancellationToken)
+    private async Task<bool> canReadApprovalFileAsync(UserSession userSession, DriveItemId fileId, CancellationToken cancellationToken)
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<ApprovalRequest> approvalRequests = await dbContext.ApprovalRequests.Include(request => request.Steps).Where(request => request.FileID == fileID || request.ApprovedFileID == fileID).ToListAsync(cancellationToken);
+            string requiredFileId = fileId.GetRequiredValue();
+            List<ApprovalRequest> approvalRequests = await dbContext.ApprovalRequests.Include(request => request.Steps).Where(request => request.FileId == requiredFileId || request.ApprovedFileId == requiredFileId).ToListAsync(cancellationToken);
             foreach (ApprovalRequest approvalRequest in approvalRequests)
             {
                 if (canReadApprovalRequestFile(userSession, approvalRequest))
@@ -36,14 +37,14 @@ public sealed partial class PermissionService
             return true;
         }
 
-        if (approvalRequest.RequesterUserID == userSession.UserID)
+        if (approvalRequest.RequesterUserId == userSession.UserId)
         {
             return true;
         }
 
         foreach (ApprovalStep step in approvalRequest.Steps)
         {
-            if (step.ApproverUserID != userSession.UserID)
+            if (step.ApproverUserId != userSession.UserId)
             {
                 continue;
             }

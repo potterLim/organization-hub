@@ -33,16 +33,16 @@ public partial class Todos
             mMessage = string.Empty;
             await InvokeAsync(StateHasChanged);
             TodoTaskFormModel formModel = new TodoTaskFormModel();
-            formModel.TaskListID = mSelectedTaskListID;
+            formModel.TaskListId = mSelectedTaskListId;
             formModel.Title = taskTitle;
             TodoTaskItem createdTask = await TodoService.CreateTaskAsync(CurrentUserSessionOrNull, formModel, CancellationToken.None);
-            removeTaskFromLocalList(optimisticTask.TaskListID, optimisticTask.ID);
+            removeTaskFromLocalList(optimisticTask.TaskListId, optimisticTask.Id);
             prependTask(createdTask);
             recordLoadedChangeSnapshot();
         }
         catch (Exception exception)
         {
-            removeTaskFromLocalList(optimisticTask.TaskListID, optimisticTask.ID);
+            removeTaskFromLocalList(optimisticTask.TaskListId, optimisticTask.Id);
             if (string.IsNullOrWhiteSpace(mNewTaskTitle))
             {
                 mNewTaskTitle = taskTitle;

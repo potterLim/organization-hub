@@ -23,7 +23,7 @@ public sealed class GoogleConnectionController : Controller
     {
         try
         {
-            string redirectUri = createCallbackUri();
+            GoogleOAuthRedirectUri redirectUri = createCallbackUri();
             string authorizationUrl = mGoogleConnectionService.CreateAuthorizationUrl(redirectUri);
             return Redirect(authorizationUrl);
         }
@@ -35,34 +35,42 @@ public sealed class GoogleConnectionController : Controller
 
     [ActionName("Callback")]
     [HttpGet("/admin/google/callback")]
-    public async Task<IActionResult> CallbackAsync([FromQuery(Name = "code")] string? codeOrNull, [FromQuery(Name = "state")] string? stateOrNull, [FromQuery(Name = "error")] string? errorOrNull)
+    public async Task<IActionResult> CallbackAsync(
+        [FromQuery(Name = "code")] string? codeOrNull,
+        [FromQuery(Name = "state")] string? stateOrNull,
+        [FromQuery(Name = "error")] string? errorOrNull
+    )
     {
         if (string.IsNullOrWhiteSpace(errorOrNull) == false)
         {
             return Redirect("/admin/google?message=" + Uri.EscapeDataString("Google 연결이 취소되었습니다. " + errorOrNull));
         }
 
-        ServiceResult result = await mGoogleConnectionService.CompleteConnectionAsync(getNullAsEmpty(codeOrNull), getNullAsEmpty(stateOrNull), createCallbackUri(), HttpContext.RequestAborted);
-        if (result.IsSuccess == false)
+        GoogleOAuthAuthorizationCode authorizationCode = new GoogleOAuthAuthorizationCode(getTextOrEmpty(codeOrNull));
+        GoogleOAuthState state = new GoogleOAuthState(getTextOrEmpty(stateOrNull));
+        GoogleOAuthRedirectUri redirectUri = createCallbackUri();
+        ServiceResult connectionResult = await mGoogleConnectionService.CompleteConnectionAsync(authorizationCode, state, redirectUri, HttpContext.RequestAborted);
+        if (connectionResult.IsSuccess == false)
         {
-            return Redirect("/admin/google?message=" + Uri.EscapeDataString(result.ErrorMessage));
+            return Redirect("/admin/google?message=" + Uri.EscapeDataString(connectionResult.ErrorMessage));
         }
 
         return Redirect("/admin/google?message=" + Uri.EscapeDataString("Google 계정 연결이 완료되었습니다."));
     }
 
-    private string createCallbackUri()
+    private GoogleOAuthRedirectUri createCallbackUri()
     {
-        return Request.Scheme + "://" + Request.Host.ToUriComponent() + "/admin/google/callback";
+        string callbackUri = Request.Scheme + "://" + Request.Host.ToUriComponent() + "/admin/google/callback";
+        return new GoogleOAuthRedirectUri(callbackUri);
     }
 
-    private string getNullAsEmpty(string? valueOrNull)
+    private string getTextOrEmpty(string? textOrNull)
     {
-        if (valueOrNull == null)
+        if (textOrNull == null)
         {
             return string.Empty;
         }
 
-        return valueOrNull;
+        return textOrNull;
     }
 }

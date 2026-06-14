@@ -11,7 +11,7 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Todos
 {
-    private async Task moveTaskBeforeAsync(TodoTaskID sourceTaskID, TodoTaskID targetTaskID)
+    private async Task moveTaskBeforeAsync(TodoTaskId sourceTaskId, TodoTaskId targetTaskId)
     {
         if (canSortTasks() == false)
         {
@@ -19,8 +19,8 @@ public partial class Todos
         }
 
         List<TodoTaskItem> pendingTasks = getPendingTasks();
-        int sourceIndex = pendingTasks.FindIndex(task => task.ID == sourceTaskID.Value);
-        int targetIndex = pendingTasks.FindIndex(task => task.ID == targetTaskID.Value);
+        int sourceIndex = pendingTasks.FindIndex(task => task.Id == sourceTaskId.Value);
+        int targetIndex = pendingTasks.FindIndex(task => task.Id == targetTaskId.Value);
         if (sourceIndex < 0 || targetIndex < 0)
         {
             return;
@@ -33,17 +33,17 @@ public partial class Todos
         }
 
         pendingTasks.RemoveAt(sourceIndex);
-        targetIndex = pendingTasks.FindIndex(task => task.ID == targetTaskID.Value);
+        targetIndex = pendingTasks.FindIndex(task => task.Id == targetTaskId.Value);
         if (targetIndex < 0)
         {
             return;
         }
 
-        TodoTaskID previousTaskID = targetIndex <= 0 ? TodoTaskID.Empty : new TodoTaskID(pendingTasks[targetIndex - 1].ID);
-        await moveTaskAsync(sourceTask, previousTaskID);
+        TodoTaskId previousTaskId = targetIndex <= 0 ? TodoTaskId.Empty : TodoTaskId.CreateOptional(pendingTasks[targetIndex - 1].Id);
+        await moveTaskAsync(sourceTask, previousTaskId);
     }
 
-    private async Task moveTaskAfterAsync(TodoTaskID sourceTaskID, TodoTaskID targetTaskID)
+    private async Task moveTaskAfterAsync(TodoTaskId sourceTaskId, TodoTaskId targetTaskId)
     {
         if (canSortTasks() == false)
         {
@@ -51,8 +51,8 @@ public partial class Todos
         }
 
         List<TodoTaskItem> pendingTasks = getPendingTasks();
-        TodoTaskItem? sourceTaskOrNull = pendingTasks.FirstOrDefault(task => task.ID == sourceTaskID.Value);
-        TodoTaskItem? targetTaskOrNull = pendingTasks.FirstOrDefault(task => task.ID == targetTaskID.Value);
+        TodoTaskItem? sourceTaskOrNull = pendingTasks.FirstOrDefault(task => task.Id == sourceTaskId.Value);
+        TodoTaskItem? targetTaskOrNull = pendingTasks.FirstOrDefault(task => task.Id == targetTaskId.Value);
         if (sourceTaskOrNull == null || targetTaskOrNull == null)
         {
             return;
@@ -65,10 +65,10 @@ public partial class Todos
             return;
         }
 
-        await moveTaskAsync(sourceTaskOrNull, new TodoTaskID(targetTaskOrNull.ID));
+        await moveTaskAsync(sourceTaskOrNull, TodoTaskId.CreateOptional(targetTaskOrNull.Id));
     }
 
-    private async Task moveTaskAsync(TodoTaskItem task, TodoTaskID previousTaskID)
+    private async Task moveTaskAsync(TodoTaskItem task, TodoTaskId previousTaskId)
     {
         if (CurrentUserSessionOrNull == null || mIsSaving)
         {
@@ -79,12 +79,12 @@ public partial class Todos
         List<TodoTaskItem> previousTasks = cloneTasks(mTasks);
         try
         {
-            moveTaskInLocalList(task, previousTaskID);
+            moveTaskInLocalList(task, previousTaskId);
             mMessage = string.Empty;
             await InvokeAsync(StateHasChanged);
-            TodoTaskItem movedTask = await TodoService.MoveTaskAsync(CurrentUserSessionOrNull, task.TaskListID, task.ID, previousTaskID.Value, CancellationToken.None);
+            TodoTaskItem movedTask = await TodoService.MoveTaskAsync(CurrentUserSessionOrNull, TodoTaskListId.CreateOptional(task.TaskListId), TodoTaskId.CreateOptional(task.Id), previousTaskId, CancellationToken.None);
             movedTask.TaskListDisplayName = task.TaskListDisplayName;
-            moveTaskInLocalList(movedTask, previousTaskID);
+            moveTaskInLocalList(movedTask, previousTaskId);
             recordLoadedChangeSnapshot();
         }
         catch (Exception exception)
@@ -97,16 +97,16 @@ public partial class Todos
     }
 
     [JSInvokable("MoveTaskBeforeFromScript")]
-    public async Task MoveTaskBeforeFromScriptAsync(string sourceTaskID, string targetTaskID)
+    public async Task MoveTaskBeforeFromScriptAsync(string sourceTaskId, string targetTaskId)
     {
-        await moveTaskBeforeAsync(new TodoTaskID(sourceTaskID), new TodoTaskID(targetTaskID));
+        await moveTaskBeforeAsync(TodoTaskId.CreateOptional(sourceTaskId), TodoTaskId.CreateOptional(targetTaskId));
         await InvokeAsync(StateHasChanged);
     }
 
     [JSInvokable("MoveTaskAfterFromScript")]
-    public async Task MoveTaskAfterFromScriptAsync(string sourceTaskID, string targetTaskID)
+    public async Task MoveTaskAfterFromScriptAsync(string sourceTaskId, string targetTaskId)
     {
-        await moveTaskAfterAsync(new TodoTaskID(sourceTaskID), new TodoTaskID(targetTaskID));
+        await moveTaskAfterAsync(TodoTaskId.CreateOptional(sourceTaskId), TodoTaskId.CreateOptional(targetTaskId));
         await InvokeAsync(StateHasChanged);
     }
 }

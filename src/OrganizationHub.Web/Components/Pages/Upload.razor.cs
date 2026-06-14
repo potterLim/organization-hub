@@ -15,7 +15,7 @@ public partial class Upload
     private List<DriveFolderPathItem> mFolderPath = new List<DriveFolderPathItem>();
     private List<DriveFileItem> mFoldersInCurrentFolder = new List<DriveFileItem>();
     private List<UploadAuditLogItem> mRecentUploads = new List<UploadAuditLogItem>();
-    private string mSelectedRootFolderID = string.Empty;
+    private string mSelectedRootFolderId = string.Empty;
     private string mNewFolderName = string.Empty;
     private IBrowserFile? mSelectedFileOrNull;
     private string mMessage = string.Empty;
@@ -44,7 +44,7 @@ public partial class Upload
         if (mUploadRootFolders.Count > 0)
         {
             DriveFolderReference defaultRootFolder = getDefaultUploadRootFolder();
-            mSelectedRootFolderID = defaultRootFolder.FolderID;
+            mSelectedRootFolderId = defaultRootFolder.FolderId.GetRequiredValue();
             resetPath(defaultRootFolder);
             await loadFoldersAsync();
         }

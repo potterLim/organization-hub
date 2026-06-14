@@ -12,13 +12,13 @@ namespace OrganizationHub.Web.Components.Pages;
 public partial class Todos
 {
     private List<TodoTaskListReference> mTaskLists = new List<TodoTaskListReference>();
-    private HashSet<string> mWritableTaskListIDs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    private HashSet<string> mWritableTaskListIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     private List<TodoTaskItem> mTasks = new List<TodoTaskItem>();
-    private string mSelectedTaskListID = string.Empty;
+    private string mSelectedTaskListId = string.Empty;
     private string mNewTaskTitle = string.Empty;
-    private string mEditingTaskID = string.Empty;
+    private string mEditingTaskId = string.Empty;
     private string mEditingTitle = string.Empty;
-    private string mDeletingTaskID = string.Empty;
+    private string mDeletingTaskId = string.Empty;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
     private ElementReference mRefreshScopeElement;

@@ -5,9 +5,16 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class NavigationMenuItemFormModel
 {
-    public int ID
+    public int Id
     {
         get; set;
+    }
+    public NavigationMenuItemId NavigationMenuItemIdValue
+    {
+        get
+        {
+            return NavigationMenuItemId.CreateOptional(Id);
+        }
     }
     public string DisplayName { get; set; } = string.Empty;
     public int SortOrder
@@ -26,5 +33,18 @@ public sealed class NavigationMenuItemFormModel
     {
         get; set;
     }
-    public List<int> TeamIDs { get; set; } = new List<int>();
+    public List<int> TeamIds { get; set; } = new List<int>();
+    public IReadOnlyList<OrganizationTeamId> TeamIdValues
+    {
+        get
+        {
+            List<OrganizationTeamId> teamIds = new List<OrganizationTeamId>();
+            foreach (int teamId in TeamIds)
+            {
+                teamIds.Add(OrganizationTeamId.CreateExisting(teamId));
+            }
+
+            return teamIds;
+        }
+    }
 }

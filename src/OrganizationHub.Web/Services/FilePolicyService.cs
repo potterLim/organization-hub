@@ -10,7 +10,19 @@ namespace OrganizationHub.Web.Services;
 public sealed class FilePolicyService : IFilePolicyService
 {
     private static readonly IReadOnlySet<string> MINUTES_EXTENSIONS = new HashSet<string> { ".pdf" };
-    private static readonly IReadOnlySet<string> MATERIAL_EXTENSIONS = new HashSet<string> { ".pdf", ".docx", ".xlsx", ".pptx", ".png", ".jpg", ".jpeg", ".zip", ".txt", ".md" };
+    private static readonly IReadOnlySet<string> MATERIAL_EXTENSIONS = new HashSet<string>
+    {
+        ".pdf",
+        ".docx",
+        ".xlsx",
+        ".pptx",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".zip",
+        ".txt",
+        ".md"
+    };
 
     private readonly OrganizationHubOptions mOptions;
 
@@ -34,14 +46,14 @@ public sealed class FilePolicyService : IFilePolicyService
         return new FileUploadPolicy(MATERIAL_EXTENSIONS, mOptions.MaximumUploadBytes);
     }
 
-    public bool CanPreviewInSite(string mimeType, string fileName)
+    public bool CanPreviewInSite(DriveFileMetadata fileMetadata)
     {
-        if (mimeType == "application/pdf")
+        if (fileMetadata.MimeType == "application/pdf")
         {
             return true;
         }
 
-        string extension = Path.GetExtension(fileName).ToLowerInvariant();
+        string extension = Path.GetExtension(fileMetadata.Name).ToLowerInvariant();
         return extension == ".pdf";
     }
 

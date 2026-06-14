@@ -28,11 +28,11 @@ public sealed class UploadAuditLogServiceTests
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache);
                 UploadAuditLogService uploadAuditLogService = new UploadAuditLogService(dbContextFactory, permissionService, driveService);
                 UserSession userSession = createPlanningUserSession();
-                DriveFolderReference planningRoot = new DriveFolderReference("planning-materials-folder", "기획팀 자료", EDriveFolderKind.TeamMaterials, 1, "기획팀", EDriveFolderUploadAccess.UploadAllowed);
+                DriveFolderReference planningRoot = createTeamFolderReference("planning-materials-folder", "기획팀 자료", 1, "기획팀", EDriveFolderUploadAccess.UploadAllowed);
 
-                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForRootAsync(userSession, planningRoot, 10, CancellationToken.None);
+                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForRootAsync(userSession, planningRoot, new RecentItemLimit(10), CancellationToken.None);
 
-                Assert.Equal(new[] { "planning-child-file", "planning-root-file" }, recentUploads.Select(item => item.FileID).ToArray());
+                Assert.Equal(new[] { "planning-child-file", "planning-root-file" }, recentUploads.Select(item => item.FileId).ToArray());
             }
         }
     }
@@ -48,9 +48,9 @@ public sealed class UploadAuditLogServiceTests
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache);
                 UploadAuditLogService uploadAuditLogService = new UploadAuditLogService(dbContextFactory, permissionService, driveService);
                 UserSession userSession = createPlanningUserSession();
-                DriveFolderReference operationRoot = new DriveFolderReference("operation-materials-folder", "운영팀 자료", EDriveFolderKind.TeamMaterials, 2, "운영팀", EDriveFolderUploadAccess.UploadDenied);
+                DriveFolderReference operationRoot = createTeamFolderReference("operation-materials-folder", "운영팀 자료", 2, "운영팀", EDriveFolderUploadAccess.UploadDenied);
 
-                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForRootAsync(userSession, operationRoot, 10, CancellationToken.None);
+                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForRootAsync(userSession, operationRoot, new RecentItemLimit(10), CancellationToken.None);
 
                 Assert.Empty(recentUploads);
             }
@@ -69,11 +69,11 @@ public sealed class UploadAuditLogServiceTests
                 UploadAuditLogService uploadAuditLogService = new UploadAuditLogService(dbContextFactory, permissionService, driveService);
                 UserSession userSession = createPlanningUserSession();
 
-                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsAsync(userSession, 10, CancellationToken.None);
+                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsAsync(userSession, new RecentItemLimit(10), CancellationToken.None);
 
-                Assert.Contains(recentUploads, item => item.FileID == "planning-root-file");
-                Assert.DoesNotContain(recentUploads, item => item.FileID == "operation-root-file");
-                Assert.DoesNotContain(recentUploads, item => item.FileID == "outside-root-file");
+                Assert.Contains(recentUploads, item => item.FileId == "planning-root-file");
+                Assert.DoesNotContain(recentUploads, item => item.FileId == "operation-root-file");
+                Assert.DoesNotContain(recentUploads, item => item.FileId == "outside-root-file");
             }
         }
     }
@@ -89,11 +89,11 @@ public sealed class UploadAuditLogServiceTests
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache);
                 UploadAuditLogService uploadAuditLogService = new UploadAuditLogService(dbContextFactory, permissionService, driveService);
                 UserSession userSession = createManagementSession();
-                DriveFolderReference managementRoot = new DriveFolderReference("management-folder", "관리팀 자료", EDriveFolderKind.TeamMaterials, 3, "Management", "관리팀", EDriveFolderUploadAccess.UploadAllowed);
+                DriveFolderReference managementRoot = createTeamFolderReference("management-folder", "관리팀 자료", 3, new OrganizationTeamKey("Management"), "관리팀", EDriveFolderUploadAccess.UploadAllowed);
 
-                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForRootAsync(userSession, managementRoot, 10, CancellationToken.None);
+                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForRootAsync(userSession, managementRoot, new RecentItemLimit(10), CancellationToken.None);
 
-                Assert.Equal(new[] { "management-child-file", "management-root-file" }, recentUploads.Select(item => item.FileID).ToArray());
+                Assert.Equal(new[] { "management-child-file", "management-root-file" }, recentUploads.Select(item => item.FileId).ToArray());
             }
         }
     }
@@ -110,9 +110,9 @@ public sealed class UploadAuditLogServiceTests
                 UploadAuditLogService uploadAuditLogService = new UploadAuditLogService(dbContextFactory, permissionService, driveService);
                 UserSession userSession = createPlanningUserSession();
 
-                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForReadableRootsAsync(userSession, EDriveFolderKind.TeamMaterials, 10, EManagementTeamFilter.ExcludeManagementTeam, CancellationToken.None);
+                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForReadableRootsAsync(userSession, EDriveFolderKind.TeamMaterials, new RecentItemLimit(10), EManagementTeamFilter.ExcludeManagementTeam, CancellationToken.None);
 
-                Assert.Equal(new[] { "planning-child-file", "planning-root-file" }, recentUploads.Select(item => item.FileID).ToArray());
+                Assert.Equal(new[] { "planning-child-file", "planning-root-file" }, recentUploads.Select(item => item.FileId).ToArray());
             }
         }
     }
@@ -129,11 +129,11 @@ public sealed class UploadAuditLogServiceTests
                 UploadAuditLogService uploadAuditLogService = new UploadAuditLogService(dbContextFactory, permissionService, driveService);
                 UserSession userSession = createManagementSession();
 
-                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForReadableRootsAsync(userSession, EDriveFolderKind.TeamMaterials, 10, EManagementTeamFilter.ExcludeManagementTeam, CancellationToken.None);
+                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForReadableRootsAsync(userSession, EDriveFolderKind.TeamMaterials, new RecentItemLimit(10), EManagementTeamFilter.ExcludeManagementTeam, CancellationToken.None);
 
-                Assert.Equal(new[] { "operation-root-file", "planning-child-file", "planning-root-file" }, recentUploads.Select(item => item.FileID).ToArray());
-                Assert.DoesNotContain(recentUploads, item => item.FileID == "management-child-file");
-                Assert.DoesNotContain(recentUploads, item => item.FileID == "same-team-outside-file");
+                Assert.Equal(new[] { "operation-root-file", "planning-child-file", "planning-root-file" }, recentUploads.Select(item => item.FileId).ToArray());
+                Assert.DoesNotContain(recentUploads, item => item.FileId == "management-child-file");
+                Assert.DoesNotContain(recentUploads, item => item.FileId == "same-team-outside-file");
             }
         }
     }
@@ -156,10 +156,10 @@ public sealed class UploadAuditLogServiceTests
                 UploadAuditLogService uploadAuditLogService = new UploadAuditLogService(dbContextFactory, permissionService, driveService);
                 UserSession userSession = createPlanningUserSession();
 
-                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForReadableRootsAsync(userSession, EDriveFolderKind.TeamMaterials, 10, EManagementTeamFilter.ExcludeManagementTeam, CancellationToken.None);
+                IReadOnlyList<UploadAuditLogItem> recentUploads = await uploadAuditLogService.GetRecentUploadsForReadableRootsAsync(userSession, EDriveFolderKind.TeamMaterials, new RecentItemLimit(10), EManagementTeamFilter.ExcludeManagementTeam, CancellationToken.None);
 
-                Assert.DoesNotContain(recentUploads, item => item.FileID == "deleted-planning-file");
-                Assert.Equal(new[] { "planning-child-file", "planning-root-file" }, recentUploads.Select(item => item.FileID).ToArray());
+                Assert.DoesNotContain(recentUploads, item => item.FileId == "deleted-planning-file");
+                Assert.Equal(new[] { "planning-child-file", "planning-root-file" }, recentUploads.Select(item => item.FileId).ToArray());
             }
         }
     }
@@ -170,12 +170,12 @@ public sealed class UploadAuditLogServiceTests
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             GlobalSetting setting = new GlobalSetting();
-            setting.ID = 1;
-            setting.PublicFolderID = "public-folder";
-            setting.CommonFolderID = "common-folder";
-            setting.ResponsibleResourcesFolderID = "responsible-folder";
-            setting.WorkResourcesFolderID = "work-resources-folder";
-            setting.OfficialRootFolderID = "official-root";
+            setting.Id = 1;
+            setting.PublicFolderId = "public-folder";
+            setting.CommonFolderId = "common-folder";
+            setting.ResponsibleResourcesFolderId = "responsible-folder";
+            setting.WorkResourcesFolderId = "work-resources-folder";
+            setting.OfficialRootFolderId = "official-root";
 
             Team planningTeam = createTeam(1, "Planning", "기획팀", "planning-materials-folder", "planning-approved-folder", 10);
             Team operationTeam = createTeam(2, "Operation", "운영팀", "operation-materials-folder", "operation-approved-folder", 20);
@@ -199,31 +199,43 @@ public sealed class UploadAuditLogServiceTests
         return dbContextFactory;
     }
 
-    private static Team createTeam(int id, string teamKey, string displayName, string materialsFolderID, string approvedFolderID, int sortOrder)
+    private static Team createTeam(int id, string teamKey, string displayName, string materialsFolderId, string approvedFolderId, int sortOrder)
     {
         Team team = new Team();
-        team.ID = id;
+        team.Id = id;
         team.TeamKey = teamKey;
         team.DisplayName = displayName;
-        team.MaterialsFolderID = materialsFolderID;
-        team.ApprovedFolderID = approvedFolderID;
+        team.MaterialsFolderId = materialsFolderId;
+        team.ApprovedFolderId = approvedFolderId;
         team.SortOrder = sortOrder;
         team.IsActive = true;
         return team;
     }
 
-    private static UploadAuditLog createAuditLog(string fileID, string folderID, EDriveFolderKind folderKind, int? teamID, string teamName, DateTime uploadedAt)
+    private static DriveFolderReference createTeamFolderReference(string folderId, string displayName, int teamId, string teamName, EDriveFolderUploadAccess uploadAccess)
+    {
+        return createTeamFolderReference(folderId, displayName, teamId, OrganizationTeamKey.Empty, teamName, uploadAccess);
+    }
+
+    private static DriveFolderReference createTeamFolderReference(string folderId, string displayName, int teamId, OrganizationTeamKey teamKey, string teamName, EDriveFolderUploadAccess uploadAccess)
+    {
+        DriveFolderOwnerContext ownerContext = new DriveFolderOwnerContext(OrganizationTeamId.CreateExisting(teamId), teamKey, teamName);
+        DriveFolderReferenceCreationRequest request = new DriveFolderReferenceCreationRequest(DriveFolderId.CreateOptional(folderId), displayName, EDriveFolderKind.TeamMaterials, uploadAccess, ownerContext);
+        return new DriveFolderReference(request);
+    }
+
+    private static UploadAuditLog createAuditLog(string fileId, string folderId, EDriveFolderKind folderKind, int? teamId, string teamName, DateTime uploadedAt)
     {
         UploadAuditLog auditLog = new UploadAuditLog();
-        auditLog.FileID = fileID;
-        auditLog.FileName = fileID + ".pdf";
-        auditLog.FolderID = folderID;
-        auditLog.FolderDisplayName = folderID;
+        auditLog.FileId = fileId;
+        auditLog.FileName = fileId + ".pdf";
+        auditLog.FolderId = folderId;
+        auditLog.FolderDisplayName = folderId;
         auditLog.FolderKind = folderKind;
-        auditLog.UploaderUserID = 1;
+        auditLog.UploaderUserId = 1;
         auditLog.UploaderDisplayName = "기획팀원";
         auditLog.UploaderRole = EUserRole.TeamUser;
-        auditLog.TeamID = teamID;
+        auditLog.TeamId = teamId;
         auditLog.TeamName = teamName;
         auditLog.UploadedAt = uploadedAt;
         return auditLog;
@@ -257,11 +269,11 @@ public sealed class UploadAuditLogServiceTests
 
     private static UserSession createPlanningUserSession()
     {
-        return new UserSession(1, "planning", "Planning User", EUserRole.TeamUser, 1, "Planning", "기획팀");
+        return new UserSession(UserAccountId.CreateExisting(1), "planning", "Planning User", EUserRole.TeamUser, OrganizationTeamId.CreateExisting(1), new OrganizationTeamKey("Planning"), "기획팀");
     }
 
     private static UserSession createManagementSession()
     {
-        return new UserSession(2, "director", "Director", EUserRole.ManagementDirector, null, string.Empty, string.Empty);
+        return new UserSession(UserAccountId.CreateExisting(2), "director", "Director", EUserRole.ManagementDirector, null, OrganizationTeamKey.Empty, string.Empty);
     }
 }

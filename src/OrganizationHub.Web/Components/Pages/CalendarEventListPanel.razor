@@ -1,0 +1,141 @@
+<MudTable Items="MonthEvents" Dense="true" Hover="true" Elevation="0" Class="hub-calendar-table hub-calendar-desktop-table">
+    <HeaderContent>
+        <MudTh>일시</MudTh>
+        <MudTh>일정</MudTh>
+        <MudTh>일정 위치</MudTh>
+        <MudTh>위치</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate Context="calendarEvent">
+        <MudTd DataLabel="일시" Class="hub-calendar-time-cell">@formatEventTime(calendarEvent)</MudTd>
+        <MudTd DataLabel="일정" Class="hub-calendar-summary-cell"><button type="button" class="hub-calendar-row-button" data-event-id="@calendarEvent.Id" @onclick="@(() => EventSelected.InvokeAsync(calendarEvent))">@calendarEvent.Summary</button></MudTd>
+        <MudTd DataLabel="일정 위치" Class="hub-calendar-meta-cell hub-calendar-calendar-cell">
+            <div>@calendarEvent.CalendarName</div>
+            @if (shouldShowCalendarAuthor(calendarEvent))
+            {
+                <div class="hub-calendar-author-line">작성자: @calendarEvent.CreatedByDisplayName</div>
+            }
+        </MudTd>
+        <MudTd DataLabel="위치" Class="hub-calendar-meta-cell hub-calendar-location-cell">@calendarEvent.Location</MudTd>
+        <MudTd DataLabel="작업" Class="hub-action-cell hub-calendar-action-cell">
+            @if (calendarEvent.CanEdit)
+            {
+                <div class="hub-table-actions">
+                    <MudTooltip Text="일정 수정">
+                        <MudIconButton Icon="@Icons.Material.Filled.EditCalendar" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EventEditRequested.InvokeAsync(calendarEvent))" aria-label="일정 수정" />
+                    </MudTooltip>
+                    <MudTooltip Text="일정 삭제">
+                        <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => EventDeleteRequested.InvokeAsync(calendarEvent))" aria-label="일정 삭제" />
+                    </MudTooltip>
+                </div>
+            }
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+<div class="hub-calendar-mobile-list">
+    @foreach (CalendarEventItem calendarEvent in MonthEvents)
+    {
+        <div class="@getCalendarMobileCardClass(calendarEvent)" role="button" tabindex="0" @onclick="@(() => EventSelected.InvokeAsync(calendarEvent))">
+            <div class="hub-calendar-mobile-top">
+                <span class="hub-calendar-mobile-time">@formatEventTime(calendarEvent)</span>
+                @if (calendarEvent.CanEdit)
+                {
+                    <div class="hub-table-actions hub-calendar-mobile-actions">
+                        <MudTooltip Text="일정 수정">
+                            <MudIconButton Icon="@Icons.Material.Filled.EditCalendar" Color="Color.Primary" Size="Size.Small" OnClick="@(() => EventEditRequested.InvokeAsync(calendarEvent))" aria-label="일정 수정" />
+                        </MudTooltip>
+                        <MudTooltip Text="일정 삭제">
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => EventDeleteRequested.InvokeAsync(calendarEvent))" aria-label="일정 삭제" />
+                        </MudTooltip>
+                    </div>
+                }
+            </div>
+            <div class="hub-calendar-mobile-title">@calendarEvent.Summary</div>
+            <div class="hub-calendar-mobile-meta">
+                <span>@calendarEvent.CalendarName</span>
+                @if (shouldShowCalendarAuthor(calendarEvent))
+                {
+                    <span>작성자: @calendarEvent.CreatedByDisplayName</span>
+                }
+                @if (string.IsNullOrWhiteSpace(calendarEvent.Location) == false)
+                {
+                    <span>@calendarEvent.Location</span>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<CalendarEventItem> MonthEvents
+    {
+        get; set;
+    } = new List<CalendarEventItem>();
+
+    [Parameter]
+    public bool ShowCalendarAuthor
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public CalendarEventItem? SelectedEventOrNull
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<CalendarEventItem> EventSelected
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<CalendarEventItem> EventEditRequested
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<CalendarEventItem> EventDeleteRequested
+    {
+        get; set;
+    }
+
+    private string getCalendarMobileCardClass(CalendarEventItem calendarEvent)
+    {
+        if (SelectedEventOrNull != null && SelectedEventOrNull.Id == calendarEvent.Id && SelectedEventOrNull.CalendarId == calendarEvent.CalendarId)
+        {
+            return "hub-calendar-mobile-card hub-calendar-mobile-card-selected";
+        }
+
+        return "hub-calendar-mobile-card";
+    }
+
+    private bool shouldShowCalendarAuthor(CalendarEventItem calendarEvent)
+    {
+        return ShowCalendarAuthor && string.IsNullOrWhiteSpace(calendarEvent.CreatedByDisplayName) == false;
+    }
+
+    private string formatEventTime(CalendarEventItem calendarEvent)
+    {
+        if (calendarEvent.Start.HasValue == false)
+        {
+            return "시간 미정";
+        }
+
+        if (calendarEvent.IsAllDay)
+        {
+            return calendarEvent.Start.Value.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 종일";
+        }
+
+        string startText = calendarEvent.Start.Value.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+        if (calendarEvent.End.HasValue == false)
+        {
+            return startText;
+        }
+
+        return startText + " - " + calendarEvent.End.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+    }
+}

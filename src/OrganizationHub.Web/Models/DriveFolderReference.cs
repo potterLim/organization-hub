@@ -5,17 +5,37 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class DriveFolderReference
 {
-    public string FolderID { get; private init; } = string.Empty;
+    public DriveFolderId FolderId
+    {
+        get; private init;
+    }
     public string DisplayName { get; private init; } = string.Empty;
     public EDriveFolderKind FolderKind
     {
         get; private init;
     }
-    public int? TeamID
+    public OrganizationTeamId? TeamIdOrNull
     {
         get; private init;
     }
-    public string TeamKey { get; private init; } = string.Empty;
+    public int? TeamIdValueOrNull
+    {
+        get
+        {
+            return OrganizationTeamId.GetValueOrNull(TeamIdOrNull);
+        }
+    }
+    public OrganizationTeamKey TeamKey
+    {
+        get; private init;
+    }
+    public string TeamKeyValue
+    {
+        get
+        {
+            return TeamKey.Value;
+        }
+    }
     public string TeamName { get; private init; } = string.Empty;
     public bool CanUpload
     {
@@ -25,7 +45,7 @@ public sealed class DriveFolderReference
     {
         get
         {
-            if (string.Equals(TeamKey, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY, StringComparison.OrdinalIgnoreCase))
+            if (TeamKey.IsManagementTeamKey)
             {
                 return true;
             }
@@ -34,20 +54,14 @@ public sealed class DriveFolderReference
         }
     }
 
-    public DriveFolderReference(string folderID, string displayName, EDriveFolderKind folderKind, int? teamID, string teamName, EDriveFolderUploadAccess uploadAccess)
-        : this(folderID, displayName, folderKind, teamID, string.Empty, teamName, uploadAccess)
+    public DriveFolderReference(DriveFolderReferenceCreationRequest request)
     {
-    }
-
-    public DriveFolderReference(string folderID, string displayName, EDriveFolderKind folderKind, int? teamID, string teamKey, string teamName, EDriveFolderUploadAccess uploadAccess)
-    {
-        FolderID = folderID;
-        DisplayName = displayName;
-        FolderKind = folderKind;
-        TeamID = teamID;
-        TeamKey = teamKey;
-        TeamName = teamName;
-        CanUpload = uploadAccess == EDriveFolderUploadAccess.UploadAllowed;
+        FolderId = request.FolderId;
+        DisplayName = request.DisplayName;
+        FolderKind = request.FolderKind;
+        TeamIdOrNull = request.TeamIdOrNull;
+        TeamKey = request.TeamKey;
+        TeamName = request.TeamName;
+        CanUpload = request.UploadAccess == EDriveFolderUploadAccess.UploadAllowed;
     }
 }
-

@@ -1,0 +1,86 @@
+<MudPaper Class="hub-card pa-4">
+    <MudText Typo="Typo.h6">월간 일정</MudText>
+    @if (MonthEvents.Count == 0)
+    {
+        <div class="hub-empty hub-empty-state">
+            <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Medium" />
+            <span>이번 달 일정이 없습니다.</span>
+        </div>
+    }
+    else if (IsMonthView)
+    {
+        <CalendarMonthGridPanel DayCells="DayCells" WeekdayLabels="WeekdayLabels" DaySelected="DaySelected" />
+    }
+    else
+    {
+        <CalendarEventListPanel MonthEvents="MonthEvents"
+                                ShowCalendarAuthor="ShowCalendarAuthor"
+                                SelectedEventOrNull="SelectedEventOrNull"
+                                EventSelected="EventSelected"
+                                EventEditRequested="EventEditRequested"
+                                EventDeleteRequested="EventDeleteRequested" />
+    }
+</MudPaper>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<CalendarEventItem> MonthEvents
+    {
+        get; set;
+    } = new List<CalendarEventItem>();
+
+    [Parameter]
+    public IReadOnlyList<CalendarDayCell> DayCells
+    {
+        get; set;
+    } = new List<CalendarDayCell>();
+
+    [Parameter]
+    public IReadOnlyList<string> WeekdayLabels
+    {
+        get; set;
+    } = new List<string>();
+
+    [Parameter]
+    public bool IsMonthView
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public bool ShowCalendarAuthor
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public CalendarEventItem? SelectedEventOrNull
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<CalendarDayCell> DaySelected
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<CalendarEventItem> EventSelected
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<CalendarEventItem> EventEditRequested
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<CalendarEventItem> EventDeleteRequested
+    {
+        get; set;
+    }
+
+}

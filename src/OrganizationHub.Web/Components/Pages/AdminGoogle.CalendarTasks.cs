@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MudBlazor;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 using OrganizationHub.Web.Services;
 
@@ -42,15 +43,15 @@ public partial class AdminGoogle
 
     private async Task assignCalendarAsync(GoogleCalendarListItem calendar)
     {
-        ServiceResult result = await GoogleWorkspaceSetupService.AssignCalendarAsync(mSelectedCalendarTargetKey, calendar.ID, CancellationToken.None);
-        showResult(result, result.IsSuccess ? calendar.Summary + " Calendar를 저장했습니다." : string.Empty);
+        ServiceResult calendarAssignmentResult = await GoogleWorkspaceSetupService.AssignCalendarAsync(mSelectedCalendarTargetKey, CalendarId.CreateOptional(calendar.Id), CancellationToken.None);
+        showOperationResult(calendarAssignmentResult, calendarAssignmentResult.IsSuccess ? calendar.Summary + " Calendar를 저장했습니다." : string.Empty);
         await loadHealthCheckAsync();
     }
 
     private async Task assignTaskListAsync(GoogleTaskListItem taskList)
     {
-        ServiceResult result = await GoogleWorkspaceSetupService.AssignTaskListAsync(mSelectedTaskListTargetKey, taskList.ID, CancellationToken.None);
-        showResult(result, result.IsSuccess ? taskList.Title + " Google Tasks 목록을 저장했습니다." : string.Empty);
+        ServiceResult taskListAssignmentResult = await GoogleWorkspaceSetupService.AssignTaskListAsync(mSelectedTaskListTargetKey, TodoTaskListId.CreateOptional(taskList.Id), CancellationToken.None);
+        showOperationResult(taskListAssignmentResult, taskListAssignmentResult.IsSuccess ? taskList.Title + " Google Tasks 목록을 저장했습니다." : string.Empty);
         await loadHealthCheckAsync();
     }
 
@@ -59,10 +60,10 @@ public partial class AdminGoogle
         mIsEnsuringStandardCalendars = true;
         try
         {
-            ServiceResultOfT<GoogleWorkspaceResourceSetupSummary> result = await GoogleWorkspaceSetupService.EnsureStandardCalendarsAsync(CancellationToken.None);
-            if (result.IsSuccess && result.ValueOrNull != null)
+            ServiceResultOfT<GoogleWorkspaceResourceSetupSummary> calendarSetupResult = await GoogleWorkspaceSetupService.EnsureStandardCalendarsAsync(CancellationToken.None);
+            if (calendarSetupResult.IsSuccess && calendarSetupResult.ValueOrNull != null)
             {
-                GoogleWorkspaceResourceSetupSummary summary = result.ValueOrNull;
+                GoogleWorkspaceResourceSetupSummary summary = calendarSetupResult.ValueOrNull;
                 mMessage = createSetupSummaryMessage("기본 Calendar 준비 완료", summary);
                 mMessageSeverity = Severity.Success;
                 await loadAssignmentOptionsAsync();
@@ -71,7 +72,7 @@ public partial class AdminGoogle
                 return;
             }
 
-            mMessage = result.ErrorMessage;
+            mMessage = calendarSetupResult.ErrorMessage;
             mMessageSeverity = Severity.Error;
         }
         finally
@@ -85,10 +86,10 @@ public partial class AdminGoogle
         mIsEnsuringStandardTaskLists = true;
         try
         {
-            ServiceResultOfT<GoogleTaskListSetupSummary> result = await GoogleWorkspaceSetupService.EnsureStandardTaskListsAsync(CancellationToken.None);
-            if (result.IsSuccess && result.ValueOrNull != null)
+            ServiceResultOfT<GoogleTaskListSetupSummary> taskListSetupResult = await GoogleWorkspaceSetupService.EnsureStandardTaskListsAsync(CancellationToken.None);
+            if (taskListSetupResult.IsSuccess && taskListSetupResult.ValueOrNull != null)
             {
-                GoogleTaskListSetupSummary summary = result.ValueOrNull;
+                GoogleTaskListSetupSummary summary = taskListSetupResult.ValueOrNull;
                 mMessage = "기본 Google Tasks 목록 준비 완료: 생성 " + summary.CreatedCount.ToString(CultureInfo.InvariantCulture) + "개, 재사용 " + summary.ReusedCount.ToString(CultureInfo.InvariantCulture) + "개, 매핑 " + summary.AssignedCount.ToString(CultureInfo.InvariantCulture) + "개";
                 mMessageSeverity = Severity.Success;
                 await loadTaskListsAsync();
@@ -96,7 +97,7 @@ public partial class AdminGoogle
                 return;
             }
 
-            mMessage = result.ErrorMessage;
+            mMessage = taskListSetupResult.ErrorMessage;
             mMessageSeverity = Severity.Error;
         }
         finally

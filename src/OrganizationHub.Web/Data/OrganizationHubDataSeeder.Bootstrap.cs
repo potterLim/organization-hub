@@ -19,7 +19,7 @@ public sealed partial class OrganizationHubDataSeeder
         UserAccount userAccount = new UserAccount();
         userAccount.Username = seedUsername;
         userAccount.DisplayName = getConfiguredSeedDisplayName();
-        userAccount.PasswordHash = mPasswordHashService.HashPassword(seedPassword);
+        userAccount.PasswordHash = mPasswordHashService.HashPassword(PlainPassword.CreateFromInput(seedPassword)).GetRequiredValue();
         userAccount.Role = EUserRole.Admin;
         userAccount.Team = systemAdministrationTeam;
         userAccount.Position = administratorPosition;
@@ -64,9 +64,13 @@ public sealed partial class OrganizationHubDataSeeder
         return managementTeamOrNull;
     }
 
-    private async Task ensureDefaultManagementPositionAsync(OrganizationHubDbContext dbContext, Team managementTeam, CancellationToken cancellationToken)
+    private async Task ensureDefaultManagementPositionAsync(
+        OrganizationHubDbContext dbContext,
+        Team managementTeam,
+        CancellationToken cancellationToken
+    )
     {
-        bool hasManagementPosition = await dbContext.Positions.AnyAsync(position => position.TeamID == managementTeam.ID && position.IsSystemAdministrator == false, cancellationToken);
+        bool hasManagementPosition = await dbContext.Positions.AnyAsync(position => position.TeamId == managementTeam.Id && position.IsSystemAdministrator == false, cancellationToken);
         if (hasManagementPosition)
         {
             return;
@@ -82,9 +86,13 @@ public sealed partial class OrganizationHubDataSeeder
         dbContext.Positions.Add(position);
     }
 
-    private async Task<OrganizationPosition> ensureSystemAdministratorPositionAsync(OrganizationHubDbContext dbContext, Team team, CancellationToken cancellationToken)
+    private async Task<OrganizationPosition> ensureSystemAdministratorPositionAsync(
+        OrganizationHubDbContext dbContext,
+        Team team,
+        CancellationToken cancellationToken
+    )
     {
-        OrganizationPosition? positionOrNull = await dbContext.Positions.Include(position => position.PermissionGrants).FirstOrDefaultAsync(position => position.TeamID == team.ID && position.IsSystemAdministrator, cancellationToken);
+        OrganizationPosition? positionOrNull = await dbContext.Positions.Include(position => position.PermissionGrants).FirstOrDefaultAsync(position => position.TeamId == team.Id && position.IsSystemAdministrator, cancellationToken);
         if (positionOrNull == null)
         {
             OrganizationPosition position = new OrganizationPosition();
@@ -108,9 +116,13 @@ public sealed partial class OrganizationHubDataSeeder
         return positionOrNull;
     }
 
-    private async Task ensureSystemAdministratorPermissionGrantsAsync(OrganizationHubDbContext dbContext, OrganizationPosition position, CancellationToken cancellationToken)
+    private async Task ensureSystemAdministratorPermissionGrantsAsync(
+        OrganizationHubDbContext dbContext,
+        OrganizationPosition position,
+        CancellationToken cancellationToken
+    )
     {
-        List<string> existingPermissionKeys = await dbContext.PositionPermissionGrants.Where(permissionGrant => permissionGrant.PositionID == position.ID).Select(permissionGrant => permissionGrant.PermissionKey).ToListAsync(cancellationToken);
+        List<string> existingPermissionKeys = await dbContext.PositionPermissionGrants.Where(permissionGrant => permissionGrant.PositionId == position.Id).Select(permissionGrant => permissionGrant.PermissionKey).ToListAsync(cancellationToken);
         IReadOnlyList<PermissionDefinition> permissionDefinitions = PermissionCatalog.GetDefinitions();
         foreach (PermissionDefinition permissionDefinition in permissionDefinitions)
         {
@@ -128,10 +140,14 @@ public sealed partial class OrganizationHubDataSeeder
         }
     }
 
-    private async Task attachOrganizationAdministratorUsersToSystemAdministrationTeamAsync(OrganizationHubDbContext dbContext, Team systemAdministrationTeam, CancellationToken cancellationToken)
+    private async Task attachOrganizationAdministratorUsersToSystemAdministrationTeamAsync(
+        OrganizationHubDbContext dbContext,
+        Team systemAdministrationTeam,
+        CancellationToken cancellationToken
+    )
     {
         List<UserAccount> organizationAdministratorUsers = await dbContext.UserAccounts.Where(user =>
-            user.TeamID.HasValue == false &&
+            user.TeamId.HasValue == false &&
             user.Role == EUserRole.Admin).ToListAsync(cancellationToken);
         foreach (UserAccount userAccount in organizationAdministratorUsers)
         {
@@ -139,10 +155,14 @@ public sealed partial class OrganizationHubDataSeeder
         }
     }
 
-    private async Task attachManagementUsersToManagementTeamAsync(OrganizationHubDbContext dbContext, Team managementTeam, CancellationToken cancellationToken)
+    private async Task attachManagementUsersToManagementTeamAsync(
+        OrganizationHubDbContext dbContext,
+        Team managementTeam,
+        CancellationToken cancellationToken
+    )
     {
         List<UserAccount> managementUsers = await dbContext.UserAccounts.Where(user =>
-            user.TeamID.HasValue == false &&
+            user.TeamId.HasValue == false &&
             (user.Role == EUserRole.ManagementDirector ||
              user.Role == EUserRole.ManagementDeputyDirector ||
              user.Role == EUserRole.ManagementManager ||
@@ -154,9 +174,13 @@ public sealed partial class OrganizationHubDataSeeder
         }
     }
 
-    private async Task attachAdministratorsToSystemAdministratorPositionAsync(OrganizationHubDbContext dbContext, OrganizationPosition administratorPosition, CancellationToken cancellationToken)
+    private async Task attachAdministratorsToSystemAdministratorPositionAsync(
+        OrganizationHubDbContext dbContext,
+        OrganizationPosition administratorPosition,
+        CancellationToken cancellationToken
+    )
     {
-        List<UserAccount> administratorUsers = await dbContext.UserAccounts.Where(user => user.Role == EUserRole.Admin && user.PositionID.HasValue == false).ToListAsync(cancellationToken);
+        List<UserAccount> administratorUsers = await dbContext.UserAccounts.Where(user => user.Role == EUserRole.Admin && user.PositionId.HasValue == false).ToListAsync(cancellationToken);
         foreach (UserAccount userAccount in administratorUsers)
         {
             userAccount.Position = administratorPosition;

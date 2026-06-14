@@ -11,12 +11,23 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class DriveBrowserService
 {
-    public async Task<IReadOnlyList<DriveFileItem>> GetRecentFilesAsync(UserSession userSession, EDriveFolderKind folderKind, int maximumCount, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DriveFileItem>> GetRecentFilesAsync(
+        UserSession userSession,
+        EDriveFolderKind folderKind,
+        RecentItemLimit maximumCount,
+        CancellationToken cancellationToken
+    )
     {
         return await GetRecentFilesAsync(userSession, folderKind, maximumCount, EManagementTeamFilter.IncludeManagementTeam, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<DriveFileItem>> GetRecentFilesAsync(UserSession userSession, EDriveFolderKind folderKind, int maximumCount, EManagementTeamFilter managementTeamFilter, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DriveFileItem>> GetRecentFilesAsync(
+        UserSession userSession,
+        EDriveFolderKind folderKind,
+        RecentItemLimit maximumCount,
+        EManagementTeamFilter managementTeamFilter,
+        CancellationToken cancellationToken
+    )
     {
         string cacheKey = createRecentFilesCacheKey(userSession, folderKind, maximumCount, managementTeamFilter);
         IReadOnlyList<DriveFileItem>? cachedFilesOrNull = mMemoryCache.Get<IReadOnlyList<DriveFileItem>>(cacheKey);
@@ -25,19 +36,25 @@ public sealed partial class DriveBrowserService
             return cloneDriveFileItems(cachedFilesOrNull);
         }
 
-        IReadOnlyList<DriveFileItem> files = await GetFilesAsync(userSession, folderKind, string.Empty, cancellationToken);
+        IReadOnlyList<DriveFileItem> files = await GetFilesAsync(userSession, folderKind, SearchKeyword.Empty, cancellationToken);
         IEnumerable<DriveFileItem> recentFileQuery = files.Where(file => file.IsFolder == false);
         if (managementTeamFilter == EManagementTeamFilter.ExcludeManagementTeam)
         {
             recentFileQuery = recentFileQuery.Where(file => isManagementFile(file) == false);
         }
 
-        List<DriveFileItem> recentFiles = recentFileQuery.Take(maximumCount).ToList();
+        List<DriveFileItem> recentFiles = recentFileQuery.Take(maximumCount.Value).ToList();
         mMemoryCache.Set(cacheKey, cloneDriveFileItems(recentFiles), RECENT_FILES_CACHE_DURATION);
         return recentFiles;
     }
 
-    public async Task<IReadOnlyList<DriveFileItem>> GetRecentUploadedFilesAsync(UserSession userSession, EDriveFolderKind folderKind, int maximumCount, EManagementTeamFilter managementTeamFilter, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DriveFileItem>> GetRecentUploadedFilesAsync(
+        UserSession userSession,
+        EDriveFolderKind folderKind,
+        RecentItemLimit maximumCount,
+        EManagementTeamFilter managementTeamFilter,
+        CancellationToken cancellationToken
+    )
     {
         string cacheKey = createRecentUploadedFilesCacheKey(userSession, folderKind, maximumCount, managementTeamFilter);
         IReadOnlyList<DriveFileItem>? cachedFilesOrNull = mMemoryCache.Get<IReadOnlyList<DriveFileItem>>(cacheKey);
@@ -57,32 +74,38 @@ public sealed partial class DriveBrowserService
         return files;
     }
 
-    private async Task mergeRecentUploadedFilesAsync(DriveFolderReference folder, string keyword, List<DriveFileItem> files, CancellationToken cancellationToken)
+    private async Task mergeRecentUploadedFilesAsync(
+        DriveFolderReference folder,
+        SearchKeyword keyword,
+        List<DriveFileItem> files,
+        CancellationToken cancellationToken
+    )
     {
-        IReadOnlyList<UploadAuditLogItem> recentUploads = await mUploadAuditLogService.GetRecentUploadsForFolderAsync(folder.FolderID, RECENT_UPLOAD_MERGE_WINDOW, cancellationToken);
+        IReadOnlyList<UploadAuditLogItem> recentUploads = await mUploadAuditLogService.GetRecentUploadsForFolderAsync(folder.FolderId, RECENT_UPLOAD_MERGE_WINDOW, cancellationToken);
         if (recentUploads.Count == 0)
         {
             return;
         }
 
-        HashSet<string> existingFileIDs = new HashSet<string>(files.Select(file => file.ID));
+        HashSet<DriveItemId> existingFileIds = new HashSet<DriveItemId>(files.Select(file => DriveItemId.CreateOptional(file.Id)));
         foreach (UploadAuditLogItem recentUpload in recentUploads)
         {
-            if (existingFileIDs.Contains(recentUpload.FileID) || isRecentUploadMergeSuppressed(recentUpload.FileID) || matchesKeyword(recentUpload.FileName, keyword) == false)
+            DriveItemId recentUploadFileId = DriveItemId.CreateOptional(recentUpload.FileId);
+            if (existingFileIds.Contains(recentUploadFileId) || isRecentUploadMergeSuppressed(recentUploadFileId) || matchesKeyword(recentUpload.FileName, keyword) == false)
             {
                 continue;
             }
 
             DriveFileItem file = createDriveFileItemFromRecentUpload(recentUpload, folder);
             files.Add(file);
-            existingFileIDs.Add(file.ID);
+            existingFileIds.Add(DriveItemId.CreateOptional(file.Id));
         }
     }
 
     private static DriveFileItem createDriveFileItemFromRecentUpload(UploadAuditLogItem recentUpload, DriveFolderReference folder)
     {
         DriveFileItem file = createDriveFileItemFromRecentUpload(recentUpload);
-        file.TeamKey = folder.TeamKey;
+        file.TeamKey = folder.TeamKey.Value;
         file.TeamName = string.IsNullOrWhiteSpace(recentUpload.TeamName) ? folder.TeamName : recentUpload.TeamName;
         if (string.IsNullOrWhiteSpace(file.TeamName))
         {
@@ -96,7 +119,7 @@ public sealed partial class DriveBrowserService
     private static DriveFileItem createDriveFileItemFromRecentUpload(UploadAuditLogItem recentUpload)
     {
         DriveFileItem file = new DriveFileItem();
-        file.ID = recentUpload.FileID;
+        file.Id = recentUpload.FileId;
         file.Name = recentUpload.FileName;
         file.MimeType = inferMimeTypeFromFileName(recentUpload.FileName);
         file.CreatedTime = recentUpload.UploadedAt;
@@ -122,6 +145,6 @@ public sealed partial class DriveBrowserService
 
     private static bool isManagementFile(DriveFileItem file)
     {
-        return string.Equals(file.TeamKey, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY, StringComparison.OrdinalIgnoreCase);
+        return new OrganizationTeamKey(file.TeamKey).IsManagementTeamKey;
     }
 }

@@ -39,16 +39,17 @@ public partial class DriveFileBrowser
         mFileErrorMessage = string.Empty;
         try
         {
-            PermissionDecision deleteDecision = await PermissionService.DecideDeleteInFolderAsync(CurrentUserSessionOrNull, getCurrentFolderID(), CancellationToken.None);
+            DriveFolderId currentFolderId = DriveFolderId.CreateOptional(getCurrentFolderId());
+            PermissionDecision deleteDecision = await PermissionService.DecideDeleteInFolderAsync(CurrentUserSessionOrNull, currentFolderId, CancellationToken.None);
             if (deleteDecision.IsAllowed == false)
             {
                 mFileErrorMessage = deleteDecision.Reason;
                 return;
             }
 
-            await DriveService.DeleteDriveItemAsync(deleteCandidate.ID, CancellationToken.None);
-            DriveBrowserService.SuppressRecentUploadMerge(deleteCandidate.ID);
-            DriveBrowserService.InvalidateRecentFiles(getCurrentFolderID());
+            await DriveService.DeleteDriveItemAsync(DriveItemId.CreateOptional(deleteCandidate.Id), CancellationToken.None);
+            DriveBrowserService.SuppressRecentUploadMerge(DriveItemId.CreateOptional(deleteCandidate.Id));
+            DriveBrowserService.InvalidateRecentFiles(currentFolderId);
             mDeleteCandidateOrNull = null;
             await loadCurrentFolderAsync();
         }

@@ -4,11 +4,11 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class PositionPermissionGrant
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
-    public int PositionID
+    public int PositionId
     {
         get; set;
     }
@@ -21,7 +21,7 @@ public class PositionPermissionGrant
     {
         get; set;
     }
-    public int? TargetTeamID
+    public int? TargetTeamId
     {
         get; set;
     }

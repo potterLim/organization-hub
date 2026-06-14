@@ -5,7 +5,7 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class UserAccount
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
@@ -16,7 +16,7 @@ public class UserAccount
     {
         get; set;
     }
-    public int? TeamID
+    public int? TeamId
     {
         get; set;
     }
@@ -24,7 +24,7 @@ public class UserAccount
     {
         get; set;
     }
-    public int? PositionID
+    public int? PositionId
     {
         get; set;
     }

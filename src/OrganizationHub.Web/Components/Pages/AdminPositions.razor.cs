@@ -15,8 +15,8 @@ public partial class AdminPositions
     private List<PermissionDefinition> mPermissionDefinitions = new List<PermissionDefinition>();
     private PositionFormModel mNewPositionFormModel = new PositionFormModel();
     private PositionFormModel mPermissionFormModel = new PositionFormModel();
-    private int mSelectedPermissionTeamID;
-    private int? mSelectedPositionIDOrNull;
+    private int mSelectedPermissionTeamId;
+    private int? mSelectedPositionIdOrNull;
     private string mSelectedPermissionCategory = string.Empty;
     private bool mShowOnlyAllowedPermissions;
     private string mMessage = string.Empty;
@@ -26,8 +26,8 @@ public partial class AdminPositions
     {
         await loadDataAsync();
         ensurePermissionCategorySelection();
-        mSelectedPermissionTeamID = getDefaultTeamID();
-        mNewPositionFormModel = createEmptyFormModel(mSelectedPermissionTeamID);
+        mSelectedPermissionTeamId = getDefaultTeamId();
+        mNewPositionFormModel = createEmptyFormModel(mSelectedPermissionTeamId);
         ensurePositionSelectionForSelectedTeam();
         loadSelectedPositionForm();
     }

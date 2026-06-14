@@ -15,52 +15,82 @@ public sealed partial class DriveBrowserService
         mChangeVersionService.Bump(ChangeVersionKeys.DRIVE_FILES);
     }
 
-    public void InvalidateRecentFiles(string folderID)
+    public void InvalidateRecentFiles(DriveFolderId folderId)
     {
         InvalidateRecentFiles();
-        mChangeVersionService.Bump(ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID(folderID)));
+        mChangeVersionService.Bump(ChangeVersionKeys.CreateDriveFolderKey(folderId));
     }
 
-    public void SuppressRecentUploadMerge(string fileID)
+    public void SuppressRecentUploadMerge(DriveItemId fileId)
     {
-        if (string.IsNullOrWhiteSpace(fileID))
+        if (fileId.HasValue == false)
         {
             return;
         }
 
-        mMemoryCache.Set(createRecentUploadSuppressionCacheKey(fileID), true, RECENT_UPLOAD_MERGE_WINDOW);
+        mMemoryCache.Set(createRecentUploadSuppressionCacheKey(fileId), true, RECENT_UPLOAD_MERGE_WINDOW);
     }
 
-    private string createRecentFilesCacheKey(UserSession userSession, EDriveFolderKind folderKind, int maximumCount, EManagementTeamFilter managementTeamFilter)
+    private string createRecentFilesCacheKey(
+        UserSession userSession,
+        EDriveFolderKind folderKind,
+        RecentItemLimit maximumCount,
+        EManagementTeamFilter managementTeamFilter
+    )
     {
         return createRecentFilesCacheKey("DriveFiles", userSession, folderKind, maximumCount, managementTeamFilter);
     }
 
-    private string createRecentUploadedFilesCacheKey(UserSession userSession, EDriveFolderKind folderKind, int maximumCount, EManagementTeamFilter managementTeamFilter)
+    private string createRecentUploadedFilesCacheKey(
+        UserSession userSession,
+        EDriveFolderKind folderKind,
+        RecentItemLimit maximumCount,
+        EManagementTeamFilter managementTeamFilter
+    )
     {
         return createRecentFilesCacheKey("UploadedFiles", userSession, folderKind, maximumCount, managementTeamFilter);
     }
 
-    private string createRecentFilesCacheKey(string sourceName, UserSession userSession, EDriveFolderKind folderKind, int maximumCount, EManagementTeamFilter managementTeamFilter)
+    private string createRecentFilesCacheKey(
+        string sourceName,
+        UserSession userSession,
+        EDriveFolderKind folderKind,
+        RecentItemLimit maximumCount,
+        EManagementTeamFilter managementTeamFilter
+    )
     {
-        string teamIDText = "none";
-        if (userSession.TeamID.HasValue)
+        string teamIdText = "none";
+        if (userSession.HasTeam)
         {
-            teamIDText = userSession.TeamID.Value.ToString(CultureInfo.InvariantCulture);
+            teamIdText = userSession.GetRequiredTeamIdValue().ToString(CultureInfo.InvariantCulture);
         }
 
         string managementTeamFilterText = managementTeamFilter == EManagementTeamFilter.ExcludeManagementTeam ? "exclude-management" : "include-management";
-        return "OrganizationHub:DriveBrowser:RecentFiles:" + sourceName + ":" + getRecentFilesCacheVersion() + ":" + userSession.UserID.ToString(CultureInfo.InvariantCulture) + ":" + userSession.Role + ":" + teamIDText + ":" + folderKind + ":" + maximumCount.ToString(CultureInfo.InvariantCulture) + ":" + managementTeamFilterText;
+        List<string> cacheKeyParts = new List<string>
+        {
+            "OrganizationHub",
+            "DriveBrowser",
+            "RecentFiles",
+            sourceName,
+            getRecentFilesCacheVersion(),
+            userSession.UserId.ToString(CultureInfo.InvariantCulture),
+            userSession.Role.ToString(),
+            teamIdText,
+            folderKind.ToString(),
+            maximumCount.Value.ToString(CultureInfo.InvariantCulture),
+            managementTeamFilterText
+        };
+        return string.Join(":", cacheKeyParts);
     }
 
-    private bool isRecentUploadMergeSuppressed(string fileID)
+    private bool isRecentUploadMergeSuppressed(DriveItemId fileId)
     {
-        return mMemoryCache.Get<bool>(createRecentUploadSuppressionCacheKey(fileID));
+        return mMemoryCache.Get<bool>(createRecentUploadSuppressionCacheKey(fileId));
     }
 
-    private static string createRecentUploadSuppressionCacheKey(string fileID)
+    private static string createRecentUploadSuppressionCacheKey(DriveItemId fileId)
     {
-        return RECENT_UPLOAD_SUPPRESSION_PREFIX + fileID.Trim();
+        return RECENT_UPLOAD_SUPPRESSION_PREFIX + fileId.GetRequiredValue();
     }
 
     private string getRecentFilesCacheVersion()
@@ -90,7 +120,7 @@ public sealed partial class DriveBrowserService
     private DriveFileItem cloneDriveFileItem(DriveFileItem file)
     {
         DriveFileItem clonedFile = new DriveFileItem();
-        clonedFile.ID = file.ID;
+        clonedFile.Id = file.Id;
         clonedFile.Name = file.Name;
         clonedFile.MimeType = file.MimeType;
         clonedFile.CreatedTime = file.CreatedTime;

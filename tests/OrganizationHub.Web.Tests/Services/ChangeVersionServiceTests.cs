@@ -15,7 +15,7 @@ public sealed class ChangeVersionServiceTests
     public void HasChangedReturnsFalseWhenSnapshotIsCurrent()
     {
         ChangeVersionService service = new ChangeVersionService();
-        List<string> keys = new List<string>();
+        List<ChangeVersionKey> keys = new List<ChangeVersionKey>();
         keys.Add(ChangeVersionKeys.DRIVE_FILES);
 
         ChangeVersionSnapshot snapshot = service.GetSnapshot(keys);
@@ -27,11 +27,11 @@ public sealed class ChangeVersionServiceTests
     public void HasChangedReturnsTrueAfterTrackedKeyIsBumped()
     {
         ChangeVersionService service = new ChangeVersionService();
-        List<string> keys = new List<string>();
-        keys.Add(ChangeVersionKeys.TODO);
+        List<ChangeVersionKey> keys = new List<ChangeVersionKey>();
+        keys.Add(ChangeVersionKeys.TASKS);
 
         ChangeVersionSnapshot snapshot = service.GetSnapshot(keys);
-        service.Bump(ChangeVersionKeys.TODO);
+        service.Bump(ChangeVersionKeys.TASKS);
 
         Assert.True(service.HasChanged(snapshot));
     }
@@ -40,9 +40,9 @@ public sealed class ChangeVersionServiceTests
     public void SnapshotTracksSpecificFolderKeySeparately()
     {
         ChangeVersionService service = new ChangeVersionService();
-        string planningFolderKey = ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID("planning-folder"));
-        string operationFolderKey = ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID("operation-folder"));
-        List<string> keys = new List<string>();
+        ChangeVersionKey planningFolderKey = ChangeVersionKeys.CreateDriveFolderKey(DriveFolderId.CreateOptional("planning-folder"));
+        ChangeVersionKey operationFolderKey = ChangeVersionKeys.CreateDriveFolderKey(DriveFolderId.CreateOptional("operation-folder"));
+        List<ChangeVersionKey> keys = new List<ChangeVersionKey>();
         keys.Add(planningFolderKey);
 
         ChangeVersionSnapshot snapshot = service.GetSnapshot(keys);
@@ -59,8 +59,8 @@ public sealed class ChangeVersionServiceTests
     public async Task ReadWithStableSnapshotRetriesWhenVersionChangesDuringReadAsync()
     {
         ChangeVersionService service = new ChangeVersionService();
-        List<string> keys = new List<string>();
-        keys.Add(ChangeVersionKeys.TODO);
+        List<ChangeVersionKey> keys = new List<ChangeVersionKey>();
+        keys.Add(ChangeVersionKeys.TASKS);
         int readCount = 0;
 
         ChangeVersionReadResult<string> result = await service.ReadWithStableSnapshotAsync(
@@ -70,7 +70,7 @@ public sealed class ChangeVersionServiceTests
                 readCount++;
                 if (readCount == 1)
                 {
-                    service.Bump(ChangeVersionKeys.TODO);
+                    service.Bump(ChangeVersionKeys.TASKS);
                 }
 
                 return Task.FromResult("read-" + readCount.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -86,7 +86,7 @@ public sealed class ChangeVersionServiceTests
     public async Task ReadWithStableSnapshotWaitsForActiveChangeBeforeReadingAsync()
     {
         ChangeVersionService service = new ChangeVersionService();
-        List<string> keys = new List<string>();
+        List<ChangeVersionKey> keys = new List<ChangeVersionKey>();
         keys.Add(ChangeVersionKeys.DRIVE_FILES);
         int readCount = 0;
 
@@ -117,7 +117,7 @@ public sealed class ChangeVersionServiceTests
     public async Task ReadWithStableSnapshotDoesNotSpendReadAttemptsWhileChangeIsActiveAsync()
     {
         ChangeVersionService service = new ChangeVersionService();
-        List<string> keys = new List<string>();
+        List<ChangeVersionKey> keys = new List<ChangeVersionKey>();
         keys.Add(ChangeVersionKeys.DRIVE_FILES);
         int readCount = 0;
 
@@ -147,8 +147,8 @@ public sealed class ChangeVersionServiceTests
     public async Task ReadWithStableSnapshotCanBypassLateStaleCacheWhenCacheKeyUsesVersionAsync()
     {
         ChangeVersionService service = new ChangeVersionService();
-        string folderKey = ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID("planning-folder"));
-        List<string> keys = new List<string>();
+        ChangeVersionKey folderKey = ChangeVersionKeys.CreateDriveFolderKey(DriveFolderId.CreateOptional("planning-folder"));
+        List<ChangeVersionKey> keys = new List<ChangeVersionKey>();
         keys.Add(folderKey);
         Dictionary<string, string> cache = new Dictionary<string, string>();
         string sourceValue = "old";
@@ -159,7 +159,7 @@ public sealed class ChangeVersionServiceTests
             _ =>
             {
                 readCount++;
-                string cacheKey = folderKey + ":" + service.GetVersion(folderKey).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                string cacheKey = folderKey.Value + ":" + service.GetVersion(folderKey).ToString(System.Globalization.CultureInfo.InvariantCulture);
                 string? cachedValue;
                 if (cache.TryGetValue(cacheKey, out cachedValue))
                 {
@@ -191,7 +191,7 @@ public sealed class ChangeVersionServiceTests
     public void BeginChangeBumpsAtStartAndFinish()
     {
         ChangeVersionService service = new ChangeVersionService();
-        List<string> keys = new List<string>();
+        List<ChangeVersionKey> keys = new List<ChangeVersionKey>();
         keys.Add(ChangeVersionKeys.CALENDAR);
         ChangeVersionSnapshot initialSnapshot = service.GetSnapshot(keys);
 

@@ -54,7 +54,7 @@
                     <div class="hub-team-check-grid">
                         @foreach (Team team in mTeams)
                         {
-                            <MudCheckBox T="bool" Value="@isTeamSelected(team.ID)" ValueChanged="@(value => setTeamSelected(team.ID, value ? ETeamSelectionState.Selected : ETeamSelectionState.Deselected))" Label="@team.DisplayName" Color="Color.Primary" Disabled="@mFormModel.IsVisibleToAllTeams" />
+                            <MudCheckBox T="bool" Value="@isTeamSelected(team.Id)" ValueChanged="@(value => setTeamSelected(team.Id, value ? ETeamSelectionState.Selected : ETeamSelectionState.Deselected))" Label="@team.DisplayName" Color="Color.Primary" Disabled="@mFormModel.IsVisibleToAllTeams" />
                         }
                     </div>
                 }
@@ -130,24 +130,24 @@
     {
         mSelectedMenuItemOrNull = menuItem;
         mFormModel = new NavigationMenuItemFormModel();
-        mFormModel.ID = menuItem.ID;
+        mFormModel.Id = menuItem.Id;
         mFormModel.DisplayName = menuItem.DisplayName;
         mFormModel.SortOrder = menuItem.SortOrder;
         mFormModel.AccessLevel = menuItem.AccessLevel;
         mFormModel.IsActive = menuItem.IsActive;
         mFormModel.IsVisibleToAllTeams = menuItem.IsVisibleToAllTeams;
-        mFormModel.TeamIDs = menuItem.TeamPermissions.Select(permission => permission.TeamID).ToList();
+        mFormModel.TeamIds = menuItem.TeamPermissions.Select(permission => permission.TeamId).ToList();
     }
 
     private async Task saveMenuAsync()
     {
-        int menuID = mFormModel.ID;
-        ServiceResult result = await NavigationMenuService.UpdateMenuItemAsync(mFormModel, CancellationToken.None);
-        showResult(result, "메뉴 표시 설정이 저장되었습니다.");
-        if (result.IsSuccess)
+        int menuId = mFormModel.Id;
+        ServiceResult saveResult = await NavigationMenuService.UpdateMenuItemAsync(mFormModel, CancellationToken.None);
+        showOperationResult(saveResult, "메뉴 표시 설정이 저장되었습니다.");
+        if (saveResult.IsSuccess)
         {
             await loadDataAsync();
-            NavigationMenuItem? menuItemOrNull = mMenuItems.FirstOrDefault(menuItem => menuItem.ID == menuID);
+            NavigationMenuItem? menuItemOrNull = mMenuItems.FirstOrDefault(menuItem => menuItem.Id == menuId);
             if (menuItemOrNull != null)
             {
                 editMenu(menuItemOrNull);
@@ -160,7 +160,7 @@
         mFormModel.IsVisibleToAllTeams = menuTeamVisibility == EMenuTeamVisibility.AllTeams;
         if (menuTeamVisibility == EMenuTeamVisibility.AllTeams)
         {
-            mFormModel.TeamIDs.Clear();
+            mFormModel.TeamIds.Clear();
         }
     }
 
@@ -170,28 +170,28 @@
         if (MenuAccessLevelUtility.IsTeamScoped(accessLevel) == false)
         {
             mFormModel.IsVisibleToAllTeams = false;
-            mFormModel.TeamIDs.Clear();
+            mFormModel.TeamIds.Clear();
         }
     }
 
-    private void setTeamSelected(int teamID, ETeamSelectionState selectionState)
+    private void setTeamSelected(int teamId, ETeamSelectionState selectionState)
     {
         if (selectionState == ETeamSelectionState.Selected)
         {
-            if (mFormModel.TeamIDs.Contains(teamID) == false)
+            if (mFormModel.TeamIds.Contains(teamId) == false)
             {
-                mFormModel.TeamIDs.Add(teamID);
+                mFormModel.TeamIds.Add(teamId);
             }
 
             return;
         }
 
-        mFormModel.TeamIDs.Remove(teamID);
+        mFormModel.TeamIds.Remove(teamId);
     }
 
-    private bool isTeamSelected(int teamID)
+    private bool isTeamSelected(int teamId)
     {
-        return mFormModel.TeamIDs.Contains(teamID);
+        return mFormModel.TeamIds.Contains(teamId);
     }
 
     private string getTeamPermissionText(NavigationMenuItem menuItem)
@@ -222,16 +222,16 @@
         return string.Join(", ", teamNames);
     }
 
-    private void showResult(ServiceResult result, string successMessage)
+    private void showOperationResult(ServiceResult operationResult, string successMessage)
     {
-        if (result.IsSuccess)
+        if (operationResult.IsSuccess)
         {
             mMessage = successMessage;
             mMessageSeverity = Severity.Success;
             return;
         }
 
-        mMessage = result.ErrorMessage;
+        mMessage = operationResult.ErrorMessage;
         mMessageSeverity = Severity.Error;
     }
 }

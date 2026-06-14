@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 using OrganizationHub.Web.Services;
 
@@ -22,10 +23,13 @@ public sealed class AccountController : Controller
     [ActionName("Login")]
     [HttpPost("/account/login")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> LoginAsync([FromForm(Name = "username")] string? usernameOrNull, [FromForm(Name = "password")] string? passwordOrNull)
+    public async Task<IActionResult> LoginAsync(
+        [FromForm(Name = "username")] string? usernameOrNull,
+        [FromForm(Name = "password")] string? passwordOrNull
+    )
     {
-        string username = getNullAsEmpty(usernameOrNull);
-        string password = getNullAsEmpty(passwordOrNull);
+        string username = getTextOrEmpty(usernameOrNull);
+        PlainPassword password = PlainPassword.CreateFromInput(passwordOrNull);
         LoginResult loginResult = await mAuthService.ValidateLoginAsync(username, password, HttpContext.RequestAborted);
         if (loginResult.IsSuccess == false || loginResult.PrincipalOrNull == null)
         {
@@ -54,13 +58,13 @@ public sealed class AccountController : Controller
         return Redirect("/login");
     }
 
-    private string getNullAsEmpty(string? valueOrNull)
+    private string getTextOrEmpty(string? textOrNull)
     {
-        if (valueOrNull == null)
+        if (textOrNull == null)
         {
             return string.Empty;
         }
 
-        return valueOrNull;
+        return textOrNull;
     }
 }

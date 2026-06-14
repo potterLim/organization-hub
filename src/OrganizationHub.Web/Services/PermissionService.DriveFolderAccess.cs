@@ -8,14 +8,19 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class PermissionService
 {
-    private async Task<DriveFolderReference?> getAllowedFolderRootForFolderAsync(UserSession userSession, string folderID, EDriveFolderRootSelection rootSelection, CancellationToken cancellationToken)
+    private async Task<DriveFolderReference?> getAllowedFolderRootForFolderAsync(
+        UserSession userSession,
+        DriveFolderId folderId,
+        EDriveFolderRootSelection rootSelection,
+        CancellationToken cancellationToken
+    )
     {
-        if (string.IsNullOrWhiteSpace(folderID))
+        if (folderId.HasValue == false)
         {
             return null;
         }
 
-        DriveFileMetadata? folderMetadataOrNull = await mDriveService.GetFileOrNullAsync(folderID, cancellationToken);
+        DriveFileMetadata? folderMetadataOrNull = await mDriveService.GetFileOrNullAsync(DriveItemId.CreateRequired(folderId.GetRequiredValue()), cancellationToken);
         if (folderMetadataOrNull == null || folderMetadataOrNull.MimeType != GOOGLE_DRIVE_FOLDER_MIME_TYPE)
         {
             return null;
@@ -32,27 +37,35 @@ public sealed partial class PermissionService
             candidateFolders = await getDriveFoldersAsync(userSession, accessMode, null, cancellationToken);
         }
 
-        return await getMatchingFolderRootOrNullAsync(folderID, candidateFolders, cancellationToken);
+        return await getMatchingFolderRootOrNullAsync(folderId, candidateFolders, cancellationToken);
     }
 
-    private async Task<DriveFolderReference?> getReadableFolderRootForFolderAsync(UserSession userSession, string folderID, CancellationToken cancellationToken)
+    private async Task<DriveFolderReference?> getReadableFolderRootForFolderAsync(
+        UserSession userSession,
+        DriveFolderId folderId,
+        CancellationToken cancellationToken
+    )
     {
-        if (string.IsNullOrWhiteSpace(folderID))
+        if (folderId.HasValue == false)
         {
             return null;
         }
 
-        DriveFileMetadata? folderMetadataOrNull = await mDriveService.GetFileOrNullAsync(folderID, cancellationToken);
+        DriveFileMetadata? folderMetadataOrNull = await mDriveService.GetFileOrNullAsync(DriveItemId.CreateRequired(folderId.GetRequiredValue()), cancellationToken);
         if (folderMetadataOrNull == null || folderMetadataOrNull.MimeType != GOOGLE_DRIVE_FOLDER_MIME_TYPE)
         {
             return null;
         }
 
         IReadOnlyList<DriveFolderReference> candidateFolders = await getDriveFoldersAsync(userSession, EDriveFolderAccessMode.Readable, null, cancellationToken);
-        return await getMatchingFolderRootOrNullAsync(folderID, candidateFolders, cancellationToken);
+        return await getMatchingFolderRootOrNullAsync(folderId, candidateFolders, cancellationToken);
     }
 
-    private async Task<DriveFolderReference?> getMatchingFolderRootOrNullAsync(string folderID, IReadOnlyList<DriveFolderReference> candidateFolders, CancellationToken cancellationToken)
+    private async Task<DriveFolderReference?> getMatchingFolderRootOrNullAsync(
+        DriveFolderId folderId,
+        IReadOnlyList<DriveFolderReference> candidateFolders,
+        CancellationToken cancellationToken
+    )
     {
         if (candidateFolders.Count == 0)
         {
@@ -61,22 +74,22 @@ public sealed partial class PermissionService
 
         foreach (DriveFolderReference candidateFolder in candidateFolders)
         {
-            if (candidateFolder.FolderID == folderID)
+            if (candidateFolder.FolderId == folderId)
             {
-                bool canUseRootFolder = await canUseFolderInsideOfficialRootAsync(folderID, cancellationToken);
+                bool canUseRootFolder = await canUseFolderInsideOfficialRootAsync(folderId, cancellationToken);
                 return canUseRootFolder ? candidateFolder : null;
             }
         }
 
-        IReadOnlySet<string> ancestorFolderIDs = await mDriveService.GetAncestorFolderIDsAsync(folderID, cancellationToken);
+        IReadOnlySet<DriveFolderId> ancestorFolderIds = await mDriveService.GetAncestorFolderIdsAsync(DriveItemId.CreateRequired(folderId.GetRequiredValue()), cancellationToken);
         foreach (DriveFolderReference candidateFolder in candidateFolders)
         {
-            if (ancestorFolderIDs.Contains(candidateFolder.FolderID) == false)
+            if (ancestorFolderIds.Contains(candidateFolder.FolderId) == false)
             {
                 continue;
             }
 
-            bool canUseFolder = await canUseFolderInsideOfficialRootAsync(folderID, cancellationToken);
+            bool canUseFolder = await canUseFolderInsideOfficialRootAsync(folderId, cancellationToken);
             if (canUseFolder)
             {
                 return candidateFolder;

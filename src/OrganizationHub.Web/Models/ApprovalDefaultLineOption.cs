@@ -6,15 +6,15 @@ public sealed class ApprovalDefaultLineOption
     {
         get; set;
     }
-    public int FirstApproverUserID
+    public int FirstApproverUserId
     {
         get; set;
     }
-    public int SecondApproverUserID
+    public int SecondApproverUserId
     {
         get; set;
     }
-    public int FinalApproverUserID
+    public int FinalApproverUserId
     {
         get; set;
     }

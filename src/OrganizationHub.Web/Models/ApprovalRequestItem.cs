@@ -6,14 +6,14 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class ApprovalRequestItem
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
     public string Title { get; set; } = string.Empty;
-    public string FileID { get; set; } = string.Empty;
+    public string FileId { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
-    public string ApprovedFileID { get; set; } = string.Empty;
+    public string ApprovedFileId { get; set; } = string.Empty;
     public string ApprovedFolderDisplayName { get; set; } = string.Empty;
     public string TeamName { get; set; } = string.Empty;
     public string RequesterDisplayName { get; set; } = string.Empty;
@@ -44,13 +44,13 @@ public sealed class ApprovalRequestItem
     public IReadOnlyList<ApprovalStepItem> Steps { get; set; } = new List<ApprovalStepItem>();
     public IReadOnlyList<ApprovalAuditLogItem> AuditLogs { get; set; } = new List<ApprovalAuditLogItem>();
 
-    public string GetDownloadFileID()
+    public string GetDownloadFileId()
     {
-        if (string.IsNullOrWhiteSpace(ApprovedFileID))
+        if (string.IsNullOrWhiteSpace(ApprovedFileId))
         {
-            return FileID;
+            return FileId;
         }
 
-        return ApprovedFileID;
+        return ApprovedFileId;
     }
 }

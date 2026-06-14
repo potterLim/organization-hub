@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Apis.Drive.v3;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 using DriveDataFile = Google.Apis.Drive.v3.Data.File;
 using DriveFileList = Google.Apis.Drive.v3.Data.FileList;
@@ -10,9 +11,10 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleDriveService
 {
-    public async Task<IReadOnlyList<DriveFileItem>> ListFilesAsync(string folderID, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DriveFileItem>> ListFilesAsync(DriveFolderId folderId, CancellationToken cancellationToken)
     {
-        string cacheKey = createFolderListCacheKey(folderID);
+        string requiredFolderId = folderId.GetRequiredValue();
+        string cacheKey = createFolderListCacheKey(folderId);
         IReadOnlyList<DriveFileItem>? cachedFilesOrNull = getCachedDriveFileItemsOrNull(cacheKey);
         if (cachedFilesOrNull != null)
         {
@@ -21,7 +23,7 @@ public sealed partial class GoogleDriveService
 
         DriveService driveService = await createDriveServiceAsync(cancellationToken);
         FilesResource.ListRequest request = driveService.Files.List();
-        request.Q = "'" + escapeDriveQueryValue(folderID) + "' in parents and trashed = false";
+        request.Q = "'" + escapeDriveQueryValue(requiredFolderId) + "' in parents and trashed = false";
         request.Fields = "files(id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size)";
         request.OrderBy = "modifiedTime desc";
         request.SupportsAllDrives = true;
@@ -32,11 +34,17 @@ public sealed partial class GoogleDriveService
         return cloneDriveFileItems(files);
     }
 
-    public async Task<IReadOnlyList<DriveFileItem>> SearchFilesAsync(string folderID, string keyword, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DriveFileItem>> SearchFilesAsync(
+        DriveFolderId folderId,
+        SearchKeyword keyword,
+        CancellationToken cancellationToken
+    )
     {
+        string requiredFolderId = folderId.GetRequiredValue();
+        string requiredKeyword = keyword.GetOptionalValue();
         DriveService driveService = await createDriveServiceAsync(cancellationToken);
         FilesResource.ListRequest request = driveService.Files.List();
-        request.Q = "'" + escapeDriveQueryValue(folderID) + "' in parents and trashed = false and name contains '" + escapeDriveQueryValue(keyword) + "'";
+        request.Q = "'" + escapeDriveQueryValue(requiredFolderId) + "' in parents and trashed = false and name contains '" + escapeDriveQueryValue(requiredKeyword) + "'";
         request.Fields = "files(id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size)";
         request.OrderBy = "modifiedTime desc";
         request.SupportsAllDrives = true;
@@ -45,9 +53,10 @@ public sealed partial class GoogleDriveService
         return createDriveFileItems(fileList, string.Empty);
     }
 
-    public async Task<DriveFileMetadata?> GetFileOrNullAsync(string fileID, CancellationToken cancellationToken)
+    public async Task<DriveFileMetadata?> GetFileOrNullAsync(DriveItemId fileId, CancellationToken cancellationToken)
     {
-        string cacheKey = createFileMetadataCacheKey(fileID);
+        string requiredFileId = fileId.GetRequiredValue();
+        string cacheKey = createFileMetadataCacheKey(fileId);
         DriveFileMetadata? cachedMetadataOrNull = getCachedDriveFileMetadataOrNull(cacheKey);
         if (cachedMetadataOrNull != null)
         {
@@ -55,7 +64,7 @@ public sealed partial class GoogleDriveService
         }
 
         DriveService driveService = await createDriveServiceAsync(cancellationToken);
-        FilesResource.GetRequest request = driveService.Files.Get(fileID);
+        FilesResource.GetRequest request = driveService.Files.Get(requiredFileId);
         request.Fields = "id,name,mimeType,parents";
         request.SupportsAllDrives = true;
         try
@@ -76,38 +85,38 @@ public sealed partial class GoogleDriveService
         }
     }
 
-    public async Task<IReadOnlySet<string>> GetAncestorFolderIDsAsync(string fileID, CancellationToken cancellationToken)
+    public async Task<IReadOnlySet<DriveFolderId>> GetAncestorFolderIdsAsync(DriveItemId fileId, CancellationToken cancellationToken)
     {
-        string cacheKey = createAncestorFolderIDsCacheKey(fileID);
-        IReadOnlySet<string>? cachedAncestorFolderIDsOrNull = getCachedAncestorFolderIDsOrNull(cacheKey);
-        if (cachedAncestorFolderIDsOrNull != null)
+        string cacheKey = createAncestorFolderIdsCacheKey(fileId);
+        IReadOnlySet<DriveFolderId>? cachedAncestorFolderIdsOrNull = getCachedAncestorFolderIdsOrNull(cacheKey);
+        if (cachedAncestorFolderIdsOrNull != null)
         {
-            return new HashSet<string>(cachedAncestorFolderIDsOrNull);
+            return new HashSet<DriveFolderId>(cachedAncestorFolderIdsOrNull);
         }
 
-        HashSet<string> ancestorFolderIDs = new HashSet<string>();
-        Queue<string> pendingFolderIDs = new Queue<string>();
-        DriveFileMetadata? fileMetadataOrNull = await GetFileOrNullAsync(fileID, cancellationToken);
+        HashSet<DriveFolderId> ancestorFolderIds = new HashSet<DriveFolderId>();
+        Queue<string> pendingFolderIds = new Queue<string>();
+        DriveFileMetadata? fileMetadataOrNull = await GetFileOrNullAsync(fileId, cancellationToken);
         if (fileMetadataOrNull == null)
         {
-            return ancestorFolderIDs;
+            return ancestorFolderIds;
         }
 
-        foreach (string parentFolderID in fileMetadataOrNull.ParentFolderIDs)
+        foreach (string parentFolderId in fileMetadataOrNull.ParentFolderIds)
         {
-            if (ancestorFolderIDs.Add(parentFolderID))
+            if (ancestorFolderIds.Add(DriveFolderId.CreateOptional(parentFolderId)))
             {
-                pendingFolderIDs.Enqueue(parentFolderID);
+                pendingFolderIds.Enqueue(parentFolderId);
             }
         }
 
         DriveService driveService = await createDriveServiceAsync(cancellationToken);
         int inspectedFolderCount = 0;
-        while (pendingFolderIDs.Count > 0 && inspectedFolderCount < 40)
+        while (pendingFolderIds.Count > 0 && inspectedFolderCount < 40)
         {
             inspectedFolderCount = inspectedFolderCount + 1;
-            string currentFolderID = pendingFolderIDs.Dequeue();
-            FilesResource.GetRequest request = driveService.Files.Get(currentFolderID);
+            string currentFolderId = pendingFolderIds.Dequeue();
+            FilesResource.GetRequest request = driveService.Files.Get(currentFolderId);
             request.Fields = "id,parents";
             request.SupportsAllDrives = true;
             DriveDataFile folder = await request.ExecuteAsync(cancellationToken);
@@ -116,16 +125,16 @@ public sealed partial class GoogleDriveService
                 continue;
             }
 
-            foreach (string parentFolderID in folder.Parents)
+            foreach (string parentFolderId in folder.Parents)
             {
-                if (ancestorFolderIDs.Add(parentFolderID))
+                if (ancestorFolderIds.Add(DriveFolderId.CreateOptional(parentFolderId)))
                 {
-                    pendingFolderIDs.Enqueue(parentFolderID);
+                    pendingFolderIds.Enqueue(parentFolderId);
                 }
             }
         }
 
-        setAncestorFolderIDsCache(cacheKey, ancestorFolderIDs, ANCESTOR_CACHE_DURATION);
-        return ancestorFolderIDs;
+        setAncestorFolderIdsCache(cacheKey, ancestorFolderIds, ANCESTOR_CACHE_DURATION);
+        return ancestorFolderIds;
     }
 }

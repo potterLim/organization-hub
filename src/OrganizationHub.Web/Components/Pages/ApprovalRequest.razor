@@ -34,10 +34,10 @@ else
             <MudPaper Class="hub-card pa-4">
                 <MudText Typo="Typo.h6">결재할 파일</MudText>
                 <div class="hub-browser-toolbar">
-                    <MudSelect T="string" Label="자료 위치" Value="mFormModel.SourceFolderID" ValueChanged="handleSourceFolderChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
+                    <MudSelect T="string" Label="자료 위치" Value="mFormModel.SourceFolderId" ValueChanged="handleSourceFolderChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
                         @foreach (DriveFolderReference folder in mCreateContext.SourceFolders)
                         {
-                            <MudSelectItem T="string" Value="@folder.FolderID">@folder.DisplayName</MudSelectItem>
+                            <MudSelectItem T="string" Value="@folder.FolderId.Value">@folder.DisplayName</MudSelectItem>
                         }
                     </MudSelect>
                     <div class="hub-browser-search">
@@ -101,7 +101,7 @@ else
                                     else
                                     {
                                         <MudTooltip Text="선택">
-                                            <MudIconButton Icon="@(mFormModel.FileID == file.ID ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)" Color="Color.Primary" Size="Size.Small" OnClick="@(() => selectFile(file))" aria-label="선택" />
+                                            <MudIconButton Icon="@(mFormModel.FileId == file.Id ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)" Color="Color.Primary" Size="Size.Small" OnClick="@(() => selectFile(file))" aria-label="선택" />
                                         </MudTooltip>
                                     }
                                 </MudTd>
@@ -131,7 +131,7 @@ else
                                     else
                                     {
                                         <MudTooltip Text="선택">
-                                            <MudIconButton Icon="@(mFormModel.FileID == file.ID ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)" Color="Color.Primary" Size="Size.Small" OnClick="@(() => selectFile(file))" aria-label="선택" />
+                                            <MudIconButton Icon="@(mFormModel.FileId == file.Id ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)" Color="Color.Primary" Size="Size.Small" OnClick="@(() => selectFile(file))" aria-label="선택" />
                                         </MudTooltip>
                                     }
                                 </div>
@@ -142,10 +142,10 @@ else
             </MudPaper>
             <MudPaper Class="hub-card hub-form-card pa-4 mt-4">
                 <MudText Typo="Typo.h6">승인본 저장 위치</MudText>
-                <MudSelect T="string" Label="보관 영역" Value="mSelectedDestinationRootFolderID" ValueChanged="handleDestinationRootChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
+                <MudSelect T="string" Label="보관 영역" Value="mSelectedDestinationRootFolderId" ValueChanged="handleDestinationRootChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
                     @foreach (DriveFolderReference folder in mCreateContext.DestinationFolders)
                     {
-                        <MudSelectItem T="string" Value="@folder.FolderID">@folder.DisplayName</MudSelectItem>
+                        <MudSelectItem T="string" Value="@folder.FolderId.Value">@folder.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
                 <div class="hub-browser-location">
@@ -225,71 +225,22 @@ else
         </MudItem>
         <MudItem xs="12" lg="4">
             <MudStack Spacing="4">
-                <MudPaper Class="hub-card hub-form-card hub-approval-line-card pa-4">
-                    <div class="hub-approval-line-head">
-                        <MudText Typo="Typo.h6">결재 경로</MudText>
-                        <MudText Typo="Typo.body2" Class="hub-muted">요청 후 아래 순서대로 결재가 진행됩니다.</MudText>
-                    </div>
-                    <MudTextField T="string" Value="@mFormModel.Title" ValueChanged="handleTitleChangedAsync" Label="요청 제목" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    <MudSelect T="int" Label="결재 방식" Value="mFormModel.StepCount" ValueChanged="handleStepCountChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@getApprovalStepDescription()">
-                        @foreach (int stepCount in mCreateContext.AvailableStepCounts)
-                        {
-                            <MudSelectItem T="int" Value="@stepCount">@getApprovalStepLabel(stepCount)</MudSelectItem>
-                        }
-                    </MudSelect>
-                    <div class="hub-approval-flow-preview" aria-label="결재 진행 순서">
-                        @foreach (ApprovalFlowPreviewItem previewItem in getApprovalFlowPreviewItems())
-                        {
-                            <div class="@getApprovalFlowStepClass(previewItem)">
-                                <span class="hub-approval-flow-number">@previewItem.StepNumber</span>
-                                <div>
-                                    <strong>@previewItem.Title</strong>
-                                    <span>@previewItem.ApproverLabel</span>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                    <div class="hub-approval-approver-fields">
-                        @if (mFormModel.StepCount >= 2)
-                        {
-                            <MudSelect @key="@("first-" + mFormModel.StepCount)" T="int" Label="1차 결재자" Value="mFormModel.FirstApproverUserID" ValueChanged="handleFirstApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                @foreach (ApprovalUserOption userOption in getFirstApproverOptions())
-                                {
-                                    <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
-                                }
-                            </MudSelect>
-                        }
-                        @if (mFormModel.StepCount == 3)
-                        {
-                            <MudSelect @key="@("second-" + mFormModel.StepCount)" T="int" Label="2차 결재자" Value="mFormModel.SecondApproverUserID" ValueChanged="handleSecondApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                @foreach (ApprovalUserOption userOption in getSecondApproverOptions())
-                                {
-                                    <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
-                                }
-                            </MudSelect>
-                        }
-                        @if (mCreateContext.FinalApproverOptions.Count == 1)
-                        {
-                            <MudTextField Value="@mCreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="최종 결재자" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
-                        }
-                        else
-                        {
-                            <MudSelect @key="@("final-" + mFormModel.StepCount)" T="int" Label="최종 결재자" Value="mFormModel.FinalApproverUserID" ValueChanged="handleFinalApproverChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                @foreach (ApprovalUserOption userOption in getFinalApproverOptions())
-                                {
-                                    <MudSelectItem T="int" Value="@userOption.UserID">@userOption.GetDisplayLabel()</MudSelectItem>
-                                }
-                            </MudSelect>
-                        }
-                    </div>
-                    <div class="hub-submit-row">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Approval" Disabled="@(mIsSubmitting || string.IsNullOrWhiteSpace(mFormModel.FileID))" OnClick="submitRequestAsync" Class="hub-primary-action-button hub-approval-submit-button">결재 요청 보내기</MudButton>
-                    </div>
-                    @if (string.IsNullOrWhiteSpace(mFormModel.FileID))
-                    {
-                        <MudText Typo="Typo.caption" Class="hub-muted hub-approval-submit-hint">결재할 파일을 선택해 주세요.</MudText>
-                    }
-                </MudPaper>
+                <ApprovalRequestLineCard FormModel="mFormModel"
+                                         CreateContext="mCreateContext"
+                                         FirstApproverOptions="getFirstApproverOptions()"
+                                         SecondApproverOptions="getSecondApproverOptions()"
+                                         FinalApproverOptions="getFinalApproverOptions()"
+                                         ApprovalFlowPreviewItems="getApprovalFlowPreviewItems()"
+                                         StepDescription="@getApprovalStepDescription()"
+                                         IsSubmitting="mIsSubmitting"
+                                         GetApprovalStepLabel="getApprovalStepLabel"
+                                         GetApprovalFlowStepClass="getApprovalFlowStepClass"
+                                         TitleChanged="handleTitleChangedAsync"
+                                         StepCountChanged="handleStepCountChangedAsync"
+                                         FirstApproverChanged="handleFirstApproverChangedAsync"
+                                         SecondApproverChanged="handleSecondApproverChangedAsync"
+                                         FinalApproverChanged="handleFinalApproverChangedAsync"
+                                         SubmitRequested="submitRequestAsync" />
             </MudStack>
         </MudItem>
     </MudGrid>

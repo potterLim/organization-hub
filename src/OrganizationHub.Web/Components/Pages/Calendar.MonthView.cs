@@ -60,37 +60,6 @@ public partial class Calendar
         return calendarEvent.Start.Value.ToLocalTime().Date;
     }
 
-    private string getCalendarDayCellClass(CalendarDayCell dayCell)
-    {
-        string className = "hub-calendar-day";
-        if (dayCell.IsCurrentMonth == false)
-        {
-            className += " hub-calendar-day-muted";
-        }
-
-        if (dayCell.IsToday)
-        {
-            className += " hub-calendar-day-today";
-        }
-
-        if (dayCell.Events.Count > 0)
-        {
-            className += " hub-calendar-day-has-events";
-        }
-
-        return className;
-    }
-
-    private IReadOnlyList<CalendarEventItem> getPreviewDayEvents(CalendarDayCell dayCell)
-    {
-        return dayCell.Events.Take(4).ToList();
-    }
-
-    private int getHiddenDayEventCount(CalendarDayCell dayCell)
-    {
-        return Math.Max(0, dayCell.Events.Count - getPreviewDayEvents(dayCell).Count);
-    }
-
     private IReadOnlyList<CalendarEventItem> getSelectedDayEvents()
     {
         if (mSelectedDayOrNull.HasValue == false)
@@ -104,16 +73,6 @@ public partial class Calendar
             .OrderBy(calendarEvent => calendarEvent.Start)
             .ThenBy(calendarEvent => calendarEvent.Summary)
             .ToList();
-    }
-
-    private string getDayEventCountText(CalendarDayCell dayCell)
-    {
-        return dayCell.Events.Count.ToString(CultureInfo.InvariantCulture) + "건";
-    }
-
-    private string getDaySummaryLabel(CalendarDayCell dayCell)
-    {
-        return dayCell.Date.ToString("M월 d일", CultureInfo.InvariantCulture) + " 일정 " + getDayEventCountText(dayCell) + " 보기";
     }
 
     private string getCalendarDayDetailItemClass(CalendarEventItem calendarEvent)

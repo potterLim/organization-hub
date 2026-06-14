@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class ApprovalUserOption
 {
-    public int UserID
+    public int UserId
     {
         get; set;
     }
@@ -14,7 +14,7 @@ public sealed class ApprovalUserOption
     {
         get; set;
     }
-    public int? TeamID
+    public int? TeamId
     {
         get; set;
     }

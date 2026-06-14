@@ -10,7 +10,11 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class UserManagementService
 {
-    private async Task<ServiceResult> validateUserFormAsync(UserAccountFormModel formModel, EPasswordRequirement passwordRequirement, CancellationToken cancellationToken)
+    private async Task<ServiceResult> validateUserFormAsync(
+        UserAccountFormModel formModel,
+        EPasswordRequirement passwordRequirement,
+        CancellationToken cancellationToken
+    )
     {
         if (string.IsNullOrWhiteSpace(formModel.Username))
         {
@@ -27,16 +31,25 @@ public sealed partial class UserManagementService
             return ServiceResult.Fail("초기 비밀번호는 8자 이상이어야 합니다.");
         }
 
-        if (formModel.Role != EUserRole.Admin && formModel.TeamID.HasValue == false)
+        OrganizationTeamId? teamIdOrNull = formModel.TeamIdOrNull;
+        OrganizationPositionId? positionIdOrNull = formModel.PositionIdOrNull;
+        if (formModel.Role != EUserRole.Admin && teamIdOrNull.HasValue == false)
         {
             return ServiceResult.Fail("일반 사용자 계정은 소속 팀이 필요합니다.");
         }
 
-        if (formModel.TeamID.HasValue)
+        if (teamIdOrNull.HasValue)
         {
+            int? teamIdValueOrNull = OrganizationTeamId.GetValueOrNull(teamIdOrNull);
+            if (teamIdValueOrNull.HasValue == false)
+            {
+                return ServiceResult.Fail("활성 팀을 선택해 주세요.");
+            }
+
+            int requiredTeamId = teamIdValueOrNull.GetValueOrDefault();
             await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
             {
-                Team? teamOrNull = await dbContext.Teams.FirstOrDefaultAsync(team => team.ID == formModel.TeamID.Value && team.IsActive, cancellationToken);
+                Team? teamOrNull = await dbContext.Teams.FirstOrDefaultAsync(team => team.Id == requiredTeamId && team.IsActive, cancellationToken);
                 if (teamOrNull == null)
                 {
                     return ServiceResult.Fail("활성 팀을 선택해 주세요.");
@@ -54,7 +67,7 @@ public sealed partial class UserManagementService
                 }
             }
         }
-        else if (formModel.PositionID.HasValue)
+        else if (positionIdOrNull.HasValue)
         {
             return ServiceResult.Fail("직책을 선택하려면 소속 팀이 필요합니다.");
         }
@@ -62,20 +75,29 @@ public sealed partial class UserManagementService
         return ServiceResult.Succeed();
     }
 
-    private async Task<ServiceResult> validatePositionSelectionAsync(OrganizationHubDbContext dbContext, UserAccountFormModel formModel, CancellationToken cancellationToken)
+    private async Task<ServiceResult> validatePositionSelectionAsync(
+        OrganizationHubDbContext dbContext,
+        UserAccountFormModel formModel,
+        CancellationToken cancellationToken
+    )
     {
-        if (formModel.PositionID.HasValue == false)
+        OrganizationPositionId? positionIdOrNull = formModel.PositionIdOrNull;
+        int? positionIdValueOrNull = OrganizationPositionId.GetValueOrNull(positionIdOrNull);
+        if (positionIdValueOrNull.HasValue == false)
         {
             return ServiceResult.Succeed();
         }
 
-        OrganizationPosition? positionOrNull = await dbContext.Positions.FirstOrDefaultAsync(position => position.ID == formModel.PositionID.Value && position.IsActive, cancellationToken);
+        OrganizationPosition? positionOrNull = await dbContext.Positions.FirstOrDefaultAsync(
+            position => position.Id == positionIdValueOrNull.GetValueOrDefault() && position.IsActive,
+            cancellationToken);
         if (positionOrNull == null)
         {
             return ServiceResult.Fail("활성 직책을 선택해 주세요.");
         }
 
-        if (formModel.TeamID.HasValue && positionOrNull.TeamID != formModel.TeamID.Value)
+        int? teamIdValueOrNull = OrganizationTeamId.GetValueOrNull(formModel.TeamIdOrNull);
+        if (teamIdValueOrNull.HasValue && positionOrNull.TeamId != teamIdValueOrNull.GetValueOrDefault())
         {
             return ServiceResult.Fail("선택한 직책이 소속 팀과 맞지 않습니다.");
         }

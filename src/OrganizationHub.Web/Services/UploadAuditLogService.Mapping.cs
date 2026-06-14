@@ -25,7 +25,7 @@ public sealed partial class UploadAuditLogService
     private UploadAuditLogItem createItem(UploadAuditLog auditLog, DriveFileMetadata? fileMetadataOrNull)
     {
         UploadAuditLogItem item = new UploadAuditLogItem();
-        item.FileID = auditLog.FileID;
+        item.FileId = auditLog.FileId;
         item.FileName = fileMetadataOrNull == null || string.IsNullOrWhiteSpace(fileMetadataOrNull.Name) ? auditLog.FileName : fileMetadataOrNull.Name;
         item.FolderDisplayName = auditLog.FolderDisplayName;
         item.FolderKind = auditLog.FolderKind;

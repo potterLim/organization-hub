@@ -4,11 +4,14 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class TodoTaskListReference
 {
-    public const string AGGREGATE_TASK_LIST_ID = "__organizationhub_all_tasks__";
+    public const string AGGREGATE_TASK_LIST_ID = TodoTaskListId.ALL_TASKS_VALUE;
 
-    public string TaskListID { get; private init; } = string.Empty;
+    public TodoTaskListId TaskListId
+    {
+        get; private init;
+    }
     public string DisplayName { get; private init; } = string.Empty;
-    public int? TeamID
+    public OrganizationTeamId? TeamIdOrNull
     {
         get; private init;
     }
@@ -17,21 +20,16 @@ public sealed class TodoTaskListReference
         get; private init;
     }
 
-    public TodoTaskListReference(string taskListID, string displayName, int? teamID)
-        : this(taskListID, displayName, teamID, ETodoTaskListKind.Regular)
+    public TodoTaskListReference(TodoTaskListId taskListId, string displayName, OrganizationTeamId? teamIdOrNull)
+        : this(taskListId, displayName, teamIdOrNull, ETodoTaskListKind.Regular)
     {
     }
 
-    public TodoTaskListReference(string taskListID, string displayName, int? teamID, ETodoTaskListKind taskListKind)
+    public TodoTaskListReference(TodoTaskListId taskListId, string displayName, OrganizationTeamId? teamIdOrNull, ETodoTaskListKind taskListKind)
     {
-        TaskListID = taskListID;
+        TaskListId = taskListId;
         DisplayName = displayName;
-        TeamID = teamID;
-        IsAggregate = taskListKind == ETodoTaskListKind.Aggregate;
-    }
-
-    public static bool IsAggregateTaskListID(string taskListID)
-    {
-        return taskListID == AGGREGATE_TASK_LIST_ID;
+        TeamIdOrNull = teamIdOrNull;
+        IsAggregate = taskListKind == ETodoTaskListKind.Aggregate || taskListId.IsAggregate;
     }
 }

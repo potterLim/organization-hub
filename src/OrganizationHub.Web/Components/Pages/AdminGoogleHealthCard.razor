@@ -1,0 +1,175 @@
+<MudPaper Class="hub-card hub-form-card pa-4">
+    <div class="hub-google-health-heading">
+        <MudText Typo="Typo.h6">연결 진단</MudText>
+        <MudTooltip Text="진단 새로고침">
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Size="Size.Small" OnClick="@(() => RefreshRequested.InvokeAsync())" aria-label="진단 새로고침" />
+        </MudTooltip>
+    </div>
+    @if (Items.Count == 0)
+    {
+        <div class="hub-empty">표시할 진단 항목이 없습니다.</div>
+    }
+    else
+    {
+        IReadOnlyList<GoogleHealthCheckItem> attentionHealthItems = getAttentionHealthItems();
+        IReadOnlyList<GoogleHealthCheckItem> healthyHealthItems = getHealthyHealthItems();
+        <div class="hub-health-list">
+            <div class="hub-health-summary">
+                <span class="@("hub-health-summary-pill " + getHealthSummaryClass())">@getHealthSummaryText()</span>
+                <span>@getHealthSummaryDescription(attentionHealthItems.Count, healthyHealthItems.Count)</span>
+            </div>
+            @if (attentionHealthItems.Count == 0)
+            {
+                <div class="hub-health-row hub-health-row-muted">
+                    <div class="hub-health-copy">
+                        <div class="hub-health-area">진단</div>
+                        <div class="hub-health-name">조치가 필요한 항목 없음</div>
+                        <div class="hub-muted">정상 항목은 아래에서 필요할 때만 펼쳐 확인합니다.</div>
+                    </div>
+                    <span class="hub-health-pill hub-health-healthy">정상</span>
+                </div>
+            }
+            @foreach (GoogleHealthCheckItem item in attentionHealthItems)
+            {
+                <div class="hub-health-row">
+                    <div class="hub-health-copy">
+                        <div class="hub-health-area">@item.Area</div>
+                        <div class="hub-health-name">@item.Name</div>
+                        <div class="hub-muted">@item.Message</div>
+                    </div>
+                    <span class="@("hub-health-pill " + getHealthClass(item.Status))">@getHealthText(item.Status)</span>
+                </div>
+            }
+            @if (healthyHealthItems.Count > 0)
+            {
+                <button type="button" class="hub-health-toggle" @onclick="@(() => ToggleHealthyItemsRequested.InvokeAsync())">
+                    <span>정상 항목 @(healthyHealthItems.Count)개</span>
+                    <MudIcon Icon="@(ShowHealthyItems ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" Size="Size.Small" />
+                </button>
+                @if (ShowHealthyItems)
+                {
+                    @foreach (GoogleHealthCheckItem item in healthyHealthItems)
+                    {
+                        <div class="hub-health-row hub-health-row-muted">
+                            <div class="hub-health-copy">
+                                <div class="hub-health-area">@item.Area</div>
+                                <div class="hub-health-name">@item.Name</div>
+                                <div class="hub-muted">@item.Message</div>
+                            </div>
+                            <span class="@("hub-health-pill " + getHealthClass(item.Status))">@getHealthText(item.Status)</span>
+                        </div>
+                    }
+                }
+            }
+        </div>
+    }
+</MudPaper>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<GoogleHealthCheckItem> Items
+    {
+        get; set;
+    } = new List<GoogleHealthCheckItem>();
+
+    [Parameter]
+    public bool ShowHealthyItems
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback RefreshRequested
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback ToggleHealthyItemsRequested
+    {
+        get; set;
+    }
+
+    private IReadOnlyList<GoogleHealthCheckItem> getAttentionHealthItems()
+    {
+        return Items.Where(item => isHealthyHealthStatus(item.Status) == false).ToList();
+    }
+
+    private IReadOnlyList<GoogleHealthCheckItem> getHealthyHealthItems()
+    {
+        return Items.Where(item => isHealthyHealthStatus(item.Status)).ToList();
+    }
+
+    private bool isHealthyHealthStatus(string status)
+    {
+        return status == "Healthy";
+    }
+
+    private string getHealthSummaryClass()
+    {
+        if (Items.Any(item => item.Status == "Error"))
+        {
+            return "hub-health-error";
+        }
+
+        if (Items.Any(item => item.Status == "Warning"))
+        {
+            return "hub-health-warning";
+        }
+
+        return "hub-health-healthy";
+    }
+
+    private string getHealthSummaryText()
+    {
+        int errorCount = Items.Count(item => item.Status == "Error");
+        int warningCount = Items.Count(item => item.Status == "Warning");
+        if (errorCount > 0)
+        {
+            return "오류 " + errorCount.ToString(CultureInfo.InvariantCulture) + "개";
+        }
+
+        if (warningCount > 0)
+        {
+            return "주의 " + warningCount.ToString(CultureInfo.InvariantCulture) + "개";
+        }
+
+        return "정상";
+    }
+
+    private string getHealthSummaryDescription(int attentionCount, int healthyCount)
+    {
+        if (attentionCount > 0)
+        {
+            return "먼저 확인할 항목 " + attentionCount.ToString(CultureInfo.InvariantCulture) + "개, 정상 항목 " + healthyCount.ToString(CultureInfo.InvariantCulture) + "개";
+        }
+
+        return "정상 항목 " + healthyCount.ToString(CultureInfo.InvariantCulture) + "개가 접혀 있습니다.";
+    }
+
+    private string getHealthClass(string status)
+    {
+        switch (status)
+        {
+            case "Healthy":
+                return "hub-health-healthy";
+            case "Warning":
+                return "hub-health-warning";
+            default:
+                return "hub-health-error";
+        }
+    }
+
+    private string getHealthText(string status)
+    {
+        switch (status)
+        {
+            case "Healthy":
+                return "정상";
+            case "Warning":
+                return "주의";
+            default:
+                return "오류";
+        }
+    }
+}

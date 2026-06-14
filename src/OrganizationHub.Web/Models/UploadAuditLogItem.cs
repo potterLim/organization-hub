@@ -5,7 +5,7 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class UploadAuditLogItem
 {
-    public string FileID { get; set; } = string.Empty;
+    public string FileId { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
     public string FolderDisplayName { get; set; } = string.Empty;
     public EDriveFolderKind FolderKind

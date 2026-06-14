@@ -1,0 +1,66 @@
+.hub-todo-shell {
+    display: grid;
+    gap: 20px;
+}
+
+.hub-todo-toolbar {
+    align-items: center;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(220px, 360px) minmax(0, 1fr);
+}
+
+.hub-todo-list-select {
+    min-width: 0;
+}
+
+.hub-todo-list-select .mud-input-control {
+    margin-top: 0;
+}
+
+.hub-todo-board {
+    align-items: stretch;
+}
+
+.hub-todo-column {
+    background: rgba(255, 255, 255, .42);
+    border: 1px solid rgba(78, 104, 145, .1);
+    border-radius: 22px;
+    display: grid;
+    gap: 10px;
+    min-height: 300px;
+    align-content: start;
+    padding: 18px;
+}
+
+.hub-todo-column-muted {
+    background: rgba(247, 250, 254, .56);
+}
+
+.hub-todo-column-head {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    min-height: 34px;
+}
+
+.hub-todo-column-head .mud-typography-h6 {
+    color: var(--hub-text-strong);
+    font-weight: 900;
+    letter-spacing: 0;
+}
+
+.hub-todo-list {
+    display: grid;
+    gap: 8px;
+}
+
+.hub-todo-empty {
+    border-radius: 16px;
+    min-height: 72px;
+    padding: 18px;
+}
+
+.mud-list-item {
+    border-radius: var(--hub-radius-sm);
+}

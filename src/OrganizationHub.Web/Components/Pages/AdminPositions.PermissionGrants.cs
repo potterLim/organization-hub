@@ -7,9 +7,8 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminPositions
 {
-    private void setPermissionAllowed(string permissionKey, bool isAllowed)
+    private void setPermissionAllowed(string permissionKey, EPermissionGrantState grantState)
     {
-        EPermissionGrantState grantState = isAllowed ? EPermissionGrantState.Allowed : EPermissionGrantState.Denied;
         setPermissionAllowed(new PermissionKey(permissionKey), grantState);
     }
 
@@ -19,21 +18,21 @@ public partial class AdminPositions
         grantForm.ScopeType = scopeType;
         if (scopeType != EPermissionScopeType.SelectedTeam)
         {
-            grantForm.TargetTeamID = null;
+            grantForm.TargetTeamId = null;
         }
     }
 
-    private void setPermissionTargetTeam(string permissionKey, int? teamIDOrNull)
+    private void setPermissionTargetTeam(string permissionKey, int? teamIdOrNull)
     {
         PositionPermissionGrantFormModel grantForm = getPermissionGrantForm(new PermissionKey(permissionKey));
-        grantForm.TargetTeamID = teamIDOrNull;
+        grantForm.TargetTeamId = teamIdOrNull;
     }
 
     private PositionFormModel createFormModelFromPosition(OrganizationPosition position)
     {
-        PositionFormModel formModel = createEmptyFormModel(position.TeamID);
-        formModel.ID = position.ID;
-        formModel.TeamID = position.TeamID;
+        PositionFormModel formModel = createEmptyFormModel(position.TeamId);
+        formModel.Id = position.Id;
+        formModel.TeamId = position.TeamId;
         formModel.Name = position.Name;
         formModel.Description = position.Description;
         formModel.SortOrder = position.SortOrder;
@@ -44,18 +43,18 @@ public partial class AdminPositions
             PositionPermissionGrantFormModel grantForm = ensureGrantForm(formModel, new PermissionKey(permissionGrant.PermissionKey));
             grantForm.IsAllowed = permissionGrant.IsAllowed;
             grantForm.ScopeType = permissionGrant.ScopeType;
-            grantForm.TargetTeamID = permissionGrant.TargetTeamID;
+            grantForm.TargetTeamId = permissionGrant.TargetTeamId;
         }
 
         return formModel;
     }
 
-    private PositionFormModel createEmptyFormModel(int teamID)
+    private PositionFormModel createEmptyFormModel(int teamId)
     {
         PositionFormModel formModel = new PositionFormModel();
         formModel.IsActive = true;
         formModel.SortOrder = 100;
-        formModel.TeamID = teamID;
+        formModel.TeamId = teamId;
 
         foreach (PermissionDefinition definition in mPermissionDefinitions)
         {
@@ -85,7 +84,7 @@ public partial class AdminPositions
         grantForm.IsAllowed = grantState == EPermissionGrantState.Allowed;
         if (grantState == EPermissionGrantState.Denied)
         {
-            grantForm.TargetTeamID = null;
+            grantForm.TargetTeamId = null;
         }
     }
 

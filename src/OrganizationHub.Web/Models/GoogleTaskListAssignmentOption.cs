@@ -4,13 +4,26 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class GoogleTaskListAssignmentOption
 {
-    public string TargetKey { get; set; } = string.Empty;
-    public string DisplayName { get; set; } = string.Empty;
+    public GoogleWorkspaceAssignmentTargetKey TargetKey
+    {
+        get; set;
+    }
+    public string TargetSelectionValue
+    {
+        get
+        {
+            return TargetKey.GetSelectionValue();
+        }
+    }
+    public string DisplayName
+    {
+        get; set;
+    } = string.Empty;
     public EGoogleTaskListAssignmentKind TaskListAssignmentKind
     {
         get; set;
     }
-    public int? TeamID
+    public OrganizationTeamId? TeamIdOrNull
     {
         get; set;
     }

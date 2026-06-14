@@ -1,0 +1,113 @@
+<div class="hub-calendar-month-grid">
+    @foreach (string weekdayLabel in WeekdayLabels)
+    {
+        <div class="hub-calendar-weekday">@weekdayLabel</div>
+    }
+    @foreach (CalendarDayCell dayCell in DayCells)
+    {
+        <div class="@getCalendarDayCellClass(dayCell)">
+            <div class="hub-calendar-day-date">
+                <span>@dayCell.Date.Day</span>
+                <span class="hub-calendar-day-badges">
+                    @if (dayCell.Events.Count > 0)
+                    {
+                        <span class="hub-calendar-day-count">@getDayEventCountText(dayCell)</span>
+                    }
+                    @if (dayCell.IsToday)
+                    {
+                        <span class="hub-calendar-today-pill">오늘</span>
+                    }
+                </span>
+            </div>
+            @if (dayCell.Events.Count > 0)
+            {
+                <button type="button" class="hub-calendar-day-time-list" @onclick="@(() => DaySelected.InvokeAsync(dayCell))" aria-label="@getDaySummaryLabel(dayCell)">
+                    @foreach (CalendarEventItem calendarEvent in getPreviewDayEvents(dayCell))
+                    {
+                        <span class="hub-calendar-day-time-line">@formatCalendarChipTime(calendarEvent)</span>
+                    }
+                    @if (getHiddenDayEventCount(dayCell) > 0)
+                    {
+                        <span class="hub-calendar-day-more">+@getHiddenDayEventCount(dayCell).ToString(CultureInfo.InvariantCulture)</span>
+                    }
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<CalendarDayCell> DayCells
+    {
+        get; set;
+    } = new List<CalendarDayCell>();
+
+    [Parameter]
+    public IReadOnlyList<string> WeekdayLabels
+    {
+        get; set;
+    } = new List<string>();
+
+    [Parameter]
+    public EventCallback<CalendarDayCell> DaySelected
+    {
+        get; set;
+    }
+
+    private string getCalendarDayCellClass(CalendarDayCell dayCell)
+    {
+        string className = "hub-calendar-day";
+        if (dayCell.IsCurrentMonth == false)
+        {
+            className += " hub-calendar-day-muted";
+        }
+
+        if (dayCell.IsToday)
+        {
+            className += " hub-calendar-day-today";
+        }
+
+        if (dayCell.Events.Count > 0)
+        {
+            className += " hub-calendar-day-has-events";
+        }
+
+        return className;
+    }
+
+    private IReadOnlyList<CalendarEventItem> getPreviewDayEvents(CalendarDayCell dayCell)
+    {
+        return dayCell.Events.Take(4).ToList();
+    }
+
+    private int getHiddenDayEventCount(CalendarDayCell dayCell)
+    {
+        return Math.Max(0, dayCell.Events.Count - getPreviewDayEvents(dayCell).Count);
+    }
+
+    private string getDayEventCountText(CalendarDayCell dayCell)
+    {
+        return dayCell.Events.Count.ToString(CultureInfo.InvariantCulture) + "건";
+    }
+
+    private string getDaySummaryLabel(CalendarDayCell dayCell)
+    {
+        return dayCell.Date.ToString("M월 d일", CultureInfo.InvariantCulture) + " 일정 " + getDayEventCountText(dayCell) + " 보기";
+    }
+
+    private string formatCalendarChipTime(CalendarEventItem calendarEvent)
+    {
+        if (calendarEvent.Start.HasValue == false)
+        {
+            return "시간";
+        }
+
+        if (calendarEvent.IsAllDay)
+        {
+            return "종일";
+        }
+
+        return calendarEvent.Start.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+    }
+}

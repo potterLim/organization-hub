@@ -130,7 +130,12 @@ public class Program
         builder.Services.AddScoped<OrganizationHubDataSeeder>();
     }
 
-    private static void addPermissionPolicy(AuthorizationOptions options, string policyName, IReadOnlyList<PermissionKey> permissionKeys, IReadOnlyList<string> fallbackRoleNames)
+    private static void addPermissionPolicy(
+        AuthorizationOptions options,
+        string policyName,
+        IReadOnlyList<PermissionKey> permissionKeys,
+        IReadOnlyList<string> fallbackRoleNames
+    )
     {
         options.AddPolicy(policyName, policy => policy.Requirements.Add(new PermissionAuthorizationRequirement(permissionKeys, fallbackRoleNames)));
     }

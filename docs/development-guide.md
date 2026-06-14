@@ -27,7 +27,7 @@ admin / ChangeMe!2026
 개발 환경에서는 user secrets를 사용합니다.
 
 ```powershell
-dotnet user-secrets set "GoogleApi:OAuthClientID" "<client-id>" --project src\OrganizationHub.Web\OrganizationHub.Web.csproj
+dotnet user-secrets set "GoogleApi:OAuthClientId" "<client-id>" --project src\OrganizationHub.Web\OrganizationHub.Web.csproj
 dotnet user-secrets set "GoogleApi:OAuthClientSecret" "<client-secret>" --project src\OrganizationHub.Web\OrganizationHub.Web.csproj
 ```
 

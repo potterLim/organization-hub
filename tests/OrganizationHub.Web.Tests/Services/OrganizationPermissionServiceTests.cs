@@ -21,7 +21,7 @@ public sealed class OrganizationPermissionServiceTests
             SeededUser seededUser = await seedUserWithGrantAsync(dbContextFactory, EPermissionScopeType.Global, null);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
 
-            PermissionDecision decision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), 999, CancellationToken.None);
+            PermissionDecision decision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), OrganizationTeamId.CreateExisting(999), CancellationToken.None);
 
             Assert.True(decision.IsAllowed);
         }
@@ -35,8 +35,8 @@ public sealed class OrganizationPermissionServiceTests
             SeededUser seededUser = await seedUserWithGrantAsync(dbContextFactory, EPermissionScopeType.OwnTeam, null);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
 
-            PermissionDecision ownTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), seededUser.TeamID, CancellationToken.None);
-            PermissionDecision otherTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), seededUser.TeamID + 100, CancellationToken.None);
+            PermissionDecision ownTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), OrganizationTeamId.CreateExisting(seededUser.TeamId), CancellationToken.None);
+            PermissionDecision otherTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), OrganizationTeamId.CreateExisting(seededUser.TeamId + 100), CancellationToken.None);
 
             Assert.True(ownTeamDecision.IsAllowed);
             Assert.False(otherTeamDecision.IsAllowed);
@@ -48,12 +48,12 @@ public sealed class OrganizationPermissionServiceTests
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
-            int targetTeamID = await seedTeamAsync(dbContextFactory, "Archive", "보관팀", 30);
-            SeededUser seededUser = await seedUserWithGrantAsync(dbContextFactory, EPermissionScopeType.SelectedTeam, targetTeamID);
+            int targetTeamId = await seedTeamAsync(dbContextFactory, "Archive", "보관팀", 30);
+            SeededUser seededUser = await seedUserWithGrantAsync(dbContextFactory, EPermissionScopeType.SelectedTeam, targetTeamId);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
 
-            PermissionDecision targetTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), targetTeamID, CancellationToken.None);
-            PermissionDecision ownTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), seededUser.TeamID, CancellationToken.None);
+            PermissionDecision targetTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), OrganizationTeamId.CreateExisting(targetTeamId), CancellationToken.None);
+            PermissionDecision ownTeamDecision = await permissionService.DecidePermissionAsync(seededUser.Session, new PermissionKey(PermissionKeys.FILES_UPLOAD), OrganizationTeamId.CreateExisting(seededUser.TeamId), CancellationToken.None);
 
             Assert.True(targetTeamDecision.IsAllowed);
             Assert.False(ownTeamDecision.IsAllowed);
@@ -65,23 +65,23 @@ public sealed class OrganizationPermissionServiceTests
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
-            int teamID = await seedTeamAsync(dbContextFactory, "Planning", "기획팀", 10);
-            UserSession userSession = await seedUserWithoutPositionAsync(dbContextFactory, teamID);
+            int teamId = await seedTeamAsync(dbContextFactory, "Planning", "기획팀", 10);
+            UserSession userSession = await seedUserWithoutPositionAsync(dbContextFactory, teamId);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
 
-            PermissionDecision decision = await permissionService.DecidePermissionAsync(userSession, new PermissionKey(PermissionKeys.FILES_UPLOAD), teamID, CancellationToken.None);
+            PermissionDecision decision = await permissionService.DecidePermissionAsync(userSession, new PermissionKey(PermissionKeys.FILES_UPLOAD), OrganizationTeamId.CreateExisting(teamId), CancellationToken.None);
 
             Assert.False(decision.IsAllowed);
         }
     }
 
-    private static async Task<SeededUser> seedUserWithGrantAsync(TestDbContextFactory dbContextFactory, EPermissionScopeType scopeType, int? targetTeamIDOrNull)
+    private static async Task<SeededUser> seedUserWithGrantAsync(TestDbContextFactory dbContextFactory, EPermissionScopeType scopeType, int? targetTeamIdOrNull)
     {
-        int teamID = await seedTeamAsync(dbContextFactory, "Planning", "기획팀", 10);
+        int teamId = await seedTeamAsync(dbContextFactory, "Planning", "기획팀", 10);
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             OrganizationPosition position = new OrganizationPosition();
-            position.TeamID = teamID;
+            position.TeamId = teamId;
             position.Name = "자료 담당";
             position.Description = string.Empty;
             position.SortOrder = 10;
@@ -90,14 +90,14 @@ public sealed class OrganizationPermissionServiceTests
             permissionGrant.Position = position;
             permissionGrant.PermissionKey = PermissionKeys.FILES_UPLOAD;
             permissionGrant.ScopeType = scopeType;
-            permissionGrant.TargetTeamID = targetTeamIDOrNull;
+            permissionGrant.TargetTeamId = targetTeamIdOrNull;
             permissionGrant.IsAllowed = true;
             UserAccount userAccount = new UserAccount();
             userAccount.Username = "planning.member";
             userAccount.DisplayName = "기획 담당";
             userAccount.PasswordHash = "test";
             userAccount.Role = EUserRole.TeamUser;
-            userAccount.TeamID = teamID;
+            userAccount.TeamId = teamId;
             userAccount.Position = position;
             userAccount.IsActive = true;
             userAccount.CreatedAt = DateTime.UtcNow;
@@ -106,12 +106,12 @@ public sealed class OrganizationPermissionServiceTests
             dbContext.UserAccounts.Add(userAccount);
             await dbContext.SaveChangesAsync(CancellationToken.None);
 
-            UserSession session = new UserSession(userAccount.ID, userAccount.Username, userAccount.DisplayName, userAccount.Role, teamID, "Planning", "기획팀");
-            return new SeededUser(session, teamID);
+            UserSession session = new UserSession(UserAccountId.CreateExisting(userAccount.Id), userAccount.Username, userAccount.DisplayName, userAccount.Role, OrganizationTeamId.CreateExisting(teamId), new OrganizationTeamKey("Planning"), "기획팀");
+            return new SeededUser(session, teamId);
         }
     }
 
-    private static async Task<UserSession> seedUserWithoutPositionAsync(TestDbContextFactory dbContextFactory, int teamID)
+    private static async Task<UserSession> seedUserWithoutPositionAsync(TestDbContextFactory dbContextFactory, int teamId)
     {
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
@@ -120,12 +120,12 @@ public sealed class OrganizationPermissionServiceTests
             userAccount.DisplayName = "미배정";
             userAccount.PasswordHash = "test";
             userAccount.Role = EUserRole.TeamUser;
-            userAccount.TeamID = teamID;
+            userAccount.TeamId = teamId;
             userAccount.IsActive = true;
             userAccount.CreatedAt = DateTime.UtcNow;
             dbContext.UserAccounts.Add(userAccount);
             await dbContext.SaveChangesAsync(CancellationToken.None);
-            return new UserSession(userAccount.ID, userAccount.Username, userAccount.DisplayName, userAccount.Role, teamID, "Planning", "기획팀");
+            return new UserSession(UserAccountId.CreateExisting(userAccount.Id), userAccount.Username, userAccount.DisplayName, userAccount.Role, OrganizationTeamId.CreateExisting(teamId), new OrganizationTeamKey("Planning"), "기획팀");
         }
     }
 
@@ -140,7 +140,7 @@ public sealed class OrganizationPermissionServiceTests
             team.IsActive = true;
             dbContext.Teams.Add(team);
             await dbContext.SaveChangesAsync(CancellationToken.None);
-            return team.ID;
+            return team.Id;
         }
     }
 
@@ -150,15 +150,15 @@ public sealed class OrganizationPermissionServiceTests
         {
             get; private init;
         }
-        public int TeamID
+        public int TeamId
         {
             get; private init;
         }
 
-        public SeededUser(UserSession session, int teamID)
+        public SeededUser(UserSession session, int teamId)
         {
             Session = session;
-            TeamID = teamID;
+            TeamId = teamId;
         }
     }
 }

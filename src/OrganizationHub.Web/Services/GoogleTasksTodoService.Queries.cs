@@ -18,7 +18,7 @@ public sealed partial class GoogleTasksTodoService
         List<TodoTaskListReference> taskLists = (await getTaskListsAsync(userSession, ETodoTaskListAccessMode.Readable, cancellationToken)).ToList();
         if (taskLists.Count > 0)
         {
-            taskLists.Insert(0, new TodoTaskListReference(TodoTaskListReference.AGGREGATE_TASK_LIST_ID, "전체", null, ETodoTaskListKind.Aggregate));
+            taskLists.Insert(0, new TodoTaskListReference(TodoTaskListId.AllTasks, "전체", null, ETodoTaskListKind.Aggregate));
         }
 
         return taskLists;
@@ -30,16 +30,20 @@ public sealed partial class GoogleTasksTodoService
         return taskLists;
     }
 
-    public async Task<IReadOnlyList<TodoTaskItem>> GetTasksAsync(UserSession userSession, string taskListID, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<TodoTaskItem>> GetTasksAsync(
+        UserSession userSession,
+        TodoTaskListId taskListId,
+        CancellationToken cancellationToken
+    )
     {
-        if (TodoTaskListReference.IsAggregateTaskListID(taskListID))
+        if (taskListId.IsAggregate)
         {
             return await getAggregateTasksAsync(userSession, cancellationToken);
         }
 
-        TodoTaskListReference taskList = await getAllowedTaskListAsync(userSession, taskListID, ETodoTaskListAccessMode.Readable, cancellationToken);
+        TodoTaskListReference taskList = await getAllowedTaskListAsync(userSession, taskListId, ETodoTaskListAccessMode.Readable, cancellationToken);
         GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken);
-        IReadOnlyList<TodoTaskItem> tasks = await getTasksAsync(tasksService, taskList.TaskListID, taskList.DisplayName, cancellationToken);
+        IReadOnlyList<TodoTaskItem> tasks = await getTasksAsync(tasksService, taskList.TaskListId, taskList.DisplayName, cancellationToken);
         return tasks;
     }
 
@@ -55,7 +59,7 @@ public sealed partial class GoogleTasksTodoService
         List<Task<IReadOnlyList<TodoTaskItem>>> fetchTasks = new List<Task<IReadOnlyList<TodoTaskItem>>>();
         foreach (TodoTaskListReference taskList in taskLists)
         {
-            fetchTasks.Add(getTasksAsync(tasksService, taskList.TaskListID, taskList.DisplayName, cancellationToken));
+            fetchTasks.Add(getTasksAsync(tasksService, taskList.TaskListId, taskList.DisplayName, cancellationToken));
         }
 
         IReadOnlyList<TodoTaskItem>[] taskGroups = await Task.WhenAll(fetchTasks);
@@ -69,13 +73,19 @@ public sealed partial class GoogleTasksTodoService
         return orderedTasks;
     }
 
-    private async Task<IReadOnlyList<TodoTaskItem>> getTasksAsync(GoogleTasksApi tasksService, string taskListID, string taskListDisplayName, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<TodoTaskItem>> getTasksAsync(
+        GoogleTasksApi tasksService,
+        TodoTaskListId taskListId,
+        string taskListDisplayName,
+        CancellationToken cancellationToken
+    )
     {
         List<TodoTaskItem> tasks = new List<TodoTaskItem>();
         string pageToken = string.Empty;
+        string requiredTaskListId = taskListId.GetRequiredValue();
         do
         {
-            Google.Apis.Tasks.v1.TasksResource.ListRequest request = tasksService.Tasks.List(taskListID);
+            Google.Apis.Tasks.v1.TasksResource.ListRequest request = tasksService.Tasks.List(requiredTaskListId);
             request.ShowCompleted = true;
             request.ShowDeleted = false;
             request.ShowHidden = false;
@@ -87,18 +97,18 @@ public sealed partial class GoogleTasksTodoService
             {
                 foreach (GoogleTask googleTask in taskList.Items)
                 {
-                    TodoTaskItem taskItem = createTaskItem(taskListID, googleTask);
+                    TodoTaskItem taskItem = createTaskItem(taskListId, googleTask);
                     taskItem.TaskListDisplayName = taskListDisplayName;
                     tasks.Add(taskItem);
                 }
             }
 
-            pageToken = getNullAsEmpty(taskList.NextPageToken);
+            pageToken = getTextOrEmpty(taskList.NextPageToken);
         }
         while (string.IsNullOrWhiteSpace(pageToken) == false);
 
-        Dictionary<string, TodoTaskMetadata> metadataByTaskID = await getMetadataByTaskIDAsync(taskListID, tasks, cancellationToken);
-        applyMetadata(tasks, metadataByTaskID);
+        Dictionary<string, TodoTaskMetadata> metadataByTaskId = await getMetadataByTaskIdAsync(taskListId, tasks, cancellationToken);
+        applyMetadata(tasks, metadataByTaskId);
         List<TodoTaskItem> orderedTasks = tasks.OrderBy(task => task.IsCompleted).ThenBy(task => task.Position).ThenBy(task => task.Title).ToList();
         return orderedTasks;
     }

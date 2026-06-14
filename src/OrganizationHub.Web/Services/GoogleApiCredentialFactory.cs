@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +26,12 @@ public sealed class GoogleApiCredentialFactory : IGoogleApiCredentialFactory
     private readonly IDataProtector mRefreshTokenProtector;
     private readonly IMemoryCache mMemoryCache;
 
-    public GoogleApiCredentialFactory(IOptions<GoogleApiOptions> options, IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IDataProtectionProvider dataProtectionProvider, IMemoryCache memoryCache)
+    public GoogleApiCredentialFactory(
+        IOptions<GoogleApiOptions> options,
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IDataProtectionProvider dataProtectionProvider,
+        IMemoryCache memoryCache
+    )
     {
         mOptions = options.Value;
         mDbContextFactory = dbContextFactory;
@@ -48,7 +54,10 @@ public sealed class GoogleApiCredentialFactory : IGoogleApiCredentialFactory
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            GoogleStorageConnection? connectionOrNull = await dbContext.GoogleStorageConnections.Where(connection => connection.IsActive).OrderByDescending(connection => connection.UpdatedAt).FirstOrDefaultAsync(cancellationToken);
+            GoogleStorageConnection? connectionOrNull = await dbContext.GoogleStorageConnections
+                .Where(connection => connection.IsActive)
+                .OrderByDescending(connection => connection.UpdatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
             return connectionOrNull;
         }
     }
@@ -80,18 +89,26 @@ public sealed class GoogleApiCredentialFactory : IGoogleApiCredentialFactory
     private string createCredentialCacheKey(GoogleStorageConnection connection, string[] scopes)
     {
         string scopeKey = string.Join("|", scopes.OrderBy(scope => scope));
-        return "OrganizationHub:GoogleCredential:" + connection.ID.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":" + connection.UpdatedAt.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":" + scopeKey;
+        List<string> cacheKeyParts = new List<string>
+        {
+            "OrganizationHub",
+            "GoogleCredential",
+            connection.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            connection.UpdatedAt.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            scopeKey
+        };
+        return string.Join(":", cacheKeyParts);
     }
 
     private GoogleAuthorizationCodeFlow createAuthorizationCodeFlow(string[] scopes)
     {
-        if (string.IsNullOrWhiteSpace(mOptions.OAuthClientID) || string.IsNullOrWhiteSpace(mOptions.OAuthClientSecret))
+        if (string.IsNullOrWhiteSpace(mOptions.OAuthClientId) || string.IsNullOrWhiteSpace(mOptions.OAuthClientSecret))
         {
             throw new InvalidOperationException("Google OAuth client settings are required.");
         }
 
         ClientSecrets clientSecrets = new ClientSecrets();
-        clientSecrets.ClientId = mOptions.OAuthClientID;
+        clientSecrets.ClientId = mOptions.OAuthClientId;
         clientSecrets.ClientSecret = mOptions.OAuthClientSecret;
 
         GoogleAuthorizationCodeFlow.Initializer initializer = new GoogleAuthorizationCodeFlow.Initializer();

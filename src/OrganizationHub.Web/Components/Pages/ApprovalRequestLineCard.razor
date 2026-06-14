@@ -1,0 +1,163 @@
+<MudPaper Class="hub-card hub-form-card hub-approval-line-card pa-4">
+    <div class="hub-approval-line-head">
+        <MudText Typo="Typo.h6">결재 경로</MudText>
+        <MudText Typo="Typo.body2" Class="hub-muted">요청 후 아래 순서대로 결재가 진행됩니다.</MudText>
+    </div>
+    <MudTextField T="string" Value="@FormModel.Title" ValueChanged="TitleChanged" Label="요청 제목" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    <MudSelect T="int" Label="결재 방식" Value="FormModel.StepCount" ValueChanged="StepCountChanged" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@StepDescription">
+        @foreach (int stepCount in CreateContext.AvailableStepCounts)
+        {
+            <MudSelectItem T="int" Value="@stepCount">@GetApprovalStepLabel(stepCount)</MudSelectItem>
+        }
+    </MudSelect>
+    <div class="hub-approval-flow-preview" aria-label="결재 진행 순서">
+        @foreach (ApprovalFlowPreviewItem previewItem in ApprovalFlowPreviewItems)
+        {
+            <div class="@GetApprovalFlowStepClass(previewItem)">
+                <span class="hub-approval-flow-number">@previewItem.StepNumber</span>
+                <div>
+                    <strong>@previewItem.Title</strong>
+                    <span>@previewItem.ApproverLabel</span>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="hub-approval-approver-fields">
+        @if (FormModel.StepCount >= 2)
+        {
+            <MudSelect @key="@("first-" + FormModel.StepCount)" T="int" Label="1차 결재자" Value="FormModel.FirstApproverUserId" ValueChanged="FirstApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (ApprovalUserOption userOption in FirstApproverOptions)
+                {
+                    <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
+                }
+            </MudSelect>
+        }
+        @if (FormModel.StepCount == 3)
+        {
+            <MudSelect @key="@("second-" + FormModel.StepCount)" T="int" Label="2차 결재자" Value="FormModel.SecondApproverUserId" ValueChanged="SecondApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (ApprovalUserOption userOption in SecondApproverOptions)
+                {
+                    <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
+                }
+            </MudSelect>
+        }
+        @if (CreateContext.FinalApproverOptions.Count == 1)
+        {
+            <MudTextField Value="@CreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="최종 결재자" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
+        }
+        else
+        {
+            <MudSelect @key="@("final-" + FormModel.StepCount)" T="int" Label="최종 결재자" Value="FormModel.FinalApproverUserId" ValueChanged="FinalApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (ApprovalUserOption userOption in FinalApproverOptions)
+                {
+                    <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
+                }
+            </MudSelect>
+        }
+    </div>
+    <div class="hub-submit-row">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Approval" Disabled="@(IsSubmitting || string.IsNullOrWhiteSpace(FormModel.FileId))" OnClick="@(() => SubmitRequested.InvokeAsync())" Class="hub-primary-action-button hub-approval-submit-button">결재 요청 보내기</MudButton>
+    </div>
+    @if (string.IsNullOrWhiteSpace(FormModel.FileId))
+    {
+        <MudText Typo="Typo.caption" Class="hub-muted hub-approval-submit-hint">결재할 파일을 선택해 주세요.</MudText>
+    }
+</MudPaper>
+
+@code {
+    [Parameter]
+    public ApprovalRequestFormModel FormModel
+    {
+        get; set;
+    } = new ApprovalRequestFormModel();
+
+    [Parameter]
+    public ApprovalCreateContext CreateContext
+    {
+        get; set;
+    } = new ApprovalCreateContext();
+
+    [Parameter]
+    public IReadOnlyList<ApprovalUserOption> FirstApproverOptions
+    {
+        get; set;
+    } = new List<ApprovalUserOption>();
+
+    [Parameter]
+    public IReadOnlyList<ApprovalUserOption> SecondApproverOptions
+    {
+        get; set;
+    } = new List<ApprovalUserOption>();
+
+    [Parameter]
+    public IReadOnlyList<ApprovalUserOption> FinalApproverOptions
+    {
+        get; set;
+    } = new List<ApprovalUserOption>();
+
+    [Parameter]
+    public IReadOnlyList<ApprovalFlowPreviewItem> ApprovalFlowPreviewItems
+    {
+        get; set;
+    } = new List<ApprovalFlowPreviewItem>();
+
+    [Parameter]
+    public string StepDescription
+    {
+        get; set;
+    } = string.Empty;
+
+    [Parameter]
+    public bool IsSubmitting
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public Func<int, string> GetApprovalStepLabel
+    {
+        get; set;
+    } = _ => string.Empty;
+
+    [Parameter]
+    public Func<ApprovalFlowPreviewItem, string> GetApprovalFlowStepClass
+    {
+        get; set;
+    } = _ => string.Empty;
+
+    [Parameter]
+    public EventCallback<string> TitleChanged
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<int> StepCountChanged
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<int> FirstApproverChanged
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<int> SecondApproverChanged
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback<int> FinalApproverChanged
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public EventCallback SubmitRequested
+    {
+        get; set;
+    }
+}

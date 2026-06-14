@@ -54,7 +54,7 @@ public sealed class PermissionAuthorizationHandlerTests
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             Team team = new Team();
-            team.ID = 1;
+            team.Id = 1;
             team.TeamKey = "Planning";
             team.DisplayName = "기획팀";
             team.IsActive = true;
@@ -70,7 +70,7 @@ public sealed class PermissionAuthorizationHandlerTests
             permissionGrant.ScopeType = EPermissionScopeType.Global;
             permissionGrant.IsAllowed = true;
             UserAccount userAccount = new UserAccount();
-            userAccount.ID = 1;
+            userAccount.Id = 1;
             userAccount.Username = "configured";
             userAccount.DisplayName = "설정형 사용자";
             userAccount.PasswordHash = "test";
@@ -92,7 +92,7 @@ public sealed class PermissionAuthorizationHandlerTests
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             UserAccount userAccount = new UserAccount();
-            userAccount.ID = 2;
+            userAccount.Id = 2;
             userAccount.Username = "admin";
             userAccount.DisplayName = "관리자";
             userAccount.PasswordHash = "test";
@@ -104,17 +104,17 @@ public sealed class PermissionAuthorizationHandlerTests
         }
     }
 
-    private static ClaimsPrincipal createPrincipal(int userID, EUserRole role, int? teamIDOrNull)
+    private static ClaimsPrincipal createPrincipal(int userId, EUserRole role, int? teamIdOrNull)
     {
         List<Claim> claims = new List<Claim>();
-        claims.Add(new Claim(OrganizationHubClaimTypes.USER_ID, userID.ToString()));
-        claims.Add(new Claim(OrganizationHubClaimTypes.USERNAME, "user" + userID.ToString()));
-        claims.Add(new Claim(OrganizationHubClaimTypes.DISPLAY_NAME, "User " + userID.ToString()));
+        claims.Add(new Claim(OrganizationHubClaimTypes.USER_ID, userId.ToString()));
+        claims.Add(new Claim(OrganizationHubClaimTypes.USERNAME, "user" + userId.ToString()));
+        claims.Add(new Claim(OrganizationHubClaimTypes.DISPLAY_NAME, "User " + userId.ToString()));
         claims.Add(new Claim(OrganizationHubClaimTypes.ROLE, role.ToString()));
         claims.Add(new Claim(ClaimTypes.Role, UserRoleUtility.GetRoleName(role)));
-        if (teamIDOrNull.HasValue)
+        if (teamIdOrNull.HasValue)
         {
-            claims.Add(new Claim(OrganizationHubClaimTypes.TEAM_ID, teamIDOrNull.Value.ToString()));
+            claims.Add(new Claim(OrganizationHubClaimTypes.TEAM_ID, teamIdOrNull.Value.ToString()));
             claims.Add(new Claim(OrganizationHubClaimTypes.TEAM_KEY, "Planning"));
             claims.Add(new Claim(OrganizationHubClaimTypes.TEAM_DISPLAY_NAME, "기획팀"));
         }

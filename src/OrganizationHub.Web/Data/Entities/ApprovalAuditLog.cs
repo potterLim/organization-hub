@@ -5,11 +5,11 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class ApprovalAuditLog
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
-    public int ApprovalRequestID
+    public int ApprovalRequestId
     {
         get; set;
     }
@@ -17,7 +17,7 @@ public class ApprovalAuditLog
     {
         get; set;
     }
-    public int ActorUserID
+    public int ActorUserId
     {
         get; set;
     }

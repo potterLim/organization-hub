@@ -10,14 +10,23 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class DriveBrowserService
 {
-    public async Task<IReadOnlyList<DriveFolderReference>> GetReadableFoldersAsync(UserSession userSession, EDriveFolderKind folderKind, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DriveFolderReference>> GetReadableFoldersAsync(
+        UserSession userSession,
+        EDriveFolderKind folderKind,
+        CancellationToken cancellationToken
+    )
     {
         IReadOnlyList<DriveFolderReference> folders = await mPermissionService.GetReadableDriveFoldersAsync(userSession, folderKind, cancellationToken);
         List<DriveFolderReference> filteredFolders = folders.OrderBy(folder => getFolderSortOrder(folder)).ThenBy(folder => folder.TeamName).ThenBy(folder => folder.DisplayName).ToList();
         return filteredFolders;
     }
 
-    public async Task<IReadOnlyList<DriveFileItem>> GetFilesAsync(UserSession userSession, EDriveFolderKind folderKind, string keyword, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DriveFileItem>> GetFilesAsync(
+        UserSession userSession,
+        EDriveFolderKind folderKind,
+        SearchKeyword keyword,
+        CancellationToken cancellationToken
+    )
     {
         IReadOnlyList<DriveFolderReference> folders = await mPermissionService.GetReadableDriveFoldersAsync(userSession, folderKind, cancellationToken);
         List<Task<IReadOnlyList<DriveFileItem>>> fileTasks = new List<Task<IReadOnlyList<DriveFileItem>>>();
@@ -38,38 +47,45 @@ public sealed partial class DriveBrowserService
         return orderedFiles;
     }
 
-    public async Task<IReadOnlyList<DriveFileItem>> GetFolderFilesAsync(UserSession userSession, EDriveFolderKind folderKind, string rootFolderID, string folderID, string keyword, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<DriveFileItem>> GetFolderFilesAsync(DriveFolderBrowseRequest request, CancellationToken cancellationToken)
     {
-        IReadOnlyList<DriveFolderReference> folders = await GetReadableFoldersAsync(userSession, folderKind, cancellationToken);
-        DriveFolderReference? rootFolderOrNull = folders.FirstOrDefault(folder => folder.FolderID == rootFolderID);
+        IReadOnlyList<DriveFolderReference> folders = await GetReadableFoldersAsync(request.UserSession, request.FolderKind, cancellationToken);
+        DriveFolderReference? rootFolderOrNull = folders.FirstOrDefault(folder => folder.FolderId == request.RootFolderId);
         if (rootFolderOrNull == null)
         {
             return new List<DriveFileItem>();
         }
 
-        bool canBrowseFolder = await canBrowseFolderInsideRootAsync(rootFolderOrNull, folderID, cancellationToken);
+        bool canBrowseFolder = await canBrowseFolderInsideRootAsync(rootFolderOrNull, request.FolderId, cancellationToken);
         if (canBrowseFolder == false)
         {
             return new List<DriveFileItem>();
         }
 
         EDriveFolderUploadAccess uploadAccess = rootFolderOrNull.CanUpload ? EDriveFolderUploadAccess.UploadAllowed : EDriveFolderUploadAccess.UploadDenied;
-        IReadOnlyList<DriveFileItem> files = await loadFolderFilesAsync(new DriveFolderReference(folderID, rootFolderOrNull.DisplayName, rootFolderOrNull.FolderKind, rootFolderOrNull.TeamID, rootFolderOrNull.TeamKey, rootFolderOrNull.TeamName, uploadAccess), keyword, cancellationToken);
+        DriveFolderOwnerContext ownerContext = new DriveFolderOwnerContext(rootFolderOrNull.TeamIdOrNull, rootFolderOrNull.TeamKey, rootFolderOrNull.TeamName);
+        DriveFolderReferenceCreationRequest referenceRequest = new DriveFolderReferenceCreationRequest(request.FolderId, rootFolderOrNull.DisplayName, rootFolderOrNull.FolderKind, uploadAccess, ownerContext);
+        DriveFolderReference currentFolder = new DriveFolderReference(referenceRequest);
+        IReadOnlyList<DriveFileItem> files = await loadFolderFilesAsync(currentFolder, request.Keyword, cancellationToken);
         List<DriveFileItem> orderedFiles = orderFilesForBrowser(files);
         await mUploadAuditLogService.AttachUploadMetadataAsync(orderedFiles, cancellationToken);
         return orderedFiles;
     }
 
-    private async Task<IReadOnlyList<DriveFileItem>> loadFolderFilesAsync(DriveFolderReference folder, string keyword, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<DriveFileItem>> loadFolderFilesAsync(
+        DriveFolderReference folder,
+        SearchKeyword keyword,
+        CancellationToken cancellationToken
+    )
     {
         IReadOnlyList<DriveFileItem> files;
-        if (string.IsNullOrWhiteSpace(keyword))
+        if (keyword.HasValue == false)
         {
-            files = await mDriveService.ListFilesAsync(folder.FolderID, cancellationToken);
+            files = await mDriveService.ListFilesAsync(folder.FolderId, cancellationToken);
         }
         else
         {
-            files = await mDriveService.SearchFilesAsync(folder.FolderID, keyword, cancellationToken);
+            files = await mDriveService.SearchFilesAsync(folder.FolderId, keyword, cancellationToken);
         }
 
         List<DriveFileItem> mergedFiles = files.ToList();
@@ -84,7 +100,7 @@ public sealed partial class DriveBrowserService
 
     private static void applyFolderContext(DriveFileItem file, DriveFolderReference folder)
     {
-        file.TeamKey = folder.TeamKey;
+        file.TeamKey = folder.TeamKey.Value;
         file.TeamName = folder.TeamName;
         if (string.IsNullOrWhiteSpace(file.TeamName))
         {
@@ -94,31 +110,35 @@ public sealed partial class DriveBrowserService
         file.FolderDisplayName = folder.DisplayName;
     }
 
-    private static bool matchesKeyword(string fileName, string keyword)
+    private static bool matchesKeyword(string fileName, SearchKeyword keyword)
     {
-        if (string.IsNullOrWhiteSpace(keyword))
+        if (keyword.HasValue == false)
         {
             return true;
         }
 
-        return fileName.IndexOf(keyword.Trim(), StringComparison.OrdinalIgnoreCase) >= 0;
+        return fileName.IndexOf(keyword.GetOptionalValue(), StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    private async Task<bool> canBrowseFolderInsideRootAsync(DriveFolderReference rootFolder, string folderID, CancellationToken cancellationToken)
+    private async Task<bool> canBrowseFolderInsideRootAsync(
+        DriveFolderReference rootFolder,
+        DriveFolderId folderId,
+        CancellationToken cancellationToken
+    )
     {
-        if (folderID == rootFolder.FolderID)
+        if (folderId == rootFolder.FolderId)
         {
             return true;
         }
 
-        DriveFileMetadata? folderMetadataOrNull = await mDriveService.GetFileOrNullAsync(folderID, cancellationToken);
+        DriveFileMetadata? folderMetadataOrNull = await mDriveService.GetFileOrNullAsync(DriveItemId.CreateRequired(folderId.GetRequiredValue()), cancellationToken);
         if (folderMetadataOrNull == null || folderMetadataOrNull.MimeType != GOOGLE_DRIVE_FOLDER_MIME_TYPE)
         {
             return false;
         }
 
-        IReadOnlySet<string> ancestorFolderIDs = await mDriveService.GetAncestorFolderIDsAsync(folderID, cancellationToken);
-        return ancestorFolderIDs.Contains(rootFolder.FolderID);
+        IReadOnlySet<DriveFolderId> ancestorFolderIds = await mDriveService.GetAncestorFolderIdsAsync(DriveItemId.CreateRequired(folderId.GetRequiredValue()), cancellationToken);
+        return ancestorFolderIds.Contains(rootFolder.FolderId);
     }
 
     private List<DriveFileItem> orderFilesForBrowser(IReadOnlyList<DriveFileItem> files)

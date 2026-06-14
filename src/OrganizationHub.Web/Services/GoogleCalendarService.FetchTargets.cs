@@ -1,27 +1,40 @@
 using System.Collections.Generic;
+using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleCalendarService
 {
-    private void addCalendarFetchTarget(List<CalendarFetchTarget> fetchTargets, HashSet<string> fetchedCalendarIDs, string? calendarIDOrNull, string calendarName)
+    private void addCalendarFetchTarget(
+        List<CalendarFetchTarget> fetchTargets,
+        HashSet<string> fetchedCalendarIds,
+        string? calendarIdOrNull,
+        string calendarName
+    )
     {
-        if (string.IsNullOrWhiteSpace(calendarIDOrNull))
+        string calendarIdValue = string.Empty;
+        if (string.IsNullOrWhiteSpace(calendarIdOrNull) == false)
+        {
+            calendarIdValue = calendarIdOrNull;
+        }
+
+        CalendarId calendarId = CalendarId.CreateOptional(calendarIdValue);
+        if (calendarId.HasValue == false)
         {
             return;
         }
 
-        if (fetchedCalendarIDs.Add(calendarIDOrNull) == false)
+        if (fetchedCalendarIds.Add(calendarId.GetRequiredValue()) == false)
         {
             return;
         }
 
-        fetchTargets.Add(new CalendarFetchTarget(calendarIDOrNull, calendarName));
+        fetchTargets.Add(new CalendarFetchTarget(calendarId, calendarName));
     }
 
     private sealed class CalendarFetchTarget
     {
-        public string CalendarID
+        public CalendarId CalendarId
         {
             get; private init;
         }
@@ -30,9 +43,9 @@ public sealed partial class GoogleCalendarService
             get; private init;
         }
 
-        public CalendarFetchTarget(string calendarID, string calendarName)
+        public CalendarFetchTarget(CalendarId calendarId, string calendarName)
         {
-            CalendarID = calendarID;
+            CalendarId = calendarId;
             CalendarName = calendarName;
         }
     }

@@ -25,12 +25,24 @@ public sealed partial class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupS
     {
     }
 
-    public GoogleWorkspaceSetupService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IDriveService driveService, IGoogleApiCredentialFactory credentialFactory, IOptions<GoogleApiOptions> options, IMemoryCache memoryCache)
+    public GoogleWorkspaceSetupService(
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IDriveService driveService,
+        IGoogleApiCredentialFactory credentialFactory,
+        IOptions<GoogleApiOptions> options,
+        IMemoryCache memoryCache
+    )
         : this(dbContextFactory, driveService, credentialFactory, options.Value, memoryCache)
     {
     }
 
-    private GoogleWorkspaceSetupService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IDriveService driveService, IGoogleApiCredentialFactory? credentialFactoryOrNull, GoogleApiOptions? optionsOrNull, IMemoryCache? memoryCacheOrNull)
+    private GoogleWorkspaceSetupService(
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IDriveService driveService,
+        IGoogleApiCredentialFactory? credentialFactoryOrNull,
+        GoogleApiOptions? optionsOrNull,
+        IMemoryCache? memoryCacheOrNull
+    )
     {
         mDbContextFactory = dbContextFactory;
         mDriveService = driveService;
@@ -62,7 +74,7 @@ public sealed partial class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupS
 
     private async Task<GlobalSetting> getGlobalSettingAsync(OrganizationHubDbContext dbContext, CancellationToken cancellationToken)
     {
-        GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.ID).FirstOrDefaultAsync(cancellationToken);
+        GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
         if (settingOrNull != null)
         {
             return settingOrNull;
@@ -74,13 +86,13 @@ public sealed partial class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupS
         return setting;
     }
 
-    private string getNullAsEmpty(string? valueOrNull)
+    private string getTextOrEmpty(string? textOrNull)
     {
-        if (valueOrNull == null)
+        if (textOrNull == null)
         {
             return string.Empty;
         }
 
-        return valueOrNull;
+        return textOrNull;
     }
 }

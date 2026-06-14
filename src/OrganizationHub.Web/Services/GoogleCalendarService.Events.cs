@@ -15,86 +15,104 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleCalendarService
 {
-    public async Task<IReadOnlyList<CalendarEventItem>> GetEventsAsync(string calendarID, string calendarName, DateTime start, DateTime end, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<CalendarEventItem>> GetEventsAsync(
+        CalendarId calendarId,
+        string calendarName,
+        DateTime start,
+        DateTime end,
+        CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(calendarID))
+        if (calendarId.HasValue == false)
         {
             return new List<CalendarEventItem>();
         }
 
         CalendarService calendarService = await createCalendarServiceAsync(cancellationToken);
-        return await getEventsAsync(calendarService, calendarID, calendarName, start, end, cancellationToken);
+        CalendarEventFetchRequest request = new CalendarEventFetchRequest(calendarService, calendarId, calendarName, start, end);
+        return await getEventsAsync(request, cancellationToken);
     }
 
-    private async Task<IReadOnlyList<CalendarEventItem>> getEventsAsync(CalendarService calendarService, string calendarID, string calendarName, DateTime start, DateTime end, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<CalendarEventItem>> getEventsAsync(CalendarEventFetchRequest request, CancellationToken cancellationToken)
     {
-        string cacheKey = createEventListCacheKey(calendarID, calendarName, start, end);
+        string cacheKey = createEventListCacheKey(request.CalendarId, request.CalendarName, request.Start, request.End);
         IReadOnlyList<CalendarEventItem>? cachedEventsOrNull = getCachedCalendarEventsOrNull(cacheKey);
         if (cachedEventsOrNull != null)
         {
             return cachedEventsOrNull;
         }
 
-        EventsResource.ListRequest request = calendarService.Events.List(calendarID);
-        request.TimeMinDateTimeOffset = new DateTimeOffset(start);
-        request.TimeMaxDateTimeOffset = new DateTimeOffset(end);
-        request.SingleEvents = true;
-        request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
-        request.Fields = "items(" + EVENT_FIELDS + "),nextPageToken";
-        Events events = await request.ExecuteAsync(cancellationToken);
-        List<CalendarEventItem> calendarEvents = createCalendarEventItems(events, calendarID, calendarName).ToList();
-        await applyEventMetadataAsync(calendarID, calendarEvents, cancellationToken);
+        string requiredCalendarId = request.CalendarId.GetRequiredValue();
+        EventsResource.ListRequest listRequest = request.CalendarService.Events.List(requiredCalendarId);
+        listRequest.TimeMinDateTimeOffset = new DateTimeOffset(request.Start);
+        listRequest.TimeMaxDateTimeOffset = new DateTimeOffset(request.End);
+        listRequest.SingleEvents = true;
+        listRequest.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
+        listRequest.Fields = "items(" + EVENT_FIELDS + "),nextPageToken";
+        Events events = await listRequest.ExecuteAsync(cancellationToken);
+        List<CalendarEventItem> calendarEvents = createCalendarEventItems(events, request.CalendarId, request.CalendarName).ToList();
+        await applyEventMetadataAsync(request.CalendarId, calendarEvents, cancellationToken);
         setCalendarEventsCache(cacheKey, calendarEvents);
         return cloneCalendarEvents(calendarEvents);
     }
 
-    public async Task<IReadOnlyList<CalendarEventItem>> GetTeamEventsAsync(int teamID, DateTime start, DateTime end, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<CalendarEventItem>> GetTeamEventsAsync(
+        OrganizationTeamId teamId,
+        DateTime start,
+        DateTime end,
+        CancellationToken cancellationToken
+    )
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            Team? teamOrNull = await dbContext.Teams.FirstOrDefaultAsync(team => team.ID == teamID && team.IsActive, cancellationToken);
-            if (teamOrNull == null || string.IsNullOrWhiteSpace(teamOrNull.CalendarID))
+            int requiredTeamId = teamId.GetRequiredValue();
+            Team? teamOrNull = await dbContext.Teams.FirstOrDefaultAsync(team => team.Id == requiredTeamId && team.IsActive, cancellationToken);
+            if (teamOrNull == null || string.IsNullOrWhiteSpace(teamOrNull.CalendarId))
             {
                 return new List<CalendarEventItem>();
             }
 
-            return await GetEventsAsync(teamOrNull.CalendarID, teamOrNull.DisplayName, start, end, cancellationToken);
+            return await GetEventsAsync(CalendarId.CreateOptional(teamOrNull.CalendarId), teamOrNull.DisplayName, start, end, cancellationToken);
         }
     }
 
-    public async Task<IReadOnlyList<CalendarEventItem>> GetAggregateEventsAsync(UserSession userSession, DateTime start, DateTime end, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<CalendarEventItem>> GetAggregateEventsAsync(
+        UserSession userSession,
+        DateTime start,
+        DateTime end,
+        CancellationToken cancellationToken
+    )
     {
         List<CalendarFetchTarget> fetchTargets = new List<CalendarFetchTarget>();
-        HashSet<string> fetchedCalendarIDs = new HashSet<string>();
+        HashSet<string> fetchedCalendarIds = new HashSet<string>();
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.ID).FirstOrDefaultAsync(cancellationToken);
+            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
             if (settingOrNull != null && userSession.IsManagementRole())
             {
-                addCalendarFetchTarget(fetchTargets, fetchedCalendarIDs, settingOrNull.OrganizationCalendarID, OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME);
+                addCalendarFetchTarget(fetchTargets, fetchedCalendarIds, settingOrNull.OrganizationCalendarId, OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME);
             }
 
             if (settingOrNull != null && userSession.IsTeamLeaderOrHigherRole())
             {
-                addCalendarFetchTarget(fetchTargets, fetchedCalendarIDs, settingOrNull.ResponsibleCalendarID, OrganizationHubWorkspaceDefaults.RESPONSIBLE_CALENDAR_NAME);
+                addCalendarFetchTarget(fetchTargets, fetchedCalendarIds, settingOrNull.ResponsibleCalendarId, OrganizationHubWorkspaceDefaults.RESPONSIBLE_CALENDAR_NAME);
             }
 
-            IQueryable<Team> teamQuery = dbContext.Teams.Where(team => team.IsActive && team.CalendarID != null && team.CalendarID != string.Empty).OrderBy(team => team.SortOrder);
+            IQueryable<Team> teamQuery = dbContext.Teams.Where(team => team.IsActive && team.CalendarId != null && team.CalendarId != string.Empty).OrderBy(team => team.SortOrder);
             if (userSession.IsManagementRole() == false)
             {
-                if (userSession.TeamID.HasValue == false)
+                if (userSession.HasTeam == false)
                 {
                     return new List<CalendarEventItem>();
                 }
 
-                int teamID = userSession.TeamID.Value;
-                teamQuery = teamQuery.Where(team => team.ID == teamID);
+                int teamId = userSession.GetRequiredTeamIdValue();
+                teamQuery = teamQuery.Where(team => team.Id == teamId);
             }
 
             List<Team> teams = await teamQuery.ToListAsync(cancellationToken);
             foreach (Team team in teams)
             {
-                addCalendarFetchTarget(fetchTargets, fetchedCalendarIDs, team.CalendarID, team.DisplayName);
+                addCalendarFetchTarget(fetchTargets, fetchedCalendarIds, team.CalendarId, team.DisplayName);
             }
         }
 
@@ -107,7 +125,8 @@ public sealed partial class GoogleCalendarService
         List<Task<IReadOnlyList<CalendarEventItem>>> eventTasks = new List<Task<IReadOnlyList<CalendarEventItem>>>();
         foreach (CalendarFetchTarget fetchTarget in fetchTargets)
         {
-            eventTasks.Add(getEventsAsync(calendarService, fetchTarget.CalendarID, fetchTarget.CalendarName, start, end, cancellationToken));
+            CalendarEventFetchRequest request = new CalendarEventFetchRequest(calendarService, fetchTarget.CalendarId, fetchTarget.CalendarName, start, end);
+            eventTasks.Add(getEventsAsync(request, cancellationToken));
         }
 
         IReadOnlyList<CalendarEventItem>[] eventGroups = await Task.WhenAll(eventTasks);
@@ -121,46 +140,101 @@ public sealed partial class GoogleCalendarService
         return orderedEvents;
     }
 
-    public async Task<CalendarEventItem> CreateEventAsync(UserSession userSession, CalendarEventFormModel formModel, string calendarName, CancellationToken cancellationToken)
+    public async Task<CalendarEventItem> CreateEventAsync(
+        UserSession userSession,
+        CalendarEventFormModel formModel,
+        string calendarName,
+        CancellationToken cancellationToken
+    )
     {
-        using (mChangeVersionService.BeginChange(createCalendarChangeKeys(formModel.CalendarID)))
+        CalendarId calendarId = formModel.CalendarIdValue;
+        string requiredCalendarId = calendarId.GetRequiredValue();
+        using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarId)))
         {
             CalendarService calendarService = await createCalendarServiceAsync(cancellationToken);
             Event googleEvent = createGoogleEvent(formModel);
-            EventsResource.InsertRequest request = calendarService.Events.Insert(googleEvent, formModel.CalendarID);
+            EventsResource.InsertRequest request = calendarService.Events.Insert(googleEvent, requiredCalendarId);
             request.Fields = EVENT_FIELDS;
             Event createdEvent = await request.ExecuteAsync(cancellationToken);
-            CalendarEventItem createdItem = createCalendarEventItem(createdEvent, formModel.CalendarID, calendarName);
-            CalendarEventMetadata createdMetadata = await createMetadataAsync(userSession, formModel.CalendarID, createdItem.ID, cancellationToken);
+            CalendarEventItem createdItem = createCalendarEventItem(createdEvent, calendarId, calendarName);
+            CalendarEventMetadata createdMetadata = await createMetadataAsync(userSession, calendarId, CalendarEventId.CreateOptional(createdItem.Id), cancellationToken);
             applyMetadata(createdItem, createdMetadata);
-            expireCalendarEventCache(formModel.CalendarID);
+            expireCalendarEventCache(calendarId);
             return createdItem;
         }
     }
 
     public async Task<CalendarEventItem> UpdateEventAsync(CalendarEventFormModel formModel, string calendarName, CancellationToken cancellationToken)
     {
-        using (mChangeVersionService.BeginChange(createCalendarChangeKeys(formModel.CalendarID)))
+        CalendarId calendarId = formModel.CalendarIdValue;
+        CalendarEventId eventId = formModel.EventIdValue;
+        string requiredCalendarId = calendarId.GetRequiredValue();
+        string requiredEventId = eventId.GetRequiredValue();
+        using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarId)))
         {
             CalendarService calendarService = await createCalendarServiceAsync(cancellationToken);
             Event googleEvent = createGoogleEvent(formModel);
-            EventsResource.PatchRequest request = calendarService.Events.Patch(googleEvent, formModel.CalendarID, formModel.ID);
+            EventsResource.PatchRequest request = calendarService.Events.Patch(googleEvent, requiredCalendarId, requiredEventId);
             request.Fields = EVENT_FIELDS;
             Event updatedEvent = await request.ExecuteAsync(cancellationToken);
-            expireCalendarEventCache(formModel.CalendarID);
-            return createCalendarEventItem(updatedEvent, formModel.CalendarID, calendarName);
+            expireCalendarEventCache(calendarId);
+            return createCalendarEventItem(updatedEvent, calendarId, calendarName);
         }
     }
 
-    public async Task DeleteEventAsync(string calendarID, string eventID, CancellationToken cancellationToken)
+    public async Task DeleteEventAsync(CalendarId calendarId, CalendarEventId eventId, CancellationToken cancellationToken)
     {
-        using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarID)))
+        string requiredCalendarId = calendarId.GetRequiredValue();
+        string requiredEventId = eventId.GetRequiredValue();
+        using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarId)))
         {
             CalendarService calendarService = await createCalendarServiceAsync(cancellationToken);
-            EventsResource.DeleteRequest request = calendarService.Events.Delete(calendarID, eventID);
+            EventsResource.DeleteRequest request = calendarService.Events.Delete(requiredCalendarId, requiredEventId);
             await request.ExecuteAsync(cancellationToken);
-            await deleteMetadataAsync(calendarID, eventID, cancellationToken);
-            expireCalendarEventCache(calendarID);
+            await deleteMetadataAsync(calendarId, eventId, cancellationToken);
+            expireCalendarEventCache(calendarId);
+        }
+    }
+
+    private sealed class CalendarEventFetchRequest
+    {
+        public CalendarEventFetchRequest(
+            CalendarService calendarService,
+            CalendarId calendarId,
+            string calendarName,
+            DateTime start,
+            DateTime end)
+        {
+            CalendarService = calendarService;
+            CalendarId = calendarId;
+            CalendarName = calendarName;
+            Start = start;
+            End = end;
+        }
+
+        public CalendarService CalendarService
+        {
+            get; private init;
+        }
+
+        public CalendarId CalendarId
+        {
+            get; private init;
+        }
+
+        public string CalendarName
+        {
+            get; private init;
+        }
+
+        public DateTime Start
+        {
+            get; private init;
+        }
+
+        public DateTime End
+        {
+            get; private init;
         }
     }
 }

@@ -1,0 +1,147 @@
+.hub-calendar-editor {
+    overflow: visible;
+}
+
+.hub-calendar-workspace .hub-card {
+    height: auto;
+}
+
+.hub-calendar-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.hub-calendar-sidebar > .hub-card.mb-4 {
+    margin-bottom: 0 !important;
+}
+
+.hub-calendar-editor-stack {
+    display: grid;
+    gap: 12px;
+}
+
+.hub-calendar-editor-stack .mud-input-control {
+    margin-bottom: 0 !important;
+}
+
+.hub-calendar-month-heading {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.hub-calendar-toolbar-layout {
+    align-items: center;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(260px, 380px) minmax(0, 1fr);
+}
+
+.hub-calendar-selector-wrap {
+    min-width: 0;
+}
+
+.hub-calendar-toolbar-actions {
+    align-items: center;
+    display: flex;
+    gap: 14px;
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+.hub-calendar-period-control {
+    align-items: center;
+    background: rgba(255, 255, 255, .56);
+    border: 1px solid rgba(78, 104, 145, .16);
+    border-radius: 999px;
+    display: inline-grid;
+    gap: 6px;
+    grid-template-columns: 40px max-content 40px;
+    height: 52px;
+    min-height: 52px;
+    padding: 4px 8px;
+    white-space: nowrap;
+}
+
+.hub-calendar-period-control .mud-tooltip-root {
+    align-items: center;
+    display: inline-flex;
+    height: 40px;
+    justify-content: center;
+}
+
+.hub-calendar-period-control .mud-icon-button {
+    align-items: center;
+    display: inline-flex;
+    height: 40px;
+    justify-content: center;
+    width: 40px;
+}
+
+.hub-calendar-period-label {
+    align-items: center;
+    color: var(--hub-text-strong);
+    display: inline-flex;
+    font-size: 20px;
+    font-weight: 900;
+    height: 40px;
+    justify-content: center;
+    line-height: 40px;
+    padding: 0 8px;
+}
+
+.hub-calendar-period-control .mud-typography-h6 {
+    align-items: center;
+    display: flex;
+    height: 40px;
+    justify-content: center;
+    line-height: 1;
+    margin: 0 !important;
+    min-height: 40px;
+}
+
+.hub-calendar-period-control h6 {
+    align-items: center;
+    display: flex;
+    margin: 0 !important;
+}
+
+.hub-calendar-view-switch {
+    align-items: center;
+    background: rgba(255, 255, 255, .54);
+    border: 1px solid rgba(78, 104, 145, .16);
+    border-radius: 999px;
+    display: inline-flex;
+    gap: 3px;
+    padding: 4px;
+}
+
+.hub-calendar-view-button {
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: var(--hub-text-muted);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 900;
+    height: 34px;
+    min-width: 58px;
+    padding: 0 13px;
+    white-space: nowrap;
+}
+
+.hub-calendar-view-button-active {
+    background: linear-gradient(135deg, var(--hub-brand), var(--hub-brand-deep));
+    box-shadow: 0 10px 22px rgba(33, 107, 255, .2);
+    color: #ffffff;
+}
+
+.hub-delete-confirm {
+    align-items: center;
+    display: flex;
+    gap: 14px;
+    justify-content: space-between;
+}

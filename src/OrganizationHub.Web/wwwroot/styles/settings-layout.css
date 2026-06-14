@@ -1,0 +1,119 @@
+.hub-settings-card {
+    overflow: hidden;
+}
+
+.hub-settings-layout {
+    align-items: start;
+    display: grid;
+    gap: 22px;
+    grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+}
+
+.hub-settings-side,
+.hub-settings-main {
+    display: grid;
+    gap: 22px;
+    min-width: 0;
+}
+
+.hub-settings-tabs {
+    min-width: 0;
+}
+
+.hub-settings-tabs .mud-tabs-toolbar {
+    background: rgba(255, 255, 255, .66);
+    border: 1px solid rgba(200, 211, 231, .72);
+    border-radius: 12px;
+    margin-bottom: 14px;
+    min-height: 50px;
+    overflow-x: auto;
+    padding: 4px;
+}
+
+.hub-settings-tabs .mud-tab {
+    border-radius: 9px;
+    color: var(--hub-text-muted);
+    flex: 0 0 auto;
+    font-weight: 850;
+    min-height: 40px;
+    min-width: auto !important;
+    padding: 0 16px !important;
+    text-transform: none;
+    white-space: nowrap;
+    width: auto !important;
+}
+
+.hub-settings-tabs .mud-tabs-tabbar-wrapper > .mud-tooltip-root {
+    margin-right: 6px;
+}
+
+.hub-settings-tabs .mud-tab.mud-tab-active {
+    background: rgba(33, 107, 255, .1) !important;
+    color: var(--hub-brand-deep) !important;
+}
+
+.hub-settings-tabs .mud-tabs-panels,
+.hub-settings-tabs .mud-tab-panel {
+    background: transparent;
+    padding: 0;
+}
+
+.hub-settings-switches {
+    margin-top: 6px;
+}
+
+.hub-settings-switches .mud-input-control {
+    margin-bottom: 0 !important;
+}
+
+.hub-advanced-settings .mud-expand-panel {
+    background: rgba(255, 255, 255, .62) !important;
+    border: 1px solid rgba(200, 211, 231, .78) !important;
+    border-radius: 14px !important;
+    box-shadow: none !important;
+}
+
+.hub-setting-id-field {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.hub-setting-id-tools {
+    align-items: center;
+    background: rgba(248, 250, 255, .72);
+    border: 1px solid rgba(200, 211, 231, .66);
+    border-radius: 16px;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    min-height: 42px;
+    padding: 4px 4px 4px 12px;
+}
+
+.hub-setting-id-preview {
+    color: var(--hub-text-muted);
+    display: block;
+    font-family: Consolas, "SFMono-Regular", "Roboto Mono", monospace;
+    font-size: 12px;
+    font-weight: 800;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-setting-id-preview-empty {
+    color: var(--hub-text-soft);
+    font-family: inherit;
+}
+
+.hub-settings-grid .mud-input-control,
+.hub-management-grid .mud-input-control {
+    margin-bottom: 12px !important;
+    width: 100%;
+}
+
+.hub-management-grid .mud-switch {
+    margin: 6px 0 4px;
+}

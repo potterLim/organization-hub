@@ -3,72 +3,77 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    private ServiceResult validateSubmitForm(ApprovalRequestFormModel formModel, ApprovalCreateContext context)
+    private ServiceResult validateSubmitCommand(ApprovalRequestCommand command, ApprovalCreateContext context)
     {
-        if (context.AvailableStepCounts.Contains(formModel.StepCount) == false)
+        if (command.StepCount.HasSupportedValue == false || context.AvailableStepCounts.Contains(command.StepCount.Value) == false)
         {
             return ServiceResult.Fail("결재 단계를 선택해 주세요.");
         }
 
-        if (string.IsNullOrWhiteSpace(formModel.DestinationFolderID))
+        if (command.DestinationFolderId.HasValue == false)
         {
             return ServiceResult.Fail("승인 완료 후 저장할 위치를 선택해 주세요.");
         }
 
-        if (string.IsNullOrWhiteSpace(formModel.FileID))
+        if (command.FileId.HasValue == false)
         {
             return ServiceResult.Fail("결재할 파일을 선택해 주세요.");
         }
 
-        if (formModel.StepCount >= 2 && formModel.FirstApproverUserID <= 0)
+        ApprovalUserId firstApproverUserId = command.FirstApproverUserId;
+        ApprovalUserId secondApproverUserId = command.SecondApproverUserId;
+        ApprovalUserId requestedFinalApproverUserId = command.FinalApproverUserId;
+        ApprovalUserId finalApproverUserId = resolveFinalApproverUserId(context.FinalApproverOptions, requestedFinalApproverUserId);
+
+        if (command.StepCount.RequiresFirstApprover && firstApproverUserId.HasValue == false)
         {
             return ServiceResult.Fail("1차 결재권자를 선택해 주세요.");
         }
 
-        if (formModel.StepCount >= 2 && context.ApproverOptions.Any(option => option.UserID == formModel.FirstApproverUserID) == false)
+        if (command.StepCount.RequiresFirstApprover && hasUserOption(context.ApproverOptions, firstApproverUserId) == false)
         {
             return ServiceResult.Fail("1차 결재권자를 찾을 수 없습니다.");
         }
 
-        if (formModel.StepCount == 3 && formModel.SecondApproverUserID <= 0)
+        if (command.StepCount.RequiresSecondApprover && secondApproverUserId.HasValue == false)
         {
             return ServiceResult.Fail("2차 결재권자를 선택해 주세요.");
         }
 
-        if (formModel.StepCount == 3 && context.ApproverOptions.Any(option => option.UserID == formModel.SecondApproverUserID) == false)
+        if (command.StepCount.RequiresSecondApprover && hasUserOption(context.ApproverOptions, secondApproverUserId) == false)
         {
             return ServiceResult.Fail("2차 결재권자를 찾을 수 없습니다.");
         }
 
-        int finalApproverUserID = resolveFinalApproverUserID(context.FinalApproverOptions, formModel.FinalApproverUserID);
-        if (finalApproverUserID <= 0)
+        if (finalApproverUserId.HasValue == false)
         {
             return ServiceResult.Fail("최종 결재권자를 선택해 주세요.");
         }
 
-        if (context.FinalApproverOptions.Any(option => option.UserID == finalApproverUserID) == false)
+        if (hasUserOption(context.FinalApproverOptions, finalApproverUserId) == false)
         {
             return ServiceResult.Fail("최종 결재권자를 찾을 수 없습니다.");
         }
 
-        HashSet<int> approverUserIDs = new HashSet<int>();
-        if (formModel.StepCount >= 2 && approverUserIDs.Add(formModel.FirstApproverUserID) == false)
+        HashSet<ApprovalUserId> approverUserIds = new HashSet<ApprovalUserId>();
+        if (command.StepCount.RequiresFirstApprover && approverUserIds.Add(firstApproverUserId) == false)
         {
             return ServiceResult.Fail("결재권자는 중복될 수 없습니다.");
         }
 
-        if (formModel.StepCount == 3 && approverUserIDs.Add(formModel.SecondApproverUserID) == false)
+        if (command.StepCount.RequiresSecondApprover && approverUserIds.Add(secondApproverUserId) == false)
         {
             return ServiceResult.Fail("결재권자는 중복될 수 없습니다.");
         }
 
-        if (approverUserIDs.Add(finalApproverUserID) == false)
+        if (approverUserIds.Add(finalApproverUserId) == false)
         {
             return ServiceResult.Fail("결재권자는 중복될 수 없습니다.");
         }
@@ -76,19 +81,22 @@ public sealed partial class ApprovalService
         return ServiceResult.Succeed();
     }
 
-    private int resolveFinalApproverUserID(IReadOnlyList<ApprovalUserOption> finalApproverOptions, int requestedFinalApproverUserID)
+    private ApprovalUserId resolveFinalApproverUserId(
+        IReadOnlyList<ApprovalUserOption> finalApproverOptions,
+        ApprovalUserId requestedFinalApproverUserId
+    )
     {
         if (finalApproverOptions.Count == 1)
         {
-            return finalApproverOptions[0].UserID;
+            return ApprovalUserId.CreateExisting(finalApproverOptions[0].UserId);
         }
 
-        return requestedFinalApproverUserID;
+        return requestedFinalApproverUserId;
     }
 
-    private ApprovalUserOption getRequiredUserOption(IReadOnlyList<ApprovalUserOption> options, int userID)
+    private ApprovalUserOption getRequiredUserOption(IReadOnlyList<ApprovalUserOption> options, ApprovalUserId userId)
     {
-        ApprovalUserOption? optionOrNull = options.FirstOrDefault(option => option.UserID == userID);
+        ApprovalUserOption? optionOrNull = options.FirstOrDefault(option => option.UserId == userId.Value);
         if (optionOrNull == null)
         {
             throw new InvalidOperationException("Approval user option was not found.");
@@ -97,34 +105,44 @@ public sealed partial class ApprovalService
         return optionOrNull;
     }
 
-    private ApprovalUserOption? getFirstApproverOrNull(IReadOnlyList<ApprovalUserOption> options, ApprovalRequestFormModel formModel)
+    private bool hasUserOption(IReadOnlyList<ApprovalUserOption> options, ApprovalUserId userId)
     {
-        if (formModel.StepCount < 2)
+        return options.Any(option => option.UserId == userId.Value);
+    }
+
+    private ApprovalUserOption? getFirstApproverOrNull(IReadOnlyList<ApprovalUserOption> options, ApprovalRequestCommand command)
+    {
+        if (command.StepCount.RequiresFirstApprover == false)
         {
             return null;
         }
 
-        return getRequiredUserOption(options, formModel.FirstApproverUserID);
+        return getRequiredUserOption(options, command.FirstApproverUserId);
     }
 
-    private ApprovalUserOption? getSecondApproverOrNull(IReadOnlyList<ApprovalUserOption> options, ApprovalRequestFormModel formModel)
+    private ApprovalUserOption? getSecondApproverOrNull(IReadOnlyList<ApprovalUserOption> options, ApprovalRequestCommand command)
     {
-        if (formModel.StepCount != 3)
+        if (command.StepCount.RequiresSecondApprover == false)
         {
             return null;
         }
 
-        return getRequiredUserOption(options, formModel.SecondApproverUserID);
+        return getRequiredUserOption(options, command.SecondApproverUserId);
     }
 
-    private async Task<bool> isFileInsideFolderAsync(DriveFileMetadata fileMetadata, string sourceFolderID, CancellationToken cancellationToken)
+    private async Task<bool> isFileInsideFolderAsync(
+        DriveFileMetadata fileMetadata,
+        DriveFolderId sourceFolderId,
+        CancellationToken cancellationToken
+    )
     {
-        if (fileMetadata.ParentFolderIDs.Contains(sourceFolderID))
+        if (fileMetadata.ParentFolderIds.Contains(sourceFolderId.GetRequiredValue()))
         {
             return true;
         }
 
-        IReadOnlySet<string> ancestorFolderIDs = await mDriveService.GetAncestorFolderIDsAsync(fileMetadata.ID, cancellationToken);
-        return ancestorFolderIDs.Contains(sourceFolderID);
+        IReadOnlySet<DriveFolderId> ancestorFolderIds = await mDriveService.GetAncestorFolderIdsAsync(DriveItemId.CreateOptional(fileMetadata.Id), cancellationToken);
+        return ancestorFolderIds.Contains(sourceFolderId);
     }
+
 }

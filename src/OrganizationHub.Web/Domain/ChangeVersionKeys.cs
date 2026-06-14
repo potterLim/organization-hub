@@ -2,33 +2,33 @@ namespace OrganizationHub.Web.Domain;
 
 public static class ChangeVersionKeys
 {
-    public const string DRIVE_FILES = "DriveFiles";
-    public const string CALENDAR = "Calendar";
-    public const string TODO = "Todo";
-    public const string APPROVAL = "Approval";
+    public static readonly ChangeVersionKey DRIVE_FILES = new ChangeVersionKey("DriveFiles");
+    public static readonly ChangeVersionKey CALENDAR = new ChangeVersionKey("Calendar");
+    public static readonly ChangeVersionKey TASKS = new ChangeVersionKey("Todo");
+    public static readonly ChangeVersionKey APPROVAL = new ChangeVersionKey("Approval");
 
-    public static string CreateDriveFolderKey(DriveFolderID folderID)
+    public static ChangeVersionKey CreateDriveFolderKey(DriveFolderId folderId)
     {
-        return "DriveFolder:" + normalizeKeyPart(folderID.Value);
+        return new ChangeVersionKey("DriveFolder:" + normalizeKeyPart(folderId.GetOptionalValue()));
     }
 
-    public static string CreateCalendarKey(CalendarID calendarID)
+    public static ChangeVersionKey CreateCalendarKey(CalendarId calendarId)
     {
-        return "Calendar:" + normalizeKeyPart(calendarID.Value);
+        return new ChangeVersionKey("Calendar:" + normalizeKeyPart(calendarId.GetOptionalValue()));
     }
 
-    public static string CreateTodoTaskListKey(TodoTaskListID taskListID)
+    public static ChangeVersionKey CreateTodoTaskListKey(TodoTaskListId taskListId)
     {
-        return "TodoTaskList:" + normalizeKeyPart(taskListID.Value);
+        return new ChangeVersionKey("TodoTaskList:" + normalizeKeyPart(taskListId.GetOptionalValue()));
     }
 
-    private static string normalizeKeyPart(string value)
+    private static string normalizeKeyPart(string keyPart)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrWhiteSpace(keyPart))
         {
             return "none";
         }
 
-        return value.Trim();
+        return keyPart.Trim();
     }
 }

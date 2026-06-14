@@ -1,23 +1,24 @@
 using System;
 using System.Globalization;
 using MudBlazor;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminGoogle
 {
-    private void setFolderTarget(string targetKey)
+    private void setFolderTarget(GoogleWorkspaceAssignmentTargetKey targetKey)
     {
         mSelectedFolderTargetKey = targetKey;
     }
 
-    private void setCalendarTarget(string targetKey)
+    private void setCalendarTarget(GoogleWorkspaceAssignmentTargetKey targetKey)
     {
         mSelectedCalendarTargetKey = targetKey;
     }
 
-    private void setTaskListTarget(string targetKey)
+    private void setTaskListTarget(GoogleWorkspaceAssignmentTargetKey targetKey)
     {
         mSelectedTaskListTargetKey = targetKey;
     }
@@ -27,16 +28,16 @@ public partial class AdminGoogle
         return prefix + ": 생성 " + summary.CreatedCount.ToString(CultureInfo.InvariantCulture) + "개, 재사용 " + summary.ReusedCount.ToString(CultureInfo.InvariantCulture) + "개, 매핑 " + summary.AssignedCount.ToString(CultureInfo.InvariantCulture) + "개";
     }
 
-    private void showResult(ServiceResult result, string successMessage)
+    private void showOperationResult(ServiceResult operationResult, string successMessage)
     {
-        if (result.IsSuccess)
+        if (operationResult.IsSuccess)
         {
             mMessage = successMessage;
             mMessageSeverity = Severity.Success;
             return;
         }
 
-        mMessage = result.ErrorMessage;
+        mMessage = operationResult.ErrorMessage;
         mMessageSeverity = Severity.Error;
     }
 

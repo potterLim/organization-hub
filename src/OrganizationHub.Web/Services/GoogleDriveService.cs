@@ -21,7 +21,12 @@ public sealed partial class GoogleDriveService : IDriveService
     private readonly IMemoryCache mMemoryCache;
     private readonly IChangeVersionService mChangeVersionService;
 
-    public GoogleDriveService(IGoogleApiCredentialFactory credentialFactory, IOptions<GoogleApiOptions> options, IMemoryCache memoryCache, IChangeVersionService changeVersionService)
+    public GoogleDriveService(
+        IGoogleApiCredentialFactory credentialFactory,
+        IOptions<GoogleApiOptions> options,
+        IMemoryCache memoryCache,
+        IChangeVersionService changeVersionService
+    )
     {
         mCredentialFactory = credentialFactory;
         mOptions = options.Value;

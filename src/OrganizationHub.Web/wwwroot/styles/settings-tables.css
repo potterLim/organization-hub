@@ -1,0 +1,148 @@
+.hub-admin-table {
+    table-layout: fixed;
+}
+
+.hub-admin-table .mud-table-container {
+    border-radius: 12px;
+    margin-top: 8px;
+    overflow-x: auto;
+}
+
+.hub-admin-table table {
+    min-width: 680px;
+}
+
+.hub-google-layout .hub-admin-table table {
+    min-width: 560px;
+}
+
+.hub-admin-table th,
+.hub-admin-table td {
+    word-break: keep-all;
+    vertical-align: middle;
+}
+
+.hub-admin-table th {
+    line-height: 1.2;
+    padding: 14px 18px !important;
+    white-space: nowrap;
+}
+
+.hub-admin-table td {
+    max-width: 220px;
+    overflow: hidden;
+    padding: 18px 18px !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-menu-table th {
+    padding: 10px 14px !important;
+}
+
+.hub-menu-table table {
+    min-width: 560px;
+}
+
+.hub-menu-table td {
+    line-height: 1.45;
+    max-width: none;
+    overflow: visible;
+    padding: 6px 14px !important;
+    text-overflow: clip;
+    white-space: normal;
+    word-break: keep-all;
+}
+
+.hub-menu-table .mud-button-root,
+.hub-menu-table .mud-icon-button-root {
+    height: 32px;
+    min-height: 32px;
+    min-width: 32px;
+    padding: 4px !important;
+    width: 32px;
+}
+
+.hub-action-cell {
+    min-width: 88px;
+    text-align: right;
+}
+
+.hub-table-actions {
+    align-items: center;
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.hub-status-pill {
+    align-items: center;
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 900;
+    height: 28px;
+    justify-content: center;
+    min-width: 54px;
+    padding: 0 10px;
+}
+
+.hub-status-active {
+    background: rgba(20, 150, 109, .12);
+    color: #087554;
+}
+
+.hub-status-completed {
+    background: rgba(78, 104, 145, .12);
+    color: #4e6891;
+}
+
+.hub-status-inactive {
+    background: rgba(180, 35, 24, .1);
+    color: var(--hub-danger);
+}
+
+.hub-status-pending {
+    background: rgba(255, 178, 90, .16);
+    color: #9b5f12;
+}
+
+.hub-status-succeeded {
+    background: rgba(20, 150, 109, .12);
+    color: #087554;
+}
+
+.hub-status-failed {
+    background: rgba(180, 35, 24, .1);
+    color: var(--hub-danger);
+}
+
+.hub-calendar-audit-table td {
+    max-width: 260px;
+    padding-bottom: 10px !important;
+    padding-top: 10px !important;
+}
+
+.hub-audit-main-cell {
+    min-width: 210px;
+}
+
+.hub-audit-title {
+    color: var(--hub-text-strong);
+    font-weight: 850;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-audit-subtitle {
+    color: var(--hub-text-muted);
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.35;
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OrganizationHub.Web.Data;
 using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
@@ -19,27 +20,36 @@ public sealed partial class UploadAuditLogService : IUploadAuditLogService
     private readonly IPermissionService mPermissionService;
     private readonly IDriveService mDriveService;
 
-    public UploadAuditLogService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IPermissionService permissionService, IDriveService driveService)
+    public UploadAuditLogService(
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IPermissionService permissionService,
+        IDriveService driveService
+    )
     {
         mDbContextFactory = dbContextFactory;
         mPermissionService = permissionService;
         mDriveService = driveService;
     }
 
-    public async Task RecordUploadAsync(UserSession userSession, DriveFolderReference targetFolder, DriveFileItem uploadedFile, CancellationToken cancellationToken)
+    public async Task RecordUploadAsync(
+        UserSession userSession,
+        DriveFolderReference targetFolder,
+        DriveFileItem uploadedFile,
+        CancellationToken cancellationToken
+    )
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             UploadAuditLog auditLog = new UploadAuditLog();
-            auditLog.FileID = uploadedFile.ID;
+            auditLog.FileId = uploadedFile.Id;
             auditLog.FileName = uploadedFile.Name;
-            auditLog.FolderID = targetFolder.FolderID;
+            auditLog.FolderId = targetFolder.FolderId.GetRequiredValue();
             auditLog.FolderDisplayName = targetFolder.DisplayName;
             auditLog.FolderKind = targetFolder.FolderKind;
-            auditLog.UploaderUserID = userSession.UserID;
+            auditLog.UploaderUserId = userSession.UserId;
             auditLog.UploaderDisplayName = userSession.DisplayName;
             auditLog.UploaderRole = userSession.Role;
-            auditLog.TeamID = targetFolder.TeamID;
+            auditLog.TeamId = targetFolder.TeamIdValueOrNull;
             auditLog.TeamName = targetFolder.TeamName;
             auditLog.UploadedAt = DateTime.UtcNow;
             dbContext.UploadAuditLogs.Add(auditLog);
@@ -54,23 +64,23 @@ public sealed partial class UploadAuditLogService : IUploadAuditLogService
             return;
         }
 
-        List<string> fileIDs = files.Select(file => file.ID).Distinct().ToList();
+        List<string> fileIds = files.Select(file => file.Id).Distinct().ToList();
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<UploadAuditLog> auditLogs = await dbContext.UploadAuditLogs.AsNoTracking().Where(auditLog => fileIDs.Contains(auditLog.FileID)).OrderByDescending(auditLog => auditLog.UploadedAt).ToListAsync(cancellationToken);
-            Dictionary<string, UploadAuditLog> auditLogsByFileID = new Dictionary<string, UploadAuditLog>();
+            List<UploadAuditLog> auditLogs = await dbContext.UploadAuditLogs.AsNoTracking().Where(auditLog => fileIds.Contains(auditLog.FileId)).OrderByDescending(auditLog => auditLog.UploadedAt).ToListAsync(cancellationToken);
+            Dictionary<string, UploadAuditLog> auditLogsByFileId = new Dictionary<string, UploadAuditLog>();
             foreach (UploadAuditLog auditLog in auditLogs)
             {
-                if (auditLogsByFileID.ContainsKey(auditLog.FileID) == false)
+                if (auditLogsByFileId.ContainsKey(auditLog.FileId) == false)
                 {
-                    auditLogsByFileID.Add(auditLog.FileID, auditLog);
+                    auditLogsByFileId.Add(auditLog.FileId, auditLog);
                 }
             }
 
             foreach (DriveFileItem file in files)
             {
                 UploadAuditLog? auditLogOrNull;
-                if (auditLogsByFileID.TryGetValue(file.ID, out auditLogOrNull))
+                if (auditLogsByFileId.TryGetValue(file.Id, out auditLogOrNull))
                 {
                     file.FolderDisplayName = auditLogOrNull.FolderDisplayName;
                     file.UploadedByDisplayName = auditLogOrNull.UploaderDisplayName;
@@ -80,18 +90,22 @@ public sealed partial class UploadAuditLogService : IUploadAuditLogService
         }
     }
 
-    public async Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsAsync(UserSession userSession, int maximumCount, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsAsync(
+        UserSession userSession,
+        RecentItemLimit maximumCount,
+        CancellationToken cancellationToken
+    )
     {
         IReadOnlyList<DriveFolderReference> readableFolders = await mPermissionService.GetReadableDriveFoldersAsync(userSession, cancellationToken);
-        HashSet<string> readableFolderIDs = new HashSet<string>(readableFolders.Select(folder => folder.FolderID));
-        if (readableFolderIDs.Count == 0)
+        HashSet<string> readableFolderIds = new HashSet<string>(readableFolders.Select(folder => folder.FolderId.GetRequiredValue()));
+        if (readableFolderIds.Count == 0)
         {
             return new List<UploadAuditLogItem>();
         }
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<UploadAuditLog> auditLogs = await dbContext.UploadAuditLogs.AsNoTracking().Where(auditLog => readableFolderIDs.Contains(auditLog.FolderID)).OrderByDescending(auditLog => auditLog.UploadedAt).Take(maximumCount).ToListAsync(cancellationToken);
+            List<UploadAuditLog> auditLogs = await dbContext.UploadAuditLogs.AsNoTracking().Where(auditLog => readableFolderIds.Contains(auditLog.FolderId)).OrderByDescending(auditLog => auditLog.UploadedAt).Take(maximumCount.Value).ToListAsync(cancellationToken);
             return createItems(auditLogs);
         }
     }

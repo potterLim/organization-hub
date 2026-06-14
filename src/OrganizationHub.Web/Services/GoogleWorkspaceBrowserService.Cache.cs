@@ -61,9 +61,9 @@ public sealed partial class GoogleWorkspaceBrowserService
         mMemoryCache.Set(createTaskListCacheKey(), cloneTaskLists(taskLists), cacheEntryOptions);
     }
 
-    private string createDriveFolderCacheKey(DriveFolderID parentFolderID)
+    private string createDriveFolderCacheKey(DriveFolderId parentFolderId)
     {
-        return "OrganizationHub:GoogleWorkspace:DriveFolders:" + parentFolderID.Value;
+        return "OrganizationHub:GoogleWorkspace:DriveFolders:" + parentFolderId.GetRequiredValue();
     }
 
     private string createCalendarListCacheKey()

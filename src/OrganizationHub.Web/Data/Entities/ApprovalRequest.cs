@@ -6,20 +6,20 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class ApprovalRequest
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
     public string Title { get; set; } = string.Empty;
-    public string FileID { get; set; } = string.Empty;
+    public string FileId { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
     public string MimeType { get; set; } = string.Empty;
-    public string SourceFolderID { get; set; } = string.Empty;
+    public string SourceFolderId { get; set; } = string.Empty;
     public EDriveFolderKind SourceFolderKind
     {
         get; set;
     }
-    public int? TeamID
+    public int? TeamId
     {
         get; set;
     }
@@ -28,7 +28,7 @@ public class ApprovalRequest
         get; set;
     }
     public string TeamName { get; set; } = string.Empty;
-    public int RequesterUserID
+    public int RequesterUserId
     {
         get; set;
     }
@@ -53,8 +53,8 @@ public class ApprovalRequest
     {
         get; set;
     }
-    public string ApprovedFileID { get; set; } = string.Empty;
-    public string ApprovedFolderID { get; set; } = string.Empty;
+    public string ApprovedFileId { get; set; } = string.Empty;
+    public string ApprovedFolderId { get; set; } = string.Empty;
     public string ApprovedFolderDisplayName { get; set; } = string.Empty;
     public DateTime? CompletedAt
     {

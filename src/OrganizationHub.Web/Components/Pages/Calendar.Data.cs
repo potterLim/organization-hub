@@ -12,10 +12,10 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Calendar
 {
-    private async Task handleCalendarChangedAsync(string calendarID)
+    private async Task handleCalendarChangedAsync(string calendarId)
     {
-        mSelectedCalendarID = calendarID;
-        NavigationManager.NavigateTo("/calendar?calendar=" + Uri.EscapeDataString(calendarID), false);
+        mSelectedCalendarId = calendarId;
+        NavigationManager.NavigateTo("/calendar?calendar=" + Uri.EscapeDataString(calendarId), false);
         await loadEventsAsync();
     }
 
@@ -50,7 +50,7 @@ public partial class Calendar
         {
             DateTime monthStart = mCurrentMonth;
             DateTime monthEnd = monthStart.AddMonths(1);
-            IReadOnlyList<string> changeVersionKeys = getChangeVersionKeys();
+            IReadOnlyList<ChangeVersionKey> changeVersionKeys = getChangeVersionKeys();
             ChangeVersionReadResult<IReadOnlyList<CalendarEventItem>> readResult = await ChangeVersionService.ReadWithStableSnapshotAsync(
                 changeVersionKeys,
                 cancellationToken => getEventsAsync(monthStart, monthEnd, cancellationToken),
@@ -78,7 +78,8 @@ public partial class Calendar
 
     private async Task<IReadOnlyList<CalendarEventItem>> getEventsAsync(DateTime start, DateTime end, CancellationToken cancellationToken)
     {
-        if (mSelectedCalendarID == "all")
+        CalendarId selectedCalendarId = CalendarId.CreateOptional(mSelectedCalendarId);
+        if (selectedCalendarId.IsAggregate)
         {
             if (CurrentUserSessionOrNull == null)
             {
@@ -88,13 +89,13 @@ public partial class Calendar
             return await CalendarService.GetAggregateEventsAsync(CurrentUserSessionOrNull, start, end, cancellationToken);
         }
 
-        CalendarReference? calendarOrNull = mCalendars.FirstOrDefault(calendar => calendar.CalendarID == mSelectedCalendarID);
+        CalendarReference? calendarOrNull = mCalendars.FirstOrDefault(calendar => calendar.CalendarId == selectedCalendarId);
         if (calendarOrNull == null)
         {
             return new List<CalendarEventItem>();
         }
 
-        return await CalendarService.GetEventsAsync(calendarOrNull.CalendarID, calendarOrNull.DisplayName, start, end, cancellationToken);
+        return await CalendarService.GetEventsAsync(calendarOrNull.CalendarId, calendarOrNull.DisplayName, start, end, cancellationToken);
     }
 
     private List<CalendarEventItem> cloneCalendarEvents(List<CalendarEventItem> calendarEvents)
@@ -115,8 +116,8 @@ public partial class Calendar
     private CalendarEventItem cloneCalendarEvent(CalendarEventItem calendarEvent)
     {
         CalendarEventItem clonedEvent = new CalendarEventItem();
-        clonedEvent.ID = calendarEvent.ID;
-        clonedEvent.CalendarID = calendarEvent.CalendarID;
+        clonedEvent.Id = calendarEvent.Id;
+        clonedEvent.CalendarId = calendarEvent.CalendarId;
         clonedEvent.CalendarName = calendarEvent.CalendarName;
         clonedEvent.Summary = calendarEvent.Summary;
         clonedEvent.Description = calendarEvent.Description;
@@ -133,8 +134,8 @@ public partial class Calendar
     private CalendarEventItem createOptimisticCalendarEvent(CalendarEventFormModel formModel, string calendarName, UserSession currentUserSession)
     {
         CalendarEventItem calendarEvent = new CalendarEventItem();
-        calendarEvent.ID = string.IsNullOrWhiteSpace(formModel.ID) ? "optimistic-" + Guid.NewGuid().ToString("N") : formModel.ID;
-        calendarEvent.CalendarID = formModel.CalendarID;
+        calendarEvent.Id = string.IsNullOrWhiteSpace(formModel.Id) ? "optimistic-" + Guid.NewGuid().ToString("N") : formModel.Id;
+        calendarEvent.CalendarId = formModel.CalendarId;
         calendarEvent.CalendarName = calendarName;
         calendarEvent.Summary = formModel.Summary;
         calendarEvent.Description = formModel.Description;
@@ -150,16 +151,16 @@ public partial class Calendar
 
     private void applyWritableState(List<CalendarEventItem> events)
     {
-        HashSet<string> writableCalendarIDs = new HashSet<string>(mWritableCalendars.Select(calendar => calendar.CalendarID));
+        HashSet<string> writableCalendarIds = new HashSet<string>(mWritableCalendars.Select(calendar => calendar.CalendarId.GetRequiredValue()));
         foreach (CalendarEventItem calendarEvent in events)
         {
-            calendarEvent.CanEdit = writableCalendarIDs.Contains(calendarEvent.CalendarID);
+            calendarEvent.CanEdit = writableCalendarIds.Contains(calendarEvent.CalendarId);
         }
     }
 
     private void applySavedEvent(CalendarEventItem calendarEvent)
     {
-        removeEventFromMonthList(calendarEvent.CalendarID, calendarEvent.ID);
+        removeEventFromMonthList(calendarEvent.CalendarId, calendarEvent.Id);
         if (isVisibleInCurrentSelection(calendarEvent))
         {
             mMonthEvents.Add(calendarEvent);
@@ -172,15 +173,15 @@ public partial class Calendar
         }
     }
 
-    private void removeEventFromLocalCollections(string calendarID, string eventID)
+    private void removeEventFromLocalCollections(string calendarId, string eventId)
     {
-        removeEventFromMonthList(calendarID, eventID);
+        removeEventFromMonthList(calendarId, eventId);
         refreshDerivedCalendarCollections();
     }
 
-    private void removeEventFromMonthList(string calendarID, string eventID)
+    private void removeEventFromMonthList(string calendarId, string eventId)
     {
-        mMonthEvents.RemoveAll(calendarEvent => calendarEvent.CalendarID == calendarID && calendarEvent.ID == eventID);
+        mMonthEvents.RemoveAll(calendarEvent => calendarEvent.CalendarId == calendarId && calendarEvent.Id == eventId);
     }
 
     private void refreshDerivedCalendarCollections()
@@ -203,12 +204,12 @@ public partial class Calendar
             return false;
         }
 
-        if (mSelectedCalendarID == "all")
+        if (CalendarId.CreateOptional(mSelectedCalendarId).IsAggregate)
         {
             return true;
         }
 
-        return calendarEvent.CalendarID == mSelectedCalendarID;
+        return calendarEvent.CalendarId == mSelectedCalendarId;
     }
 
     private bool isEventInsideCurrentMonth(CalendarEventItem calendarEvent)
@@ -237,7 +238,7 @@ public partial class Calendar
             return;
         }
 
-        CalendarEventItem? selectedEventOrNull = mMonthEvents.FirstOrDefault(calendarEvent => calendarEvent.ID == mSelectedEventOrNull.ID && calendarEvent.CalendarID == mSelectedEventOrNull.CalendarID);
+        CalendarEventItem? selectedEventOrNull = mMonthEvents.FirstOrDefault(calendarEvent => calendarEvent.Id == mSelectedEventOrNull.Id && calendarEvent.CalendarId == mSelectedEventOrNull.CalendarId);
         mSelectedEventOrNull = selectedEventOrNull;
     }
 }

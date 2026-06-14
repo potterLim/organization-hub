@@ -63,14 +63,15 @@ public sealed partial class UserManagementService : IUserManagementService
             }
 
             EUserRole role = getAllowedRole(formModel);
-            int? teamIDOrNull = await getAllowedTeamIDAsync(dbContext, formModel, role, cancellationToken);
-            OrganizationPosition? positionOrNull = await getAllowedPositionOrNullAsync(dbContext, formModel, role, teamIDOrNull, cancellationToken);
+            OrganizationTeamId? teamIdOrNull = await getAllowedTeamIdOrNullAsync(dbContext, formModel, role, cancellationToken);
+            OrganizationPosition? positionOrNull = await getAllowedPositionOrNullAsync(dbContext, formModel, role, teamIdOrNull, cancellationToken);
             UserAccount userAccount = new UserAccount();
             userAccount.Username = username;
             userAccount.DisplayName = formModel.DisplayName.Trim();
-            userAccount.PasswordHash = mPasswordHashService.HashPassword(formModel.Password);
+            PasswordHash passwordHash = mPasswordHashService.HashPassword(PlainPassword.CreateFromInput(formModel.Password));
+            userAccount.PasswordHash = passwordHash.GetRequiredValue();
             userAccount.Role = role;
-            userAccount.TeamID = teamIDOrNull;
+            userAccount.TeamId = OrganizationTeamId.GetValueOrNull(teamIdOrNull);
             applyUserPosition(userAccount, positionOrNull);
             userAccount.IsActive = formModel.IsActive;
             userAccount.CreatedAt = DateTime.UtcNow;
@@ -96,7 +97,9 @@ public sealed partial class UserManagementService : IUserManagementService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            UserAccount? userAccountOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.ID == formModel.ID, cancellationToken);
+            UserAccountId userAccountId = formModel.UserAccountIdValue;
+            int requiredUserAccountId = userAccountId.GetRequiredValue();
+            UserAccount? userAccountOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Id == requiredUserAccountId, cancellationToken);
             if (userAccountOrNull == null)
             {
                 return ServiceResult.Fail("사용자를 찾을 수 없습니다.");
@@ -115,7 +118,7 @@ public sealed partial class UserManagementService : IUserManagementService
             }
 
             string username = formModel.Username.Trim();
-            bool hasDuplicateUsername = await dbContext.UserAccounts.AnyAsync(user => user.ID != formModel.ID && user.Username == username, cancellationToken);
+            bool hasDuplicateUsername = await dbContext.UserAccounts.AnyAsync(user => user.Id != requiredUserAccountId && user.Username == username, cancellationToken);
             if (hasDuplicateUsername)
             {
                 return ServiceResult.Fail("이미 사용 중인 아이디입니다.");
@@ -124,10 +127,10 @@ public sealed partial class UserManagementService : IUserManagementService
             userAccountOrNull.Username = username;
             userAccountOrNull.DisplayName = formModel.DisplayName.Trim();
             EUserRole role = getAllowedRole(formModel);
-            int? teamIDOrNull = await getAllowedTeamIDAsync(dbContext, formModel, role, cancellationToken);
-            OrganizationPosition? positionOrNull = await getAllowedPositionOrNullAsync(dbContext, formModel, role, teamIDOrNull, cancellationToken);
+            OrganizationTeamId? teamIdOrNull = await getAllowedTeamIdOrNullAsync(dbContext, formModel, role, cancellationToken);
+            OrganizationPosition? positionOrNull = await getAllowedPositionOrNullAsync(dbContext, formModel, role, teamIdOrNull, cancellationToken);
             userAccountOrNull.Role = role;
-            userAccountOrNull.TeamID = teamIDOrNull;
+            userAccountOrNull.TeamId = OrganizationTeamId.GetValueOrNull(teamIdOrNull);
             applyUserPosition(userAccountOrNull, positionOrNull);
             userAccountOrNull.IsActive = formModel.IsActive;
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -135,21 +138,26 @@ public sealed partial class UserManagementService : IUserManagementService
         }
     }
 
-    public async Task<ServiceResult> ActivateUserAsync(UserSession userSession, int userID, CancellationToken cancellationToken)
+    public async Task<ServiceResult> ActivateUserAsync(UserSession userSession, UserAccountId userId, CancellationToken cancellationToken)
     {
-        return await setUserActivationStateAsync(userSession, userID, EActivationState.Active, cancellationToken);
+        return await setUserActivationStateAsync(userSession, userId, EActivationState.Active, cancellationToken);
     }
 
-    public async Task<ServiceResult> DeactivateUserAsync(UserSession userSession, int userID, CancellationToken cancellationToken)
+    public async Task<ServiceResult> DeactivateUserAsync(UserSession userSession, UserAccountId userId, CancellationToken cancellationToken)
     {
-        return await setUserActivationStateAsync(userSession, userID, EActivationState.Inactive, cancellationToken);
+        return await setUserActivationStateAsync(userSession, userId, EActivationState.Inactive, cancellationToken);
     }
 
-    private async Task<ServiceResult> setUserActivationStateAsync(UserSession userSession, int userID, EActivationState activationState, CancellationToken cancellationToken)
+    private async Task<ServiceResult> setUserActivationStateAsync(
+        UserSession userSession,
+        UserAccountId userAccountId,
+        EActivationState activationState,
+        CancellationToken cancellationToken)
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            UserAccount? userAccountOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.ID == userID, cancellationToken);
+            int requiredUserAccountId = userAccountId.GetRequiredValue();
+            UserAccount? userAccountOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Id == requiredUserAccountId, cancellationToken);
             if (userAccountOrNull == null)
             {
                 return ServiceResult.Fail("사용자를 찾을 수 없습니다.");
@@ -173,16 +181,32 @@ public sealed partial class UserManagementService : IUserManagementService
         }
     }
 
-    public async Task<ServiceResult> ResetPasswordAsync(UserSession userSession, int userID, string newPassword, CancellationToken cancellationToken)
+    public async Task<ServiceResult> ResetPasswordAsync(
+        UserSession userSession,
+        UserAccountId userId,
+        PlainPassword newPassword,
+        CancellationToken cancellationToken
+    )
     {
-        if (newPassword.Length < 8)
+        return await resetPasswordAsync(userSession, userId, newPassword, cancellationToken);
+    }
+
+    private async Task<ServiceResult> resetPasswordAsync(
+        UserSession userSession,
+        UserAccountId userAccountId,
+        PlainPassword newPassword,
+        CancellationToken cancellationToken
+    )
+    {
+        if (newPassword.HasMinimumLength(8) == false)
         {
             return ServiceResult.Fail("비밀번호는 8자 이상이어야 합니다.");
         }
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            UserAccount? userAccountOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.ID == userID, cancellationToken);
+            int requiredUserAccountId = userAccountId.GetRequiredValue();
+            UserAccount? userAccountOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Id == requiredUserAccountId, cancellationToken);
             if (userAccountOrNull == null)
             {
                 return ServiceResult.Fail("사용자를 찾을 수 없습니다.");
@@ -200,7 +224,8 @@ public sealed partial class UserManagementService : IUserManagementService
                 return managementLeadershipValidationResult;
             }
 
-            userAccountOrNull.PasswordHash = mPasswordHashService.HashPassword(newPassword);
+            PasswordHash passwordHash = mPasswordHashService.HashPassword(newPassword);
+            userAccountOrNull.PasswordHash = passwordHash.GetRequiredValue();
             await dbContext.SaveChangesAsync(cancellationToken);
             return ServiceResult.Succeed();
         }

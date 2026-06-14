@@ -1,0 +1,57 @@
+<MudExpansionPanels Elevation="0" Class="hub-advanced-settings">
+    <MudExpansionPanel Text="고급: 연결 ID 직접 확인/수정">
+        <div class="hub-form-hint">일반 운영자는 위 선택 목록을 사용하면 됩니다. 외부에서 받은 정확한 ID를 직접 넣어야 할 때만 이 영역을 사용하세요.</div>
+        <MudGrid Spacing="3" Class="hub-settings-grid">
+            <MudItem xs="12" md="6">
+                <SettingIdField @bind-Value="FormModel.DriveResources.OfficialRootFolderId" Label="기본 자료 폴더 ID" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <SettingIdField @bind-Value="FormModel.DriveResources.PublicFolderId" Label="외부 공유 자료 폴더 ID" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <SettingIdField @bind-Value="FormModel.DriveResources.CommonFolderId" Label="공통 자료 폴더 ID" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <SettingIdField @bind-Value="FormModel.DriveResources.ResponsibleResourcesFolderId" Label="책임자 자료 폴더 ID" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <SettingIdField @bind-Value="FormModel.DriveResources.WorkResourcesFolderId" Label="업무 지원 자료 폴더 ID" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <SettingIdField @bind-Value="FormModel.CalendarResources.OrganizationCalendarId" Label="조직 공용 Calendar ID" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <SettingIdField @bind-Value="FormModel.CalendarResources.ResponsibleCalendarId" Label="책임자 Calendar ID" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <SettingIdField @bind-Value="FormModel.TaskResources.OrganizationTaskListId" Label="조직 공용 Google Tasks 목록 ID" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <SettingIdField @bind-Value="FormModel.TaskResources.ResponsibleTaskListId" Label="책임자 Google Tasks 목록 ID" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <SettingIdField @bind-Value="FormModel.FileResources.NoticeFileId" Label="공지 파일 ID" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <SettingIdField @bind-Value="FormModel.FileResources.WorkGuidelineFileId" Label="업무 기준 파일 ID" />
+            </MudItem>
+        </MudGrid>
+        <div class="hub-submit-row">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => SaveRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">고급 설정 저장</MudButton>
+        </div>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@code {
+    [Parameter]
+    public GlobalSettingFormModel FormModel
+    {
+        get; set;
+    } = new GlobalSettingFormModel();
+
+    [Parameter]
+    public EventCallback SaveRequested
+    {
+        get; set;
+    }
+}

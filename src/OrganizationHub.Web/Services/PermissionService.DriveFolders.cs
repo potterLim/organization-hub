@@ -12,36 +12,42 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class PermissionService
 {
-    private async Task<IReadOnlyList<DriveFolderReference>> getDriveFoldersAsync(UserSession userSession, EDriveFolderAccessMode accessMode, EDriveFolderKind? folderKindOrNull, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<DriveFolderReference>> getDriveFoldersAsync(
+        UserSession userSession,
+        EDriveFolderAccessMode accessMode,
+        EDriveFolderKind? folderKindOrNull,
+        CancellationToken cancellationToken
+    )
     {
         List<DriveFolderReference> folders = new List<DriveFolderReference>();
-        bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSession, cancellationToken);
+        EPermissionConfigurationMode configurationMode = await getPermissionConfigurationModeAsync(userSession, cancellationToken);
+        DriveFolderCollectionContext collectionContext = new DriveFolderCollectionContext(userSession, accessMode, folderKindOrNull, configurationMode);
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.ID).FirstOrDefaultAsync(cancellationToken);
+            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
             if (settingOrNull != null)
             {
-                await addGlobalFoldersAsync(folders, settingOrNull, userSession, accessMode, folderKindOrNull, usesConfiguredPermissions, cancellationToken);
+                await addGlobalFoldersAsync(folders, settingOrNull, collectionContext, cancellationToken);
             }
 
             IQueryable<Team> teamQuery = dbContext.Teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder);
-            if (usesConfiguredPermissions == false && userSession.IsManagementRole() == false)
+            if (configurationMode == EPermissionConfigurationMode.FallbackPolicy && userSession.IsManagementRole() == false)
             {
-                if (userSession.TeamID.HasValue == false)
+                if (userSession.HasTeam == false)
                 {
                     IReadOnlyList<DriveFolderReference> filteredTeamlessFolders = filterFolders(folders, accessMode);
                     IReadOnlyList<DriveFolderReference> allowedTeamlessFolders = await filterFoldersInsideOfficialRootAsync(filteredTeamlessFolders, cancellationToken);
                     return deduplicateFolderReferences(allowedTeamlessFolders);
                 }
 
-                int teamID = userSession.TeamID.Value;
-                teamQuery = teamQuery.Where(team => team.ID == teamID);
+                int teamId = userSession.GetRequiredTeamIdValue();
+                teamQuery = teamQuery.Where(team => team.Id == teamId);
             }
 
             List<Team> teams = await teamQuery.ToListAsync(cancellationToken);
             foreach (Team team in teams)
             {
-                await addTeamFoldersAsync(folders, team, userSession, accessMode, folderKindOrNull, usesConfiguredPermissions, cancellationToken);
+                await addTeamFoldersAsync(folders, team, collectionContext, cancellationToken);
             }
         }
 

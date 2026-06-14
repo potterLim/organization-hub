@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -15,9 +16,9 @@ public partial class Todos
             return;
         }
 
-        mEditingTaskID = task.ID;
+        mEditingTaskId = task.Id;
         mEditingTitle = task.Title;
-        mDeletingTaskID = string.Empty;
+        mDeletingTaskId = string.Empty;
     }
 
     private void setEditingTitle(string title)
@@ -27,7 +28,7 @@ public partial class Todos
 
     private void cancelEdit()
     {
-        mEditingTaskID = string.Empty;
+        mEditingTaskId = string.Empty;
         mEditingTitle = string.Empty;
     }
 
@@ -38,14 +39,14 @@ public partial class Todos
             return;
         }
 
-        mDeletingTaskID = task.ID;
-        mEditingTaskID = string.Empty;
+        mDeletingTaskId = task.Id;
+        mEditingTaskId = string.Empty;
         mEditingTitle = string.Empty;
     }
 
     private void cancelDelete()
     {
-        mDeletingTaskID = string.Empty;
+        mDeletingTaskId = string.Empty;
     }
 
     private async Task saveEditAsync(TodoTaskItem task)
@@ -68,8 +69,8 @@ public partial class Todos
             mMessage = string.Empty;
             await InvokeAsync(StateHasChanged);
             TodoTaskFormModel formModel = new TodoTaskFormModel();
-            formModel.TaskListID = task.TaskListID;
-            formModel.TaskID = task.ID;
+            formModel.TaskListId = task.TaskListId;
+            formModel.TaskId = task.Id;
             formModel.Title = editedTitle;
             TodoTaskItem updatedTask = await TodoService.UpdateTaskAsync(CurrentUserSessionOrNull, formModel, CancellationToken.None);
             updatedTask.TaskListDisplayName = task.TaskListDisplayName;
@@ -79,7 +80,7 @@ public partial class Todos
         catch (Exception exception)
         {
             mTasks = cloneTasks(previousTasks);
-            mEditingTaskID = task.ID;
+            mEditingTaskId = task.Id;
             mEditingTitle = task.Title;
             showError(createTodoErrorMessage(exception));
         }
@@ -98,11 +99,11 @@ public partial class Todos
         List<TodoTaskItem> previousTasks = cloneTasks(mTasks);
         try
         {
-            removeTaskFromLocalList(task.TaskListID, task.ID);
-            mDeletingTaskID = string.Empty;
+            removeTaskFromLocalList(task.TaskListId, task.Id);
+            mDeletingTaskId = string.Empty;
             mMessage = string.Empty;
             await InvokeAsync(StateHasChanged);
-            await TodoService.DeleteTaskAsync(CurrentUserSessionOrNull, task.TaskListID, task.ID, CancellationToken.None);
+            await TodoService.DeleteTaskAsync(CurrentUserSessionOrNull, TodoTaskListId.CreateOptional(task.TaskListId), TodoTaskId.CreateOptional(task.Id), CancellationToken.None);
             recordLoadedChangeSnapshot();
         }
         catch (Exception exception)

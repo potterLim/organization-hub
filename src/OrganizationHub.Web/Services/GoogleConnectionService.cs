@@ -17,20 +17,32 @@ using Microsoft.Extensions.Options;
 using OrganizationHub.Web.Configuration;
 using OrganizationHub.Web.Data;
 using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
 public sealed class GoogleConnectionService : IGoogleConnectionService
 {
-    private static readonly string[] OAUTH_SCOPES = new[] { DriveService.Scope.Drive, CalendarService.Scope.Calendar, TasksService.Scope.Tasks, "openid", "email" };
+    private static readonly string[] OAUTH_SCOPES = new[]
+    {
+        DriveService.Scope.Drive,
+        CalendarService.Scope.Calendar,
+        TasksService.Scope.Tasks,
+        "openid",
+        "email"
+    };
 
     private readonly GoogleApiOptions mOptions;
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;
     private readonly IDataProtector mRefreshTokenProtector;
     private readonly IDataProtector mStateProtector;
 
-    public GoogleConnectionService(IOptions<GoogleApiOptions> options, IDbContextFactory<OrganizationHubDbContext> dbContextFactory, IDataProtectionProvider dataProtectionProvider)
+    public GoogleConnectionService(
+        IOptions<GoogleApiOptions> options,
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IDataProtectionProvider dataProtectionProvider
+    )
     {
         mOptions = options.Value;
         mDbContextFactory = dbContextFactory;
@@ -60,7 +72,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
         }
     }
 
-    public string CreateAuthorizationUrl(string redirectUri)
+    public string CreateAuthorizationUrl(GoogleOAuthRedirectUri redirectUri)
     {
         if (hasOAuthConfiguration() == false)
         {
@@ -68,7 +80,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
         }
 
         GoogleAuthorizationCodeFlow flow = createAuthorizationCodeFlow(OAUTH_SCOPES);
-        AuthorizationCodeRequestUrl request = flow.CreateAuthorizationCodeRequest(redirectUri);
+        AuthorizationCodeRequestUrl request = flow.CreateAuthorizationCodeRequest(redirectUri.Value);
         GoogleAuthorizationCodeRequestUrl googleRequest = (GoogleAuthorizationCodeRequestUrl)request;
         googleRequest.AccessType = "offline";
         googleRequest.Prompt = "consent";
@@ -76,14 +88,19 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
         return googleRequest.Build().ToString();
     }
 
-    public async Task<ServiceResult> CompleteConnectionAsync(string code, string state, string redirectUri, CancellationToken cancellationToken)
+    public async Task<ServiceResult> CompleteConnectionAsync(
+        GoogleOAuthAuthorizationCode authorizationCode,
+        GoogleOAuthState state,
+        GoogleOAuthRedirectUri redirectUri,
+        CancellationToken cancellationToken
+    )
     {
         if (hasOAuthConfiguration() == false)
         {
             return ServiceResult.Fail("Google OAuth Client ID와 Client Secret이 설정되지 않았습니다.");
         }
 
-        if (string.IsNullOrWhiteSpace(code))
+        if (authorizationCode.HasValue == false)
         {
             return ServiceResult.Fail("Google OAuth 인증 코드가 비어 있습니다.");
         }
@@ -94,7 +111,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
         }
 
         GoogleAuthorizationCodeFlow flow = createAuthorizationCodeFlow(OAUTH_SCOPES);
-        TokenResponse tokenResponse = await flow.ExchangeCodeForTokenAsync("organization-hub-storage", code, redirectUri, cancellationToken);
+        TokenResponse tokenResponse = await flow.ExchangeCodeForTokenAsync("organization-hub-storage", authorizationCode.Value, redirectUri.Value, cancellationToken);
         if (string.IsNullOrWhiteSpace(tokenResponse.RefreshToken))
         {
             return ServiceResult.Fail("Google refresh token을 받지 못했습니다. Google 권한 연결을 해제한 뒤 다시 연결해 주세요.");
@@ -123,13 +140,13 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
 
     private bool hasOAuthConfiguration()
     {
-        return string.IsNullOrWhiteSpace(mOptions.OAuthClientID) == false && string.IsNullOrWhiteSpace(mOptions.OAuthClientSecret) == false;
+        return string.IsNullOrWhiteSpace(mOptions.OAuthClientId) == false && string.IsNullOrWhiteSpace(mOptions.OAuthClientSecret) == false;
     }
 
     private GoogleAuthorizationCodeFlow createAuthorizationCodeFlow(string[] scopes)
     {
         ClientSecrets clientSecrets = new ClientSecrets();
-        clientSecrets.ClientId = mOptions.OAuthClientID;
+        clientSecrets.ClientId = mOptions.OAuthClientId;
         clientSecrets.ClientSecret = mOptions.OAuthClientSecret;
 
         GoogleAuthorizationCodeFlow.Initializer initializer = new GoogleAuthorizationCodeFlow.Initializer();
@@ -144,16 +161,16 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
         return mStateProtector.Protect(statePayload);
     }
 
-    private bool validateState(string state)
+    private bool validateState(GoogleOAuthState state)
     {
-        if (string.IsNullOrWhiteSpace(state))
+        if (state.HasValue == false)
         {
             return false;
         }
 
         try
         {
-            string statePayload = mStateProtector.Unprotect(state);
+            string statePayload = mStateProtector.Unprotect(state.Value);
             string[] parts = statePayload.Split(':');
             if (parts.Length != 2)
             {

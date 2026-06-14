@@ -15,7 +15,7 @@ public partial class ApprovalRequest
     private List<DriveFolderPathItem> mDestinationFolderPath = new List<DriveFolderPathItem>();
     private List<DriveFileItem> mFiles = new List<DriveFileItem>();
     private List<DriveFileItem> mDestinationFoldersInCurrentFolder = new List<DriveFileItem>();
-    private string mSelectedDestinationRootFolderID = string.Empty;
+    private string mSelectedDestinationRootFolderId = string.Empty;
     private string mNewDestinationFolderName = string.Empty;
     private string mKeyword = string.Empty;
     private string mMessage = string.Empty;
@@ -39,7 +39,7 @@ public partial class ApprovalRequest
         }
 
         mCreateContext = await ApprovalService.GetCreateContextAsync(CurrentUserSessionOrNull, CancellationToken.None);
-        initializeDefaults();
+        initializeApprovalRequestDefaults();
         if (mCreateContext.SourceFolders.Count > 0)
         {
             await loadFilesAsync();

@@ -12,12 +12,18 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    private async Task<ConfiguredApprovalLine?> createConfiguredApprovalLineOrNullAsync(OrganizationHubDbContext dbContext, IReadOnlyList<UserAccount> users, UserSession userSession, CancellationToken cancellationToken)
+    private async Task<ConfiguredApprovalLine?> createConfiguredApprovalLineOrNullAsync(
+        OrganizationHubDbContext dbContext,
+        IReadOnlyList<UserAccount> users,
+        UserSession userSession,
+        CancellationToken cancellationToken)
     {
+        OrganizationTeamId? userTeamIdOrNull = createUserTeamIdOrNull(userSession);
+        int? userTeamIdValueOrNull = OrganizationTeamId.GetValueOrNull(userTeamIdOrNull);
         ApprovalWorkflow? workflowOrNull = await dbContext.ApprovalWorkflows
             .Include(workflow => workflow.Steps)
-            .Where(workflow => workflow.IsActive && (workflow.AppliesToTeamID == null || workflow.AppliesToTeamID == userSession.TeamID))
-            .OrderBy(workflow => workflow.AppliesToTeamID == userSession.TeamID ? 0 : 1)
+            .Where(workflow => workflow.IsActive && (workflow.AppliesToTeamId == null || workflow.AppliesToTeamId == userTeamIdValueOrNull))
+            .OrderBy(workflow => workflow.AppliesToTeamId == userTeamIdValueOrNull ? 0 : 1)
             .ThenBy(workflow => workflow.Priority)
             .FirstOrDefaultAsync(cancellationToken);
         if (workflowOrNull == null)
@@ -32,11 +38,11 @@ public sealed partial class ApprovalService
         }
 
         List<ApprovalUserOption> selectedApprovers = new List<ApprovalUserOption>();
-        HashSet<int> usedUserIDs = new HashSet<int>();
+        HashSet<int> usedUserIds = new HashSet<int>();
         foreach (ApprovalWorkflowStep step in steps)
         {
-            bool isFinalStep = step.StepOrder == steps[steps.Count - 1].StepOrder;
-            UserAccount? approverOrNull = resolveWorkflowStepApproverOrNull(users, userSession, step, usedUserIDs, isFinalStep);
+            EApprovalWorkflowStepRole stepRole = step.StepOrder == steps[steps.Count - 1].StepOrder ? EApprovalWorkflowStepRole.Final : EApprovalWorkflowStepRole.Intermediate;
+            UserAccount? approverOrNull = resolveWorkflowStepApproverOrNull(users, userSession, step, usedUserIds, stepRole);
             if (approverOrNull == null)
             {
                 if (step.IsRequired)
@@ -47,7 +53,7 @@ public sealed partial class ApprovalService
                 continue;
             }
 
-            usedUserIDs.Add(approverOrNull.ID);
+            usedUserIds.Add(approverOrNull.Id);
             selectedApprovers.Add(createApprovalUserOption(approverOrNull));
         }
 
@@ -58,59 +64,136 @@ public sealed partial class ApprovalService
 
         ApprovalUserOption finalApprover = selectedApprovers[selectedApprovers.Count - 1];
         List<ApprovalUserOption> intermediateApprovers = selectedApprovers.Take(selectedApprovers.Count - 1).ToList();
+        ApprovalStepCount selectedStepCount = new ApprovalStepCount(selectedApprovers.Count);
         ApprovalDefaultLineOption defaultLine = new ApprovalDefaultLineOption();
-        defaultLine.StepCount = selectedApprovers.Count;
-        defaultLine.FinalApproverUserID = finalApprover.UserID;
+        defaultLine.StepCount = selectedStepCount.Value;
+        defaultLine.FinalApproverUserId = finalApprover.UserId;
         if (selectedApprovers.Count >= 2)
         {
-            defaultLine.FirstApproverUserID = selectedApprovers[0].UserID;
+            defaultLine.FirstApproverUserId = selectedApprovers[0].UserId;
         }
 
         if (selectedApprovers.Count == 3)
         {
-            defaultLine.SecondApproverUserID = selectedApprovers[1].UserID;
+            defaultLine.SecondApproverUserId = selectedApprovers[1].UserId;
         }
 
-        return new ConfiguredApprovalLine(selectedApprovers.Count, intermediateApprovers, new List<ApprovalUserOption> { finalApprover }, defaultLine);
+        return new ConfiguredApprovalLine(selectedStepCount, intermediateApprovers, new List<ApprovalUserOption> { finalApprover }, defaultLine);
     }
 
-    private UserAccount? resolveWorkflowStepApproverOrNull(IReadOnlyList<UserAccount> users, UserSession userSession, ApprovalWorkflowStep step, IReadOnlySet<int> usedUserIDs, bool isFinalStep)
+    private UserAccount? resolveWorkflowStepApproverOrNull(
+        IReadOnlyList<UserAccount> users,
+        UserSession userSession,
+        ApprovalWorkflowStep step,
+        IReadOnlySet<int> usedUserIds,
+        EApprovalWorkflowStepRole stepRole)
     {
-        List<UserAccount> candidates = getWorkflowStepCandidates(users, userSession, step, isFinalStep)
-            .Where(user => user.ID != userSession.UserID && usedUserIDs.Contains(user.ID) == false)
+        List<UserAccount> candidates = getWorkflowStepCandidates(users, userSession, step, stepRole)
+            .Where(user => user.Id != userSession.UserId && usedUserIds.Contains(user.Id) == false)
             .OrderBy(user => getApproverSortOrder(user, userSession))
             .ThenBy(user => user.DisplayName)
             .ToList();
         return candidates.FirstOrDefault();
     }
 
-    private List<UserAccount> getWorkflowStepCandidates(IReadOnlyList<UserAccount> users, UserSession userSession, ApprovalWorkflowStep step, bool isFinalStep)
+    private List<UserAccount> getWorkflowStepCandidates(
+        IReadOnlyList<UserAccount> users,
+        UserSession userSession,
+        ApprovalWorkflowStep step,
+        EApprovalWorkflowStepRole stepRole)
     {
         switch (step.ApproverSelectionType)
         {
             case EApproverSelectionType.SpecificUser:
-                return users.Where(user => step.ApproverUserID.HasValue && user.ID == step.ApproverUserID.Value).ToList();
+                return getSpecificUserCandidates(users, step);
             case EApproverSelectionType.SpecificPosition:
-                return users.Where(user => step.ApproverPositionID.HasValue && user.PositionID == step.ApproverPositionID.Value).ToList();
+                return getSpecificPositionCandidates(users, step);
             case EApproverSelectionType.PositionInRequesterTeam:
-                return users.Where(user => userSession.TeamID.HasValue && step.ApproverPositionID.HasValue && user.TeamID == userSession.TeamID.Value && user.PositionID == step.ApproverPositionID.Value).ToList();
+                return getRequesterTeamPositionCandidates(users, userSession, step);
             case EApproverSelectionType.PositionInSelectedTeam:
-                return users.Where(user => step.ApproverTeamID.HasValue && step.ApproverPositionID.HasValue && user.TeamID == step.ApproverTeamID.Value && user.PositionID == step.ApproverPositionID.Value).ToList();
+                return getSelectedTeamPositionCandidates(users, step);
             case EApproverSelectionType.PermissionHolder:
-                return users.Where(user => userHasWorkflowPermission(user, userSession, step, isFinalStep)).ToList();
+                return users.Where(user => userHasWorkflowPermission(user, userSession, step, stepRole)).ToList();
             default:
                 return new List<UserAccount>();
         }
     }
 
-    private bool userHasWorkflowPermission(UserAccount user, UserSession userSession, ApprovalWorkflowStep step, bool isFinalStep)
+    private List<UserAccount> getSpecificUserCandidates(
+        IReadOnlyList<UserAccount> users,
+        ApprovalWorkflowStep step)
+    {
+        if (step.ApproverUserId.HasValue == false)
+        {
+            return new List<UserAccount>();
+        }
+
+        int approverUserId = step.ApproverUserId.GetValueOrDefault();
+        return users
+            .Where(user => user.Id == approverUserId)
+            .ToList();
+    }
+
+    private List<UserAccount> getSpecificPositionCandidates(
+        IReadOnlyList<UserAccount> users,
+        ApprovalWorkflowStep step)
+    {
+        if (step.ApproverPositionId.HasValue == false)
+        {
+            return new List<UserAccount>();
+        }
+
+        int approverPositionId = step.ApproverPositionId.GetValueOrDefault();
+        return users
+            .Where(user => user.PositionId == approverPositionId)
+            .ToList();
+    }
+
+    private List<UserAccount> getRequesterTeamPositionCandidates(
+        IReadOnlyList<UserAccount> users,
+        UserSession userSession,
+        ApprovalWorkflowStep step)
+    {
+        if (userSession.HasTeam == false || step.ApproverPositionId.HasValue == false)
+        {
+            return new List<UserAccount>();
+        }
+
+        int requesterTeamId = userSession.GetRequiredTeamIdValue();
+        int approverPositionId = step.ApproverPositionId.GetValueOrDefault();
+        return users
+            .Where(user =>
+                user.TeamId == requesterTeamId &&
+                user.PositionId == approverPositionId)
+            .ToList();
+    }
+
+    private List<UserAccount> getSelectedTeamPositionCandidates(
+        IReadOnlyList<UserAccount> users,
+        ApprovalWorkflowStep step)
+    {
+        if (step.ApproverTeamId.HasValue == false || step.ApproverPositionId.HasValue == false)
+        {
+            return new List<UserAccount>();
+        }
+
+        int approverTeamId = step.ApproverTeamId.GetValueOrDefault();
+        int approverPositionId = step.ApproverPositionId.GetValueOrDefault();
+        return users
+            .Where(user =>
+                user.TeamId == approverTeamId &&
+                user.PositionId == approverPositionId)
+            .ToList();
+    }
+
+    private bool userHasWorkflowPermission(UserAccount user, UserSession userSession, ApprovalWorkflowStep step, EApprovalWorkflowStepRole stepRole)
     {
         if (user.Position == null || user.Position.IsActive == false)
         {
             return false;
         }
 
-        string permissionKey = getWorkflowStepPermissionKey(step, isFinalStep);
+        string permissionKey = getWorkflowStepPermissionKey(step, stepRole);
         foreach (PositionPermissionGrant permissionGrant in user.Position.PermissionGrants)
         {
             if (permissionGrant.IsAllowed == false || permissionGrant.PermissionKey != permissionKey)
@@ -118,7 +201,7 @@ public sealed partial class ApprovalService
                 continue;
             }
 
-            if (isWorkflowPermissionGrantInScope(permissionGrant, user, userSession.TeamID))
+            if (isWorkflowPermissionGrantInScope(permissionGrant, user, createUserTeamIdOrNull(userSession)))
             {
                 return true;
             }
@@ -127,14 +210,14 @@ public sealed partial class ApprovalService
         return false;
     }
 
-    private string getWorkflowStepPermissionKey(ApprovalWorkflowStep step, bool isFinalStep)
+    private string getWorkflowStepPermissionKey(ApprovalWorkflowStep step, EApprovalWorkflowStepRole stepRole)
     {
         if (string.IsNullOrWhiteSpace(step.RequiredPermissionKey) == false)
         {
             return step.RequiredPermissionKey;
         }
 
-        if (isFinalStep)
+        if (stepRole == EApprovalWorkflowStepRole.Final)
         {
             return PermissionKeys.APPROVAL_FINAL_APPROVE;
         }
@@ -142,19 +225,29 @@ public sealed partial class ApprovalService
         return PermissionKeys.APPROVAL_APPROVE;
     }
 
-    private bool isWorkflowPermissionGrantInScope(PositionPermissionGrant permissionGrant, UserAccount user, int? requesterTeamIDOrNull)
+    private bool isWorkflowPermissionGrantInScope(
+        PositionPermissionGrant permissionGrant,
+        UserAccount user,
+        OrganizationTeamId? requesterTeamIdOrNull)
     {
+        int? requesterTeamIdValueOrNull = OrganizationTeamId.GetValueOrNull(requesterTeamIdOrNull);
         switch (permissionGrant.ScopeType)
         {
             case EPermissionScopeType.Global:
                 return true;
             case EPermissionScopeType.OwnTeam:
             case EPermissionScopeType.OwnTeamAndChildren:
-                return requesterTeamIDOrNull.HasValue && user.TeamID.HasValue && requesterTeamIDOrNull.Value == user.TeamID.Value;
+                return requesterTeamIdValueOrNull.HasValue && user.TeamId == requesterTeamIdValueOrNull;
             case EPermissionScopeType.SelectedTeam:
-                return requesterTeamIDOrNull.HasValue && permissionGrant.TargetTeamID.HasValue && requesterTeamIDOrNull.Value == permissionGrant.TargetTeamID.Value;
+                return requesterTeamIdValueOrNull.HasValue && permissionGrant.TargetTeamId == requesterTeamIdValueOrNull;
             default:
                 return false;
         }
+    }
+
+    private enum EApprovalWorkflowStepRole
+    {
+        Intermediate,
+        Final
     }
 }

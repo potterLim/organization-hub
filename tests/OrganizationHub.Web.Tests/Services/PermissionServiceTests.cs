@@ -31,24 +31,24 @@ public sealed class PermissionServiceTests
                 IReadOnlyList<DriveFolderReference> readableFolders = await permissionService.GetReadableDriveFoldersAsync(userSession, CancellationToken.None);
                 IReadOnlyList<DriveFolderReference> uploadableFolders = await permissionService.GetUploadableDriveFoldersAsync(userSession, CancellationToken.None);
 
-                Assert.Contains(readableFolders, folder => folder.FolderID == "public-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderID == "common-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderID == "work-resources-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderID == "planning-materials-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderID == "planning-approved-folder");
-                Assert.DoesNotContain(readableFolders, folder => folder.FolderID == "responsible-folder");
-                Assert.DoesNotContain(readableFolders, folder => folder.FolderID == "management-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderID == "planning-materials-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderID == "planning-approved-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderID == "responsible-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderID == "public-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderID == "operation-materials-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "public-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "common-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "work-resources-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "planning-approved-folder");
+                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.Value == "responsible-folder");
+                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.Value == "management-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "planning-approved-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "responsible-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "public-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "operation-materials-folder");
             }
         }
     }
 
     [Fact]
-    public async Task TeamLeaderCanUseLeaderSharedFolderAsync()
+    public async Task TeamLeaderCanUseResponsibleSharedFolderAsync()
     {
         using (TestDbContextFactory dbContextFactory = createConfiguredDbContextFactory(EOfficialRootConfiguration.WithOfficialRoot))
         {
@@ -60,12 +60,12 @@ public sealed class PermissionServiceTests
 
                 IReadOnlyList<DriveFolderReference> readableFolders = await permissionService.GetReadableDriveFoldersAsync(responsibleSession, CancellationToken.None);
                 IReadOnlyList<DriveFolderReference> uploadableFolders = await permissionService.GetUploadableDriveFoldersAsync(responsibleSession, CancellationToken.None);
-                bool canReadLeaderFile = await permissionService.CanReadFileAsync(responsibleSession, "leader-file", CancellationToken.None);
-                bool canUploadToResponsibleFolder = await permissionService.CanUploadToFolderAsync(responsibleSession, "responsible-folder", CancellationToken.None);
+                bool canReadResponsibleFile = await permissionService.CanReadFileAsync(responsibleSession, driveItemId("responsible-file"), CancellationToken.None);
+                bool canUploadToResponsibleFolder = await permissionService.CanUploadToFolderAsync(responsibleSession, driveFolderId("responsible-folder"), CancellationToken.None);
 
-                Assert.Contains(readableFolders, folder => folder.FolderID == "responsible-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderID == "responsible-folder");
-                Assert.True(canReadLeaderFile);
+                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "responsible-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "responsible-folder");
+                Assert.True(canReadResponsibleFile);
                 Assert.True(canUploadToResponsibleFolder);
             }
         }
@@ -85,13 +85,13 @@ public sealed class PermissionServiceTests
                 IReadOnlyList<DriveFolderReference> readableFolders = await permissionService.GetReadableDriveFoldersAsync(deputyLeaderSession, CancellationToken.None);
                 IReadOnlyList<DriveFolderReference> uploadableFolders = await permissionService.GetUploadableDriveFoldersAsync(deputyLeaderSession, CancellationToken.None);
                 IReadOnlyList<CalendarReference> readableCalendars = await permissionService.GetReadableCalendarsAsync(deputyLeaderSession, CancellationToken.None);
-                bool canUploadToResponsibleFolder = await permissionService.CanUploadToFolderAsync(deputyLeaderSession, "responsible-folder", CancellationToken.None);
-                bool canDeleteOwnTeamFile = await permissionService.CanDeleteInFolderAsync(deputyLeaderSession, "planning-child-folder", CancellationToken.None);
+                bool canUploadToResponsibleFolder = await permissionService.CanUploadToFolderAsync(deputyLeaderSession, driveFolderId("responsible-folder"), CancellationToken.None);
+                bool canDeleteOwnTeamFile = await permissionService.CanDeleteInFolderAsync(deputyLeaderSession, driveFolderId("planning-child-folder"), CancellationToken.None);
 
-                Assert.Contains(readableFolders, folder => folder.FolderID == "planning-materials-folder");
-                Assert.DoesNotContain(readableFolders, folder => folder.FolderID == "responsible-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderID == "planning-materials-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderID == "responsible-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
+                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.Value == "responsible-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "responsible-folder");
                 Assert.False(hasCalendar(readableCalendars, "responsible-calendar"));
                 Assert.False(canUploadToResponsibleFolder);
                 Assert.False(canDeleteOwnTeamFile);
@@ -113,16 +113,16 @@ public sealed class PermissionServiceTests
                 IReadOnlyList<DriveFolderReference> readableFolders = await permissionService.GetReadableDriveFoldersAsync(managementSession, CancellationToken.None);
                 IReadOnlyList<DriveFolderReference> uploadableFolders = await permissionService.GetUploadableDriveFoldersAsync(managementSession, CancellationToken.None);
 
-                Assert.Contains(readableFolders, folder => folder.FolderID == "planning-materials-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderID == "operation-materials-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderID == "responsible-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderID == "management-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderID == "common-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderID == "work-resources-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderID == "planning-materials-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderID == "operation-materials-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderID == "responsible-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderID == "public-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "operation-materials-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "responsible-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "management-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "common-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "work-resources-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "operation-materials-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "responsible-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "public-folder");
             }
         }
     }
@@ -135,7 +135,7 @@ public sealed class PermissionServiceTests
             using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
             {
                 Team managementTeam = dbContext.Teams.Single(team => team.TeamKey == "Management");
-                managementTeam.MaterialsFolderID = "management-folder";
+                managementTeam.MaterialsFolderId = "management-folder";
                 dbContext.SaveChanges();
             }
 
@@ -146,13 +146,13 @@ public sealed class PermissionServiceTests
                 UserSession directorSession = createManagementSession(EUserRole.ManagementDirector);
 
                 IReadOnlyList<DriveFolderReference> uploadableFolders = await permissionService.GetUploadableDriveFoldersAsync(directorSession, CancellationToken.None);
-                List<DriveFolderReference> managementFolders = uploadableFolders.Where(folder => folder.FolderID == "management-folder").ToList();
+                List<DriveFolderReference> managementFolders = uploadableFolders.Where(folder => folder.FolderId.Value == "management-folder").ToList();
 
                 DriveFolderReference managementFolder = Assert.Single(managementFolders);
                 Assert.Equal("관리팀 자료", managementFolder.DisplayName);
                 Assert.Equal(EDriveFolderKind.TeamMaterials, managementFolder.FolderKind);
-                Assert.Equal(3, managementFolder.TeamID);
-                Assert.Equal("Management", managementFolder.TeamKey);
+                Assert.Equal(3, managementFolder.TeamIdValueOrNull);
+                Assert.Equal("Management", managementFolder.TeamKey.Value);
                 Assert.True(managementFolder.IsManagementTeam);
             }
         }
@@ -169,10 +169,10 @@ public sealed class PermissionServiceTests
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache);
                 UserSession userSession = createPlanningUserSession(EUserRole.TeamUser);
 
-                bool canReadOwnFile = await permissionService.CanReadFileAsync(userSession, "planning-materials-file", CancellationToken.None);
-                bool canReadCommonFile = await permissionService.CanReadFileAsync(userSession, "common-file", CancellationToken.None);
-                bool canReadOtherTeamFile = await permissionService.CanReadFileAsync(userSession, "operation-materials-file", CancellationToken.None);
-                bool canReadRootOutsideFile = await permissionService.CanReadFileAsync(userSession, "outside-file", CancellationToken.None);
+                bool canReadOwnFile = await permissionService.CanReadFileAsync(userSession, driveItemId("planning-materials-file"), CancellationToken.None);
+                bool canReadCommonFile = await permissionService.CanReadFileAsync(userSession, driveItemId("common-file"), CancellationToken.None);
+                bool canReadOtherTeamFile = await permissionService.CanReadFileAsync(userSession, driveItemId("operation-materials-file"), CancellationToken.None);
+                bool canReadRootOutsideFile = await permissionService.CanReadFileAsync(userSession, driveItemId("outside-file"), CancellationToken.None);
 
                 Assert.True(canReadOwnFile);
                 Assert.True(canReadCommonFile);
@@ -194,8 +194,8 @@ public sealed class PermissionServiceTests
                 UserSession userSession = createPlanningUserSession(EUserRole.TeamUser);
 
                 IReadOnlyList<DriveFolderReference> readableFolders = await permissionService.GetReadableDriveFoldersAsync(userSession, CancellationToken.None);
-                bool canUpload = await permissionService.CanUploadToFolderAsync(userSession, "planning-materials-folder", CancellationToken.None);
-                bool canReadFile = await permissionService.CanReadFileAsync(userSession, "planning-materials-file", CancellationToken.None);
+                bool canUpload = await permissionService.CanUploadToFolderAsync(userSession, driveFolderId("planning-materials-folder"), CancellationToken.None);
+                bool canReadFile = await permissionService.CanReadFileAsync(userSession, driveItemId("planning-materials-file"), CancellationToken.None);
 
                 Assert.Empty(readableFolders);
                 Assert.False(canUpload);
@@ -215,8 +215,8 @@ public sealed class PermissionServiceTests
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache);
                 UserSession userSession = createPlanningUserSession(EUserRole.TeamUser);
 
-                bool canUploadToChildFolder = await permissionService.CanUploadToFolderAsync(userSession, "planning-child-folder", CancellationToken.None);
-                bool canUploadToOtherTeamChildFolder = await permissionService.CanUploadToFolderAsync(userSession, "operation-child-folder", CancellationToken.None);
+                bool canUploadToChildFolder = await permissionService.CanUploadToFolderAsync(userSession, driveFolderId("planning-child-folder"), CancellationToken.None);
+                bool canUploadToOtherTeamChildFolder = await permissionService.CanUploadToFolderAsync(userSession, driveFolderId("operation-child-folder"), CancellationToken.None);
 
                 Assert.True(canUploadToChildFolder);
                 Assert.False(canUploadToOtherTeamChildFolder);
@@ -237,14 +237,14 @@ public sealed class PermissionServiceTests
 
                 IReadOnlyList<DriveFolderReference> readableFolders = await permissionService.GetReadableDriveFoldersAsync(userSession, CancellationToken.None);
                 IReadOnlyList<DriveFolderReference> uploadableFolders = await permissionService.GetUploadableDriveFoldersAsync(userSession, CancellationToken.None);
-                bool canDeleteOwnTeamFile = await permissionService.CanDeleteInFolderAsync(userSession, "planning-child-folder", CancellationToken.None);
-                bool canDeleteOtherTeamFile = await permissionService.CanDeleteInFolderAsync(userSession, "operation-child-folder", CancellationToken.None);
+                bool canDeleteOwnTeamFile = await permissionService.CanDeleteInFolderAsync(userSession, driveFolderId("planning-child-folder"), CancellationToken.None);
+                bool canDeleteOtherTeamFile = await permissionService.CanDeleteInFolderAsync(userSession, driveFolderId("operation-child-folder"), CancellationToken.None);
 
-                Assert.Contains(readableFolders, folder => folder.FolderID == "planning-materials-folder");
-                Assert.DoesNotContain(readableFolders, folder => folder.FolderID == "operation-materials-folder");
-                Assert.DoesNotContain(readableFolders, folder => folder.FolderID == "common-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderID == "planning-materials-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderID == "operation-materials-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
+                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.Value == "operation-materials-folder");
+                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.Value == "common-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "operation-materials-folder");
                 Assert.True(canDeleteOwnTeamFile);
                 Assert.False(canDeleteOtherTeamFile);
             }
@@ -262,8 +262,8 @@ public sealed class PermissionServiceTests
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache);
                 UserSession userSession = createPlanningUserSession(EUserRole.TeamUser);
 
-                bool canStoreToApprovedChild = await permissionService.CanStoreApprovedFileToFolderAsync(userSession, "planning-approved-child-folder", CancellationToken.None);
-                bool canStoreToMaterialsChild = await permissionService.CanStoreApprovedFileToFolderAsync(userSession, "planning-child-folder", CancellationToken.None);
+                bool canStoreToApprovedChild = await permissionService.CanStoreApprovedFileToFolderAsync(userSession, driveFolderId("planning-approved-child-folder"), CancellationToken.None);
+                bool canStoreToMaterialsChild = await permissionService.CanStoreApprovedFileToFolderAsync(userSession, driveFolderId("planning-child-folder"), CancellationToken.None);
 
                 Assert.True(canStoreToApprovedChild);
                 Assert.False(canStoreToMaterialsChild);
@@ -282,17 +282,17 @@ public sealed class PermissionServiceTests
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache);
                 UserSession teamUserSession = createPlanningUserSession(EUserRole.TeamUser);
                 UserSession planningLeaderSession = createPlanningUserSession(EUserRole.TeamLeader);
-                UserSession operationLeaderSession = new UserSession(4, "operation.leader", "Operation Leader", EUserRole.TeamLeader, 2, "Operation", "운영팀");
+                UserSession operationLeaderSession = new UserSession(UserAccountId.CreateExisting(4), "operation.leader", "Operation Leader", EUserRole.TeamLeader, OrganizationTeamId.CreateExisting(2), new OrganizationTeamKey("Operation"), "운영팀");
                 UserSession generalManagementSession = createManagementSession(EUserRole.ManagementStaff);
                 UserSession directorSession = createManagementSession(EUserRole.ManagementDirector);
                 UserSession adminSession = createManagementSession(EUserRole.Admin);
 
-                bool teamUserCanDeleteOwnTeam = await permissionService.CanDeleteInFolderAsync(teamUserSession, "planning-child-folder", CancellationToken.None);
-                bool planningLeaderCanDeleteOwnTeam = await permissionService.CanDeleteInFolderAsync(planningLeaderSession, "planning-child-folder", CancellationToken.None);
-                bool operationLeaderCanDeletePlanningTeam = await permissionService.CanDeleteInFolderAsync(operationLeaderSession, "planning-materials-folder", CancellationToken.None);
-                bool generalManagementCanDeleteTeam = await permissionService.CanDeleteInFolderAsync(generalManagementSession, "planning-materials-folder", CancellationToken.None);
-                bool directorCanDeleteTeam = await permissionService.CanDeleteInFolderAsync(directorSession, "planning-child-folder", CancellationToken.None);
-                bool adminCanDeleteTeam = await permissionService.CanDeleteInFolderAsync(adminSession, "operation-materials-folder", CancellationToken.None);
+                bool teamUserCanDeleteOwnTeam = await permissionService.CanDeleteInFolderAsync(teamUserSession, driveFolderId("planning-child-folder"), CancellationToken.None);
+                bool planningLeaderCanDeleteOwnTeam = await permissionService.CanDeleteInFolderAsync(planningLeaderSession, driveFolderId("planning-child-folder"), CancellationToken.None);
+                bool operationLeaderCanDeletePlanningTeam = await permissionService.CanDeleteInFolderAsync(operationLeaderSession, driveFolderId("planning-materials-folder"), CancellationToken.None);
+                bool generalManagementCanDeleteTeam = await permissionService.CanDeleteInFolderAsync(generalManagementSession, driveFolderId("planning-materials-folder"), CancellationToken.None);
+                bool directorCanDeleteTeam = await permissionService.CanDeleteInFolderAsync(directorSession, driveFolderId("planning-child-folder"), CancellationToken.None);
+                bool adminCanDeleteTeam = await permissionService.CanDeleteInFolderAsync(adminSession, driveFolderId("operation-materials-folder"), CancellationToken.None);
 
                 Assert.False(teamUserCanDeleteOwnTeam);
                 Assert.True(planningLeaderCanDeleteOwnTeam);
@@ -316,9 +316,9 @@ public sealed class PermissionServiceTests
                 UserSession planningLeaderSession = createPlanningUserSession(EUserRole.TeamLeader);
                 UserSession staffSession = createManagementSession(EUserRole.ManagementStaff);
 
-                PermissionDecision ownTeamDeleteDecision = await permissionService.DecideDeleteInFolderAsync(planningLeaderSession, "planning-child-folder", CancellationToken.None);
-                PermissionDecision managementDeleteDecision = await permissionService.DecideDeleteInFolderAsync(staffSession, "planning-materials-folder", CancellationToken.None);
-                PermissionDecision publicUploadDecision = await permissionService.DecideUploadToFolderAsync(staffSession, "public-folder", CancellationToken.None);
+                PermissionDecision ownTeamDeleteDecision = await permissionService.DecideDeleteInFolderAsync(planningLeaderSession, driveFolderId("planning-child-folder"), CancellationToken.None);
+                PermissionDecision managementDeleteDecision = await permissionService.DecideDeleteInFolderAsync(staffSession, driveFolderId("planning-materials-folder"), CancellationToken.None);
+                PermissionDecision publicUploadDecision = await permissionService.DecideUploadToFolderAsync(staffSession, driveFolderId("public-folder"), CancellationToken.None);
 
                 Assert.True(ownTeamDeleteDecision.IsAllowed);
                 Assert.Equal("자기 팀 자료", ownTeamDeleteDecision.ScopeLabel);
@@ -341,20 +341,21 @@ public sealed class PermissionServiceTests
             {
                 FakeDriveService driveService = createConfiguredDriveService();
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache);
-                string[] folderIDs = new[] { "management-folder", "public-folder", "common-folder", "work-resources-folder" };
+                string[] folderIds = new[] { "management-folder", "public-folder", "common-folder", "work-resources-folder" };
                 UserSession generalManagementSession = createManagementSession(EUserRole.ManagementStaff);
                 UserSession directorSession = createManagementSession(EUserRole.ManagementDirector);
                 UserSession deputyDirectorSession = createManagementSession(EUserRole.ManagementDeputyDirector);
                 UserSession managerSession = createManagementSession(EUserRole.ManagementManager);
                 UserSession adminSession = createManagementSession(EUserRole.Admin);
 
-                foreach (string folderID in folderIDs)
+                foreach (string folderId in folderIds)
                 {
-                    Assert.False(await permissionService.CanDeleteInFolderAsync(generalManagementSession, folderID, CancellationToken.None));
-                    Assert.True(await permissionService.CanDeleteInFolderAsync(directorSession, folderID, CancellationToken.None));
-                    Assert.True(await permissionService.CanDeleteInFolderAsync(deputyDirectorSession, folderID, CancellationToken.None));
-                    Assert.True(await permissionService.CanDeleteInFolderAsync(managerSession, folderID, CancellationToken.None));
-                    Assert.True(await permissionService.CanDeleteInFolderAsync(adminSession, folderID, CancellationToken.None));
+                    DriveFolderId targetFolderId = driveFolderId(folderId);
+                    Assert.False(await permissionService.CanDeleteInFolderAsync(generalManagementSession, targetFolderId, CancellationToken.None));
+                    Assert.True(await permissionService.CanDeleteInFolderAsync(directorSession, targetFolderId, CancellationToken.None));
+                    Assert.True(await permissionService.CanDeleteInFolderAsync(deputyDirectorSession, targetFolderId, CancellationToken.None));
+                    Assert.True(await permissionService.CanDeleteInFolderAsync(managerSession, targetFolderId, CancellationToken.None));
+                    Assert.True(await permissionService.CanDeleteInFolderAsync(adminSession, targetFolderId, CancellationToken.None));
                 }
             }
         }
@@ -372,8 +373,8 @@ public sealed class PermissionServiceTests
                 UserSession managerSession = createManagementSession(EUserRole.ManagementManager);
                 UserSession adminSession = createManagementSession(EUserRole.Admin);
 
-                bool managerCanDeleteApproved = await permissionService.CanDeleteInFolderAsync(managerSession, "planning-approved-folder", CancellationToken.None);
-                bool adminCanDeleteApproved = await permissionService.CanDeleteInFolderAsync(adminSession, "planning-approved-folder", CancellationToken.None);
+                bool managerCanDeleteApproved = await permissionService.CanDeleteInFolderAsync(managerSession, driveFolderId("planning-approved-folder"), CancellationToken.None);
+                bool adminCanDeleteApproved = await permissionService.CanDeleteInFolderAsync(adminSession, driveFolderId("planning-approved-folder"), CancellationToken.None);
 
                 Assert.False(managerCanDeleteApproved);
                 Assert.True(adminCanDeleteApproved);
@@ -390,11 +391,11 @@ public sealed class PermissionServiceTests
             {
                 FakeDriveService driveService = createConfiguredDriveService();
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache);
-                UserSession userSession = new UserSession(2, "management.staff", "관리팀 담당자", EUserRole.ManagementStaff, null, string.Empty, string.Empty);
+                UserSession userSession = new UserSession(UserAccountId.CreateExisting(2), "management.staff", "관리팀 담당자", EUserRole.ManagementStaff, null, OrganizationTeamKey.Empty, string.Empty);
 
-                bool canStoreToManagementFolder = await permissionService.CanStoreApprovedFileToFolderAsync(userSession, "management-folder", CancellationToken.None);
-                bool canStoreToManagementApprovedFolder = await permissionService.CanStoreApprovedFileToFolderAsync(userSession, "management-approved-folder", CancellationToken.None);
-                bool canStoreToPlanningApprovedFolder = await permissionService.CanStoreApprovedFileToFolderAsync(userSession, "planning-approved-folder", CancellationToken.None);
+                bool canStoreToManagementFolder = await permissionService.CanStoreApprovedFileToFolderAsync(userSession, driveFolderId("management-folder"), CancellationToken.None);
+                bool canStoreToManagementApprovedFolder = await permissionService.CanStoreApprovedFileToFolderAsync(userSession, driveFolderId("management-approved-folder"), CancellationToken.None);
+                bool canStoreToPlanningApprovedFolder = await permissionService.CanStoreApprovedFileToFolderAsync(userSession, driveFolderId("planning-approved-folder"), CancellationToken.None);
 
                 Assert.False(canStoreToManagementFolder);
                 Assert.True(canStoreToManagementApprovedFolder);
@@ -414,8 +415,8 @@ public sealed class PermissionServiceTests
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache);
                 UserSession teamUserSession = createPlanningUserSession(EUserRole.TeamUser);
                 UserSession responsibleSession = createPlanningUserSession(EUserRole.TeamLeader);
-                UserSession managementSession = new UserSession(2, "management.staff", "관리팀 담당자", EUserRole.ManagementStaff, null, string.Empty, string.Empty);
-                UserSession directorSession = new UserSession(3, "director", "Director", EUserRole.ManagementDirector, null, string.Empty, string.Empty);
+                UserSession managementSession = new UserSession(UserAccountId.CreateExisting(2), "management.staff", "관리팀 담당자", EUserRole.ManagementStaff, null, OrganizationTeamKey.Empty, string.Empty);
+                UserSession directorSession = new UserSession(UserAccountId.CreateExisting(3), "director", "Director", EUserRole.ManagementDirector, null, OrganizationTeamKey.Empty, string.Empty);
 
                 IReadOnlyList<CalendarReference> teamUserReadableCalendars = await permissionService.GetReadableCalendarsAsync(teamUserSession, CancellationToken.None);
                 IReadOnlyList<CalendarReference> leaderReadableCalendars = await permissionService.GetReadableCalendarsAsync(responsibleSession, CancellationToken.None);
@@ -458,8 +459,8 @@ public sealed class PermissionServiceTests
 
                 IReadOnlyList<CalendarReference> readableCalendars = await permissionService.GetReadableCalendarsAsync(userSession, CancellationToken.None);
                 IReadOnlyList<CalendarReference> writableCalendars = await permissionService.GetWritableCalendarsAsync(userSession, CancellationToken.None);
-                bool canWritePlanningCalendar = await permissionService.CanWriteCalendarAsync(userSession, "planning-calendar", CancellationToken.None);
-                bool canWriteOperationCalendar = await permissionService.CanWriteCalendarAsync(userSession, "operation-calendar", CancellationToken.None);
+                bool canWritePlanningCalendar = await permissionService.CanWriteCalendarAsync(userSession, calendarId("planning-calendar"), CancellationToken.None);
+                bool canWriteOperationCalendar = await permissionService.CanWriteCalendarAsync(userSession, calendarId("operation-calendar"), CancellationToken.None);
 
                 Assert.True(hasCalendar(readableCalendars, "planning-calendar"));
                 Assert.False(hasCalendar(readableCalendars, "operation-calendar"));
@@ -478,17 +479,17 @@ public sealed class PermissionServiceTests
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             GlobalSetting setting = new GlobalSetting();
-            setting.ID = 1;
-            setting.PublicFolderID = "public-folder";
-            setting.CommonFolderID = "common-folder";
-            setting.ResponsibleResourcesFolderID = "responsible-folder";
-            setting.WorkResourcesFolderID = "work-resources-folder";
-            setting.ArchiveFolderID = "archive-folder";
-            setting.OrganizationCalendarID = "management-calendar";
-            setting.ResponsibleCalendarID = "responsible-calendar";
+            setting.Id = 1;
+            setting.PublicFolderId = "public-folder";
+            setting.CommonFolderId = "common-folder";
+            setting.ResponsibleResourcesFolderId = "responsible-folder";
+            setting.WorkResourcesFolderId = "work-resources-folder";
+            setting.ArchiveFolderId = "archive-folder";
+            setting.OrganizationCalendarId = "management-calendar";
+            setting.ResponsibleCalendarId = "responsible-calendar";
             if (officialRootConfiguration == EOfficialRootConfiguration.WithOfficialRoot)
             {
-                setting.OfficialRootFolderID = "official-root";
+                setting.OfficialRootFolderId = "official-root";
             }
 
             Team planningTeam = createTeam(1, "Planning", "기획팀", "planning-materials-folder", "planning-approved-folder", "planning-calendar", 10);
@@ -504,15 +505,15 @@ public sealed class PermissionServiceTests
         return dbContextFactory;
     }
 
-    private static Team createTeam(int id, string teamKey, string displayName, string materialsFolderID, string approvedFolderID, string calendarID, int sortOrder)
+    private static Team createTeam(int id, string teamKey, string displayName, string materialsFolderId, string approvedFolderId, string calendarId, int sortOrder)
     {
         Team team = new Team();
-        team.ID = id;
+        team.Id = id;
         team.TeamKey = teamKey;
         team.DisplayName = displayName;
-        team.MaterialsFolderID = materialsFolderID;
-        team.ApprovedFolderID = approvedFolderID;
-        team.CalendarID = calendarID;
+        team.MaterialsFolderId = materialsFolderId;
+        team.ApprovedFolderId = approvedFolderId;
+        team.CalendarId = calendarId;
         team.SortOrder = sortOrder;
         team.IsActive = true;
         return team;
@@ -540,17 +541,17 @@ public sealed class PermissionServiceTests
         driveService.AddFile("planning-materials-file", "2026-05-21_기획팀_회의록.pdf", "application/pdf", "planning-materials-folder", "planning-team-folder", "official-root");
         driveService.AddFile("operation-materials-file", "2026-05-21_운영팀_회의록.pdf", "application/pdf", "operation-materials-folder", "operation-team-folder", "official-root");
         driveService.AddFile("common-file", "공통양식.pdf", "application/pdf", "common-folder", "official-root");
-        driveService.AddFile("leader-file", "팀장공유.pdf", "application/pdf", "responsible-folder", "official-root");
+        driveService.AddFile("responsible-file", "책임자공유.pdf", "application/pdf", "responsible-folder", "official-root");
         driveService.AddFile("outside-file", "외부자료.pdf", "application/pdf", "outside-folder");
         return driveService;
     }
 
-    private static async Task<UserSession> seedConfiguredPermissionUserAsync(TestDbContextFactory dbContextFactory, int userID, int teamID, EPermissionScopeType scopeType, IReadOnlyList<string> permissionKeys)
+    private static async Task<UserSession> seedConfiguredPermissionUserAsync(TestDbContextFactory dbContextFactory, int userId, int teamId, EPermissionScopeType scopeType, IReadOnlyList<string> permissionKeys)
     {
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             OrganizationPosition position = new OrganizationPosition();
-            position.TeamID = teamID;
+            position.TeamId = teamId;
             position.Name = "자료 담당";
             position.Description = string.Empty;
             position.SortOrder = 10;
@@ -568,40 +569,55 @@ public sealed class PermissionServiceTests
             }
 
             UserAccount userAccount = new UserAccount();
-            userAccount.ID = userID;
+            userAccount.Id = userId;
             userAccount.Username = "configured.user";
             userAccount.DisplayName = "권한 설정 사용자";
             userAccount.PasswordHash = "test";
             userAccount.Role = EUserRole.TeamUser;
-            userAccount.TeamID = teamID;
+            userAccount.TeamId = teamId;
             userAccount.Position = position;
             userAccount.IsActive = true;
             userAccount.CreatedAt = DateTime.UtcNow;
             dbContext.UserAccounts.Add(userAccount);
             await dbContext.SaveChangesAsync(CancellationToken.None);
-            return new UserSession(userAccount.ID, userAccount.Username, userAccount.DisplayName, userAccount.Role, teamID, "Planning", "기획팀");
+            return new UserSession(UserAccountId.CreateExisting(userAccount.Id), userAccount.Username, userAccount.DisplayName, userAccount.Role, OrganizationTeamId.CreateExisting(teamId), new OrganizationTeamKey("Planning"), "기획팀");
         }
     }
 
     private static UserSession createPlanningUserSession(EUserRole role)
     {
-        return new UserSession(1, "planning", "Planning User", role, 1, "Planning", "기획팀");
+        return new UserSession(UserAccountId.CreateExisting(1), "planning", "Planning User", role, OrganizationTeamId.CreateExisting(1), new OrganizationTeamKey("Planning"), "기획팀");
     }
 
     private static UserSession createManagementSession(EUserRole role)
     {
-        return new UserSession(2, "hq", "Management", role, null, string.Empty, string.Empty);
+        return new UserSession(UserAccountId.CreateExisting(2), "hq", "Management", role, null, OrganizationTeamKey.Empty, string.Empty);
     }
 
-    private static bool hasCalendar(IReadOnlyList<CalendarReference> calendars, string calendarID)
+    private static DriveItemId driveItemId(string value)
     {
-        CalendarReference? calendarOrNull = calendars.FirstOrDefault(calendar => calendar.CalendarID == calendarID);
+        return DriveItemId.CreateOptional(value);
+    }
+
+    private static DriveFolderId driveFolderId(string value)
+    {
+        return DriveFolderId.CreateOptional(value);
+    }
+
+    private static CalendarId calendarId(string value)
+    {
+        return CalendarId.CreateOptional(value);
+    }
+
+    private static bool hasCalendar(IReadOnlyList<CalendarReference> calendars, string calendarId)
+    {
+        CalendarReference? calendarOrNull = calendars.FirstOrDefault(calendar => calendar.CalendarId.Value == calendarId);
         return calendarOrNull != null;
     }
 
-    private static string getCalendarDisplayName(IReadOnlyList<CalendarReference> calendars, string calendarID)
+    private static string getCalendarDisplayName(IReadOnlyList<CalendarReference> calendars, string calendarId)
     {
-        CalendarReference? calendarOrNull = calendars.FirstOrDefault(calendar => calendar.CalendarID == calendarID);
+        CalendarReference? calendarOrNull = calendars.FirstOrDefault(calendar => calendar.CalendarId.Value == calendarId);
         if (calendarOrNull == null)
         {
             return string.Empty;

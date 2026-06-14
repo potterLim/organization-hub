@@ -1,0 +1,21 @@
+<MudPaper Class="hub-card hub-form-card pa-4">
+    <div class="hub-admin-form-heading">
+        <MudText Typo="Typo.h6">연결 상태</MudText>
+        <span>@(Status.IsConnected ? "사용 가능" : "연결 필요")</span>
+    </div>
+    <div class="hub-google-status">
+        <span class="@(Status.IsConnected ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(Status.IsConnected ? "연결됨" : "미연결")</span>
+        <div>
+            <div class="hub-google-status-title">@(Status.IsConnected ? Status.ConnectedEmail : "Google 계정 없음")</div>
+            <div class="hub-muted">@(Status.IsConnected ? "아래 목록에서 사용할 Drive 폴더와 파일을 선택할 수 있습니다." : "Google 연결 메뉴에서 계정을 먼저 연결해 주세요.")</div>
+        </div>
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public GoogleConnectionStatus Status
+    {
+        get; set;
+    } = new GoogleConnectionStatus();
+}

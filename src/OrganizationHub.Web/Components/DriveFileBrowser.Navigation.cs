@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components;
@@ -23,7 +24,7 @@ public partial class DriveFileBrowser
             mRootFolders = filterRootFolders(folders).ToList();
             if (mRootFolders.Count > 0)
             {
-                mSelectedRootFolderID = mRootFolders[0].FolderID;
+                mSelectedRootFolderId = mRootFolders[0].FolderId.GetRequiredValue();
                 resetPath(mRootFolders[0]);
                 await loadCurrentFolderAsync();
             }
@@ -38,7 +39,7 @@ public partial class DriveFileBrowser
 
     private async Task loadCurrentFolderAsync()
     {
-        if (CurrentUserSessionOrNull == null || string.IsNullOrWhiteSpace(mSelectedRootFolderID))
+        if (CurrentUserSessionOrNull == null || string.IsNullOrWhiteSpace(mSelectedRootFolderId))
         {
             return;
         }
@@ -47,10 +48,13 @@ public partial class DriveFileBrowser
         mFileErrorMessage = string.Empty;
         try
         {
-            IReadOnlyList<string> changeVersionKeys = getChangeVersionKeys();
+            IReadOnlyList<ChangeVersionKey> changeVersionKeys = getChangeVersionKeys();
+            DriveFolderBrowseRequest request = new DriveFolderBrowseRequest(CurrentUserSessionOrNull, FolderKind, DriveFolderId.CreateOptional(mSelectedRootFolderId), DriveFolderId.CreateOptional(getCurrentFolderId()));
+            request.Keyword = SearchKeyword.CreateOptional(mKeyword);
+
             ChangeVersionReadResult<IReadOnlyList<DriveFileItem>> readResult = await ChangeVersionService.ReadWithStableSnapshotAsync(
                 changeVersionKeys,
-                cancellationToken => DriveBrowserService.GetFolderFilesAsync(CurrentUserSessionOrNull, FolderKind, mSelectedRootFolderID, getCurrentFolderID(), mKeyword, cancellationToken),
+                cancellationToken => DriveBrowserService.GetFolderFilesAsync(request, cancellationToken),
                 CancellationToken.None);
             mFiles = readResult.Value.ToList();
             DriveFolderReference? currentRootFolderOrNull = getCurrentRootFolderOrNull();
@@ -66,11 +70,11 @@ public partial class DriveFileBrowser
         mIsLoadingFiles = false;
     }
 
-    private async Task handleRootFolderChangedAsync(string folderID)
+    private async Task handleRootFolderChangedAsync(string folderId)
     {
-        mSelectedRootFolderID = folderID;
+        mSelectedRootFolderId = folderId;
         mKeyword = string.Empty;
-        DriveFolderReference? selectedFolderOrNull = mRootFolders.FirstOrDefault(folder => folder.FolderID == folderID);
+        DriveFolderReference? selectedFolderOrNull = mRootFolders.FirstOrDefault(folder => folder.FolderId.GetRequiredValue() == folderId);
         if (selectedFolderOrNull != null)
         {
             resetPath(selectedFolderOrNull);
@@ -87,7 +91,7 @@ public partial class DriveFileBrowser
         }
 
         DriveFolderPathItem pathItem = new DriveFolderPathItem();
-        pathItem.ID = folder.ID;
+        pathItem.Id = folder.Id;
         pathItem.Name = folder.Name;
         mFolderPath.Add(pathItem);
         mKeyword = string.Empty;
@@ -115,25 +119,25 @@ public partial class DriveFileBrowser
     private void resetPath(DriveFolderReference rootFolder)
     {
         DriveFolderPathItem pathItem = new DriveFolderPathItem();
-        pathItem.ID = rootFolder.FolderID;
+        pathItem.Id = rootFolder.FolderId.GetRequiredValue();
         pathItem.Name = rootFolder.DisplayName;
         mFolderPath = new List<DriveFolderPathItem>();
         mFolderPath.Add(pathItem);
     }
 
-    private string getCurrentFolderID()
+    private string getCurrentFolderId()
     {
         if (mFolderPath.Count == 0)
         {
-            return mSelectedRootFolderID;
+            return mSelectedRootFolderId;
         }
 
-        return mFolderPath[mFolderPath.Count - 1].ID;
+        return mFolderPath[mFolderPath.Count - 1].Id;
     }
 
     private DriveFolderReference? getCurrentRootFolderOrNull()
     {
-        return mRootFolders.FirstOrDefault(folder => folder.FolderID == mSelectedRootFolderID);
+        return mRootFolders.FirstOrDefault(folder => folder.FolderId.GetRequiredValue() == mSelectedRootFolderId);
     }
 
     private IEnumerable<DriveFolderReference> filterRootFolders(IReadOnlyList<DriveFolderReference> folders)

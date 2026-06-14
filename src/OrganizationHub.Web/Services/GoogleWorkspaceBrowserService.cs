@@ -36,10 +36,10 @@ public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrow
         mMemoryCache = memoryCache;
     }
 
-    public async Task<IReadOnlyList<GoogleDriveFolderItem>> ListDriveFoldersAsync(string parentFolderID, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<GoogleDriveFolderItem>> ListDriveFoldersAsync(DriveFolderId parentFolderId, CancellationToken cancellationToken)
     {
-        DriveFolderID effectiveParentFolderID = getEffectiveParentFolderID(parentFolderID);
-        string cacheKey = createDriveFolderCacheKey(effectiveParentFolderID);
+        DriveFolderId effectiveParentFolderId = getEffectiveParentFolderId(parentFolderId);
+        string cacheKey = createDriveFolderCacheKey(effectiveParentFolderId);
         IReadOnlyList<GoogleDriveFolderItem>? cachedFoldersOrNull = getCachedDriveFoldersOrNull(cacheKey);
         if (cachedFoldersOrNull != null)
         {
@@ -48,7 +48,7 @@ public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrow
 
         DriveService driveService = await createDriveServiceAsync(cancellationToken);
         FilesResource.ListRequest request = driveService.Files.List();
-        request.Q = "'" + escapeDriveQueryValue(effectiveParentFolderID.Value) + "' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+        request.Q = "'" + escapeDriveQueryValue(effectiveParentFolderId.GetRequiredValue()) + "' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
         request.Fields = "files(id,name,modifiedTime)";
         request.OrderBy = "name";
         request.SupportsAllDrives = true;
@@ -93,14 +93,13 @@ public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrow
         return cloneTaskLists(listItems);
     }
 
-    private DriveFolderID getEffectiveParentFolderID(string parentFolderID)
+    private DriveFolderId getEffectiveParentFolderId(DriveFolderId parentFolderId)
     {
-        DriveFolderID requestedParentFolderID = new DriveFolderID(parentFolderID);
-        if (requestedParentFolderID.HasValue)
+        if (parentFolderId.HasValue)
         {
-            return requestedParentFolderID;
+            return parentFolderId;
         }
 
-        return new DriveFolderID("root");
+        return DriveFolderId.Root;
     }
 }

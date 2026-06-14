@@ -18,10 +18,15 @@ public sealed class ChangeVersionService : IChangeVersionService
     private readonly ConcurrentDictionary<string, long> mVersions = new ConcurrentDictionary<string, long>();
     private readonly ConcurrentDictionary<string, int> mActiveChangeCounts = new ConcurrentDictionary<string, int>();
 
-    public long GetVersion(string key)
+    public long GetVersion(ChangeVersionKey key)
     {
+        if (key.HasValue == false)
+        {
+            return 0;
+        }
+
         long version;
-        if (mVersions.TryGetValue(key, out version))
+        if (mVersions.TryGetValue(key.Value, out version))
         {
             return version;
         }
@@ -29,10 +34,10 @@ public sealed class ChangeVersionService : IChangeVersionService
         return 0;
     }
 
-    public ChangeVersionSnapshot GetSnapshot(IReadOnlyList<string> keys)
+    public ChangeVersionSnapshot GetSnapshot(IReadOnlyList<ChangeVersionKey> changeVersionKeys)
     {
         ChangeVersionSnapshot snapshot = new ChangeVersionSnapshot();
-        foreach (string key in keys)
+        foreach (ChangeVersionKey key in normalizeKeys(changeVersionKeys))
         {
             snapshot.Versions[key] = GetVersion(key);
         }
@@ -42,7 +47,7 @@ public sealed class ChangeVersionService : IChangeVersionService
 
     public bool HasChanged(ChangeVersionSnapshot snapshot)
     {
-        foreach (KeyValuePair<string, long> version in snapshot.Versions)
+        foreach (KeyValuePair<ChangeVersionKey, long> version in snapshot.Versions)
         {
             if (GetVersion(version.Key) != version.Value)
             {
@@ -53,12 +58,12 @@ public sealed class ChangeVersionService : IChangeVersionService
         return false;
     }
 
-    public bool HasActiveChange(IReadOnlyList<string> keys)
+    public bool HasActiveChange(IReadOnlyList<ChangeVersionKey> changeVersionKeys)
     {
-        foreach (string key in normalizeKeys(keys))
+        foreach (ChangeVersionKey key in normalizeKeys(changeVersionKeys))
         {
             int activeChangeCount;
-            if (mActiveChangeCounts.TryGetValue(key, out activeChangeCount) && activeChangeCount > 0)
+            if (mActiveChangeCounts.TryGetValue(key.Value, out activeChangeCount) && activeChangeCount > 0)
             {
                 return true;
             }
@@ -67,21 +72,25 @@ public sealed class ChangeVersionService : IChangeVersionService
         return false;
     }
 
-    public IDisposable BeginChange(IReadOnlyList<string> keys)
+    public IDisposable BeginChange(IReadOnlyList<ChangeVersionKey> changeVersionKeys)
     {
-        List<string> normalizedKeys = normalizeKeys(keys);
-        foreach (string key in normalizedKeys)
+        List<ChangeVersionKey> normalizedKeys = normalizeKeys(changeVersionKeys);
+        foreach (ChangeVersionKey key in normalizedKeys)
         {
-            mActiveChangeCounts.AddOrUpdate(key, 1, (_, currentCount) => currentCount + 1);
+            mActiveChangeCounts.AddOrUpdate(key.Value, 1, (_, currentCount) => currentCount + 1);
         }
 
         BumpMany(normalizedKeys);
         return new ChangeScope(this, normalizedKeys);
     }
 
-    public async Task<ChangeVersionReadResult<T>> ReadWithStableSnapshotAsync<T>(IReadOnlyList<string> keys, Func<CancellationToken, Task<T>> readValue, CancellationToken cancellationToken)
+    public async Task<ChangeVersionReadResult<T>> ReadWithStableSnapshotAsync<T>(
+        IReadOnlyList<ChangeVersionKey> changeVersionKeys,
+        Func<CancellationToken, Task<T>> readValue,
+        CancellationToken cancellationToken
+    )
     {
-        List<string> normalizedKeys = normalizeKeys(keys);
+        List<ChangeVersionKey> normalizedKeys = normalizeKeys(changeVersionKeys);
         ChangeVersionSnapshot latestSnapshot = GetSnapshot(normalizedKeys);
         ChangeVersionReadResult<T>? latestReadResultOrNull = null;
         DateTime activeChangeWaitDeadline = DateTime.UtcNow.Add(MAX_ACTIVE_CHANGE_WAIT);
@@ -124,43 +133,48 @@ public sealed class ChangeVersionService : IChangeVersionService
         return new ChangeVersionReadResult<T>(finalReadValue, latestSnapshot, EChangeVersionStability.Unstable);
     }
 
-    public void Bump(string key)
+    public void Bump(ChangeVersionKey key)
     {
-        mVersions.AddOrUpdate(key, 1, (_, currentVersion) => currentVersion + 1);
+        if (key.HasValue == false)
+        {
+            return;
+        }
+
+        mVersions.AddOrUpdate(key.Value, 1, (_, currentVersion) => currentVersion + 1);
     }
 
-    public void BumpMany(IReadOnlyList<string> keys)
+    public void BumpMany(IReadOnlyList<ChangeVersionKey> changeVersionKeys)
     {
-        foreach (string key in keys)
+        foreach (ChangeVersionKey key in normalizeKeys(changeVersionKeys))
         {
             Bump(key);
         }
     }
 
-    private static List<string> normalizeKeys(IReadOnlyList<string> keys)
+    private static List<ChangeVersionKey> normalizeKeys(IReadOnlyList<ChangeVersionKey> changeVersionKeys)
     {
-        return keys.Where(key => string.IsNullOrWhiteSpace(key) == false).Select(key => key.Trim()).Distinct().ToList();
+        return changeVersionKeys.Where(key => key.HasValue).Distinct().ToList();
     }
 
-    private void finishChange(IReadOnlyList<string> keys)
+    private void finishChange(IReadOnlyList<ChangeVersionKey> changeVersionKeys)
     {
-        BumpMany(keys);
-        foreach (string key in keys)
+        BumpMany(changeVersionKeys);
+        foreach (ChangeVersionKey key in normalizeKeys(changeVersionKeys))
         {
-            mActiveChangeCounts.AddOrUpdate(key, 0, (_, currentCount) => Math.Max(0, currentCount - 1));
+            mActiveChangeCounts.AddOrUpdate(key.Value, 0, (_, currentCount) => Math.Max(0, currentCount - 1));
         }
     }
 
     private sealed class ChangeScope : IDisposable
     {
         private readonly ChangeVersionService mChangeVersionService;
-        private readonly IReadOnlyList<string> mKeys;
+        private readonly IReadOnlyList<ChangeVersionKey> mChangeVersionKeys;
         private bool mIsDisposed;
 
-        public ChangeScope(ChangeVersionService changeVersionService, IReadOnlyList<string> keys)
+        public ChangeScope(ChangeVersionService changeVersionService, IReadOnlyList<ChangeVersionKey> changeVersionKeys)
         {
             mChangeVersionService = changeVersionService;
-            mKeys = keys;
+            mChangeVersionKeys = changeVersionKeys;
         }
 
         public void Dispose()
@@ -171,7 +185,7 @@ public sealed class ChangeVersionService : IChangeVersionService
             }
 
             mIsDisposed = true;
-            mChangeVersionService.finishChange(mKeys);
+            mChangeVersionService.finishChange(mChangeVersionKeys);
         }
     }
 }

@@ -38,23 +38,24 @@ public partial class Todos
 
     private bool isAggregateSelected()
     {
-        TodoTaskListReference? taskListOrNull = mTaskLists.FirstOrDefault(taskList => taskList.TaskListID == mSelectedTaskListID);
+        TodoTaskListId selectedTaskListId = TodoTaskListId.CreateOptional(mSelectedTaskListId);
+        TodoTaskListReference? taskListOrNull = mTaskLists.FirstOrDefault(taskList => taskList.TaskListId == selectedTaskListId);
         return taskListOrNull != null && taskListOrNull.IsAggregate;
     }
 
-    private string getInitialTaskListID()
+    private string getInitialTaskListId()
     {
         if (mTaskLists.Count == 2 && mTaskLists[0].IsAggregate)
         {
-            return mTaskLists[1].TaskListID;
+            return mTaskLists[1].TaskListId.GetRequiredValue();
         }
 
-        return mTaskLists[0].TaskListID;
+        return mTaskLists[0].TaskListId.GetRequiredValue();
     }
 
     private bool canCreateTask()
     {
-        return string.IsNullOrWhiteSpace(mSelectedTaskListID) == false && isAggregateSelected() == false && isSelectedTaskListWritable();
+        return string.IsNullOrWhiteSpace(mSelectedTaskListId) == false && isAggregateSelected() == false && isSelectedTaskListWritable();
     }
 
     private bool canSubmitNewTask()
@@ -79,17 +80,18 @@ public partial class Todos
 
     private bool isSelectedTaskListWritable()
     {
-        return mWritableTaskListIDs.Contains(mSelectedTaskListID);
+        return mWritableTaskListIds.Contains(mSelectedTaskListId);
     }
 
     private bool canWriteTask(TodoTaskItem task)
     {
-        return string.IsNullOrWhiteSpace(task.TaskListID) == false && mWritableTaskListIDs.Contains(task.TaskListID);
+        return string.IsNullOrWhiteSpace(task.TaskListId) == false && mWritableTaskListIds.Contains(task.TaskListId);
     }
 
     private string getSelectedTaskListDisplayName()
     {
-        TodoTaskListReference? taskListOrNull = mTaskLists.FirstOrDefault(taskList => taskList.TaskListID == mSelectedTaskListID);
+        TodoTaskListId selectedTaskListId = TodoTaskListId.CreateOptional(mSelectedTaskListId);
+        TodoTaskListReference? taskListOrNull = mTaskLists.FirstOrDefault(taskList => taskList.TaskListId == selectedTaskListId);
         if (taskListOrNull == null)
         {
             return string.Empty;

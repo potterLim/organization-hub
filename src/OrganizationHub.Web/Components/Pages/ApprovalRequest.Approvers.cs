@@ -7,19 +7,19 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class ApprovalRequest
 {
-    private void initializeDefaults()
+    private void initializeApprovalRequestDefaults()
     {
         mApproverSelectionStateOrNull = new ApprovalApproverSelectionState(mCreateContext, mFormModel);
 
         if (mCreateContext.SourceFolders.Count > 0)
         {
-            mFormModel.SourceFolderID = mCreateContext.SourceFolders[0].FolderID;
+            mFormModel.SourceFolderId = mCreateContext.SourceFolders[0].FolderId.GetRequiredValue();
             resetSourcePath(mCreateContext.SourceFolders[0]);
         }
 
         if (mCreateContext.DestinationFolders.Count > 0)
         {
-            mSelectedDestinationRootFolderID = mCreateContext.DestinationFolders[0].FolderID;
+            mSelectedDestinationRootFolderId = mCreateContext.DestinationFolders[0].FolderId.GetRequiredValue();
             resetDestinationPath(mCreateContext.DestinationFolders[0]);
         }
 
@@ -37,21 +37,21 @@ public partial class ApprovalRequest
         return Task.CompletedTask;
     }
 
-    private Task handleFirstApproverChangedAsync(int userID)
+    private Task handleFirstApproverChangedAsync(int userId)
     {
-        getApproverSelectionState().ChangeFirstApprover(new ApprovalUserID(userID));
+        getApproverSelectionState().ChangeFirstApprover(ApprovalUserId.CreateExisting(userId));
         return Task.CompletedTask;
     }
 
-    private Task handleSecondApproverChangedAsync(int userID)
+    private Task handleSecondApproverChangedAsync(int userId)
     {
-        getApproverSelectionState().ChangeSecondApprover(new ApprovalUserID(userID));
+        getApproverSelectionState().ChangeSecondApprover(ApprovalUserId.CreateExisting(userId));
         return Task.CompletedTask;
     }
 
-    private Task handleFinalApproverChangedAsync(int userID)
+    private Task handleFinalApproverChangedAsync(int userId)
     {
-        getApproverSelectionState().ChangeFinalApprover(new ApprovalUserID(userID));
+        getApproverSelectionState().ChangeFinalApprover(ApprovalUserId.CreateExisting(userId));
         return Task.CompletedTask;
     }
 

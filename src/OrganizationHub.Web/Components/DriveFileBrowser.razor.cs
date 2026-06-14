@@ -60,7 +60,7 @@ public partial class DriveFileBrowser
     private List<DriveFolderReference> mRootFolders = new List<DriveFolderReference>();
     private List<DriveFolderPathItem> mFolderPath = new List<DriveFolderPathItem>();
     private List<DriveFileItem> mFiles = new List<DriveFileItem>();
-    private string mSelectedRootFolderID = string.Empty;
+    private string mSelectedRootFolderId = string.Empty;
     private string mKeyword = string.Empty;
     private string mRootErrorMessage = string.Empty;
     private string mFileErrorMessage = string.Empty;

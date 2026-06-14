@@ -18,7 +18,13 @@ public sealed partial class DriveBrowserService : IDriveBrowserService
     private readonly IMemoryCache mMemoryCache;
     private readonly IChangeVersionService mChangeVersionService;
 
-    public DriveBrowserService(IPermissionService permissionService, IDriveService driveService, IUploadAuditLogService uploadAuditLogService, IMemoryCache memoryCache, IChangeVersionService changeVersionService)
+    public DriveBrowserService(
+        IPermissionService permissionService,
+        IDriveService driveService,
+        IUploadAuditLogService uploadAuditLogService,
+        IMemoryCache memoryCache,
+        IChangeVersionService changeVersionService
+    )
     {
         mPermissionService = permissionService;
         mDriveService = driveService;

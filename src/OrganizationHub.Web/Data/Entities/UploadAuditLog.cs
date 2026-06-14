@@ -5,19 +5,19 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class UploadAuditLog
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
-    public string FileID { get; set; } = string.Empty;
+    public string FileId { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
-    public string FolderID { get; set; } = string.Empty;
+    public string FolderId { get; set; } = string.Empty;
     public string FolderDisplayName { get; set; } = string.Empty;
     public EDriveFolderKind FolderKind
     {
         get; set;
     }
-    public int UploaderUserID
+    public int UploaderUserId
     {
         get; set;
     }
@@ -26,7 +26,7 @@ public class UploadAuditLog
     {
         get; set;
     }
-    public int? TeamID
+    public int? TeamId
     {
         get; set;
     }

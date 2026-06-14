@@ -23,7 +23,7 @@ public sealed class AuthService : IAuthService
         mPasswordHashService = passwordHashService;
     }
 
-    public async Task<LoginResult> ValidateLoginAsync(string username, string password, CancellationToken cancellationToken)
+    public async Task<LoginResult> ValidateLoginAsync(string username, PlainPassword password, CancellationToken cancellationToken)
     {
         string normalizedUsername = username.Trim();
         if (string.IsNullOrWhiteSpace(normalizedUsername))
@@ -31,7 +31,7 @@ public sealed class AuthService : IAuthService
             return LoginResult.Fail("아이디와 비밀번호를 확인해 주세요.");
         }
 
-        if (string.IsNullOrWhiteSpace(password))
+        if (password.HasValue == false)
         {
             return LoginResult.Fail("아이디와 비밀번호를 확인해 주세요.");
         }
@@ -49,7 +49,8 @@ public sealed class AuthService : IAuthService
                 return LoginResult.Fail("비활성화된 계정입니다. 관리자에게 문의해 주세요.");
             }
 
-            bool isPasswordValid = mPasswordHashService.VerifyPassword(password, userAccountOrNull.PasswordHash);
+            PasswordHash storedPasswordHash = PasswordHash.CreateFromStoredValue(userAccountOrNull.PasswordHash);
+            bool isPasswordValid = mPasswordHashService.VerifyPassword(password, storedPasswordHash);
             if (isPasswordValid == false)
             {
                 return LoginResult.Fail("아이디와 비밀번호를 확인해 주세요.");
@@ -73,17 +74,17 @@ public sealed class AuthService : IAuthService
     public ClaimsPrincipal CreateClaimsPrincipal(UserAccount userAccount)
     {
         List<Claim> claims = new List<Claim>();
-        claims.Add(new Claim(ClaimTypes.NameIdentifier, userAccount.ID.ToString()));
+        claims.Add(new Claim(ClaimTypes.NameIdentifier, userAccount.Id.ToString()));
         claims.Add(new Claim(ClaimTypes.Name, userAccount.Username));
         claims.Add(new Claim(ClaimTypes.Role, UserRoleUtility.GetRoleName(userAccount.Role)));
-        claims.Add(new Claim(OrganizationHubClaimTypes.USER_ID, userAccount.ID.ToString()));
+        claims.Add(new Claim(OrganizationHubClaimTypes.USER_ID, userAccount.Id.ToString()));
         claims.Add(new Claim(OrganizationHubClaimTypes.USERNAME, userAccount.Username));
         claims.Add(new Claim(OrganizationHubClaimTypes.DISPLAY_NAME, userAccount.DisplayName));
         claims.Add(new Claim(OrganizationHubClaimTypes.ROLE, UserRoleUtility.GetRoleName(userAccount.Role)));
 
-        if (userAccount.TeamID.HasValue)
+        if (userAccount.TeamId.HasValue)
         {
-            claims.Add(new Claim(OrganizationHubClaimTypes.TEAM_ID, userAccount.TeamID.Value.ToString()));
+            claims.Add(new Claim(OrganizationHubClaimTypes.TEAM_ID, userAccount.TeamId.Value.ToString()));
         }
 
         if (userAccount.Team != null)

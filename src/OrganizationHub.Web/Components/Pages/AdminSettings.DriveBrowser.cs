@@ -18,7 +18,7 @@ public partial class AdminSettings
         }
 
         GoogleDriveFolderPathItem pathItem = new GoogleDriveFolderPathItem();
-        pathItem.ID = folder.ID;
+        pathItem.Id = folder.Id;
         pathItem.Name = folder.Name;
         mFolderPath.Add(pathItem);
         await loadDriveItemsAsync();
@@ -50,7 +50,7 @@ public partial class AdminSettings
     private void resetDrivePathToRoot()
     {
         GoogleDriveFolderPathItem rootPathItem = new GoogleDriveFolderPathItem();
-        rootPathItem.ID = DRIVE_ROOT_ID;
+        rootPathItem.Id = DRIVE_ROOT_ID;
         rootPathItem.Name = "내 Drive";
         mFolderPath = new List<GoogleDriveFolderPathItem>();
         mFolderPath.Add(rootPathItem);
@@ -58,17 +58,22 @@ public partial class AdminSettings
 
     private void resetDrivePathToOfficialRoot()
     {
-        if (string.IsNullOrWhiteSpace(mFormModel.OfficialRootFolderID))
+        if (string.IsNullOrWhiteSpace(mFormModel.DriveResources.OfficialRootFolderId))
         {
             resetDrivePathToRoot();
             return;
         }
 
         GoogleDriveFolderPathItem rootPathItem = new GoogleDriveFolderPathItem();
-        rootPathItem.ID = mFormModel.OfficialRootFolderID;
+        rootPathItem.Id = mFormModel.DriveResources.OfficialRootFolderId;
         rootPathItem.Name = "기본 자료";
         mFolderPath = new List<GoogleDriveFolderPathItem>();
         mFolderPath.Add(rootPathItem);
+    }
+
+    private bool hasOfficialRootFolder()
+    {
+        return string.IsNullOrWhiteSpace(mFormModel.DriveResources.OfficialRootFolderId) == false;
     }
 
     private List<DriveFileItem> getOrderedDriveItems()
@@ -76,14 +81,14 @@ public partial class AdminSettings
         return mDriveItems.OrderBy(item => item.IsFolder ? 0 : 1).ThenBy(item => item.IsFolder ? item.Name : string.Empty).ThenByDescending(item => item.ModifiedTime).ThenBy(item => item.Name).ToList();
     }
 
-    private string getCurrentFolderID()
+    private string getCurrentFolderId()
     {
         if (mFolderPath.Count == 0)
         {
             return DRIVE_ROOT_ID;
         }
 
-        return mFolderPath[mFolderPath.Count - 1].ID;
+        return mFolderPath[mFolderPath.Count - 1].Id;
     }
 
     private string getFileTypeDisplayName(DriveFileItem file)

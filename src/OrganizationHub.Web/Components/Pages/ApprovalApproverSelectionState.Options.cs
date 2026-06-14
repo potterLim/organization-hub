@@ -10,112 +10,130 @@ internal sealed partial class ApprovalApproverSelectionState
     public IReadOnlyList<ApprovalUserOption> GetFirstApproverOptions()
     {
         return getApproverOptionsExcludingExcept(
-            new ApprovalUserID(mFormModel.FirstApproverUserID),
-            new ApprovalUserID(mFormModel.SecondApproverUserID),
-            new ApprovalUserID(mFormModel.FinalApproverUserID));
+            ApprovalUserId.CreateOptional(mFormModel.FirstApproverUserId),
+            ApprovalUserId.CreateOptional(mFormModel.SecondApproverUserId),
+            ApprovalUserId.CreateOptional(mFormModel.FinalApproverUserId));
     }
 
     public IReadOnlyList<ApprovalUserOption> GetSecondApproverOptions()
     {
         return getApproverOptionsExcludingExcept(
-            new ApprovalUserID(mFormModel.SecondApproverUserID),
-            new ApprovalUserID(mFormModel.FirstApproverUserID),
-            new ApprovalUserID(mFormModel.FinalApproverUserID));
+            ApprovalUserId.CreateOptional(mFormModel.SecondApproverUserId),
+            ApprovalUserId.CreateOptional(mFormModel.FirstApproverUserId),
+            ApprovalUserId.CreateOptional(mFormModel.FinalApproverUserId));
     }
 
     public IReadOnlyList<ApprovalUserOption> GetFinalApproverOptions()
     {
         return getFinalApproverOptionsExcludingExcept(
-            new ApprovalUserID(mFormModel.FinalApproverUserID),
-            new ApprovalUserID(mFormModel.FirstApproverUserID),
-            new ApprovalUserID(mFormModel.SecondApproverUserID));
+            ApprovalUserId.CreateOptional(mFormModel.FinalApproverUserId),
+            ApprovalUserId.CreateOptional(mFormModel.FirstApproverUserId),
+            ApprovalUserId.CreateOptional(mFormModel.SecondApproverUserId));
     }
 
-    private IReadOnlyList<ApprovalUserOption> getApproverOptionsExcludingExcept(ApprovalUserID currentUserID, params ApprovalUserID[] excludedUserIDs)
+    private IReadOnlyList<ApprovalUserOption> getApproverOptionsExcludingExcept(ApprovalUserId currentUserId, params ApprovalUserId[] excludedUserIds)
     {
-        HashSet<int> excludedIDs = createExcludedUserIDSet(currentUserID, excludedUserIDs);
-        return mCreateContext.ApproverOptions.Where(userOption => excludedIDs.Contains(userOption.UserID) == false).ToList();
+        HashSet<int> excludedIds = createExcludedUserIdSet(currentUserId, excludedUserIds);
+        return mCreateContext.ApproverOptions.Where(userOption => excludedIds.Contains(userOption.UserId) == false).ToList();
     }
 
-    private IReadOnlyList<ApprovalUserOption> getFinalApproverOptionsExcludingExcept(ApprovalUserID currentUserID, params ApprovalUserID[] excludedUserIDs)
+    private IReadOnlyList<ApprovalUserOption> getFinalApproverOptionsExcludingExcept(
+        ApprovalUserId currentUserId,
+        params ApprovalUserId[] excludedUserIds
+    )
     {
-        HashSet<int> excludedIDs = createExcludedUserIDSet(currentUserID, excludedUserIDs);
-        return mCreateContext.FinalApproverOptions.Where(userOption => excludedIDs.Contains(userOption.UserID) == false).ToList();
+        HashSet<int> excludedIds = createExcludedUserIdSet(currentUserId, excludedUserIds);
+        return mCreateContext.FinalApproverOptions.Where(userOption => excludedIds.Contains(userOption.UserId) == false).ToList();
     }
 
-    private HashSet<int> createExcludedUserIDSet(ApprovalUserID currentUserID, IReadOnlyList<ApprovalUserID> excludedUserIDs)
+    private HashSet<int> createExcludedUserIdSet(ApprovalUserId currentUserId, IReadOnlyList<ApprovalUserId> excludedUserIds)
     {
-        return excludedUserIDs
-            .Where(userID => userID.HasValue && userID != currentUserID)
-            .Select(userID => userID.Value)
+        return excludedUserIds
+            .Where(userId => userId.HasValue && userId != currentUserId)
+            .Select(userId => userId.Value)
             .ToHashSet();
     }
 
-    private ApprovalUserID getDefaultFirstApproverIDExcluding(params ApprovalUserID[] excludedUserIDs)
+    private ApprovalUserId getDefaultFirstApproverIdExcluding(params ApprovalUserId[] excludedUserIds)
     {
         ApprovalDefaultLineOption? defaultLineOrNull = getDefaultLineOrNull();
-        ApprovalUserID preferredUserID = defaultLineOrNull == null ? ApprovalUserID.Empty : new ApprovalUserID(defaultLineOrNull.FirstApproverUserID);
-        return getPreferredApproverIDExcluding(preferredUserID, excludedUserIDs);
-    }
-
-    private ApprovalUserID getDefaultSecondApproverIDExcluding(params ApprovalUserID[] excludedUserIDs)
-    {
-        ApprovalDefaultLineOption? defaultLineOrNull = getDefaultLineOrNull();
-        ApprovalUserID preferredUserID = defaultLineOrNull == null ? ApprovalUserID.Empty : new ApprovalUserID(defaultLineOrNull.SecondApproverUserID);
-        return getPreferredApproverIDExcluding(preferredUserID, excludedUserIDs);
-    }
-
-    private ApprovalUserID getDefaultFinalApproverIDExcluding(params ApprovalUserID[] excludedUserIDs)
-    {
-        ApprovalDefaultLineOption? defaultLineOrNull = getDefaultLineOrNull();
-        ApprovalUserID preferredUserID = defaultLineOrNull == null ? ApprovalUserID.Empty : new ApprovalUserID(defaultLineOrNull.FinalApproverUserID);
-        return getPreferredFinalApproverIDExcluding(preferredUserID, excludedUserIDs);
-    }
-
-    private ApprovalUserID getPreferredApproverIDExcluding(ApprovalUserID preferredUserID, params ApprovalUserID[] excludedUserIDs)
-    {
-        HashSet<int> excludedIDs = createExcludedUserIDSet(ApprovalUserID.Empty, excludedUserIDs);
-        if (preferredUserID.HasValue && excludedIDs.Contains(preferredUserID.Value) == false && isApproverOptionSelected(preferredUserID))
+        ApprovalUserId preferredUserId = ApprovalUserId.Empty;
+        if (defaultLineOrNull != null)
         {
-            return preferredUserID;
+            preferredUserId = ApprovalUserId.CreateExisting(defaultLineOrNull.FirstApproverUserId);
         }
 
-        return getFirstApproverIDExcluding(excludedUserIDs);
+        return getPreferredApproverIdExcluding(preferredUserId, excludedUserIds);
     }
 
-    private ApprovalUserID getPreferredFinalApproverIDExcluding(ApprovalUserID preferredUserID, params ApprovalUserID[] excludedUserIDs)
+    private ApprovalUserId getDefaultSecondApproverIdExcluding(params ApprovalUserId[] excludedUserIds)
     {
-        HashSet<int> excludedIDs = createExcludedUserIDSet(ApprovalUserID.Empty, excludedUserIDs);
-        if (preferredUserID.HasValue && excludedIDs.Contains(preferredUserID.Value) == false && isFinalApproverOptionSelected(preferredUserID))
+        ApprovalDefaultLineOption? defaultLineOrNull = getDefaultLineOrNull();
+        ApprovalUserId preferredUserId = ApprovalUserId.Empty;
+        if (defaultLineOrNull != null)
         {
-            return preferredUserID;
+            preferredUserId = ApprovalUserId.CreateExisting(defaultLineOrNull.SecondApproverUserId);
         }
 
-        return getFirstFinalApproverIDExcluding(excludedUserIDs);
+        return getPreferredApproverIdExcluding(preferredUserId, excludedUserIds);
     }
 
-    private ApprovalUserID getFirstApproverIDExcluding(params ApprovalUserID[] excludedUserIDs)
+    private ApprovalUserId getDefaultFinalApproverIdExcluding(params ApprovalUserId[] excludedUserIds)
     {
-        HashSet<int> excludedIDs = createExcludedUserIDSet(ApprovalUserID.Empty, excludedUserIDs);
-        ApprovalUserOption? approverOptionOrNull = mCreateContext.ApproverOptions.FirstOrDefault(userOption => excludedIDs.Contains(userOption.UserID) == false);
+        ApprovalDefaultLineOption? defaultLineOrNull = getDefaultLineOrNull();
+        ApprovalUserId preferredUserId = ApprovalUserId.Empty;
+        if (defaultLineOrNull != null)
+        {
+            preferredUserId = ApprovalUserId.CreateExisting(defaultLineOrNull.FinalApproverUserId);
+        }
+
+        return getPreferredFinalApproverIdExcluding(preferredUserId, excludedUserIds);
+    }
+
+    private ApprovalUserId getPreferredApproverIdExcluding(ApprovalUserId preferredUserId, params ApprovalUserId[] excludedUserIds)
+    {
+        HashSet<int> excludedIds = createExcludedUserIdSet(ApprovalUserId.Empty, excludedUserIds);
+        if (preferredUserId.HasValue && excludedIds.Contains(preferredUserId.Value) == false && isApproverOptionSelected(preferredUserId))
+        {
+            return preferredUserId;
+        }
+
+        return getFirstApproverIdExcluding(excludedUserIds);
+    }
+
+    private ApprovalUserId getPreferredFinalApproverIdExcluding(ApprovalUserId preferredUserId, params ApprovalUserId[] excludedUserIds)
+    {
+        HashSet<int> excludedIds = createExcludedUserIdSet(ApprovalUserId.Empty, excludedUserIds);
+        if (preferredUserId.HasValue && excludedIds.Contains(preferredUserId.Value) == false && isFinalApproverOptionSelected(preferredUserId))
+        {
+            return preferredUserId;
+        }
+
+        return getFirstFinalApproverIdExcluding(excludedUserIds);
+    }
+
+    private ApprovalUserId getFirstApproverIdExcluding(params ApprovalUserId[] excludedUserIds)
+    {
+        HashSet<int> excludedIds = createExcludedUserIdSet(ApprovalUserId.Empty, excludedUserIds);
+        ApprovalUserOption? approverOptionOrNull = mCreateContext.ApproverOptions.FirstOrDefault(userOption => excludedIds.Contains(userOption.UserId) == false);
         if (approverOptionOrNull == null)
         {
-            return ApprovalUserID.Empty;
+            return ApprovalUserId.Empty;
         }
 
-        return new ApprovalUserID(approverOptionOrNull.UserID);
+        return ApprovalUserId.CreateExisting(approverOptionOrNull.UserId);
     }
 
-    private ApprovalUserID getFirstFinalApproverIDExcluding(params ApprovalUserID[] excludedUserIDs)
+    private ApprovalUserId getFirstFinalApproverIdExcluding(params ApprovalUserId[] excludedUserIds)
     {
-        HashSet<int> excludedIDs = createExcludedUserIDSet(ApprovalUserID.Empty, excludedUserIDs);
-        ApprovalUserOption? finalApproverOptionOrNull = mCreateContext.FinalApproverOptions.FirstOrDefault(userOption => excludedIDs.Contains(userOption.UserID) == false);
+        HashSet<int> excludedIds = createExcludedUserIdSet(ApprovalUserId.Empty, excludedUserIds);
+        ApprovalUserOption? finalApproverOptionOrNull = mCreateContext.FinalApproverOptions.FirstOrDefault(userOption => excludedIds.Contains(userOption.UserId) == false);
         if (finalApproverOptionOrNull == null)
         {
-            return ApprovalUserID.Empty;
+            return ApprovalUserId.Empty;
         }
 
-        return new ApprovalUserID(finalApproverOptionOrNull.UserID);
+        return ApprovalUserId.CreateExisting(finalApproverOptionOrNull.UserId);
     }
 
     private ApprovalDefaultLineOption? getDefaultLineOrNull()
@@ -123,13 +141,13 @@ internal sealed partial class ApprovalApproverSelectionState
         return mCreateContext.DefaultLineOptions.FirstOrDefault(defaultLine => defaultLine.StepCount == mFormModel.StepCount);
     }
 
-    private bool isApproverOptionSelected(ApprovalUserID userID)
+    private bool isApproverOptionSelected(ApprovalUserId userId)
     {
-        return userID.HasValue && mCreateContext.ApproverOptions.Any(userOption => userOption.UserID == userID.Value);
+        return userId.HasValue && mCreateContext.ApproverOptions.Any(userOption => userOption.UserId == userId.Value);
     }
 
-    private bool isFinalApproverOptionSelected(ApprovalUserID userID)
+    private bool isFinalApproverOptionSelected(ApprovalUserId userId)
     {
-        return userID.HasValue && mCreateContext.FinalApproverOptions.Any(userOption => userOption.UserID == userID.Value);
+        return userId.HasValue && mCreateContext.FinalApproverOptions.Any(userOption => userOption.UserId == userId.Value);
     }
 }

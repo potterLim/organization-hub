@@ -27,8 +27,8 @@ public partial class Todos
     private TodoTaskItem cloneTask(TodoTaskItem task)
     {
         TodoTaskItem clonedTask = new TodoTaskItem();
-        clonedTask.ID = task.ID;
-        clonedTask.TaskListID = task.TaskListID;
+        clonedTask.Id = task.Id;
+        clonedTask.TaskListId = task.TaskListId;
         clonedTask.TaskListDisplayName = task.TaskListDisplayName;
         clonedTask.Title = task.Title;
         clonedTask.Position = task.Position;
@@ -43,8 +43,8 @@ public partial class Todos
     private TodoTaskItem createOptimisticTask(string taskTitle)
     {
         TodoTaskItem optimisticTask = new TodoTaskItem();
-        optimisticTask.ID = "optimistic-" + Guid.NewGuid().ToString("N");
-        optimisticTask.TaskListID = mSelectedTaskListID;
+        optimisticTask.Id = "optimistic-" + Guid.NewGuid().ToString("N");
+        optimisticTask.TaskListId = mSelectedTaskListId;
         optimisticTask.TaskListDisplayName = getSelectedTaskListDisplayName();
         optimisticTask.Title = taskTitle;
         optimisticTask.Position = string.Empty;
@@ -58,13 +58,13 @@ public partial class Todos
 
     private void prependTask(TodoTaskItem task)
     {
-        removeTaskFromLocalList(task.TaskListID, task.ID);
+        removeTaskFromLocalList(task.TaskListId, task.Id);
         mTasks.Insert(0, task);
     }
 
     private void replaceTask(TodoTaskItem task)
     {
-        int taskIndex = mTasks.FindIndex(existingTask => existingTask.TaskListID == task.TaskListID && existingTask.ID == task.ID);
+        int taskIndex = mTasks.FindIndex(existingTask => existingTask.TaskListId == task.TaskListId && existingTask.Id == task.Id);
         if (taskIndex < 0)
         {
             prependTask(task);
@@ -74,15 +74,15 @@ public partial class Todos
         mTasks[taskIndex] = task;
     }
 
-    private void removeTaskFromLocalList(string taskListID, string taskID)
+    private void removeTaskFromLocalList(string taskListId, string taskId)
     {
-        mTasks.RemoveAll(existingTask => existingTask.TaskListID == taskListID && existingTask.ID == taskID);
+        mTasks.RemoveAll(existingTask => existingTask.TaskListId == taskListId && existingTask.Id == taskId);
     }
 
-    private void moveTaskInLocalList(TodoTaskItem movedTask, TodoTaskID previousTaskID)
+    private void moveTaskInLocalList(TodoTaskItem movedTask, TodoTaskId previousTaskId)
     {
-        removeTaskFromLocalList(movedTask.TaskListID, movedTask.ID);
-        if (previousTaskID.HasValue == false)
+        removeTaskFromLocalList(movedTask.TaskListId, movedTask.Id);
+        if (previousTaskId.HasValue == false)
         {
             int firstPendingTaskIndex = mTasks.FindIndex(existingTask => existingTask.IsCompleted == false);
             if (firstPendingTaskIndex < 0)
@@ -95,7 +95,7 @@ public partial class Todos
             return;
         }
 
-        int previousTaskIndex = mTasks.FindIndex(existingTask => existingTask.TaskListID == movedTask.TaskListID && existingTask.ID == previousTaskID.Value);
+        int previousTaskIndex = mTasks.FindIndex(existingTask => existingTask.TaskListId == movedTask.TaskListId && existingTask.Id == previousTaskId.GetRequiredValue());
         if (previousTaskIndex < 0)
         {
             mTasks.Insert(0, movedTask);

@@ -4,7 +4,7 @@ const changeRefreshStates = new WeakMap();
 export function initializeChangeRefresh(containerElement, dotNetReference) {
     disposeChangeRefresh(containerElement);
     const abortController = new AbortController();
-    const state = { abortController: abortController, isChecking: false, lastCheckedAt: 0, intervalID: 0 };
+    const state = { abortController: abortController, isChecking: false, lastCheckedAt: 0, intervalId: 0 };
     const signal = abortController.signal;
     const checkForChanges = async () => {
         if (document.hidden || state.isChecking) {
@@ -34,7 +34,7 @@ export function initializeChangeRefresh(containerElement, dotNetReference) {
     window.addEventListener("pageshow", () => {
         void checkForChanges();
     }, { signal: signal });
-    state.intervalID = window.setInterval(() => {
+    state.intervalId = window.setInterval(() => {
         void checkForChanges();
     }, BACKGROUND_CHECK_INTERVAL_MS);
     changeRefreshStates.set(containerElement, state);
@@ -45,7 +45,7 @@ export function disposeChangeRefresh(containerElement) {
         return;
     }
     state.abortController.abort();
-    window.clearInterval(state.intervalID);
+    window.clearInterval(state.intervalId);
     changeRefreshStates.delete(containerElement);
 }
 //# sourceMappingURL=organizationHubChangeRefresh.js.map

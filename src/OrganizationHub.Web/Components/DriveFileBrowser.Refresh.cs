@@ -24,7 +24,7 @@ public partial class DriveFileBrowser
     [JSInvokable("CheckForExternalChanges")]
     public async Task CheckForExternalChangesAsync()
     {
-        if (mIsLoadingRoots || mIsLoadingFiles || CurrentUserSessionOrNull == null || string.IsNullOrWhiteSpace(mSelectedRootFolderID))
+        if (mIsLoadingRoots || mIsLoadingFiles || CurrentUserSessionOrNull == null || string.IsNullOrWhiteSpace(mSelectedRootFolderId))
         {
             return;
         }
@@ -49,11 +49,11 @@ public partial class DriveFileBrowser
         mLoadedChangeSnapshot = loadedSnapshotOrNull;
     }
 
-    private IReadOnlyList<string> getChangeVersionKeys()
+    private IReadOnlyList<ChangeVersionKey> getChangeVersionKeys()
     {
-        List<string> keys = new List<string>();
-        keys.Add(ChangeVersionKeys.CreateDriveFolderKey(new DriveFolderID(getCurrentFolderID())));
-        return keys;
+        List<ChangeVersionKey> changeVersionKeys = new List<ChangeVersionKey>();
+        changeVersionKeys.Add(ChangeVersionKeys.CreateDriveFolderKey(DriveFolderId.CreateOptional(getCurrentFolderId())));
+        return changeVersionKeys;
     }
 
     public async ValueTask DisposeAsync()

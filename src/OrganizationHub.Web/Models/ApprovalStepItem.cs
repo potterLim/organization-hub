@@ -9,7 +9,7 @@ public sealed class ApprovalStepItem
     {
         get; set;
     }
-    public int ApproverUserID
+    public int ApproverUserId
     {
         get; set;
     }

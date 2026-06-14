@@ -170,11 +170,11 @@
                                 @if (file.CanPreviewInSite)
                                 {
                                     <MudTooltip Text="PDF 보기">
-                                        <MudIconButton Href="@("/files/" + file.ID + "/viewer")" Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" Size="Size.Small" aria-label="PDF 보기" />
+                                        <MudIconButton Href="@("/files/" + file.Id + "/viewer")" Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" Size="Size.Small" aria-label="PDF 보기" />
                                     </MudTooltip>
                                 }
                                 <MudTooltip Text="다운로드">
-                                    <MudIconButton Href="@("/files/" + file.ID + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
+                                    <MudIconButton Href="@("/files/" + file.Id + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
                                 </MudTooltip>
                             </div>
                         </div>

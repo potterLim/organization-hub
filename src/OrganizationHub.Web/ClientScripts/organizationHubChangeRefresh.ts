@@ -6,7 +6,7 @@ interface ChangeRefreshState {
     abortController: AbortController;
     isChecking: boolean;
     lastCheckedAt: number;
-    intervalID: number;
+    intervalId: number;
 }
 
 const MIN_CHECK_INTERVAL_MS: number = 1000;
@@ -17,7 +17,7 @@ export function initializeChangeRefresh(containerElement: HTMLElement, dotNetRef
     disposeChangeRefresh(containerElement);
 
     const abortController: AbortController = new AbortController();
-    const state: ChangeRefreshState = { abortController: abortController, isChecking: false, lastCheckedAt: 0, intervalID: 0 };
+    const state: ChangeRefreshState = { abortController: abortController, isChecking: false, lastCheckedAt: 0, intervalId: 0 };
     const signal: AbortSignal = abortController.signal;
 
     const checkForChanges = async (): Promise<void> => {
@@ -54,7 +54,7 @@ export function initializeChangeRefresh(containerElement: HTMLElement, dotNetRef
         void checkForChanges();
     }, { signal: signal });
 
-    state.intervalID = window.setInterval(() => {
+    state.intervalId = window.setInterval(() => {
         void checkForChanges();
     }, BACKGROUND_CHECK_INTERVAL_MS);
 
@@ -68,6 +68,6 @@ export function disposeChangeRefresh(containerElement: HTMLElement): void {
     }
 
     state.abortController.abort();
-    window.clearInterval(state.intervalID);
+    window.clearInterval(state.intervalId);
     changeRefreshStates.delete(containerElement);
 }

@@ -19,10 +19,10 @@ public sealed partial class NavigationMenuService
         {
             List<NavigationMenuItem> menuItems = await dbContext.NavigationMenuItems.Include(menuItem => menuItem.TeamPermissions).ThenInclude(menuPermission => menuPermission.Team).OrderBy(menuItem => menuItem.SortOrder).ThenBy(menuItem => menuItem.DisplayName).ToListAsync(cancellationToken);
             List<NavigationMenuItem> visibleMenuItems = new List<NavigationMenuItem>();
-            bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSession, cancellationToken);
+            EPermissionConfigurationMode configurationMode = await getNavigationPermissionConfigurationModeAsync(userSession, cancellationToken);
             foreach (NavigationMenuItem menuItem in menuItems)
             {
-                if (await isVisibleForUserAsync(menuItem, userSession, usesConfiguredPermissions, cancellationToken))
+                if (await isVisibleForUserAsync(menuItem, userSession, configurationMode, cancellationToken))
                 {
                     visibleMenuItems.Add(menuItem);
                 }
@@ -33,14 +33,19 @@ public sealed partial class NavigationMenuService
         }
     }
 
-    private async Task<bool> isVisibleForUserAsync(NavigationMenuItem menuItem, UserSession userSession, bool usesConfiguredPermissions, CancellationToken cancellationToken)
+    private async Task<bool> isVisibleForUserAsync(
+        NavigationMenuItem menuItem,
+        UserSession userSession,
+        EPermissionConfigurationMode configurationMode,
+        CancellationToken cancellationToken
+    )
     {
         if (menuItem.IsActive == false && menuItem.IsLocked == false)
         {
             return false;
         }
 
-        bool isAccessAllowed = await isAccessLevelAllowedAsync(menuItem, userSession, usesConfiguredPermissions, cancellationToken);
+        bool isAccessAllowed = await isAccessLevelAllowedAsync(menuItem, userSession, configurationMode, cancellationToken);
         if (isAccessAllowed == false)
         {
             return false;
@@ -71,15 +76,15 @@ public sealed partial class NavigationMenuService
             return false;
         }
 
-        if (userSession.TeamID.HasValue == false)
+        if (userSession.HasTeam == false)
         {
             return false;
         }
 
-        int teamID = userSession.TeamID.Value;
+        int teamId = userSession.GetRequiredTeamIdValue();
         foreach (NavigationMenuTeamPermission permission in menuItem.TeamPermissions)
         {
-            if (permission.TeamID == teamID && permission.Team != null && permission.Team.IsActive)
+            if (permission.TeamId == teamId && permission.Team != null && permission.Team.IsActive)
             {
                 return true;
             }
@@ -88,9 +93,14 @@ public sealed partial class NavigationMenuService
         return false;
     }
 
-    private async Task<bool> isAccessLevelAllowedAsync(NavigationMenuItem menuItem, UserSession userSession, bool usesConfiguredPermissions, CancellationToken cancellationToken)
+    private async Task<bool> isAccessLevelAllowedAsync(
+        NavigationMenuItem menuItem,
+        UserSession userSession,
+        EPermissionConfigurationMode configurationMode,
+        CancellationToken cancellationToken
+    )
     {
-        if (usesConfiguredPermissions)
+        if (configurationMode == EPermissionConfigurationMode.ConfiguredPermissions)
         {
             IReadOnlyList<string> permissionKeys = getMenuPermissionKeys(menuItem);
             if (permissionKeys.Count == 0)
@@ -98,10 +108,10 @@ public sealed partial class NavigationMenuService
                 return true;
             }
 
-            int? targetTeamIDOrNull = getConfiguredPermissionTargetTeamIDOrNull(menuItem, userSession);
+            OrganizationTeamId? targetTeamIdOrNull = getConfiguredPermissionTargetTeamIdOrNull(menuItem, userSession);
             foreach (string permissionKey in permissionKeys)
             {
-                bool hasPermission = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(permissionKey), targetTeamIDOrNull, cancellationToken);
+                bool hasPermission = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(permissionKey), targetTeamIdOrNull, cancellationToken);
                 if (hasPermission)
                 {
                     return true;
@@ -114,19 +124,43 @@ public sealed partial class NavigationMenuService
         return MenuAccessLevelUtility.IsRoleAllowed(menuItem.AccessLevel, userSession.Role);
     }
 
-    private int? getConfiguredPermissionTargetTeamIDOrNull(NavigationMenuItem menuItem, UserSession userSession)
+    private async Task<EPermissionConfigurationMode> getNavigationPermissionConfigurationModeAsync(
+        UserSession userSession,
+        CancellationToken cancellationToken
+    )
+    {
+        bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSession, cancellationToken);
+        if (usesConfiguredPermissions)
+        {
+            return EPermissionConfigurationMode.ConfiguredPermissions;
+        }
+
+        return EPermissionConfigurationMode.FallbackPolicy;
+    }
+
+    private OrganizationTeamId? getConfiguredPermissionTargetTeamIdOrNull(NavigationMenuItem menuItem, UserSession userSession)
     {
         if (MenuAccessLevelUtility.IsTeamScoped(menuItem.AccessLevel))
         {
-            return userSession.TeamID;
+            return createUserTeamIdOrNull(userSession);
         }
 
         if (shouldUseUserTeamContext(menuItem))
         {
-            return userSession.TeamID;
+            return createUserTeamIdOrNull(userSession);
         }
 
         return null;
+    }
+
+    private OrganizationTeamId? createUserTeamIdOrNull(UserSession userSession)
+    {
+        if (userSession.HasTeam == false)
+        {
+            return null;
+        }
+
+        return userSession.GetRequiredOrganizationTeamId();
     }
 
     private bool shouldUseUserTeamContext(NavigationMenuItem menuItem)
@@ -157,6 +191,6 @@ public sealed partial class NavigationMenuService
             return true;
         }
 
-        return string.Equals(userSession.TeamKey, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY, StringComparison.OrdinalIgnoreCase);
+        return userSession.TeamKey.IsManagementTeamKey;
     }
 }

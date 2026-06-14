@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Apis.Calendar.v3;
 using Google.Apis.Http;
 using Google.Apis.Services;
 using Microsoft.Extensions.Caching.Memory;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
@@ -39,15 +41,15 @@ public sealed partial class GoogleCalendarService
         mMemoryCache.Set(cacheKey, cloneCalendarEvents(calendarEvents), cacheEntryOptions);
     }
 
-    private void expireCalendarEventCache(string calendarID)
+    private void expireCalendarEventCache(CalendarId calendarId)
     {
-        mMemoryCache.Remove(createCalendarVersionCacheKey(calendarID));
-        mMemoryCache.Set(createCalendarVersionCacheKey(calendarID), Guid.NewGuid().ToString("N"), TimeSpan.FromHours(1));
+        mMemoryCache.Remove(createCalendarVersionCacheKey(calendarId));
+        mMemoryCache.Set(createCalendarVersionCacheKey(calendarId), Guid.NewGuid().ToString("N"), TimeSpan.FromHours(1));
     }
 
-    private string getCalendarEventCacheVersion(string calendarID)
+    private string getCalendarEventCacheVersion(CalendarId calendarId)
     {
-        string versionCacheKey = createCalendarVersionCacheKey(calendarID);
+        string versionCacheKey = createCalendarVersionCacheKey(calendarId);
         string? versionOrNull = mMemoryCache.Get<string>(versionCacheKey);
         if (versionOrNull != null)
         {
@@ -59,13 +61,24 @@ public sealed partial class GoogleCalendarService
         return version;
     }
 
-    private string createCalendarVersionCacheKey(string calendarID)
+    private string createCalendarVersionCacheKey(CalendarId calendarId)
     {
-        return "OrganizationHub:Calendar:Version:" + calendarID;
+        return "OrganizationHub:Calendar:Version:" + calendarId.GetRequiredValue();
     }
 
-    private string createEventListCacheKey(string calendarID, string calendarName, DateTime start, DateTime end)
+    private string createEventListCacheKey(CalendarId calendarId, string calendarName, DateTime start, DateTime end)
     {
-        return "OrganizationHub:Calendar:Events:" + calendarID + ":" + getCalendarEventCacheVersion(calendarID) + ":" + calendarName + ":" + start.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":" + end.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        List<string> cacheKeyParts = new List<string>
+        {
+            "OrganizationHub",
+            "Calendar",
+            "Events",
+            calendarId.GetRequiredValue(),
+            getCalendarEventCacheVersion(calendarId),
+            calendarName,
+            start.Ticks.ToString(CultureInfo.InvariantCulture),
+            end.Ticks.ToString(CultureInfo.InvariantCulture)
+        };
+        return string.Join(":", cacheKeyParts);
     }
 }

@@ -10,24 +10,29 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    private async Task<ServiceResult> copyApprovedFileIfConfiguredAsync(OrganizationHubDbContext dbContext, ApprovalRequest request, CancellationToken cancellationToken)
+    private async Task<ServiceResult> copyApprovedFileIfConfiguredAsync(
+        OrganizationHubDbContext dbContext,
+        ApprovalRequest request,
+        CancellationToken cancellationToken
+    )
     {
-        if (string.IsNullOrWhiteSpace(request.ApprovedFolderID))
+        if (string.IsNullOrWhiteSpace(request.ApprovedFolderId))
         {
-            request.ApprovedFileID = request.FileID;
-            request.ApprovedFolderID = string.Empty;
+            request.ApprovedFileId = request.FileId;
+            request.ApprovedFolderId = string.Empty;
             request.ApprovedFolderDisplayName = string.Empty;
             return ServiceResult.Succeed();
         }
 
         try
         {
-            DriveFileItem copiedFile = await mDriveService.CopyFileToFolderAsync(request.FileID, request.ApprovedFolderID.Trim(), request.FileName, cancellationToken);
-            request.ApprovedFileID = copiedFile.ID;
+            DriveFolderId approvedFolderId = DriveFolderId.CreateOptional(request.ApprovedFolderId);
+            DriveFileItem copiedFile = await mDriveService.CopyFileToFolderAsync(DriveItemId.CreateOptional(request.FileId), approvedFolderId, request.FileName, cancellationToken);
+            request.ApprovedFileId = copiedFile.Id;
             dbContext.UploadAuditLogs.Add(createUploadAuditLogForApprovedCopy(request, copiedFile));
             if (mDriveBrowserServiceOrNull != null)
             {
-                mDriveBrowserServiceOrNull.InvalidateRecentFiles(request.ApprovedFolderID.Trim());
+                mDriveBrowserServiceOrNull.InvalidateRecentFiles(approvedFolderId);
             }
 
             return ServiceResult.Succeed();
@@ -41,15 +46,15 @@ public sealed partial class ApprovalService
     private UploadAuditLog createUploadAuditLogForApprovedCopy(ApprovalRequest request, DriveFileItem copiedFile)
     {
         UploadAuditLog auditLog = new UploadAuditLog();
-        auditLog.FileID = copiedFile.ID;
+        auditLog.FileId = copiedFile.Id;
         auditLog.FileName = copiedFile.Name;
-        auditLog.FolderID = request.ApprovedFolderID.Trim();
+        auditLog.FolderId = request.ApprovedFolderId.Trim();
         auditLog.FolderDisplayName = request.ApprovedFolderDisplayName;
         auditLog.FolderKind = EDriveFolderKind.TeamApproved;
-        auditLog.UploaderUserID = request.RequesterUserID;
+        auditLog.UploaderUserId = request.RequesterUserId;
         auditLog.UploaderDisplayName = request.RequesterDisplayName;
         auditLog.UploaderRole = getRequesterRole(request);
-        auditLog.TeamID = request.TeamID;
+        auditLog.TeamId = request.TeamId;
         auditLog.TeamName = request.TeamName;
         auditLog.UploadedAt = DateTime.UtcNow;
         return auditLog;

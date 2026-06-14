@@ -22,7 +22,7 @@ public sealed class PositionManagementServiceTests
             PositionManagementService positionManagementService = new PositionManagementService(dbContextFactory);
 
             PositionFormModel formModel = new PositionFormModel();
-            formModel.TeamID = 1;
+            formModel.TeamId = 1;
             formModel.Name = "문서 관리자";
             formModel.Description = "팀 자료를 관리합니다.";
             formModel.SortOrder = 10;
@@ -56,7 +56,7 @@ public sealed class PositionManagementServiceTests
             PositionManagementService positionManagementService = new PositionManagementService(dbContextFactory);
 
             PositionFormModel formModel = new PositionFormModel();
-            formModel.TeamID = 1;
+            formModel.TeamId = 1;
             formModel.Name = "외부 자료 담당";
             formModel.IsActive = true;
             PositionPermissionGrantFormModel permissionGrantFormModel = new PositionPermissionGrantFormModel();
@@ -76,7 +76,7 @@ public sealed class PositionManagementServiceTests
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             Team team = new Team();
-            team.ID = 1;
+            team.Id = 1;
             team.TeamKey = "Documents";
             team.DisplayName = "문서팀";
             team.IsActive = true;
@@ -84,7 +84,7 @@ public sealed class PositionManagementServiceTests
             dbContext.Teams.Add(team);
 
             Team targetTeam = new Team();
-            targetTeam.ID = 2;
+            targetTeam.Id = 2;
             targetTeam.TeamKey = "Operations";
             targetTeam.DisplayName = "운영팀";
             targetTeam.IsActive = true;

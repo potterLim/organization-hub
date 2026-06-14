@@ -16,7 +16,21 @@ public sealed partial class ApprovalService
     {
         ApprovalCreateContext context = new ApprovalCreateContext();
         bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSession, cancellationToken);
-        bool canCreateApprovalRequest = usesConfiguredPermissions ? await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.APPROVAL_REQUEST), userSession.TeamID, cancellationToken) : UserPermissionPolicy.CanCreateApprovalRequests(userSession.Role);
+        OrganizationTeamId? userTeamIdOrNull = createUserTeamIdOrNull(userSession);
+        bool canCreateApprovalRequest;
+        if (usesConfiguredPermissions)
+        {
+            canCreateApprovalRequest = await mOrganizationPermissionService.HasPermissionAsync(
+                userSession,
+                new PermissionKey(PermissionKeys.APPROVAL_REQUEST),
+                userTeamIdOrNull,
+                cancellationToken);
+        }
+        else
+        {
+            canCreateApprovalRequest = UserPermissionPolicy.CanCreateApprovalRequests(userSession.Role);
+        }
+
         if (canCreateApprovalRequest == false)
         {
             context.BlockReason = "결재 요청 권한이 없습니다.";
@@ -54,12 +68,15 @@ public sealed partial class ApprovalService
         return context;
     }
 
-    private void applyConfiguredApprovalLine(ApprovalCreateContext context, IReadOnlyList<DriveFolderReference> sourceFolders, ConfiguredApprovalLine configuredLine)
+    private void applyConfiguredApprovalLine(
+        ApprovalCreateContext context,
+        IReadOnlyList<DriveFolderReference> sourceFolders,
+        ConfiguredApprovalLine configuredLine)
     {
         context.ApproverOptions = configuredLine.IntermediateApprovers;
         context.FinalApproverOptions = configuredLine.FinalApprovers;
         context.FinalApproverCandidates = configuredLine.FinalApprovers;
-        context.AvailableStepCounts = new List<int> { configuredLine.StepCount };
+        context.AvailableStepCounts = new List<int> { configuredLine.StepCount.Value };
         context.DefaultLineOptions = new List<ApprovalDefaultLineOption> { configuredLine.DefaultLine };
         context.CanCreateRequest = sourceFolders.Count > 0 && context.DestinationFolders.Count > 0 && context.FinalApproverOptions.Count > 0;
         if (context.CanCreateRequest == false)
@@ -77,18 +94,28 @@ public sealed partial class ApprovalService
             .OrderBy(user => user.DisplayName)
             .ToListAsync(cancellationToken);
 
-        List<int> positionIDs = users
-            .Where(user => user.PositionID.HasValue)
-            .Select(user => user.PositionID.GetValueOrDefault())
+        List<int> positionIds = users
+            .Where(user => user.PositionId.HasValue)
+            .Select(user => user.PositionId.GetValueOrDefault())
             .Distinct()
             .ToList();
-        if (positionIDs.Count > 0)
+        if (positionIds.Count > 0)
         {
             await dbContext.PositionPermissionGrants
-                .Where(permissionGrant => positionIDs.Contains(permissionGrant.PositionID))
+                .Where(permissionGrant => positionIds.Contains(permissionGrant.PositionId))
                 .LoadAsync(cancellationToken);
         }
 
         return users;
+    }
+
+    private static OrganizationTeamId? createUserTeamIdOrNull(UserSession userSession)
+    {
+        if (userSession.HasTeam == false)
+        {
+            return null;
+        }
+
+        return userSession.GetRequiredOrganizationTeamId();
     }
 }

@@ -9,9 +9,9 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Upload
 {
-    private async Task handleRootFolderChangedAsync(string folderID)
+    private async Task handleRootFolderChangedAsync(string folderId)
     {
-        mSelectedRootFolderID = folderID;
+        mSelectedRootFolderId = folderId;
         mMessage = string.Empty;
         DriveFolderReference? selectedFolderOrNull = getSelectedRootFolderOrNull();
         if (selectedFolderOrNull != null)
@@ -40,8 +40,9 @@ public partial class Upload
         mFolderLoadErrorMessage = string.Empty;
         try
         {
-            mCurrentFolderUploadDecision = await PermissionService.DecideUploadToFolderAsync(CurrentUserSessionOrNull, getCurrentFolderID(), CancellationToken.None);
-            mCurrentFolderCreateDecision = await PermissionService.DecideCreateFolderInFolderAsync(CurrentUserSessionOrNull, getCurrentFolderID(), CancellationToken.None);
+            DriveFolderId currentFolderId = DriveFolderId.CreateOptional(getCurrentFolderId());
+            mCurrentFolderUploadDecision = await PermissionService.DecideUploadToFolderAsync(CurrentUserSessionOrNull, currentFolderId, CancellationToken.None);
+            mCurrentFolderCreateDecision = await PermissionService.DecideCreateFolderInFolderAsync(CurrentUserSessionOrNull, currentFolderId, CancellationToken.None);
             if (mCurrentFolderCreateDecision.IsAllowed == false)
             {
                 closeFolderCreate();
@@ -53,7 +54,8 @@ public partial class Upload
                 return;
             }
 
-            IReadOnlyList<DriveFileItem> files = await DriveBrowserService.GetFolderFilesAsync(CurrentUserSessionOrNull, rootFolderOrNull.FolderKind, rootFolderOrNull.FolderID, getCurrentFolderID(), string.Empty, CancellationToken.None);
+            DriveFolderBrowseRequest request = new DriveFolderBrowseRequest(CurrentUserSessionOrNull, rootFolderOrNull.FolderKind, rootFolderOrNull.FolderId, currentFolderId);
+            IReadOnlyList<DriveFileItem> files = await DriveBrowserService.GetFolderFilesAsync(request, CancellationToken.None);
             mFoldersInCurrentFolder = files.Where(file => file.IsFolder).OrderBy(file => file.Name).ToList();
         }
         catch
@@ -75,7 +77,7 @@ public partial class Upload
         }
 
         DriveFolderPathItem pathItem = new DriveFolderPathItem();
-        pathItem.ID = folder.ID;
+        pathItem.Id = folder.Id;
         pathItem.Name = folder.Name;
         mFolderPath.Add(pathItem);
         await loadFoldersAsync();
@@ -95,25 +97,25 @@ public partial class Upload
     private void resetPath(DriveFolderReference rootFolder)
     {
         DriveFolderPathItem pathItem = new DriveFolderPathItem();
-        pathItem.ID = rootFolder.FolderID;
+        pathItem.Id = rootFolder.FolderId.GetRequiredValue();
         pathItem.Name = rootFolder.DisplayName;
         mFolderPath = new List<DriveFolderPathItem>();
         mFolderPath.Add(pathItem);
     }
 
-    private string getCurrentFolderID()
+    private string getCurrentFolderId()
     {
         if (mFolderPath.Count == 0)
         {
-            return mSelectedRootFolderID;
+            return mSelectedRootFolderId;
         }
 
-        return mFolderPath[mFolderPath.Count - 1].ID;
+        return mFolderPath[mFolderPath.Count - 1].Id;
     }
 
     private DriveFolderReference? getSelectedRootFolderOrNull()
     {
-        return mUploadRootFolders.FirstOrDefault(folder => folder.FolderID == mSelectedRootFolderID);
+        return mUploadRootFolders.FirstOrDefault(folder => folder.FolderId.GetRequiredValue() == mSelectedRootFolderId);
     }
 
     private DriveFolderReference getDefaultUploadRootFolder()
@@ -129,10 +131,10 @@ public partial class Upload
             return mUploadRootFolders[0];
         }
 
-        if (CurrentUserSessionOrNull != null && CurrentUserSessionOrNull.TeamID.HasValue)
+        if (CurrentUserSessionOrNull != null && CurrentUserSessionOrNull.HasTeam)
         {
-            int teamID = CurrentUserSessionOrNull.TeamID.Value;
-            DriveFolderReference? teamMaterialsFolderOrNull = mUploadRootFolders.FirstOrDefault(folder => folder.FolderKind == EDriveFolderKind.TeamMaterials && folder.TeamID == teamID);
+            OrganizationTeamId teamId = CurrentUserSessionOrNull.GetRequiredOrganizationTeamId();
+            DriveFolderReference? teamMaterialsFolderOrNull = mUploadRootFolders.FirstOrDefault(folder => folder.FolderKind == EDriveFolderKind.TeamMaterials && folder.TeamIdOrNull == teamId);
             if (teamMaterialsFolderOrNull != null)
             {
                 return teamMaterialsFolderOrNull;

@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class ApprovalWorkflowStepFormModel
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
@@ -14,17 +14,38 @@ public sealed class ApprovalWorkflowStepFormModel
     }
     public string StepName { get; set; } = string.Empty;
     public EApproverSelectionType ApproverSelectionType { get; set; } = EApproverSelectionType.PositionInRequesterTeam;
-    public int? ApproverUserID
+    public int? ApproverUserId
     {
         get; set;
     }
-    public int? ApproverPositionID
+    public ApprovalUserId? ApproverUserIdOrNull
+    {
+        get
+        {
+            return ApprovalUserId.CreateExistingOrNull(ApproverUserId);
+        }
+    }
+    public int? ApproverPositionId
     {
         get; set;
     }
-    public int? ApproverTeamID
+    public OrganizationPositionId? ApproverPositionIdOrNull
+    {
+        get
+        {
+            return OrganizationPositionId.CreateExistingOrNull(ApproverPositionId);
+        }
+    }
+    public int? ApproverTeamId
     {
         get; set;
+    }
+    public OrganizationTeamId? ApproverTeamIdOrNull
+    {
+        get
+        {
+            return OrganizationTeamId.CreateExistingOrNull(ApproverTeamId);
+        }
     }
     public string RequiredPermissionKey { get; set; } = string.Empty;
     public EPermissionScopeType ScopeType { get; set; } = EPermissionScopeType.OwnTeam;

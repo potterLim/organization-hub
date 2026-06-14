@@ -10,11 +10,17 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    public async Task<ServiceResult> ApproveRequestAsync(UserSession userSession, int approvalRequestID, int nextApproverUserID, string comment, CancellationToken cancellationToken)
+    public async Task<ServiceResult> ApproveRequestAsync(
+        UserSession userSession,
+        ApprovalRequestId approvalRequestId,
+        ApprovalUserId nextApproverUserId,
+        string comment,
+        CancellationToken cancellationToken
+    )
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            ApprovalRequest? requestOrNull = await loadApprovalRequestOrNullAsync(dbContext, new ApprovalRequestID(approvalRequestID), cancellationToken);
+            ApprovalRequest? requestOrNull = await loadApprovalRequestOrNullAsync(dbContext, approvalRequestId, cancellationToken);
             if (requestOrNull == null)
             {
                 return ServiceResult.Fail("결재 요청을 찾을 수 없습니다.");
@@ -26,7 +32,7 @@ public sealed partial class ApprovalService
                 return ServiceResult.Fail("결재할 권한이 없습니다.");
             }
 
-            ServiceResult changeResult = await changeNextApproverIfRequestedAsync(dbContext, requestOrNull, userSession, new ApprovalUserID(nextApproverUserID), cancellationToken);
+            ServiceResult changeResult = await changeNextApproverIfRequestedAsync(dbContext, requestOrNull, userSession, nextApproverUserId, cancellationToken);
             if (changeResult.IsSuccess == false)
             {
                 return changeResult;
@@ -48,7 +54,12 @@ public sealed partial class ApprovalService
         }
     }
 
-    public async Task<ServiceResult> RejectRequestAsync(UserSession userSession, int approvalRequestID, string comment, CancellationToken cancellationToken)
+    public async Task<ServiceResult> RejectRequestAsync(
+        UserSession userSession,
+        ApprovalRequestId approvalRequestId,
+        string comment,
+        CancellationToken cancellationToken
+    )
     {
         if (string.IsNullOrWhiteSpace(comment))
         {
@@ -57,7 +68,7 @@ public sealed partial class ApprovalService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            ApprovalRequest? requestOrNull = await loadApprovalRequestOrNullAsync(dbContext, new ApprovalRequestID(approvalRequestID), cancellationToken);
+            ApprovalRequest? requestOrNull = await loadApprovalRequestOrNullAsync(dbContext, approvalRequestId, cancellationToken);
             if (requestOrNull == null)
             {
                 return ServiceResult.Fail("결재 요청을 찾을 수 없습니다.");
@@ -81,12 +92,12 @@ public sealed partial class ApprovalService
         currentStep.Status = EApprovalStepStatus.Approved;
         currentStep.ActionedAt = DateTime.UtcNow;
         currentStep.Comment = getTrimmedComment(comment);
-        request.AuditLogs.Add(createAuditLog(userSession, EApprovalAuditAction.Approved, currentStep.StepNumber, currentStep.Comment, string.Empty, string.Empty));
+        request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Approved, currentStep.StepNumber, currentStep.Comment)));
         if (currentStep.StepNumber == request.StepCount)
         {
             request.Status = EApprovalRequestStatus.Approved;
             request.CompletedAt = DateTime.UtcNow;
-            request.AuditLogs.Add(createAuditLog(userSession, EApprovalAuditAction.Completed, currentStep.StepNumber, "최종 결재 완료", string.Empty, string.Empty));
+            request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Completed, currentStep.StepNumber, "최종 결재 완료")));
             return;
         }
 
@@ -100,6 +111,6 @@ public sealed partial class ApprovalService
         currentStep.Comment = getTrimmedComment(comment);
         request.Status = EApprovalRequestStatus.Rejected;
         request.RejectedAt = DateTime.UtcNow;
-        request.AuditLogs.Add(createAuditLog(userSession, EApprovalAuditAction.Rejected, currentStep.StepNumber, currentStep.Comment, string.Empty, string.Empty));
+        request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Rejected, currentStep.StepNumber, currentStep.Comment)));
     }
 }

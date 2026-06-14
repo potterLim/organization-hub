@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public sealed class GoogleStorageConnection
 {
-    public int ID
+    public int Id
     {
         get; set;
     }

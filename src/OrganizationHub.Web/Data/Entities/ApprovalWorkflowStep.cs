@@ -4,11 +4,11 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class ApprovalWorkflowStep
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
-    public int ApprovalWorkflowID
+    public int ApprovalWorkflowId
     {
         get; set;
     }
@@ -25,7 +25,7 @@ public class ApprovalWorkflowStep
     {
         get; set;
     }
-    public int? ApproverUserID
+    public int? ApproverUserId
     {
         get; set;
     }
@@ -33,7 +33,7 @@ public class ApprovalWorkflowStep
     {
         get; set;
     }
-    public int? ApproverPositionID
+    public int? ApproverPositionId
     {
         get; set;
     }
@@ -41,7 +41,7 @@ public class ApprovalWorkflowStep
     {
         get; set;
     }
-    public int? ApproverTeamID
+    public int? ApproverTeamId
     {
         get; set;
     }

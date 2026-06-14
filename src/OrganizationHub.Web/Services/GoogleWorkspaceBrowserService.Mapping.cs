@@ -22,8 +22,8 @@ public sealed partial class GoogleWorkspaceBrowserService
         foreach (DriveDataFile file in fileList.Files)
         {
             GoogleDriveFolderItem folderItem = new GoogleDriveFolderItem();
-            folderItem.ID = getNullAsEmpty(file.Id);
-            folderItem.Name = getNullAsEmpty(file.Name);
+            folderItem.Id = getTextOrEmpty(file.Id);
+            folderItem.Name = getTextOrEmpty(file.Name);
             folderItem.ModifiedTime = file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.DateTime : null;
             folders.Add(folderItem);
         }
@@ -37,7 +37,7 @@ public sealed partial class GoogleWorkspaceBrowserService
         foreach (GoogleDriveFolderItem folder in folders)
         {
             GoogleDriveFolderItem clonedFolder = new GoogleDriveFolderItem();
-            clonedFolder.ID = folder.ID;
+            clonedFolder.Id = folder.Id;
             clonedFolder.Name = folder.Name;
             clonedFolder.ModifiedTime = folder.ModifiedTime;
             clonedFolders.Add(clonedFolder);
@@ -57,9 +57,9 @@ public sealed partial class GoogleWorkspaceBrowserService
         foreach (CalendarListEntryData calendarEntry in calendarList.Items)
         {
             GoogleCalendarListItem calendarItem = new GoogleCalendarListItem();
-            calendarItem.ID = getNullAsEmpty(calendarEntry.Id);
-            calendarItem.Summary = getNullAsEmpty(calendarEntry.Summary);
-            calendarItem.AccessRole = getNullAsEmpty(calendarEntry.AccessRole);
+            calendarItem.Id = getTextOrEmpty(calendarEntry.Id);
+            calendarItem.Summary = getTextOrEmpty(calendarEntry.Summary);
+            calendarItem.AccessRole = getTextOrEmpty(calendarEntry.AccessRole);
             calendarItem.IsPrimary = calendarEntry.Primary.HasValue && calendarEntry.Primary.Value;
             calendars.Add(calendarItem);
         }
@@ -73,7 +73,7 @@ public sealed partial class GoogleWorkspaceBrowserService
         foreach (GoogleCalendarListItem calendar in calendars)
         {
             GoogleCalendarListItem clonedCalendar = new GoogleCalendarListItem();
-            clonedCalendar.ID = calendar.ID;
+            clonedCalendar.Id = calendar.Id;
             clonedCalendar.Summary = calendar.Summary;
             clonedCalendar.AccessRole = calendar.AccessRole;
             clonedCalendar.IsPrimary = calendar.IsPrimary;
@@ -94,8 +94,8 @@ public sealed partial class GoogleWorkspaceBrowserService
         foreach (TaskListData taskList in taskLists.Items)
         {
             GoogleTaskListItem listItem = new GoogleTaskListItem();
-            listItem.ID = getNullAsEmpty(taskList.Id);
-            listItem.Title = getNullAsEmpty(taskList.Title);
+            listItem.Id = getTextOrEmpty(taskList.Id);
+            listItem.Title = getTextOrEmpty(taskList.Title);
             listItems.Add(listItem);
         }
 
@@ -108,7 +108,7 @@ public sealed partial class GoogleWorkspaceBrowserService
         foreach (GoogleTaskListItem taskList in taskLists)
         {
             GoogleTaskListItem clonedTaskList = new GoogleTaskListItem();
-            clonedTaskList.ID = taskList.ID;
+            clonedTaskList.Id = taskList.Id;
             clonedTaskList.Title = taskList.Title;
             clonedTaskLists.Add(clonedTaskList);
         }
@@ -116,18 +116,18 @@ public sealed partial class GoogleWorkspaceBrowserService
         return clonedTaskLists;
     }
 
-    private string escapeDriveQueryValue(string value)
+    private string escapeDriveQueryValue(string queryValue)
     {
-        return value.Replace("\\", "\\\\").Replace("'", "\\'");
+        return queryValue.Replace("\\", "\\\\").Replace("'", "\\'");
     }
 
-    private string getNullAsEmpty(string? valueOrNull)
+    private string getTextOrEmpty(string? textOrNull)
     {
-        if (valueOrNull == null)
+        if (textOrNull == null)
         {
             return string.Empty;
         }
 
-        return valueOrNull;
+        return textOrNull;
     }
 }

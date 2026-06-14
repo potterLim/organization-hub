@@ -39,15 +39,15 @@ internal sealed partial class ApprovalApproverSelectionState
         ApprovalStepCount stepCount = new ApprovalStepCount(mFormModel.StepCount);
         if (stepCount.RequiresFirstApprover)
         {
-            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "1차 결재", new ApprovalUserID(mFormModel.FirstApproverUserID)));
+            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "1차 결재", ApprovalUserId.CreateExisting(mFormModel.FirstApproverUserId)));
         }
 
         if (stepCount.RequiresSecondApprover)
         {
-            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "2차 결재", new ApprovalUserID(mFormModel.SecondApproverUserID)));
+            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "2차 결재", ApprovalUserId.CreateExisting(mFormModel.SecondApproverUserId)));
         }
 
-        previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "최종 결재", new ApprovalUserID(mFormModel.FinalApproverUserID)));
+        previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "최종 결재", ApprovalUserId.CreateExisting(mFormModel.FinalApproverUserId)));
         return previewItems;
     }
 
@@ -61,26 +61,26 @@ internal sealed partial class ApprovalApproverSelectionState
         return "hub-approval-flow-step hub-approval-flow-step-empty";
     }
 
-    private ApprovalFlowPreviewItem createApprovalFlowPreviewItem(int stepNumber, string title, ApprovalUserID approverUserID)
+    private ApprovalFlowPreviewItem createApprovalFlowPreviewItem(int stepNumber, string title, ApprovalUserId approverUserId)
     {
         ApprovalFlowPreviewItem previewItem = new ApprovalFlowPreviewItem();
         previewItem.StepNumber = stepNumber.ToString(CultureInfo.InvariantCulture);
         previewItem.Title = title;
-        previewItem.ApproverLabel = getApproverLabelOrPlaceholder(approverUserID);
-        previewItem.IsComplete = approverUserID.HasValue;
+        previewItem.ApproverLabel = getApproverLabelOrPlaceholder(approverUserId);
+        previewItem.IsComplete = approverUserId.HasValue;
         return previewItem;
     }
 
-    private string getApproverLabelOrPlaceholder(ApprovalUserID approverUserID)
+    private string getApproverLabelOrPlaceholder(ApprovalUserId approverUserId)
     {
-        if (approverUserID.HasValue == false)
+        if (approverUserId.HasValue == false)
         {
             return "선택 필요";
         }
 
         ApprovalUserOption? userOptionOrNull = mCreateContext.ApproverOptions
             .Concat(mCreateContext.FinalApproverOptions)
-            .FirstOrDefault(userOption => userOption.UserID == approverUserID.Value);
+            .FirstOrDefault(userOption => userOption.UserId == approverUserId.Value);
         if (userOptionOrNull == null)
         {
             return "선택 필요";

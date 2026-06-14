@@ -31,10 +31,10 @@
 <MudPaper Class="hub-card hub-calendar-toolbar pa-4 mb-4">
     <div class="hub-calendar-toolbar-layout">
         <div class="hub-calendar-selector-wrap">
-            <MudSelect T="string" Label="일정 선택" Value="mSelectedCalendarID" ValueChanged="handleCalendarChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-control-select-width">
+            <MudSelect T="string" Label="일정 선택" Value="mSelectedCalendarId" ValueChanged="handleCalendarChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-control-select-width">
                 @foreach (CalendarReference calendar in mCalendars)
                 {
-                    <MudSelectItem T="string" Value="@calendar.CalendarID">@calendar.DisplayName</MudSelectItem>
+                    <MudSelectItem T="string" Value="@calendar.CalendarId.Value">@calendar.DisplayName</MudSelectItem>
                 }
             </MudSelect>
         </div>
@@ -95,7 +95,7 @@ else
                     <div class="hub-calendar-week-list">
                         @foreach (CalendarEventItem calendarEvent in mWeekEvents)
                         {
-                            <button type="button" class="@getCalendarListItemClass(calendarEvent)" data-event-id="@calendarEvent.ID" @onclick="@(() => selectEvent(calendarEvent))">
+                            <button type="button" class="@getCalendarListItemClass(calendarEvent)" data-event-id="@calendarEvent.Id" @onclick="@(() => selectEvent(calendarEvent))">
                                 <MudText Typo="Typo.body2">@calendarEvent.Summary</MudText>
                                 <MudText Typo="Typo.caption" Class="hub-muted">@formatCalendarEventMeta(calendarEvent)</MudText>
                             </button>
@@ -114,10 +114,10 @@ else
                         <MudAlert Severity="Severity.Warning" Class="mb-3">@mEditorMessage</MudAlert>
                     }
                     <div class="hub-calendar-editor-stack">
-                        <MudSelect T="string" Label="저장 위치" Value="mEditorCalendarID" ValueChanged="handleEditorCalendarChangedAsync" Disabled="mIsEditing" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        <MudSelect T="string" Label="저장 위치" Value="mEditorCalendarId" ValueChanged="handleEditorCalendarChangedAsync" Disabled="mIsEditing" Variant="Variant.Outlined" Margin="Margin.Dense">
                             @foreach (CalendarReference calendar in mWritableCalendars)
                             {
-                                <MudSelectItem T="string" Value="@calendar.CalendarID">@calendar.DisplayName</MudSelectItem>
+                                <MudSelectItem T="string" Value="@calendar.CalendarId.Value">@calendar.DisplayName</MudSelectItem>
                             }
                         </MudSelect>
                         <MudTextField @bind-Value="mEditorSummary" Label="일정 제목" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
@@ -202,7 +202,7 @@ else
                         <div class="hub-calendar-day-detail-list">
                             @foreach (CalendarEventItem calendarEvent in selectedDayEvents)
                             {
-                                <button type="button" class="@getCalendarDayDetailItemClass(calendarEvent)" data-event-id="@calendarEvent.ID" @onclick="@(() => selectEvent(calendarEvent))">
+                                <button type="button" class="@getCalendarDayDetailItemClass(calendarEvent)" data-event-id="@calendarEvent.Id" @onclick="@(() => selectEvent(calendarEvent))">
                                     <span>@formatCalendarChipTime(calendarEvent)</span>
                                     <strong>@calendarEvent.Summary</strong>
                                     <small>@calendarEvent.CalendarName</small>
@@ -221,129 +221,16 @@ else
             </MudPaper>
         </MudItem>
         <MudItem xs="12" lg="8">
-            <MudPaper Class="hub-card pa-4">
-                <MudText Typo="Typo.h6">월간 일정</MudText>
-                @if (mMonthEvents.Count == 0)
-                {
-                    <div class="hub-empty hub-empty-state">
-                        <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Medium" />
-                        <span>이번 달 일정이 없습니다.</span>
-                    </div>
-                }
-                else
-                {
-                    @if (mIsCalendarMonthView)
-                    {
-                        <div class="hub-calendar-month-grid">
-                            @foreach (string weekdayLabel in mCalendarWeekdayLabels)
-                            {
-                                <div class="hub-calendar-weekday">@weekdayLabel</div>
-                            }
-                            @foreach (CalendarDayCell dayCell in mCalendarDayCells)
-                            {
-                                <div class="@getCalendarDayCellClass(dayCell)">
-                                    <div class="hub-calendar-day-date">
-                                        <span>@dayCell.Date.Day</span>
-                                        <span class="hub-calendar-day-badges">
-                                            @if (dayCell.Events.Count > 0)
-                                            {
-                                                <span class="hub-calendar-day-count">@getDayEventCountText(dayCell)</span>
-                                            }
-                                            @if (dayCell.IsToday)
-                                            {
-                                                <span class="hub-calendar-today-pill">오늘</span>
-                                            }
-                                        </span>
-                                    </div>
-                                    @if (dayCell.Events.Count > 0)
-                                    {
-                                        <button type="button" class="hub-calendar-day-time-list" @onclick="@(() => selectDay(dayCell))" aria-label="@getDaySummaryLabel(dayCell)">
-                                            @foreach (CalendarEventItem calendarEvent in getPreviewDayEvents(dayCell))
-                                            {
-                                                <span class="hub-calendar-day-time-line">@formatCalendarChipTime(calendarEvent)</span>
-                                            }
-                                            @if (getHiddenDayEventCount(dayCell) > 0)
-                                            {
-                                                <span class="hub-calendar-day-more">+@getHiddenDayEventCount(dayCell).ToString(CultureInfo.InvariantCulture)</span>
-                                            }
-                                        </button>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <MudTable Items="mMonthEvents" Dense="true" Hover="true" Elevation="0" Class="hub-calendar-table hub-calendar-desktop-table">
-                            <HeaderContent>
-                                <MudTh>일시</MudTh>
-                                <MudTh>일정</MudTh>
-                                <MudTh>일정 위치</MudTh>
-                                <MudTh>위치</MudTh>
-                                <MudTh></MudTh>
-                            </HeaderContent>
-                            <RowTemplate Context="calendarEvent">
-                                <MudTd DataLabel="일시" Class="hub-calendar-time-cell">@formatEventTime(calendarEvent)</MudTd>
-                                <MudTd DataLabel="일정" Class="hub-calendar-summary-cell"><button type="button" class="hub-calendar-row-button" data-event-id="@calendarEvent.ID" @onclick="@(() => selectEvent(calendarEvent))">@calendarEvent.Summary</button></MudTd>
-                                <MudTd DataLabel="일정 위치" Class="hub-calendar-meta-cell hub-calendar-calendar-cell">
-                                    <div>@calendarEvent.CalendarName</div>
-                                    @if (shouldShowCalendarAuthor(calendarEvent))
-                                    {
-                                        <div class="hub-calendar-author-line">작성자: @calendarEvent.CreatedByDisplayName</div>
-                                    }
-                                </MudTd>
-                                <MudTd DataLabel="위치" Class="hub-calendar-meta-cell hub-calendar-location-cell">@calendarEvent.Location</MudTd>
-                                <MudTd DataLabel="작업" Class="hub-action-cell hub-calendar-action-cell">
-                                    @if (calendarEvent.CanEdit)
-                                    {
-                                        <div class="hub-table-actions">
-                                            <MudTooltip Text="일정 수정">
-                                                <MudIconButton Icon="@Icons.Material.Filled.EditCalendar" Color="Color.Primary" Size="Size.Small" OnClick="@(() => openEditEditor(calendarEvent))" aria-label="일정 수정" />
-                                            </MudTooltip>
-                                            <MudTooltip Text="일정 삭제">
-                                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => requestDelete(calendarEvent))" aria-label="일정 삭제" />
-                                            </MudTooltip>
-                                        </div>
-                                    }
-                                </MudTd>
-                            </RowTemplate>
-                        </MudTable>
-                        <div class="hub-calendar-mobile-list">
-                            @foreach (CalendarEventItem calendarEvent in mMonthEvents)
-                            {
-                                <div class="@getCalendarMobileCardClass(calendarEvent)" role="button" tabindex="0" @onclick="@(() => selectEvent(calendarEvent))">
-                                    <div class="hub-calendar-mobile-top">
-                                        <span class="hub-calendar-mobile-time">@formatEventTime(calendarEvent)</span>
-                                        @if (calendarEvent.CanEdit)
-                                        {
-                                            <div class="hub-table-actions hub-calendar-mobile-actions">
-                                                <MudTooltip Text="일정 수정">
-                                                    <MudIconButton Icon="@Icons.Material.Filled.EditCalendar" Color="Color.Primary" Size="Size.Small" OnClick="@(() => openEditEditor(calendarEvent))" aria-label="일정 수정" />
-                                                </MudTooltip>
-                                                <MudTooltip Text="일정 삭제">
-                                                    <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => requestDelete(calendarEvent))" aria-label="일정 삭제" />
-                                                </MudTooltip>
-                                            </div>
-                                        }
-                                    </div>
-                                    <div class="hub-calendar-mobile-title">@calendarEvent.Summary</div>
-                                    <div class="hub-calendar-mobile-meta">
-                                        <span>@calendarEvent.CalendarName</span>
-                                        @if (shouldShowCalendarAuthor(calendarEvent))
-                                        {
-                                            <span>작성자: @calendarEvent.CreatedByDisplayName</span>
-                                        }
-                                        @if (string.IsNullOrWhiteSpace(calendarEvent.Location) == false)
-                                        {
-                                            <span>@calendarEvent.Location</span>
-                                        }
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                }
-            </MudPaper>
+            <CalendarMonthPanel MonthEvents="mMonthEvents"
+                                DayCells="mCalendarDayCells"
+                                WeekdayLabels="mCalendarWeekdayLabels"
+                                IsMonthView="mIsCalendarMonthView"
+                                ShowCalendarAuthor="mShowCalendarAuthor"
+                                SelectedEventOrNull="mSelectedEventOrNull"
+                                DaySelected="selectDay"
+                                EventSelected="selectEvent"
+                                EventEditRequested="openEditEditor"
+                                EventDeleteRequested="requestDelete" />
         </MudItem>
     </MudGrid>
 }

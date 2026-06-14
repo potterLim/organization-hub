@@ -63,12 +63,12 @@ else
         }
 
         IReadOnlyList<Team> teams = await TeamManagementService.GetTeamsAsync(CancellationToken.None);
-        Team? managementTeamOrNull = teams.FirstOrDefault(team => string.Equals(team.TeamKey, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY, StringComparison.OrdinalIgnoreCase));
+        Team? managementTeamOrNull = teams.FirstOrDefault(team => new OrganizationTeamKey(team.TeamKey).IsManagementTeamKey);
         if (managementTeamOrNull == null)
         {
             return false;
         }
 
-        return await OrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.FILES_READ), managementTeamOrNull.ID, CancellationToken.None);
+        return await OrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.FILES_READ), OrganizationTeamId.CreateExisting(managementTeamOrNull.Id), CancellationToken.None);
     }
 }

@@ -15,39 +15,44 @@ public sealed partial class GoogleWorkspaceSetupService
     public async Task<IReadOnlyList<GoogleFolderAssignmentOption>> GetFolderAssignmentOptionsAsync(CancellationToken cancellationToken)
     {
         List<GoogleFolderAssignmentOption> options = new List<GoogleFolderAssignmentOption>();
-        options.Add(createFolderAssignmentOption("OfficialRoot", "기본 자료 위치", EGoogleFolderAssignmentKind.OfficialRoot, null));
-        options.Add(createFolderAssignmentOption("Public", OrganizationHubWorkspaceDefaults.PUBLIC_FOLDER_NAME, EGoogleFolderAssignmentKind.Public, null));
-        options.Add(createFolderAssignmentOption("Common", OrganizationHubWorkspaceDefaults.COMMON_FOLDER_NAME, EGoogleFolderAssignmentKind.Common, null));
-        options.Add(createFolderAssignmentOption("Leader", OrganizationHubWorkspaceDefaults.RESPONSIBLE_RESOURCES_FOLDER_NAME, EGoogleFolderAssignmentKind.ResponsibleResources, null));
-        options.Add(createFolderAssignmentOption("WorkResources", OrganizationHubWorkspaceDefaults.WORK_RESOURCES_FOLDER_NAME, EGoogleFolderAssignmentKind.WorkResources, null));
+        options.Add(createFolderAssignmentOption(GoogleWorkspaceAssignmentTargetKey.OfficialRootFolder, "기본 자료 위치", EGoogleFolderAssignmentKind.OfficialRoot, null));
+        options.Add(createFolderAssignmentOption(GoogleWorkspaceAssignmentTargetKey.PublicFolder, OrganizationHubWorkspaceDefaults.PUBLIC_FOLDER_NAME, EGoogleFolderAssignmentKind.Public, null));
+        options.Add(createFolderAssignmentOption(GoogleWorkspaceAssignmentTargetKey.CommonFolder, OrganizationHubWorkspaceDefaults.COMMON_FOLDER_NAME, EGoogleFolderAssignmentKind.Common, null));
+        options.Add(createFolderAssignmentOption(GoogleWorkspaceAssignmentTargetKey.ResponsibleResource, OrganizationHubWorkspaceDefaults.RESPONSIBLE_RESOURCES_FOLDER_NAME, EGoogleFolderAssignmentKind.ResponsibleResources, null));
+        options.Add(createFolderAssignmentOption(GoogleWorkspaceAssignmentTargetKey.WorkResourcesFolder, OrganizationHubWorkspaceDefaults.WORK_RESOURCES_FOLDER_NAME, EGoogleFolderAssignmentKind.WorkResources, null));
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             List<Team> teams = await getWorkspaceTeamsAsync(dbContext, cancellationToken);
             foreach (Team team in teams)
             {
-                options.Add(createFolderAssignmentOption("TeamMaterials:" + team.ID.ToString(System.Globalization.CultureInfo.InvariantCulture), team.DisplayName + " 자료", EGoogleFolderAssignmentKind.TeamMaterials, team.ID));
-                options.Add(createFolderAssignmentOption("TeamApproved:" + team.ID.ToString(System.Globalization.CultureInfo.InvariantCulture), team.DisplayName + " " + OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME, EGoogleFolderAssignmentKind.TeamApproved, team.ID));
+                OrganizationTeamId teamId = OrganizationTeamId.CreateExisting(team.Id);
+                options.Add(createFolderAssignmentOption(GoogleWorkspaceAssignmentTargetKey.CreateTeamMaterialsFolder(teamId), team.DisplayName + " 자료", EGoogleFolderAssignmentKind.TeamMaterials, teamId));
+                options.Add(createFolderAssignmentOption(GoogleWorkspaceAssignmentTargetKey.CreateTeamApprovedFolder(teamId), team.DisplayName + " " + OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME, EGoogleFolderAssignmentKind.TeamApproved, teamId));
             }
         }
 
         return options;
     }
 
-    public async Task<ServiceResult> AssignFolderAsync(string targetKey, string folderID, CancellationToken cancellationToken)
+    public async Task<ServiceResult> AssignFolderAsync(
+        GoogleWorkspaceAssignmentTargetKey targetKey,
+        DriveFolderId folderId,
+        CancellationToken cancellationToken
+    )
     {
-        if (string.IsNullOrWhiteSpace(targetKey))
+        if (targetKey.HasValue == false)
         {
             return ServiceResult.Fail("저장 대상을 선택해 주세요.");
         }
 
-        if (string.IsNullOrWhiteSpace(folderID))
+        if (folderId.HasValue == false)
         {
             return ServiceResult.Fail("Drive 폴더를 선택해 주세요.");
         }
 
         IReadOnlyList<GoogleFolderAssignmentOption> options = await GetFolderAssignmentOptionsAsync(cancellationToken);
-        GoogleFolderAssignmentOption? optionOrNull = options.FirstOrDefault(option => option.TargetKey == targetKey);
+        GoogleFolderAssignmentOption? optionOrNull = options.FirstOrDefault(option => targetKey.Matches(option.TargetKey));
         if (optionOrNull == null)
         {
             return ServiceResult.Fail("저장 대상을 찾을 수 없습니다.");
@@ -58,14 +63,14 @@ public sealed partial class GoogleWorkspaceSetupService
             GlobalSetting setting = await getGlobalSettingAsync(dbContext, cancellationToken);
             if (optionOrNull.FolderAssignmentKind != EGoogleFolderAssignmentKind.OfficialRoot)
             {
-                ServiceResult rootValidationResult = await validateFolderInsideOfficialRootAsync(setting, folderID, cancellationToken);
+                ServiceResult rootValidationResult = await validateFolderInsideOfficialRootAsync(setting, folderId, cancellationToken);
                 if (rootValidationResult.IsSuccess == false)
                 {
                     return rootValidationResult;
                 }
             }
 
-            ServiceResult applyResult = await applyFolderAssignmentAsync(dbContext, setting, optionOrNull, folderID, cancellationToken);
+            ServiceResult applyResult = await applyFolderAssignmentAsync(dbContext, setting, optionOrNull, folderId, cancellationToken);
             if (applyResult.IsSuccess == false)
             {
                 return applyResult;
@@ -76,31 +81,40 @@ public sealed partial class GoogleWorkspaceSetupService
         }
     }
 
-    private GoogleFolderAssignmentOption createFolderAssignmentOption(string targetKey, string displayName, EGoogleFolderAssignmentKind folderAssignmentKind, int? teamID)
+    private GoogleFolderAssignmentOption createFolderAssignmentOption(
+        GoogleWorkspaceAssignmentTargetKey targetKey,
+        string displayName,
+        EGoogleFolderAssignmentKind folderAssignmentKind,
+        OrganizationTeamId? teamIdOrNull
+    )
     {
         GoogleFolderAssignmentOption option = new GoogleFolderAssignmentOption();
         option.TargetKey = targetKey;
         option.DisplayName = displayName;
         option.FolderAssignmentKind = folderAssignmentKind;
-        option.TeamID = teamID;
+        option.TeamIdOrNull = teamIdOrNull;
         return option;
     }
 
-    private async Task<ServiceResult> validateFolderInsideOfficialRootAsync(GlobalSetting setting, string folderID, CancellationToken cancellationToken)
+    private async Task<ServiceResult> validateFolderInsideOfficialRootAsync(
+        GlobalSetting setting,
+        DriveFolderId folderId,
+        CancellationToken cancellationToken
+    )
     {
-        if (string.IsNullOrWhiteSpace(setting.OfficialRootFolderID))
+        if (string.IsNullOrWhiteSpace(setting.OfficialRootFolderId))
         {
             return ServiceResult.Fail("먼저 기본 자료 위치를 지정해 주세요.");
         }
 
-        string officialRootFolderID = setting.OfficialRootFolderID.Trim();
-        if (folderID == officialRootFolderID)
+        DriveFolderId officialRootFolderId = DriveFolderId.CreateOptional(setting.OfficialRootFolderId);
+        if (folderId == officialRootFolderId)
         {
             return ServiceResult.Succeed();
         }
 
-        IReadOnlySet<string> ancestorFolderIDs = await mDriveService.GetAncestorFolderIDsAsync(folderID, cancellationToken);
-        if (ancestorFolderIDs.Contains(officialRootFolderID))
+        IReadOnlySet<DriveFolderId> ancestorFolderIds = await mDriveService.GetAncestorFolderIdsAsync(DriveItemId.CreateRequired(folderId.GetRequiredValue()), cancellationToken);
+        if (ancestorFolderIds.Contains(officialRootFolderId))
         {
             return ServiceResult.Succeed();
         }
@@ -108,44 +122,56 @@ public sealed partial class GoogleWorkspaceSetupService
         return ServiceResult.Fail("기본 자료 위치 안의 폴더만 저장 대상으로 지정할 수 있습니다.");
     }
 
-    private async Task<ServiceResult> applyFolderAssignmentAsync(OrganizationHubDbContext dbContext, GlobalSetting setting, GoogleFolderAssignmentOption option, string folderID, CancellationToken cancellationToken)
+    private async Task<ServiceResult> applyFolderAssignmentAsync(
+        OrganizationHubDbContext dbContext,
+        GlobalSetting setting,
+        GoogleFolderAssignmentOption option,
+        DriveFolderId folderId,
+        CancellationToken cancellationToken
+    )
     {
-        string trimmedFolderID = folderID.Trim();
         switch (option.FolderAssignmentKind)
         {
             case EGoogleFolderAssignmentKind.OfficialRoot:
-                setting.OfficialRootFolderID = trimmedFolderID;
+                setting.OfficialRootFolderId = folderId.GetRequiredValue();
                 return ServiceResult.Succeed();
             case EGoogleFolderAssignmentKind.Public:
-                setting.PublicFolderID = trimmedFolderID;
+                setting.PublicFolderId = folderId.GetRequiredValue();
                 return ServiceResult.Succeed();
             case EGoogleFolderAssignmentKind.Common:
-                setting.CommonFolderID = trimmedFolderID;
+                setting.CommonFolderId = folderId.GetRequiredValue();
                 return ServiceResult.Succeed();
             case EGoogleFolderAssignmentKind.ResponsibleResources:
-                setting.ResponsibleResourcesFolderID = trimmedFolderID;
+                setting.ResponsibleResourcesFolderId = folderId.GetRequiredValue();
                 return ServiceResult.Succeed();
             case EGoogleFolderAssignmentKind.WorkResources:
-                setting.WorkResourcesFolderID = trimmedFolderID;
+                setting.WorkResourcesFolderId = folderId.GetRequiredValue();
                 return ServiceResult.Succeed();
             case EGoogleFolderAssignmentKind.TeamMaterials:
-                return await assignTeamFolderAsync(dbContext, option, trimmedFolderID, EGoogleFolderAssignmentKind.TeamMaterials, cancellationToken);
+                return await assignTeamFolderAsync(dbContext, option, folderId, EGoogleFolderAssignmentKind.TeamMaterials, cancellationToken);
             case EGoogleFolderAssignmentKind.TeamApproved:
-                return await assignTeamFolderAsync(dbContext, option, trimmedFolderID, EGoogleFolderAssignmentKind.TeamApproved, cancellationToken);
+                return await assignTeamFolderAsync(dbContext, option, folderId, EGoogleFolderAssignmentKind.TeamApproved, cancellationToken);
             default:
                 return ServiceResult.Fail("지원하지 않는 폴더 저장 대상입니다.");
         }
     }
 
-    private async Task<ServiceResult> assignTeamFolderAsync(OrganizationHubDbContext dbContext, GoogleFolderAssignmentOption option, string folderID, EGoogleFolderAssignmentKind folderAssignmentKind, CancellationToken cancellationToken)
+    private async Task<ServiceResult> assignTeamFolderAsync(
+        OrganizationHubDbContext dbContext,
+        GoogleFolderAssignmentOption option,
+        DriveFolderId folderId,
+        EGoogleFolderAssignmentKind folderAssignmentKind,
+        CancellationToken cancellationToken
+    )
     {
-        if (option.TeamID.HasValue == false)
+        int? teamIdValueOrNull = OrganizationTeamId.GetValueOrNull(option.TeamIdOrNull);
+        if (teamIdValueOrNull.HasValue == false)
         {
             return ServiceResult.Fail("팀 폴더 대상을 찾을 수 없습니다.");
         }
 
-        int teamID = option.TeamID.Value;
-        Team? teamOrNull = await dbContext.Teams.FirstOrDefaultAsync(team => team.ID == teamID, cancellationToken);
+        int teamId = teamIdValueOrNull.GetValueOrDefault();
+        Team? teamOrNull = await dbContext.Teams.FirstOrDefaultAsync(team => team.Id == teamId, cancellationToken);
         if (teamOrNull == null)
         {
             return ServiceResult.Fail("팀을 찾을 수 없습니다.");
@@ -153,11 +179,11 @@ public sealed partial class GoogleWorkspaceSetupService
 
         if (folderAssignmentKind == EGoogleFolderAssignmentKind.TeamMaterials)
         {
-            teamOrNull.MaterialsFolderID = folderID;
+            teamOrNull.MaterialsFolderId = folderId.GetRequiredValue();
             return ServiceResult.Succeed();
         }
 
-        teamOrNull.ApprovedFolderID = folderID;
+        teamOrNull.ApprovedFolderId = folderId.GetRequiredValue();
         return ServiceResult.Succeed();
     }
 }

@@ -8,9 +8,9 @@
     <div>
         <h1 class="hub-page-title">업무 기준</h1>
     </div>
-    @if (string.IsNullOrWhiteSpace(mWorkGuidelineFileID) == false)
+    @if (string.IsNullOrWhiteSpace(mWorkGuidelineFileId) == false)
     {
-        <MudButton Href="@("/files/" + mWorkGuidelineFileID + "/download")" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download">업무 기준 다운로드</MudButton>
+        <MudButton Href="@("/files/" + mWorkGuidelineFileId + "/download")" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download">업무 기준 다운로드</MudButton>
     }
 </div>
 
@@ -46,11 +46,11 @@
 
 @code
 {
-    private string mWorkGuidelineFileID = string.Empty;
+    private string mWorkGuidelineFileId = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         GlobalSettingFormModel setting = await TeamManagementService.GetGlobalSettingAsync(CancellationToken.None);
-        mWorkGuidelineFileID = setting.WorkGuidelineFileID;
+        mWorkGuidelineFileId = setting.FileResources.WorkGuidelineFileId;
     }
 }

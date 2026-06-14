@@ -11,7 +11,11 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    private async Task<List<ApprovalRequest>> filterApprovedRequestsByDestinationAsync(UserSession userSession, IReadOnlyList<ApprovalRequest> requests, CancellationToken cancellationToken)
+    private async Task<List<ApprovalRequest>> filterApprovedRequestsByDestinationAsync(
+        UserSession userSession,
+        IReadOnlyList<ApprovalRequest> requests,
+        CancellationToken cancellationToken
+    )
     {
         List<ApprovalRequest> readableRequests = new List<ApprovalRequest>();
         foreach (ApprovalRequest request in requests)
@@ -26,28 +30,53 @@ public sealed partial class ApprovalService
         return readableRequests;
     }
 
-    private async Task<bool> canReadApprovedRequestDestinationAsync(UserSession userSession, ApprovalRequest request, CancellationToken cancellationToken)
+    private async Task<bool> canReadApprovedRequestDestinationAsync(
+        UserSession userSession,
+        ApprovalRequest request,
+        CancellationToken cancellationToken
+    )
     {
-        if (string.IsNullOrWhiteSpace(request.ApprovedFolderID))
+        if (string.IsNullOrWhiteSpace(request.ApprovedFolderId))
         {
             return false;
         }
 
-        return await mPermissionService.CanStoreApprovedFileToFolderAsync(userSession, request.ApprovedFolderID, cancellationToken);
+        return await mPermissionService.CanStoreApprovedFileToFolderAsync(userSession, DriveFolderId.CreateOptional(request.ApprovedFolderId), cancellationToken);
     }
 
-    private ApprovalAuditLog createAuditLog(UserSession userSession, EApprovalAuditAction action, int? stepNumber, string comment, string previousApproverDisplayName, string newApproverDisplayName)
+    private ApprovalAuditLog createAuditLog(ApprovalAuditLogCreationRequest request)
     {
         ApprovalAuditLog auditLog = new ApprovalAuditLog();
-        auditLog.ActorUserID = userSession.UserID;
-        auditLog.ActorDisplayName = userSession.DisplayName;
-        auditLog.Action = action;
-        auditLog.StepNumber = stepNumber;
-        auditLog.Comment = getTrimmedComment(comment);
-        auditLog.PreviousApproverDisplayName = previousApproverDisplayName;
-        auditLog.NewApproverDisplayName = newApproverDisplayName;
+        auditLog.ActorUserId = request.UserSession.UserId;
+        auditLog.ActorDisplayName = request.UserSession.DisplayName;
+        auditLog.Action = request.Action;
+        auditLog.StepNumber = request.StepNumberOrNull;
+        auditLog.Comment = getTrimmedComment(request.Comment);
+        auditLog.PreviousApproverDisplayName = request.PreviousApproverDisplayName;
+        auditLog.NewApproverDisplayName = request.NewApproverDisplayName;
         auditLog.CreatedAt = DateTime.UtcNow;
         return auditLog;
+    }
+
+    private ApprovalAuditLogCreationRequest createAuditLogRequest(
+        UserSession userSession,
+        EApprovalAuditAction action,
+        int? stepNumberOrNull,
+        string comment)
+    {
+        return new ApprovalAuditLogCreationRequest(userSession, action, stepNumberOrNull, comment);
+    }
+
+    private ApprovalAuditLogCreationRequest createApproverChangedAuditLogRequest(
+        UserSession userSession,
+        int stepNumber,
+        string previousApproverDisplayName,
+        string newApproverDisplayName)
+    {
+        ApprovalAuditLogCreationRequest request = createAuditLogRequest(userSession, EApprovalAuditAction.ApproverChanged, stepNumber, "결재선 변경");
+        request.PreviousApproverDisplayName = previousApproverDisplayName;
+        request.NewApproverDisplayName = newApproverDisplayName;
+        return request;
     }
 
     private string getTrimmedComment(string comment)
@@ -58,6 +87,33 @@ public sealed partial class ApprovalService
         }
 
         return comment.Trim();
+    }
+
+    private sealed class ApprovalAuditLogCreationRequest
+    {
+        public UserSession UserSession
+        {
+            get; private init;
+        }
+        public EApprovalAuditAction Action
+        {
+            get; private init;
+        }
+        public int? StepNumberOrNull
+        {
+            get; private init;
+        }
+        public string Comment { get; private init; } = string.Empty;
+        public string PreviousApproverDisplayName { get; set; } = string.Empty;
+        public string NewApproverDisplayName { get; set; } = string.Empty;
+
+        public ApprovalAuditLogCreationRequest(UserSession userSession, EApprovalAuditAction action, int? stepNumberOrNull, string comment)
+        {
+            UserSession = userSession;
+            Action = action;
+            StepNumberOrNull = stepNumberOrNull;
+            Comment = comment;
+        }
     }
 
     private IReadOnlyList<ApprovalRequestItem> createApprovalRequestItems(IReadOnlyList<ApprovalRequest> requests)
@@ -74,11 +130,11 @@ public sealed partial class ApprovalService
     private ApprovalRequestItem createApprovalRequestItem(ApprovalRequest request)
     {
         ApprovalRequestItem item = new ApprovalRequestItem();
-        item.ID = request.ID;
+        item.Id = request.Id;
         item.Title = request.Title;
-        item.FileID = request.FileID;
+        item.FileId = request.FileId;
         item.FileName = request.FileName;
-        item.ApprovedFileID = request.ApprovedFileID;
+        item.ApprovedFileId = request.ApprovedFileId;
         item.ApprovedFolderDisplayName = request.ApprovedFolderDisplayName;
         item.TeamName = request.TeamName;
         item.RequesterDisplayName = request.RequesterDisplayName;
@@ -97,7 +153,7 @@ public sealed partial class ApprovalService
     {
         ApprovalStepItem item = new ApprovalStepItem();
         item.StepNumber = step.StepNumber;
-        item.ApproverUserID = step.ApproverUserID;
+        item.ApproverUserId = step.ApproverUserId;
         item.ApproverDisplayName = step.ApproverDisplayName;
         item.Status = step.Status;
         item.ActionedAt = step.ActionedAt;

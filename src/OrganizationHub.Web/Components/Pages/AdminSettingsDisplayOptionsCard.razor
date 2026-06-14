@@ -1,0 +1,28 @@
+<MudPaper Class="hub-card hub-form-card pa-4">
+    <div class="hub-admin-form-heading">
+        <MudText Typo="Typo.h6">표시 옵션</MudText>
+        <span>운영 화면</span>
+    </div>
+    <div class="hub-form-hint">Calendar와 Google Tasks 화면에서 작성자 정보를 함께 보여줄지 정합니다.</div>
+    <MudStack Spacing="1" Class="hub-settings-switches">
+        <MudSwitch T="bool" @bind-Value="FormModel.ShowTodoAuthor" Label="할 일 작성자 표시" Color="Color.Primary" />
+        <MudSwitch T="bool" @bind-Value="FormModel.ShowCalendarAuthor" Label="일정 작성자 표시" Color="Color.Primary" />
+    </MudStack>
+    <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => SaveRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">표시 옵션 저장</MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public GlobalSettingFormModel FormModel
+    {
+        get; set;
+    } = new GlobalSettingFormModel();
+
+    [Parameter]
+    public EventCallback SaveRequested
+    {
+        get; set;
+    }
+}

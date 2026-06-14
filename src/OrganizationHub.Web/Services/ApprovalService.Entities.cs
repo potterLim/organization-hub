@@ -7,25 +7,30 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    private ApprovalRequest createApprovalRequest(UserSession userSession, ApprovalRequestFormModel formModel, DriveFolderReference sourceFolder, DriveFileMetadata fileMetadata, DriveFileMetadata destinationFolderMetadata)
+    private ApprovalRequest createApprovalRequest(
+        UserSession userSession,
+        ApprovalRequestCommand command,
+        DriveFolderReference sourceFolder,
+        DriveFileMetadata fileMetadata,
+        DriveFileMetadata destinationFolderMetadata)
     {
         ApprovalRequest request = new ApprovalRequest();
-        request.Title = getRequestTitle(formModel.Title, fileMetadata.Name);
-        request.FileID = fileMetadata.ID;
+        request.Title = getRequestTitle(command.Title, fileMetadata.Name);
+        request.FileId = fileMetadata.Id;
         request.FileName = fileMetadata.Name;
         request.MimeType = fileMetadata.MimeType;
-        request.SourceFolderID = sourceFolder.FolderID;
+        request.SourceFolderId = sourceFolder.FolderId.GetRequiredValue();
         request.SourceFolderKind = sourceFolder.FolderKind;
-        request.TeamID = sourceFolder.TeamID;
+        request.TeamId = sourceFolder.TeamIdValueOrNull;
         request.TeamName = getSourceFolderOwnerName(sourceFolder);
-        request.RequesterUserID = userSession.UserID;
+        request.RequesterUserId = userSession.UserId;
         request.RequesterDisplayName = userSession.DisplayName;
         request.RequestedAt = DateTime.UtcNow;
         request.Status = EApprovalRequestStatus.Pending;
-        request.StepCount = formModel.StepCount;
+        request.StepCount = command.StepCount.Value;
         request.CurrentStepNumber = 1;
-        request.ApprovedFileID = string.Empty;
-        request.ApprovedFolderID = formModel.DestinationFolderID.Trim();
+        request.ApprovedFileId = string.Empty;
+        request.ApprovedFolderId = command.DestinationFolderId.GetRequiredValue();
         request.ApprovedFolderDisplayName = destinationFolderMetadata.Name;
         return request;
     }
@@ -34,7 +39,7 @@ public sealed partial class ApprovalService
     {
         ApprovalStep step = new ApprovalStep();
         step.StepNumber = stepNumber;
-        step.ApproverUserID = approver.UserID;
+        step.ApproverUserId = approver.UserId;
         step.ApproverDisplayName = approver.DisplayName;
         step.Status = EApprovalStepStatus.Pending;
         step.Comment = string.Empty;

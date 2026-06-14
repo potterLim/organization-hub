@@ -1,0 +1,88 @@
+.hub-todo-create {
+    min-width: 0;
+}
+
+.hub-todo-create-bar {
+    align-items: center;
+    background: rgba(247, 250, 254, .72);
+    border: 1px solid rgba(78, 104, 145, .12);
+    border-radius: 18px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72);
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 24px minmax(0, 1fr) 132px;
+    min-height: 64px;
+    padding: 8px 8px 8px 12px;
+}
+
+.hub-todo-create-glyph {
+    align-items: center;
+    color: var(--hub-brand);
+    display: inline-flex;
+    height: 48px;
+    justify-content: center;
+    opacity: .9;
+    width: 24px;
+}
+
+.hub-todo-create-input {
+    align-self: center;
+    margin: 0 !important;
+    min-height: 48px;
+}
+
+.hub-todo-create-input.mud-input-control {
+    margin: 0 !important;
+}
+
+.hub-todo-create-input .mud-input-control {
+    margin: 0 !important;
+    min-height: 48px;
+}
+
+.hub-todo-create-input .mud-input-control-input-container,
+.hub-todo-create-input .mud-input {
+    height: 48px !important;
+    min-height: 48px !important;
+}
+
+.hub-todo-create-input .mud-input-slot {
+    font-size: 16px;
+    font-weight: 800;
+    height: 48px !important;
+    min-height: 48px !important;
+}
+
+.hub-todo-create-input .mud-input-outlined-border {
+    border-color: rgba(78, 104, 145, .24) !important;
+}
+
+.hub-todo-create-input .mud-input-root {
+    background: rgba(255, 255, 255, .9);
+    border-radius: 14px;
+    min-height: 48px;
+}
+
+.hub-todo-create-button {
+    align-self: center;
+    border-radius: 14px !important;
+    font-weight: 900 !important;
+    height: 48px;
+    min-height: 48px;
+    min-width: 132px !important;
+}
+
+.hub-todo-create-button:disabled,
+.hub-todo-create-button.mud-disabled {
+    background: rgba(236, 241, 249, .86) !important;
+    border: 1px solid rgba(78, 104, 145, .16) !important;
+    box-shadow: none !important;
+    color: rgba(78, 104, 145, .62) !important;
+}
+
+.hub-todo-create-bar:has(.hub-todo-create-button:disabled),
+.hub-todo-create-bar:has(.hub-todo-create-button.mud-disabled) {
+    background: rgba(247, 250, 254, .56);
+    border-color: rgba(78, 104, 145, .1);
+    box-shadow: none;
+}

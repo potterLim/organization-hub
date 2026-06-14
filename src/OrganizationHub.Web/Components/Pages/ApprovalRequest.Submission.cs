@@ -15,23 +15,24 @@ public partial class ApprovalRequest
             return;
         }
 
-        mFormModel.DestinationFolderID = getCurrentDestinationFolderID();
+        mFormModel.DestinationFolderId = getCurrentDestinationFolderId();
+        ApprovalRequestCommand command = mFormModel.CreateCommand();
         mIsSubmitting = true;
-        ServiceResult result = await ApprovalService.SubmitRequestAsync(CurrentUserSessionOrNull, mFormModel, CancellationToken.None);
+        ServiceResult submissionResult = await ApprovalService.SubmitRequestAsync(CurrentUserSessionOrNull, command, CancellationToken.None);
         mIsSubmitting = false;
-        if (result.IsSuccess)
+        if (submissionResult.IsSuccess)
         {
             mMessage = "결재 요청이 등록되었습니다.";
             mMessageSeverity = Severity.Success;
             mFormModel = new ApprovalRequestFormModel();
             mHasCustomTitle = false;
-            initializeDefaults();
+            initializeApprovalRequestDefaults();
             await loadFilesAsync();
             await loadDestinationFoldersAsync();
             return;
         }
 
-        mMessage = result.ErrorMessage;
+        mMessage = submissionResult.ErrorMessage;
         mMessageSeverity = Severity.Error;
     }
 

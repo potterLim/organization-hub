@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 using OrganizationHub.Web.Services;
 
@@ -24,8 +25,8 @@ public sealed class FilesController : Controller
     }
 
     [ActionName("Download")]
-    [HttpGet("/files/{fileID}/download")]
-    public async Task<IActionResult> DownloadAsync(string fileID)
+    [HttpGet("/files/{fileId}/download")]
+    public async Task<IActionResult> DownloadAsync(string fileId)
     {
         UserSession? userSessionOrNull = UserSessionFactory.CreateOrNull(User);
         if (userSessionOrNull == null)
@@ -33,20 +34,21 @@ public sealed class FilesController : Controller
             return Unauthorized();
         }
 
-        bool canReadFile = await mPermissionService.CanReadFileAsync(userSessionOrNull, fileID, HttpContext.RequestAborted);
+        DriveItemId requestedFileId = DriveItemId.CreateOptional(fileId);
+        bool canReadFile = await mPermissionService.CanReadFileAsync(userSessionOrNull, requestedFileId, HttpContext.RequestAborted);
         if (canReadFile == false)
         {
             return Forbid();
         }
 
-        FileDownloadResult downloadResult = await mDriveService.DownloadFileAsync(fileID, HttpContext.RequestAborted);
+        FileDownloadResult downloadResult = await mDriveService.DownloadFileAsync(requestedFileId, HttpContext.RequestAborted);
         setShortPrivateCacheHeaders();
         return File(downloadResult.ContentStream, downloadResult.ContentType, downloadResult.FileName, true);
     }
 
     [ActionName("Stream")]
-    [HttpGet("/files/{fileID}/stream")]
-    public async Task<IActionResult> StreamAsync(string fileID)
+    [HttpGet("/files/{fileId}/stream")]
+    public async Task<IActionResult> StreamAsync(string fileId)
     {
         UserSession? userSessionOrNull = UserSessionFactory.CreateOrNull(User);
         if (userSessionOrNull == null)
@@ -54,25 +56,26 @@ public sealed class FilesController : Controller
             return Unauthorized();
         }
 
-        bool canReadFile = await mPermissionService.CanReadFileAsync(userSessionOrNull, fileID, HttpContext.RequestAborted);
+        DriveItemId requestedFileId = DriveItemId.CreateOptional(fileId);
+        bool canReadFile = await mPermissionService.CanReadFileAsync(userSessionOrNull, requestedFileId, HttpContext.RequestAborted);
         if (canReadFile == false)
         {
             return Forbid();
         }
 
-        DriveFileMetadata? fileMetadataOrNull = await mDriveService.GetFileOrNullAsync(fileID, HttpContext.RequestAborted);
+        DriveFileMetadata? fileMetadataOrNull = await mDriveService.GetFileOrNullAsync(requestedFileId, HttpContext.RequestAborted);
         if (fileMetadataOrNull == null)
         {
             return NotFound();
         }
 
-        bool canPreview = mFilePolicyService.CanPreviewInSite(fileMetadataOrNull.MimeType, fileMetadataOrNull.Name);
+        bool canPreview = mFilePolicyService.CanPreviewInSite(fileMetadataOrNull);
         if (canPreview == false)
         {
             return BadRequest("PDF 파일만 내부 보기로 열 수 있습니다.");
         }
 
-        FileDownloadResult downloadResult = await mDriveService.DownloadFileAsync(fileID, HttpContext.RequestAborted);
+        FileDownloadResult downloadResult = await mDriveService.DownloadFileAsync(requestedFileId, HttpContext.RequestAborted);
         Response.Headers.ContentDisposition = createInlineContentDisposition(fileMetadataOrNull.Name);
         setShortPrivateCacheHeaders();
         return File(downloadResult.ContentStream, "application/pdf", true);
@@ -103,9 +106,9 @@ public sealed class FilesController : Controller
         return "document" + extension;
     }
 
-    private static bool isAsciiHeaderSafe(string value)
+    private static bool isAsciiHeaderSafe(string headerValue)
     {
-        foreach (char currentCharacter in value)
+        foreach (char currentCharacter in headerValue)
         {
             if (currentCharacter < 32 || currentCharacter > 126 || currentCharacter == '"' || currentCharacter == '\\' || currentCharacter == ';')
             {

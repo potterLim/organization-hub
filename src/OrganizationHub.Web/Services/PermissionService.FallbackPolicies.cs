@@ -1,4 +1,3 @@
-using System;
 using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
@@ -24,36 +23,43 @@ public sealed partial class PermissionService
             return true;
         }
 
-        if (userSession.TeamID.HasValue == false)
+        if (userSession.HasTeam == false)
         {
             return false;
         }
 
-        return userSession.TeamID.Value == team.ID;
+        OrganizationTeamId userTeamId = userSession.GetRequiredOrganizationTeamId();
+        OrganizationTeamId materialTeamId = OrganizationTeamId.CreateExisting(team.Id);
+        return isSameTeam(userTeamId, materialTeamId);
     }
 
     private bool canWriteTeamWorkFallback(UserSession userSession, Team team)
     {
-        if (UserPermissionPolicy.CanWriteAnyTeamWork(userSession.Role))
-        {
-            return true;
-        }
-
-        if (UserPermissionPolicy.CanWriteOwnTeamWork(userSession.Role) == false)
-        {
-            return false;
-        }
-
-        if (userSession.TeamID.HasValue == false)
-        {
-            return false;
-        }
-
-        return userSession.TeamID.Value == team.ID;
+        PermissionDecision decision = UserPermissionPolicy.DecideCalendarWrite(
+            userSession.Role,
+            ECalendarViewKind.Team,
+            OrganizationTeamId.CreateExisting(team.Id),
+            createTeamIdOrNull(userSession));
+        return decision.IsAllowed;
     }
 
     private bool isManagementTeam(Team team)
     {
-        return string.Equals(team.TeamKey, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY, StringComparison.OrdinalIgnoreCase);
+        return new OrganizationTeamKey(team.TeamKey).IsManagementTeamKey;
+    }
+
+    private static bool isSameTeam(OrganizationTeamId firstTeamId, OrganizationTeamId secondTeamId)
+    {
+        return firstTeamId.HasValue && secondTeamId.HasValue && firstTeamId == secondTeamId;
+    }
+
+    private static OrganizationTeamId? createTeamIdOrNull(UserSession userSession)
+    {
+        if (userSession.HasTeam == false)
+        {
+            return null;
+        }
+
+        return userSession.GetRequiredOrganizationTeamId();
     }
 }

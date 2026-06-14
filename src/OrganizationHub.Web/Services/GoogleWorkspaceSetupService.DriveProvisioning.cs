@@ -22,24 +22,24 @@ public sealed partial class GoogleWorkspaceSetupService
             {
                 GlobalSetting setting = await getGlobalSettingAsync(dbContext, cancellationToken);
                 DriveFileItem officialRoot = await getOrCreateDriveFolderAsync("root", OrganizationHubProduct.NAME, summary, cancellationToken);
-                assignIfChanged(setting.OfficialRootFolderID, officialRoot.ID, value => setting.OfficialRootFolderID = value, summary);
-                DriveFileItem publicFolder = await getOrCreateDriveFolderAsync(officialRoot.ID, OrganizationHubWorkspaceDefaults.PUBLIC_FOLDER_NAME, summary, cancellationToken);
-                assignIfChanged(setting.PublicFolderID, publicFolder.ID, value => setting.PublicFolderID = value, summary);
-                DriveFileItem commonFolder = await getOrCreateDriveFolderAsync(officialRoot.ID, OrganizationHubWorkspaceDefaults.COMMON_FOLDER_NAME, summary, cancellationToken);
-                assignIfChanged(setting.CommonFolderID, commonFolder.ID, value => setting.CommonFolderID = value, summary);
-                DriveFileItem responsibleResourcesFolder = await getOrCreateDriveFolderAsync(officialRoot.ID, OrganizationHubWorkspaceDefaults.RESPONSIBLE_RESOURCES_FOLDER_NAME, summary, cancellationToken);
-                assignIfChanged(setting.ResponsibleResourcesFolderID, responsibleResourcesFolder.ID, value => setting.ResponsibleResourcesFolderID = value, summary);
-                DriveFileItem workResourcesFolder = await getOrCreateDriveFolderAsync(officialRoot.ID, OrganizationHubWorkspaceDefaults.WORK_RESOURCES_FOLDER_NAME, summary, cancellationToken);
-                assignIfChanged(setting.WorkResourcesFolderID, workResourcesFolder.ID, value => setting.WorkResourcesFolderID = value, summary);
-                DriveFileItem teamRootFolder = await getOrCreateDriveFolderAsync(officialRoot.ID, OrganizationHubWorkspaceDefaults.TEAM_ROOT_FOLDER_NAME, summary, cancellationToken);
+                assignIfChanged(setting.OfficialRootFolderId, officialRoot.Id, value => setting.OfficialRootFolderId = value, summary);
+                DriveFileItem publicFolder = await getOrCreateDriveFolderAsync(officialRoot.Id, OrganizationHubWorkspaceDefaults.PUBLIC_FOLDER_NAME, summary, cancellationToken);
+                assignIfChanged(setting.PublicFolderId, publicFolder.Id, value => setting.PublicFolderId = value, summary);
+                DriveFileItem commonFolder = await getOrCreateDriveFolderAsync(officialRoot.Id, OrganizationHubWorkspaceDefaults.COMMON_FOLDER_NAME, summary, cancellationToken);
+                assignIfChanged(setting.CommonFolderId, commonFolder.Id, value => setting.CommonFolderId = value, summary);
+                DriveFileItem responsibleResourcesFolder = await getOrCreateDriveFolderAsync(officialRoot.Id, OrganizationHubWorkspaceDefaults.RESPONSIBLE_RESOURCES_FOLDER_NAME, summary, cancellationToken);
+                assignIfChanged(setting.ResponsibleResourcesFolderId, responsibleResourcesFolder.Id, value => setting.ResponsibleResourcesFolderId = value, summary);
+                DriveFileItem workResourcesFolder = await getOrCreateDriveFolderAsync(officialRoot.Id, OrganizationHubWorkspaceDefaults.WORK_RESOURCES_FOLDER_NAME, summary, cancellationToken);
+                assignIfChanged(setting.WorkResourcesFolderId, workResourcesFolder.Id, value => setting.WorkResourcesFolderId = value, summary);
+                DriveFileItem teamRootFolder = await getOrCreateDriveFolderAsync(officialRoot.Id, OrganizationHubWorkspaceDefaults.TEAM_ROOT_FOLDER_NAME, summary, cancellationToken);
                 List<Team> teams = await getWorkspaceTeamsAsync(dbContext, cancellationToken);
                 foreach (Team team in teams)
                 {
-                    await ensureTeamDriveFoldersAsync(team, officialRoot.ID, teamRootFolder.ID, summary, cancellationToken);
+                    await ensureTeamDriveFoldersAsync(team, officialRoot.Id, teamRootFolder.Id, summary, cancellationToken);
                 }
 
                 await dbContext.SaveChangesAsync(cancellationToken);
-                clearDriveFolderCaches(officialRoot.ID, teamRootFolder.ID);
+                clearDriveFolderCaches(officialRoot.Id, teamRootFolder.Id);
             }
         }
         catch (Exception exception)
@@ -55,28 +55,40 @@ public sealed partial class GoogleWorkspaceSetupService
         return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Succeed(summary);
     }
 
-    private async Task ensureTeamDriveFoldersAsync(Team team, string officialRootFolderID, string teamRootFolderID, GoogleWorkspaceResourceSetupSummary summary, CancellationToken cancellationToken)
+    private async Task ensureTeamDriveFoldersAsync(
+        Team team,
+        string officialRootFolderId,
+        string teamRootFolderId,
+        GoogleWorkspaceResourceSetupSummary summary,
+        CancellationToken cancellationToken
+    )
     {
-        if (team.TeamKey == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY)
+        if (new OrganizationTeamKey(team.TeamKey).IsManagementTeamKey)
         {
-            DriveFileItem managementFolder = await getOrCreateDriveFolderAsync(officialRootFolderID, OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME, summary, cancellationToken);
-            assignIfChanged(team.MaterialsFolderID, managementFolder.ID, value => team.MaterialsFolderID = value, summary);
-            DriveFileItem managementApprovedFolder = await getOrCreateDriveFolderAsync(officialRootFolderID, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " " + OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME, summary, cancellationToken);
-            assignIfChanged(team.ApprovedFolderID, managementApprovedFolder.ID, value => team.ApprovedFolderID = value, summary);
+            DriveFileItem managementFolder = await getOrCreateDriveFolderAsync(officialRootFolderId, OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME, summary, cancellationToken);
+            assignIfChanged(team.MaterialsFolderId, managementFolder.Id, value => team.MaterialsFolderId = value, summary);
+            DriveFileItem managementApprovedFolder = await getOrCreateDriveFolderAsync(officialRootFolderId, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " " + OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME, summary, cancellationToken);
+            assignIfChanged(team.ApprovedFolderId, managementApprovedFolder.Id, value => team.ApprovedFolderId = value, summary);
             return;
         }
 
-        DriveFileItem teamFolder = await getOrCreateDriveFolderAsync(teamRootFolderID, team.DisplayName, summary, cancellationToken);
-        DriveFileItem materialsFolder = await getOrCreateDriveFolderAsync(teamFolder.ID, OrganizationHubWorkspaceDefaults.TEAM_MATERIALS_FOLDER_NAME, summary, cancellationToken);
-        assignIfChanged(team.MaterialsFolderID, materialsFolder.ID, value => team.MaterialsFolderID = value, summary);
-        DriveFileItem approvedFolder = await getOrCreateDriveFolderAsync(teamFolder.ID, OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME, summary, cancellationToken);
-        assignIfChanged(team.ApprovedFolderID, approvedFolder.ID, value => team.ApprovedFolderID = value, summary);
+        DriveFileItem teamFolder = await getOrCreateDriveFolderAsync(teamRootFolderId, team.DisplayName, summary, cancellationToken);
+        DriveFileItem materialsFolder = await getOrCreateDriveFolderAsync(teamFolder.Id, OrganizationHubWorkspaceDefaults.TEAM_MATERIALS_FOLDER_NAME, summary, cancellationToken);
+        assignIfChanged(team.MaterialsFolderId, materialsFolder.Id, value => team.MaterialsFolderId = value, summary);
+        DriveFileItem approvedFolder = await getOrCreateDriveFolderAsync(teamFolder.Id, OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME, summary, cancellationToken);
+        assignIfChanged(team.ApprovedFolderId, approvedFolder.Id, value => team.ApprovedFolderId = value, summary);
     }
 
-    private async Task<DriveFileItem> getOrCreateDriveFolderAsync(string parentFolderID, string folderName, GoogleWorkspaceResourceSetupSummary summary, CancellationToken cancellationToken)
+    private async Task<DriveFileItem> getOrCreateDriveFolderAsync(
+        string parentFolderId,
+        string folderName,
+        GoogleWorkspaceResourceSetupSummary summary,
+        CancellationToken cancellationToken
+    )
     {
         summary.TargetCount = summary.TargetCount + 1;
-        IReadOnlyList<DriveFileItem> files = await mDriveService.ListFilesAsync(parentFolderID, cancellationToken);
+        DriveFolderId parentFolder = DriveFolderId.CreateOptional(parentFolderId);
+        IReadOnlyList<DriveFileItem> files = await mDriveService.ListFilesAsync(parentFolder, cancellationToken);
         DriveFileItem? existingFolderOrNull = files.FirstOrDefault(file => file.IsFolder && file.Name == folderName);
         if (existingFolderOrNull != null)
         {
@@ -84,14 +96,19 @@ public sealed partial class GoogleWorkspaceSetupService
             return existingFolderOrNull;
         }
 
-        DriveFileItem createdFolder = await mDriveService.CreateFolderAsync(parentFolderID, folderName, cancellationToken);
+        DriveFileItem createdFolder = await mDriveService.CreateFolderAsync(parentFolder, folderName, cancellationToken);
         summary.CreatedCount = summary.CreatedCount + 1;
         return createdFolder;
     }
 
-    private void assignIfChanged(string? currentValueOrNull, string nextValue, Action<string> assignAction, GoogleWorkspaceResourceSetupSummary summary)
+    private void assignIfChanged(
+        string? currentValueOrNull,
+        string nextValue,
+        Action<string> assignAction,
+        GoogleWorkspaceResourceSetupSummary summary
+    )
     {
-        if (string.Equals(getNullAsEmpty(currentValueOrNull), nextValue, StringComparison.Ordinal))
+        if (string.Equals(getTextOrEmpty(currentValueOrNull), nextValue, StringComparison.Ordinal))
         {
             return;
         }
@@ -100,7 +117,7 @@ public sealed partial class GoogleWorkspaceSetupService
         summary.AssignedCount = summary.AssignedCount + 1;
     }
 
-    private void clearDriveFolderCaches(params string[] folderIDs)
+    private void clearDriveFolderCaches(params string[] folderIds)
     {
         if (mMemoryCacheOrNull == null)
         {
@@ -108,14 +125,14 @@ public sealed partial class GoogleWorkspaceSetupService
         }
 
         mMemoryCacheOrNull.Remove(DRIVE_FOLDER_CACHE_PREFIX + "root");
-        foreach (string folderID in folderIDs)
+        foreach (string folderId in folderIds)
         {
-            if (string.IsNullOrWhiteSpace(folderID))
+            if (string.IsNullOrWhiteSpace(folderId))
             {
                 continue;
             }
 
-            mMemoryCacheOrNull.Remove(DRIVE_FOLDER_CACHE_PREFIX + folderID);
+            mMemoryCacheOrNull.Remove(DRIVE_FOLDER_CACHE_PREFIX + folderId);
         }
     }
 }

@@ -13,10 +13,13 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class UploadAuditLogService
 {
-    public async Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsForFolderAsync(string folderID, TimeSpan maximumAge, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsForFolderAsync(
+        DriveFolderId folderId,
+        TimeSpan maximumAge,
+        CancellationToken cancellationToken
+    )
     {
-        DriveFolderID requestedFolderID = new DriveFolderID(folderID);
-        if (requestedFolderID.HasValue == false)
+        if (folderId.HasValue == false)
         {
             return new List<UploadAuditLogItem>();
         }
@@ -24,7 +27,8 @@ public sealed partial class UploadAuditLogService
         DateTime cutoff = DateTime.UtcNow.Subtract(maximumAge);
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<UploadAuditLog> auditLogs = await dbContext.UploadAuditLogs.AsNoTracking().Where(auditLog => auditLog.FolderID == requestedFolderID.Value && auditLog.UploadedAt >= cutoff).OrderByDescending(auditLog => auditLog.UploadedAt).Take(100).ToListAsync(cancellationToken);
+            string requiredFolderId = folderId.GetRequiredValue();
+            List<UploadAuditLog> auditLogs = await dbContext.UploadAuditLogs.AsNoTracking().Where(auditLog => auditLog.FolderId == requiredFolderId && auditLog.UploadedAt >= cutoff).OrderByDescending(auditLog => auditLog.UploadedAt).Take(100).ToListAsync(cancellationToken);
             return createItems(auditLogs);
         }
     }

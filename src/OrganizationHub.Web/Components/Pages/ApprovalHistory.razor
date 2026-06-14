@@ -39,7 +39,7 @@ else
                     <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" />
                     <span>@approvalRequest.FileName</span>
                     <MudTooltip Text="다운로드">
-                        <MudIconButton Href="@("/files/" + approvalRequest.GetDownloadFileID() + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
+                        <MudIconButton Href="@("/files/" + approvalRequest.GetDownloadFileId() + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
                     </MudTooltip>
                 </div>
                 <div class="hub-approval-steps">

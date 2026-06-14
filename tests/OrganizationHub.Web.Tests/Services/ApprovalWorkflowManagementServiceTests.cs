@@ -29,7 +29,7 @@ public sealed class ApprovalWorkflowManagementServiceTests
             stepFormModel.StepOrder = 1;
             stepFormModel.StepName = "팀 검토";
             stepFormModel.ApproverSelectionType = EApproverSelectionType.PositionInRequesterTeam;
-            stepFormModel.ApproverPositionID = 1;
+            stepFormModel.ApproverPositionId = 1;
             stepFormModel.IsRequired = true;
             formModel.Steps.Add(stepFormModel);
 
@@ -75,21 +75,21 @@ public sealed class ApprovalWorkflowManagementServiceTests
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             Team team = new Team();
-            team.ID = 1;
+            team.Id = 1;
             team.TeamKey = "Documents";
             team.DisplayName = "문서팀";
             team.IsActive = true;
             dbContext.Teams.Add(team);
 
             OrganizationPosition position = new OrganizationPosition();
-            position.ID = 1;
+            position.Id = 1;
             position.Team = team;
             position.Name = "문서 리드";
             position.IsActive = true;
             dbContext.Positions.Add(position);
 
             UserAccount userAccount = new UserAccount();
-            userAccount.ID = 1;
+            userAccount.Id = 1;
             userAccount.Username = "lead";
             userAccount.DisplayName = "문서 리드";
             userAccount.PasswordHash = "hash";

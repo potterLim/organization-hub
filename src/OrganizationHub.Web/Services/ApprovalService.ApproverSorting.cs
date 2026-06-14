@@ -8,10 +8,10 @@ public sealed partial class ApprovalService
 {
     private int getApproverSortOrder(UserAccount user, UserSession userSession)
     {
-        return getApproverSortOrder(user.Role, userSession, user.TeamID);
+        return getApproverSortOrder(user.Role, userSession, OrganizationTeamId.CreateExistingOrNull(user.TeamId));
     }
 
-    private int getApproverSortOrder(EUserRole role, UserSession userSession, int? teamIDOrNull = null)
+    private int getApproverSortOrder(EUserRole role, UserSession userSession, OrganizationTeamId? teamIdOrNull)
     {
         if (UserRoleUtility.IsManagementMemberRole(userSession.Role))
         {
@@ -34,7 +34,12 @@ public sealed partial class ApprovalService
             }
         }
 
-        if (userSession.TeamID.HasValue && teamIDOrNull.HasValue && teamIDOrNull.Value == userSession.TeamID.Value && role == EUserRole.TeamLeader)
+        OrganizationTeamId teamId = teamIdOrNull.GetValueOrDefault();
+        bool isSameTeamLeader = userSession.HasTeam &&
+            teamId.HasValue &&
+            teamId.GetRequiredValue() == userSession.GetRequiredTeamIdValue() &&
+            role == EUserRole.TeamLeader;
+        if (isSameTeamLeader)
         {
             return 0;
         }

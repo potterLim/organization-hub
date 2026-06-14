@@ -38,7 +38,7 @@ public sealed partial class GoogleDriveService
     private DriveFileItem cloneDriveFileItem(DriveFileItem file)
     {
         DriveFileItem clonedFile = new DriveFileItem();
-        clonedFile.ID = file.ID;
+        clonedFile.Id = file.Id;
         clonedFile.Name = file.Name;
         clonedFile.MimeType = file.MimeType;
         clonedFile.CreatedTime = file.CreatedTime;
@@ -58,13 +58,13 @@ public sealed partial class GoogleDriveService
     private DriveFileItem createDriveFileItem(DriveDataFile file, string teamName)
     {
         DriveFileItem item = new DriveFileItem();
-        item.ID = getNullAsEmpty(file.Id);
-        item.Name = getNullAsEmpty(file.Name);
-        item.MimeType = getNullAsEmpty(file.MimeType);
+        item.Id = getTextOrEmpty(file.Id);
+        item.Name = getTextOrEmpty(file.Name);
+        item.MimeType = getTextOrEmpty(file.MimeType);
         item.CreatedTime = file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.DateTime : null;
         item.ModifiedTime = file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.DateTime : null;
-        item.IconLink = getNullAsEmpty(file.IconLink);
-        item.ThumbnailLink = getNullAsEmpty(file.ThumbnailLink);
+        item.IconLink = getTextOrEmpty(file.IconLink);
+        item.ThumbnailLink = getTextOrEmpty(file.ThumbnailLink);
         item.IsFolder = file.MimeType == "application/vnd.google-apps.folder";
         item.TeamName = teamName;
         item.CanPreviewInSite = file.MimeType == "application/pdf";
@@ -75,16 +75,16 @@ public sealed partial class GoogleDriveService
     private DriveFileMetadata createDriveFileMetadata(DriveDataFile file)
     {
         DriveFileMetadata metadata = new DriveFileMetadata();
-        metadata.ID = getNullAsEmpty(file.Id);
-        metadata.Name = getNullAsEmpty(file.Name);
-        metadata.MimeType = getNullAsEmpty(file.MimeType);
+        metadata.Id = getTextOrEmpty(file.Id);
+        metadata.Name = getTextOrEmpty(file.Name);
+        metadata.MimeType = getTextOrEmpty(file.MimeType);
         if (file.Parents == null)
         {
-            metadata.ParentFolderIDs = new List<string>();
+            metadata.ParentFolderIds = new List<string>();
         }
         else
         {
-            metadata.ParentFolderIDs = new List<string>(file.Parents);
+            metadata.ParentFolderIds = new List<string>(file.Parents);
         }
 
         return metadata;
@@ -93,25 +93,25 @@ public sealed partial class GoogleDriveService
     private DriveFileMetadata cloneDriveFileMetadata(DriveFileMetadata metadata)
     {
         DriveFileMetadata clonedMetadata = new DriveFileMetadata();
-        clonedMetadata.ID = metadata.ID;
+        clonedMetadata.Id = metadata.Id;
         clonedMetadata.Name = metadata.Name;
         clonedMetadata.MimeType = metadata.MimeType;
-        clonedMetadata.ParentFolderIDs = new List<string>(metadata.ParentFolderIDs);
+        clonedMetadata.ParentFolderIds = new List<string>(metadata.ParentFolderIds);
         return clonedMetadata;
     }
 
-    private string escapeDriveQueryValue(string value)
+    private string escapeDriveQueryValue(string queryValue)
     {
-        return value.Replace("\\", "\\\\").Replace("'", "\\'");
+        return queryValue.Replace("\\", "\\\\").Replace("'", "\\'");
     }
 
-    private string getNullAsEmpty(string? valueOrNull)
+    private string getTextOrEmpty(string? textOrNull)
     {
-        if (valueOrNull == null)
+        if (textOrNull == null)
         {
             return string.Empty;
         }
 
-        return valueOrNull;
+        return textOrNull;
     }
 }

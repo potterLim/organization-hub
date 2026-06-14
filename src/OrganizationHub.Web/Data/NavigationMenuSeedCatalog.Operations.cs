@@ -1,0 +1,71 @@
+using System.Collections.Generic;
+using OrganizationHub.Web.Domain;
+
+namespace OrganizationHub.Web.Data;
+
+internal static partial class NavigationMenuSeedCatalog
+{
+    private static void addOperationMenuDefinitions(List<NavigationMenuSeedDefinition> menuDefinitions)
+    {
+        menuDefinitions.Add(new NavigationMenuSeedDefinition
+        {
+            MenuKey = "Dashboard",
+            DisplayName = "홈",
+            Href = "/dashboard",
+            IconKey = "Dashboard",
+            SortOrder = 10,
+            AccessLevel = EMenuAccessLevel.Authenticated,
+            ActivationState = EActivationState.Active,
+            TeamVisibility = EMenuTeamVisibility.AllTeams,
+            LockState = ENavigationMenuLockState.Editable,
+        });
+        menuDefinitions.Add(new NavigationMenuSeedDefinition
+        {
+            MenuKey = "Calendar",
+            DisplayName = "일정",
+            Href = "/calendar",
+            IconKey = "CalendarMonth",
+            SortOrder = 20,
+            AccessLevel = EMenuAccessLevel.Authenticated,
+            ActivationState = EActivationState.Active,
+            TeamVisibility = EMenuTeamVisibility.AllTeams,
+            LockState = ENavigationMenuLockState.Editable,
+        });
+        menuDefinitions.Add(new NavigationMenuSeedDefinition
+        {
+            MenuKey = "Todos",
+            DisplayName = "할 일",
+            Href = "/todos",
+            IconKey = "TaskAlt",
+            SortOrder = 30,
+            AccessLevel = EMenuAccessLevel.Authenticated,
+            ActivationState = EActivationState.Active,
+            TeamVisibility = EMenuTeamVisibility.AllTeams,
+            LockState = ENavigationMenuLockState.Editable,
+        });
+        menuDefinitions.Add(new NavigationMenuSeedDefinition
+        {
+            MenuKey = "WorkGuidelines",
+            DisplayName = "업무 기준",
+            Href = "/work-guidelines",
+            IconKey = "Rule",
+            SortOrder = 40,
+            AccessLevel = EMenuAccessLevel.Authenticated,
+            ActivationState = EActivationState.Active,
+            TeamVisibility = EMenuTeamVisibility.AllTeams,
+            LockState = ENavigationMenuLockState.Editable,
+        });
+        menuDefinitions.Add(new NavigationMenuSeedDefinition
+        {
+            MenuKey = "WorkResources",
+            DisplayName = OrganizationHubWorkspaceDefaults.WORK_RESOURCES_FOLDER_NAME,
+            Href = "/work-resources",
+            IconKey = "EventAvailable",
+            SortOrder = 50,
+            AccessLevel = EMenuAccessLevel.Authenticated,
+            ActivationState = EActivationState.Active,
+            TeamVisibility = EMenuTeamVisibility.AllTeams,
+            LockState = ENavigationMenuLockState.Editable,
+        });
+    }
+}

@@ -19,7 +19,7 @@ namespace OrganizationHub.Web.Data.Migrations
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.ApprovalAuditLog", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -33,10 +33,10 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ActorUserID")
+                    b.Property<int>("ActorUserId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("ApprovalRequestID")
+                    b.Property<int>("ApprovalRequestId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Comment")
@@ -60,13 +60,13 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<int?>("StepNumber")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
                     b.HasIndex("Action");
 
-                    b.HasIndex("ActorUserID");
+                    b.HasIndex("ActorUserId");
 
-                    b.HasIndex("ApprovalRequestID");
+                    b.HasIndex("ApprovalRequestId");
 
                     b.HasIndex("CreatedAt");
 
@@ -75,11 +75,11 @@ namespace OrganizationHub.Web.Data.Migrations
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.ApprovalRequest", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ApprovedFileID")
+                    b.Property<string>("ApprovedFileId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -89,7 +89,7 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ApprovedFolderID")
+                    b.Property<string>("ApprovedFolderId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -100,7 +100,7 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<int>("CurrentStepNumber")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("FileID")
+                    b.Property<string>("FileId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -126,10 +126,10 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("RequesterUserID")
+                    b.Property<int>("RequesterUserId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("SourceFolderID")
+                    b.Property<string>("SourceFolderId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -147,7 +147,7 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<int>("StepCount")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("TeamID")
+                    b.Property<int?>("TeamId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("TeamName")
@@ -160,31 +160,31 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(180)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("ApprovedFileID");
+                    b.HasIndex("ApprovedFileId");
 
-                    b.HasIndex("FileID");
+                    b.HasIndex("FileId");
 
-                    b.HasIndex("RequesterUserID");
+                    b.HasIndex("RequesterUserId");
 
                     b.HasIndex("Status");
 
-                    b.HasIndex("TeamID");
+                    b.HasIndex("TeamId");
 
                     b.ToTable("ApprovalRequests");
                 });
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.ApprovalStep", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("ActionedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ApprovalRequestID")
+                    b.Property<int>("ApprovalRequestId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ApproverDisplayName")
@@ -192,7 +192,7 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ApproverUserID")
+                    b.Property<int>("ApproverUserId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Comment")
@@ -208,13 +208,13 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<int>("StepNumber")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("ApproverUserID");
+                    b.HasIndex("ApproverUserId");
 
                     b.HasIndex("Status");
 
-                    b.HasIndex("ApprovalRequestID", "StepNumber")
+                    b.HasIndex("ApprovalRequestId", "StepNumber")
                         .IsUnique();
 
                     b.ToTable("ApprovalSteps");
@@ -222,11 +222,11 @@ namespace OrganizationHub.Web.Data.Migrations
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.ApprovalWorkflow", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("AppliesToTeamID")
+                    b.Property<int?>("AppliesToTeamId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Description")
@@ -245,23 +245,23 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<int>("Priority")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("AppliesToTeamID", "Priority");
+                    b.HasIndex("AppliesToTeamId", "Priority");
 
                     b.ToTable("ApprovalWorkflows");
                 });
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.ApprovalWorkflowStep", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("ApprovalWorkflowID")
+                    b.Property<int>("ApprovalWorkflowId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ApproverPositionID")
+                    b.Property<int?>("ApproverPositionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ApproverSelectionType")
@@ -269,10 +269,10 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(48)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ApproverTeamID")
+                    b.Property<int?>("ApproverTeamId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("ApproverUserID")
+                    b.Property<int?>("ApproverUserId")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsRequired")
@@ -296,15 +296,15 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<int>("StepOrder")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("ApproverPositionID");
+                    b.HasIndex("ApproverPositionId");
 
-                    b.HasIndex("ApproverTeamID");
+                    b.HasIndex("ApproverTeamId");
 
-                    b.HasIndex("ApproverUserID");
+                    b.HasIndex("ApproverUserId");
 
-                    b.HasIndex("ApprovalWorkflowID", "StepOrder")
+                    b.HasIndex("ApprovalWorkflowId", "StepOrder")
                         .IsUnique();
 
                     b.ToTable("ApprovalWorkflowSteps");
@@ -312,11 +312,11 @@ namespace OrganizationHub.Web.Data.Migrations
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.CalendarEventDeletionAuditLog", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("CalendarID")
+                    b.Property<string>("CalendarId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -339,7 +339,7 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("DeletedByTeamID")
+                    b.Property<int?>("DeletedByTeamId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("DeletedByTeamName")
@@ -347,7 +347,7 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("DeletedByUserID")
+                    b.Property<int>("DeletedByUserId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ErrorMessage")
@@ -358,7 +358,7 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<DateTimeOffset?>("EventEnd")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("EventID")
+                    b.Property<string>("EventId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -384,15 +384,15 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("CalendarID");
+                    b.HasIndex("CalendarId");
 
                     b.HasIndex("DeletedAt");
 
-                    b.HasIndex("DeletedByUserID");
+                    b.HasIndex("DeletedByUserId");
 
-                    b.HasIndex("EventID");
+                    b.HasIndex("EventId");
 
                     b.HasIndex("Status");
 
@@ -401,11 +401,11 @@ namespace OrganizationHub.Web.Data.Migrations
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.CalendarEventMetadata", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("CalendarID")
+                    b.Property<string>("CalendarId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -418,19 +418,19 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("CreatedByUserID")
+                    b.Property<int>("CreatedByUserId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("EventID")
+                    b.Property<string>("EventId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("CreatedByUserID");
+                    b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("CalendarID", "EventID")
+                    b.HasIndex("CalendarId", "EventId")
                         .IsUnique();
 
                     b.ToTable("CalendarEventMetadata");
@@ -438,55 +438,55 @@ namespace OrganizationHub.Web.Data.Migrations
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.GlobalSetting", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ArchiveFolderID")
+                    b.Property<string>("ArchiveFolderId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("CommonFolderID")
+                    b.Property<string>("CommonFolderId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ResponsibleCalendarID")
+                    b.Property<string>("ResponsibleCalendarId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ResponsibleResourcesFolderID")
+                    b.Property<string>("ResponsibleResourcesFolderId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ResponsibleTaskListID")
+                    b.Property<string>("ResponsibleTaskListId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("NoticeFileID")
+                    b.Property<string>("NoticeFileId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("OfficialRootFolderID")
+                    b.Property<string>("OfficialRootFolderId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("WorkResourcesFolderID")
+                    b.Property<string>("WorkResourcesFolderId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("WorkGuidelineFileID")
+                    b.Property<string>("WorkGuidelineFileId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("OrganizationCalendarID")
+                    b.Property<string>("OrganizationCalendarId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("OrganizationTaskListID")
+                    b.Property<string>("OrganizationTaskListId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("PublicFolderID")
+                    b.Property<string>("PublicFolderId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
@@ -500,14 +500,14 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(true);
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
                     b.ToTable("GlobalSettings");
                 });
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.GoogleStorageConnection", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -537,14 +537,14 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
                     b.ToTable("GoogleStorageConnections");
                 });
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.NavigationMenuItem", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -585,7 +585,7 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
                     b.HasIndex("MenuKey")
                         .IsUnique();
@@ -595,22 +595,22 @@ namespace OrganizationHub.Web.Data.Migrations
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.NavigationMenuTeamPermission", b =>
                 {
-                    b.Property<int>("NavigationMenuItemID")
+                    b.Property<int>("NavigationMenuItemId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("TeamID")
+                    b.Property<int>("TeamId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("NavigationMenuItemID", "TeamID");
+                    b.HasKey("NavigationMenuItemId", "TeamId");
 
-                    b.HasIndex("TeamID");
+                    b.HasIndex("TeamId");
 
                     b.ToTable("NavigationMenuTeamPermissions");
                 });
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.OrganizationPosition", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -633,12 +633,12 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("TeamID")
+                    b.Property<int>("TeamId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("TeamID", "Name")
+                    b.HasIndex("TeamId", "Name")
                         .IsUnique();
 
                     b.ToTable("Positions");
@@ -646,7 +646,7 @@ namespace OrganizationHub.Web.Data.Migrations
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.PositionPermissionGrant", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -658,7 +658,7 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("PositionID")
+                    b.Property<int>("PositionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ScopeType")
@@ -666,14 +666,14 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("TargetTeamID")
+                    b.Property<int?>("TargetTeamId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("TargetTeamID");
+                    b.HasIndex("TargetTeamId");
 
-                    b.HasIndex("PositionID", "PermissionKey", "ScopeType", "TargetTeamID")
+                    b.HasIndex("PositionId", "PermissionKey", "ScopeType", "TargetTeamId")
                         .IsUnique();
 
                     b.ToTable("PositionPermissionGrants");
@@ -681,15 +681,15 @@ namespace OrganizationHub.Web.Data.Migrations
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.Team", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("ApprovedFolderID")
+                    b.Property<string>("ApprovedFolderId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("CalendarID")
+                    b.Property<string>("CalendarId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
@@ -701,14 +701,14 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("MaterialsFolderID")
+                    b.Property<string>("MaterialsFolderId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("TaskListID")
+                    b.Property<string>("TaskListId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
@@ -717,7 +717,7 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
                     b.HasIndex("TeamKey")
                         .IsUnique();
@@ -727,7 +727,7 @@ namespace OrganizationHub.Web.Data.Migrations
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.TodoTaskMetadata", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -739,24 +739,24 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("CreatedByUserID")
+                    b.Property<int>("CreatedByUserId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("TaskID")
+                    b.Property<string>("TaskId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TaskListID")
+                    b.Property<string>("TaskListId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("CreatedByUserID");
+                    b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("TaskListID", "TaskID")
+                    b.HasIndex("TaskListId", "TaskId")
                         .IsUnique();
 
                     b.ToTable("TodoTaskMetadata");
@@ -764,11 +764,11 @@ namespace OrganizationHub.Web.Data.Migrations
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.UploadAuditLog", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("FileID")
+                    b.Property<string>("FileId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -783,7 +783,7 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(160)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("FolderID")
+                    b.Property<string>("FolderId")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -793,7 +793,7 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("TeamID")
+                    b.Property<int?>("TeamId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("TeamName")
@@ -814,25 +814,25 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("UploaderUserID")
+                    b.Property<int>("UploaderUserId")
                         .HasColumnType("INTEGER");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("FileID");
+                    b.HasIndex("FileId");
 
-                    b.HasIndex("FolderID");
+                    b.HasIndex("FolderId");
 
-                    b.HasIndex("FileID", "UploadedAt");
+                    b.HasIndex("FileId", "UploadedAt");
 
-                    b.HasIndex("FolderID", "UploadedAt");
+                    b.HasIndex("FolderId", "UploadedAt");
 
                     b.ToTable("UploadAuditLogs");
                 });
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.UserAccount", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -855,7 +855,7 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("PositionID")
+                    b.Property<int?>("PositionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Role")
@@ -863,7 +863,7 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("TeamID")
+                    b.Property<int?>("TeamId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Username")
@@ -871,11 +871,11 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("PositionID");
+                    b.HasIndex("PositionId");
 
-                    b.HasIndex("TeamID");
+                    b.HasIndex("TeamId");
 
                     b.HasIndex("Username")
                         .IsUnique();
@@ -887,7 +887,7 @@ namespace OrganizationHub.Web.Data.Migrations
                 {
                     b.HasOne("OrganizationHub.Web.Data.Entities.ApprovalRequest", "ApprovalRequest")
                         .WithMany("AuditLogs")
-                        .HasForeignKey("ApprovalRequestID")
+                        .HasForeignKey("ApprovalRequestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -898,13 +898,13 @@ namespace OrganizationHub.Web.Data.Migrations
                 {
                     b.HasOne("OrganizationHub.Web.Data.Entities.UserAccount", "RequesterUser")
                         .WithMany()
-                        .HasForeignKey("RequesterUserID")
+                        .HasForeignKey("RequesterUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("OrganizationHub.Web.Data.Entities.Team", "Team")
                         .WithMany("ApprovalRequests")
-                        .HasForeignKey("TeamID")
+                        .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("RequesterUser");
@@ -916,13 +916,13 @@ namespace OrganizationHub.Web.Data.Migrations
                 {
                     b.HasOne("OrganizationHub.Web.Data.Entities.ApprovalRequest", "ApprovalRequest")
                         .WithMany("Steps")
-                        .HasForeignKey("ApprovalRequestID")
+                        .HasForeignKey("ApprovalRequestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OrganizationHub.Web.Data.Entities.UserAccount", "ApproverUser")
                         .WithMany()
-                        .HasForeignKey("ApproverUserID")
+                        .HasForeignKey("ApproverUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -935,7 +935,7 @@ namespace OrganizationHub.Web.Data.Migrations
                 {
                     b.HasOne("OrganizationHub.Web.Data.Entities.Team", "AppliesToTeam")
                         .WithMany("ApprovalWorkflows")
-                        .HasForeignKey("AppliesToTeamID")
+                        .HasForeignKey("AppliesToTeamId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("AppliesToTeam");
@@ -945,23 +945,23 @@ namespace OrganizationHub.Web.Data.Migrations
                 {
                     b.HasOne("OrganizationHub.Web.Data.Entities.ApprovalWorkflow", "ApprovalWorkflow")
                         .WithMany("Steps")
-                        .HasForeignKey("ApprovalWorkflowID")
+                        .HasForeignKey("ApprovalWorkflowId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OrganizationHub.Web.Data.Entities.OrganizationPosition", "ApproverPosition")
                         .WithMany("ApprovalWorkflowSteps")
-                        .HasForeignKey("ApproverPositionID")
+                        .HasForeignKey("ApproverPositionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("OrganizationHub.Web.Data.Entities.Team", "ApproverTeam")
                         .WithMany()
-                        .HasForeignKey("ApproverTeamID")
+                        .HasForeignKey("ApproverTeamId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("OrganizationHub.Web.Data.Entities.UserAccount", "ApproverUser")
                         .WithMany()
-                        .HasForeignKey("ApproverUserID")
+                        .HasForeignKey("ApproverUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ApprovalWorkflow");
@@ -977,13 +977,13 @@ namespace OrganizationHub.Web.Data.Migrations
                 {
                     b.HasOne("OrganizationHub.Web.Data.Entities.NavigationMenuItem", "NavigationMenuItem")
                         .WithMany("TeamPermissions")
-                        .HasForeignKey("NavigationMenuItemID")
+                        .HasForeignKey("NavigationMenuItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OrganizationHub.Web.Data.Entities.Team", "Team")
                         .WithMany("NavigationMenuPermissions")
-                        .HasForeignKey("TeamID")
+                        .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -996,7 +996,7 @@ namespace OrganizationHub.Web.Data.Migrations
                 {
                     b.HasOne("OrganizationHub.Web.Data.Entities.Team", "Team")
                         .WithMany("Positions")
-                        .HasForeignKey("TeamID")
+                        .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1007,13 +1007,13 @@ namespace OrganizationHub.Web.Data.Migrations
                 {
                     b.HasOne("OrganizationHub.Web.Data.Entities.OrganizationPosition", "Position")
                         .WithMany("PermissionGrants")
-                        .HasForeignKey("PositionID")
+                        .HasForeignKey("PositionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OrganizationHub.Web.Data.Entities.Team", "TargetTeam")
                         .WithMany()
-                        .HasForeignKey("TargetTeamID")
+                        .HasForeignKey("TargetTeamId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Position");
@@ -1025,12 +1025,12 @@ namespace OrganizationHub.Web.Data.Migrations
                 {
                     b.HasOne("OrganizationHub.Web.Data.Entities.OrganizationPosition", "Position")
                         .WithMany("UserAccounts")
-                        .HasForeignKey("PositionID")
+                        .HasForeignKey("PositionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("OrganizationHub.Web.Data.Entities.Team", "Team")
                         .WithMany("UserAccounts")
-                        .HasForeignKey("TeamID")
+                        .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Position");

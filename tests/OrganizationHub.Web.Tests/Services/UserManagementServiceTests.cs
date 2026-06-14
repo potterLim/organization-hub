@@ -26,7 +26,7 @@ public sealed class UserManagementServiceTests
             formModel.DisplayName = "운영 담당";
             formModel.Password = "ChangeMe!2026";
             formModel.Role = EUserRole.ManagementStaff;
-            formModel.TeamID = null;
+            formModel.TeamId = null;
             formModel.IsActive = true;
 
             ServiceResult result = await userManagementService.CreateUserAsync(createDirectorSession(), formModel, CancellationToken.None);
@@ -41,10 +41,10 @@ public sealed class UserManagementServiceTests
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
-            int userID = await createPlanningUserAsync(dbContextFactory);
+            int userId = await createPlanningUserAsync(dbContextFactory);
             UserManagementService userManagementService = new UserManagementService(dbContextFactory, new Pbkdf2PasswordHashService());
             UserAccountFormModel formModel = new UserAccountFormModel();
-            formModel.ID = userID;
+            formModel.Id = userId;
             formModel.Username = "planning.member";
             formModel.DisplayName = "기획 운영";
             formModel.Role = EUserRole.ManagementRecorder;
@@ -62,14 +62,14 @@ public sealed class UserManagementServiceTests
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
-            int managementTeamID = await createManagementTeamAsync(dbContextFactory);
+            int managementTeamId = await createManagementTeamAsync(dbContextFactory);
             UserManagementService userManagementService = new UserManagementService(dbContextFactory, new Pbkdf2PasswordHashService());
             UserAccountFormModel formModel = new UserAccountFormModel();
             formModel.Username = "management.office";
             formModel.DisplayName = "관리팀 지원";
             formModel.Password = "ChangeMe!2026";
             formModel.Role = EUserRole.TeamUser;
-            formModel.TeamID = managementTeamID;
+            formModel.TeamId = managementTeamId;
             formModel.IsActive = true;
 
             ServiceResult result = await userManagementService.CreateUserAsync(createDirectorSession(), formModel, CancellationToken.None);
@@ -94,14 +94,14 @@ public sealed class UserManagementServiceTests
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
-            int managementTeamID = await createManagementTeamAsync(dbContextFactory);
+            int managementTeamId = await createManagementTeamAsync(dbContextFactory);
             UserManagementService userManagementService = new UserManagementService(dbContextFactory, new Pbkdf2PasswordHashService());
             UserAccountFormModel formModel = new UserAccountFormModel();
             formModel.Username = "new.director";
             formModel.DisplayName = "신규 디렉터";
             formModel.Password = "ChangeMe!2026";
             formModel.Role = EUserRole.ManagementDirector;
-            formModel.TeamID = managementTeamID;
+            formModel.TeamId = managementTeamId;
             formModel.IsActive = true;
 
             ServiceResult result = await userManagementService.CreateUserAsync(createDirectorSession(), formModel, CancellationToken.None);
@@ -121,14 +121,14 @@ public sealed class UserManagementServiceTests
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
-            int managementTeamID = await createManagementTeamAsync(dbContextFactory);
+            int managementTeamId = await createManagementTeamAsync(dbContextFactory);
             UserManagementService userManagementService = new UserManagementService(dbContextFactory, new Pbkdf2PasswordHashService());
             UserAccountFormModel formModel = new UserAccountFormModel();
             formModel.Username = "new.director";
             formModel.DisplayName = "신규 디렉터";
             formModel.Password = "ChangeMe!2026";
             formModel.Role = EUserRole.ManagementDirector;
-            formModel.TeamID = managementTeamID;
+            formModel.TeamId = managementTeamId;
             formModel.IsActive = true;
 
             ServiceResult result = await userManagementService.CreateUserAsync(createAdminSession(), formModel, CancellationToken.None);
@@ -148,14 +148,14 @@ public sealed class UserManagementServiceTests
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
-            int planningTeamID = await createPlanningTeamAsync(dbContextFactory);
+            int planningTeamId = await createPlanningTeamAsync(dbContextFactory);
             UserManagementService userManagementService = new UserManagementService(dbContextFactory, new Pbkdf2PasswordHashService());
             UserAccountFormModel formModel = new UserAccountFormModel();
             formModel.Username = "planning.deputy";
             formModel.DisplayName = "기획 부책임자";
             formModel.Password = "ChangeMe!2026";
             formModel.Role = EUserRole.TeamDeputyLeader;
-            formModel.TeamID = planningTeamID;
+            formModel.TeamId = planningTeamId;
             formModel.IsActive = true;
 
             ServiceResult result = await userManagementService.CreateUserAsync(createDirectorSession(), formModel, CancellationToken.None);
@@ -180,16 +180,16 @@ public sealed class UserManagementServiceTests
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
-            int planningTeamID = await createPlanningTeamAsync(dbContextFactory);
-            int managerPositionID = await createPositionAsync(dbContextFactory, planningTeamID, "문서 관리자");
+            int planningTeamId = await createPlanningTeamAsync(dbContextFactory);
+            int managerPositionId = await createPositionAsync(dbContextFactory, planningTeamId, "문서 관리자");
             UserManagementService userManagementService = new UserManagementService(dbContextFactory, new Pbkdf2PasswordHashService());
             UserAccountFormModel formModel = new UserAccountFormModel();
             formModel.Username = "planning.docs";
             formModel.DisplayName = "문서 담당";
             formModel.Password = "ChangeMe!2026";
             formModel.Role = EUserRole.TeamUser;
-            formModel.TeamID = planningTeamID;
-            formModel.PositionID = managerPositionID;
+            formModel.TeamId = planningTeamId;
+            formModel.PositionId = managerPositionId;
             formModel.IsActive = true;
 
             ServiceResult result = await userManagementService.CreateUserAsync(createDirectorSession(), formModel, CancellationToken.None);
@@ -199,7 +199,7 @@ public sealed class UserManagementServiceTests
             {
                 UserAccount? userAccountOrNull = await dbContext.UserAccounts.Include(user => user.Position).FirstOrDefaultAsync(user => user.Username == "planning.docs", CancellationToken.None);
                 Assert.NotNull(userAccountOrNull);
-                Assert.Equal(managerPositionID, userAccountOrNull.PositionID);
+                Assert.Equal(managerPositionId, userAccountOrNull.PositionId);
                 Assert.NotNull(userAccountOrNull.Position);
                 if (userAccountOrNull.Position != null)
                 {
@@ -214,17 +214,17 @@ public sealed class UserManagementServiceTests
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
-            int planningTeamID = await createPlanningTeamAsync(dbContextFactory);
-            int operationTeamID = await createTeamAsync(dbContextFactory, "Operation", "운영팀", 20);
-            int operationPositionID = await createPositionAsync(dbContextFactory, operationTeamID, "운영 담당");
+            int planningTeamId = await createPlanningTeamAsync(dbContextFactory);
+            int operationTeamId = await createTeamAsync(dbContextFactory, "Operation", "운영팀", 20);
+            int operationPositionId = await createPositionAsync(dbContextFactory, operationTeamId, "운영 담당");
             UserManagementService userManagementService = new UserManagementService(dbContextFactory, new Pbkdf2PasswordHashService());
             UserAccountFormModel formModel = new UserAccountFormModel();
             formModel.Username = "planning.invalid";
             formModel.DisplayName = "잘못된 직책";
             formModel.Password = "ChangeMe!2026";
             formModel.Role = EUserRole.TeamUser;
-            formModel.TeamID = planningTeamID;
-            formModel.PositionID = operationPositionID;
+            formModel.TeamId = planningTeamId;
+            formModel.PositionId = operationPositionId;
             formModel.IsActive = true;
 
             ServiceResult result = await userManagementService.CreateUserAsync(createDirectorSession(), formModel, CancellationToken.None);
@@ -241,7 +241,7 @@ public sealed class UserManagementServiceTests
             await createAdminUserAsync(dbContextFactory);
             UserManagementService userManagementService = new UserManagementService(dbContextFactory, new Pbkdf2PasswordHashService());
             UserSession adminSession = createAdminSession();
-            UserSession managerSession = new UserSession(11, "manager", "매니저", EUserRole.ManagementManager, null, string.Empty, string.Empty);
+            UserSession managerSession = new UserSession(UserAccountId.CreateExisting(11), "manager", "매니저", EUserRole.ManagementManager, null, OrganizationTeamKey.Empty, string.Empty);
             UserAccountFormModel adminFormModel = new UserAccountFormModel();
             adminFormModel.Username = "site.admin2";
             adminFormModel.DisplayName = "사이트 관리자2";
@@ -281,7 +281,7 @@ public sealed class UserManagementServiceTests
             dbContext.Teams.Add(planningTeam);
             dbContext.UserAccounts.Add(userAccount);
             await dbContext.SaveChangesAsync(CancellationToken.None);
-            return userAccount.ID;
+            return userAccount.Id;
         }
     }
 
@@ -296,7 +296,7 @@ public sealed class UserManagementServiceTests
             managementTeam.IsActive = true;
             dbContext.Teams.Add(managementTeam);
             await dbContext.SaveChangesAsync(CancellationToken.None);
-            return managementTeam.ID;
+            return managementTeam.Id;
         }
     }
 
@@ -316,23 +316,23 @@ public sealed class UserManagementServiceTests
             team.IsActive = true;
             dbContext.Teams.Add(team);
             await dbContext.SaveChangesAsync(CancellationToken.None);
-            return team.ID;
+            return team.Id;
         }
     }
 
-    private async Task<int> createPositionAsync(TestDbContextFactory dbContextFactory, int teamID, string name)
+    private async Task<int> createPositionAsync(TestDbContextFactory dbContextFactory, int teamId, string name)
     {
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             OrganizationPosition position = new OrganizationPosition();
-            position.TeamID = teamID;
+            position.TeamId = teamId;
             position.Name = name;
             position.Description = string.Empty;
             position.SortOrder = 10;
             position.IsActive = true;
             dbContext.Positions.Add(position);
             await dbContext.SaveChangesAsync(CancellationToken.None);
-            return position.ID;
+            return position.Id;
         }
     }
 
@@ -354,11 +354,11 @@ public sealed class UserManagementServiceTests
 
     private static UserSession createDirectorSession()
     {
-        return new UserSession(10, "director", "디렉터", EUserRole.ManagementDirector, null, string.Empty, string.Empty);
+        return new UserSession(UserAccountId.CreateExisting(10), "director", "디렉터", EUserRole.ManagementDirector, null, OrganizationTeamKey.Empty, string.Empty);
     }
 
     private static UserSession createAdminSession()
     {
-        return new UserSession(9, "admin", "관리자", EUserRole.Admin, null, string.Empty, string.Empty);
+        return new UserSession(UserAccountId.CreateExisting(9), "admin", "관리자", EUserRole.Admin, null, OrganizationTeamKey.Empty, string.Empty);
     }
 }

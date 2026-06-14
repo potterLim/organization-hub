@@ -5,7 +5,7 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class NavigationMenuItem
 {
-    public int ID
+    public int Id
     {
         get; set;
     }

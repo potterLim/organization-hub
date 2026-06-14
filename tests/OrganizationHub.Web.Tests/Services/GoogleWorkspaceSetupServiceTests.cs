@@ -65,16 +65,16 @@ public sealed class GoogleWorkspaceSetupServiceTests
             Assert.Equal("팀별 자료", await getDriveItemNameAsync(driveService, "teams-root-folder"));
             Assert.Equal("기획팀", planningParentMetadata.Name);
             Assert.Equal("운영팀", operationParentMetadata.Name);
-            Assert.Equal("teams-root-folder", planningParentMetadata.ParentFolderIDs[0]);
-            Assert.Equal("teams-root-folder", operationParentMetadata.ParentFolderIDs[0]);
+            Assert.Equal("teams-root-folder", planningParentMetadata.ParentFolderIds[0]);
+            Assert.Equal("teams-root-folder", operationParentMetadata.ParentFolderIds[0]);
             Assert.Equal("자료", planningMaterialsMetadata.Name);
             Assert.Equal("결재 완료 자료", planningApprovedMetadata.Name);
             Assert.Equal("자료", operationMaterialsMetadata.Name);
             Assert.Equal("결재 완료 자료", operationApprovedMetadata.Name);
-            Assert.Equal("folder-기획팀", planningMaterialsMetadata.ParentFolderIDs[0]);
-            Assert.Equal("folder-기획팀", planningApprovedMetadata.ParentFolderIDs[0]);
-            Assert.Equal("folder-운영팀", operationMaterialsMetadata.ParentFolderIDs[0]);
-            Assert.Equal("folder-운영팀", operationApprovedMetadata.ParentFolderIDs[0]);
+            Assert.Equal("folder-기획팀", planningMaterialsMetadata.ParentFolderIds[0]);
+            Assert.Equal("folder-기획팀", planningApprovedMetadata.ParentFolderIds[0]);
+            Assert.Equal("folder-운영팀", operationMaterialsMetadata.ParentFolderIds[0]);
+            Assert.Equal("folder-운영팀", operationApprovedMetadata.ParentFolderIds[0]);
         }
     }
 
@@ -97,8 +97,8 @@ public sealed class GoogleWorkspaceSetupServiceTests
             Assert.Equal("팀별 자료", await getDriveItemNameAsync(driveService, "teams-root-folder"));
             Assert.Equal("자료", managementMaterialsMetadata.Name);
             Assert.Equal("결재 완료 자료", managementApprovedMetadata.Name);
-            Assert.Equal("official-root", managementMaterialsMetadata.ParentFolderIDs[0]);
-            Assert.Equal("official-root", managementApprovedMetadata.ParentFolderIDs[0]);
+            Assert.Equal("official-root", managementMaterialsMetadata.ParentFolderIds[0]);
+            Assert.Equal("official-root", managementApprovedMetadata.ParentFolderIds[0]);
         }
     }
 
@@ -130,19 +130,19 @@ public sealed class GoogleWorkspaceSetupServiceTests
                 Team managementTeam = dbContext.Teams.Single(team => team.TeamKey == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY);
                 Team planningTeam = dbContext.Teams.Single(team => team.TeamKey == "Planning");
                 Team operationTeam = dbContext.Teams.Single(team => team.TeamKey == "Operation");
-                Assert.Equal("Organization Hub", await getDriveItemNameAsync(driveService, getRequiredID(setting.OfficialRootFolderID)));
-                Assert.Equal("외부 공유 자료", await getDriveItemNameAsync(driveService, getRequiredID(setting.PublicFolderID)));
-                Assert.Equal("공통 자료", await getDriveItemNameAsync(driveService, getRequiredID(setting.CommonFolderID)));
-                Assert.Equal("책임자 자료", await getDriveItemNameAsync(driveService, getRequiredID(setting.ResponsibleResourcesFolderID)));
-                Assert.Equal("업무 지원 자료", await getDriveItemNameAsync(driveService, getRequiredID(setting.WorkResourcesFolderID)));
-                Assert.Equal("관리팀 자료", await getDriveItemNameAsync(driveService, getRequiredID(managementTeam.MaterialsFolderID)));
-                Assert.Equal("관리팀 결재 완료 자료", await getDriveItemNameAsync(driveService, getRequiredID(managementTeam.ApprovedFolderID)));
-                Assert.Equal("자료", await getDriveItemNameAsync(driveService, getRequiredID(planningTeam.MaterialsFolderID)));
-                Assert.Equal("결재 완료 자료", await getDriveItemNameAsync(driveService, getRequiredID(planningTeam.ApprovedFolderID)));
-                Assert.Equal("자료", await getDriveItemNameAsync(driveService, getRequiredID(operationTeam.MaterialsFolderID)));
-                Assert.Equal("결재 완료 자료", await getDriveItemNameAsync(driveService, getRequiredID(operationTeam.ApprovedFolderID)));
-                Assert.True(string.IsNullOrWhiteSpace(systemAdministrationTeam.MaterialsFolderID));
-                Assert.True(string.IsNullOrWhiteSpace(systemAdministrationTeam.ApprovedFolderID));
+                Assert.Equal("Organization Hub", await getDriveItemNameAsync(driveService, getRequiredId(setting.OfficialRootFolderId)));
+                Assert.Equal("외부 공유 자료", await getDriveItemNameAsync(driveService, getRequiredId(setting.PublicFolderId)));
+                Assert.Equal("공통 자료", await getDriveItemNameAsync(driveService, getRequiredId(setting.CommonFolderId)));
+                Assert.Equal("책임자 자료", await getDriveItemNameAsync(driveService, getRequiredId(setting.ResponsibleResourcesFolderId)));
+                Assert.Equal("업무 지원 자료", await getDriveItemNameAsync(driveService, getRequiredId(setting.WorkResourcesFolderId)));
+                Assert.Equal("관리팀 자료", await getDriveItemNameAsync(driveService, getRequiredId(managementTeam.MaterialsFolderId)));
+                Assert.Equal("관리팀 결재 완료 자료", await getDriveItemNameAsync(driveService, getRequiredId(managementTeam.ApprovedFolderId)));
+                Assert.Equal("자료", await getDriveItemNameAsync(driveService, getRequiredId(planningTeam.MaterialsFolderId)));
+                Assert.Equal("결재 완료 자료", await getDriveItemNameAsync(driveService, getRequiredId(planningTeam.ApprovedFolderId)));
+                Assert.Equal("자료", await getDriveItemNameAsync(driveService, getRequiredId(operationTeam.MaterialsFolderId)));
+                Assert.Equal("결재 완료 자료", await getDriveItemNameAsync(driveService, getRequiredId(operationTeam.ApprovedFolderId)));
+                Assert.True(string.IsNullOrWhiteSpace(systemAdministrationTeam.MaterialsFolderId));
+                Assert.True(string.IsNullOrWhiteSpace(systemAdministrationTeam.ApprovedFolderId));
             }
         }
     }
@@ -153,13 +153,13 @@ public sealed class GoogleWorkspaceSetupServiceTests
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             GlobalSetting setting = new GlobalSetting();
-            setting.ID = 1;
-            setting.OfficialRootFolderID = "official-root";
-            setting.PublicFolderID = "public-folder";
-            setting.CommonFolderID = "common-folder";
-            setting.ResponsibleResourcesFolderID = "responsible-folder";
-            setting.WorkResourcesFolderID = "work-resources-folder";
-            setting.ArchiveFolderID = "archive-folder";
+            setting.Id = 1;
+            setting.OfficialRootFolderId = "official-root";
+            setting.PublicFolderId = "public-folder";
+            setting.CommonFolderId = "common-folder";
+            setting.ResponsibleResourcesFolderId = "responsible-folder";
+            setting.WorkResourcesFolderId = "work-resources-folder";
+            setting.ArchiveFolderId = "archive-folder";
             dbContext.GlobalSettings.Add(setting);
             dbContext.Teams.Add(createTeam(1, "Planning", "기획팀", "planning-materials-folder", "planning-approved-folder", EActivationState.Active));
             dbContext.Teams.Add(createTeam(2, "Safety", "안전관리팀", "safety-materials-folder", "safety-approved-folder", EActivationState.Inactive));
@@ -175,7 +175,7 @@ public sealed class GoogleWorkspaceSetupServiceTests
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             GlobalSetting setting = new GlobalSetting();
-            setting.ID = 1;
+            setting.Id = 1;
             dbContext.GlobalSettings.Add(setting);
             dbContext.Teams.Add(createTeam(1, OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_KEY, OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_DISPLAY_NAME, string.Empty, string.Empty, EActivationState.Active));
             dbContext.Teams.Add(createTeam(2, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME, string.Empty, string.Empty, EActivationState.Active));
@@ -193,8 +193,8 @@ public sealed class GoogleWorkspaceSetupServiceTests
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             GlobalSetting setting = new GlobalSetting();
-            setting.ID = 1;
-            setting.OfficialRootFolderID = "official-root";
+            setting.Id = 1;
+            setting.OfficialRootFolderId = "official-root";
             dbContext.GlobalSettings.Add(setting);
             dbContext.Teams.Add(createTeam(1, "Planning", "기획팀", "planning-materials-folder", "planning-approved-folder", EActivationState.Active));
             dbContext.Teams.Add(createTeam(2, "Operation", "운영팀", "operation-materials-folder", "operation-approved-folder", EActivationState.Active));
@@ -210,8 +210,8 @@ public sealed class GoogleWorkspaceSetupServiceTests
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             GlobalSetting setting = new GlobalSetting();
-            setting.ID = 1;
-            setting.OfficialRootFolderID = "official-root";
+            setting.Id = 1;
+            setting.OfficialRootFolderId = "official-root";
             dbContext.GlobalSettings.Add(setting);
             dbContext.Teams.Add(createTeam(1, "Management", "관리팀", "management-folder", "management-approved-folder", EActivationState.Active));
             dbContext.Teams.Add(createTeam(2, "Planning", "기획팀", "planning-materials-folder", "planning-approved-folder", EActivationState.Active));
@@ -221,14 +221,14 @@ public sealed class GoogleWorkspaceSetupServiceTests
         return dbContextFactory;
     }
 
-    private static Team createTeam(int id, string teamKey, string displayName, string materialsFolderID, string approvedFolderID, EActivationState activationState)
+    private static Team createTeam(int id, string teamKey, string displayName, string materialsFolderId, string approvedFolderId, EActivationState activationState)
     {
         Team team = new Team();
-        team.ID = id;
+        team.Id = id;
         team.TeamKey = teamKey;
         team.DisplayName = displayName;
-        team.MaterialsFolderID = materialsFolderID;
-        team.ApprovedFolderID = approvedFolderID;
+        team.MaterialsFolderId = materialsFolderId;
+        team.ApprovedFolderId = approvedFolderId;
         team.IsActive = activationState == EActivationState.Active;
         return team;
     }
@@ -241,7 +241,7 @@ public sealed class GoogleWorkspaceSetupServiceTests
         driveService.AddFolder("public-folder", "00_Public", "official-root");
         driveService.AddFolder("common-folder", "01_Common", "official-root");
         driveService.AddFolder("management-folder", "02_Management", "official-root");
-        driveService.AddFolder("responsible-folder", "Leader", "official-root");
+        driveService.AddFolder("responsible-folder", "Responsible", "official-root");
         driveService.AddFolder("work-resources-folder", "04_WorkResources", "official-root");
         driveService.AddFolder("archive-folder", "05_Archive", "official-root");
         driveService.AddFolder("planning-team-folder", "Planning", "teams-root-folder");
@@ -298,25 +298,25 @@ public sealed class GoogleWorkspaceSetupServiceTests
         return result.ValueOrNull;
     }
 
-    private static string getRequiredID(string? idOrNull)
+    private static string getRequiredId(string? idOrNull)
     {
         if (string.IsNullOrWhiteSpace(idOrNull))
         {
-            throw new InvalidOperationException("Expected a configured ID.");
+            throw new InvalidOperationException("Expected a configured Id.");
         }
 
         return idOrNull;
     }
 
-    private static async Task<string> getDriveItemNameAsync(FakeDriveService driveService, string itemID)
+    private static async Task<string> getDriveItemNameAsync(FakeDriveService driveService, string itemId)
     {
-        DriveFileMetadata metadata = await getDriveItemMetadataAsync(driveService, itemID);
+        DriveFileMetadata metadata = await getDriveItemMetadataAsync(driveService, itemId);
         return metadata.Name;
     }
 
-    private static async Task<DriveFileMetadata> getDriveItemMetadataAsync(FakeDriveService driveService, string itemID)
+    private static async Task<DriveFileMetadata> getDriveItemMetadataAsync(FakeDriveService driveService, string itemId)
     {
-        DriveFileMetadata? metadataOrNull = await driveService.GetFileOrNullAsync(itemID, CancellationToken.None);
+        DriveFileMetadata? metadataOrNull = await driveService.GetFileOrNullAsync(DriveItemId.CreateOptional(itemId), CancellationToken.None);
         if (metadataOrNull == null)
         {
             throw new InvalidOperationException("Expected a Drive item.");

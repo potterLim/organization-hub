@@ -2,14 +2,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using MudBlazor;
 using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminSettings
 {
-    private const string NOTICE_FILE_TARGET_KEY = "Notice";
-    private const string WORK_GUIDELINE_FILE_TARGET_KEY = "WorkGuideline";
     private const string DRIVE_ROOT_ID = "root";
 
     private GlobalSettingFormModel mFormModel = new GlobalSettingFormModel();
@@ -22,11 +21,11 @@ public partial class AdminSettings
     private List<DriveFileItem> mDriveItems = new List<DriveFileItem>();
     private List<GoogleCalendarListItem> mCalendars = new List<GoogleCalendarListItem>();
     private List<GoogleTaskListItem> mTaskLists = new List<GoogleTaskListItem>();
-    private Dictionary<string, string> mDriveResourceNameByID = new Dictionary<string, string>();
-    private string mSelectedFolderTargetKey = string.Empty;
-    private string mSelectedCalendarTargetKey = string.Empty;
-    private string mSelectedTaskListTargetKey = string.Empty;
-    private string mSelectedFileTargetKey = NOTICE_FILE_TARGET_KEY;
+    private Dictionary<string, string> mDriveResourceNameById = new Dictionary<string, string>();
+    private GoogleWorkspaceAssignmentTargetKey mSelectedFolderTargetKey;
+    private GoogleWorkspaceAssignmentTargetKey mSelectedCalendarTargetKey;
+    private GoogleWorkspaceAssignmentTargetKey mSelectedTaskListTargetKey;
+    private ESettingFileAssignmentTarget mSelectedFileAssignmentTarget = ESettingFileAssignmentTarget.NoticeFile;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
     private bool mIsLoadingDriveItems;

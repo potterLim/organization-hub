@@ -5,13 +5,13 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class CalendarEventDeletionAuditLog
 {
-    public int ID
+    public int Id
     {
         get; set;
     }
-    public string CalendarID { get; set; } = string.Empty;
+    public string CalendarId { get; set; } = string.Empty;
     public string CalendarName { get; set; } = string.Empty;
-    public string EventID { get; set; } = string.Empty;
+    public string EventId { get; set; } = string.Empty;
     public string EventSummary { get; set; } = string.Empty;
     public string EventLocation { get; set; } = string.Empty;
     public DateTimeOffset? EventStart
@@ -26,7 +26,7 @@ public class CalendarEventDeletionAuditLog
     {
         get; set;
     }
-    public int DeletedByUserID
+    public int DeletedByUserId
     {
         get; set;
     }
@@ -35,7 +35,7 @@ public class CalendarEventDeletionAuditLog
     {
         get; set;
     }
-    public int? DeletedByTeamID
+    public int? DeletedByTeamId
     {
         get; set;
     }

@@ -23,7 +23,7 @@ public partial class Upload
             return;
         }
 
-        PermissionDecision createDecision = await PermissionService.DecideCreateFolderInFolderAsync(CurrentUserSessionOrNull, getCurrentFolderID(), CancellationToken.None);
+        PermissionDecision createDecision = await PermissionService.DecideCreateFolderInFolderAsync(CurrentUserSessionOrNull, DriveFolderId.CreateOptional(getCurrentFolderId()), CancellationToken.None);
         if (createDecision.IsAllowed == false)
         {
             showMessage(createDecision.Reason, Severity.Error);
@@ -33,9 +33,9 @@ public partial class Upload
         mIsCreatingFolder = true;
         try
         {
-            string currentFolderID = getCurrentFolderID();
-            DriveFileItem createdFolder = await DriveService.CreateFolderAsync(currentFolderID, folderName, CancellationToken.None);
-            DriveBrowserService.InvalidateRecentFiles(currentFolderID);
+            DriveFolderId currentFolderId = DriveFolderId.CreateOptional(getCurrentFolderId());
+            DriveFileItem createdFolder = await DriveService.CreateFolderAsync(currentFolderId, folderName, CancellationToken.None);
+            DriveBrowserService.InvalidateRecentFiles(currentFolderId);
             mNewFolderName = string.Empty;
             mIsFolderCreateOpen = false;
             await openFolderAsync(createdFolder);
