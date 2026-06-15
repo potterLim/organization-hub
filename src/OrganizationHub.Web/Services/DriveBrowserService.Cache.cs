@@ -77,7 +77,7 @@ public sealed partial class DriveBrowserService
             userSession.Role.ToString(),
             teamIdText,
             folderKind.ToString(),
-            maximumCount.Value.ToString(CultureInfo.InvariantCulture),
+            maximumCount.GetRequiredValue().ToString(CultureInfo.InvariantCulture),
             managementTeamFilterText
         };
         return string.Join(":", cacheKeyParts);

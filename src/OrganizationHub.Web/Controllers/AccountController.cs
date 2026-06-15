@@ -28,7 +28,7 @@ public sealed class AccountController : Controller
         [FromForm(Name = "password")] string? passwordOrNull
     )
     {
-        string username = getTextOrEmpty(usernameOrNull);
+        Username username = Username.CreateOptional(usernameOrNull);
         PlainPassword password = PlainPassword.CreateFromInput(passwordOrNull);
         LoginResult loginResult = await mAuthService.ValidateLoginAsync(username, password, HttpContext.RequestAborted);
         if (loginResult.IsSuccess == false || loginResult.PrincipalOrNull == null)
@@ -56,15 +56,5 @@ public sealed class AccountController : Controller
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Redirect("/login");
-    }
-
-    private string getTextOrEmpty(string? textOrNull)
-    {
-        if (textOrNull == null)
-        {
-            return string.Empty;
-        }
-
-        return textOrNull;
     }
 }

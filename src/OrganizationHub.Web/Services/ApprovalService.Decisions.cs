@@ -89,15 +89,16 @@ public sealed partial class ApprovalService
 
     private void approveCurrentStep(UserSession userSession, ApprovalRequest request, ApprovalStep currentStep, string comment)
     {
+        ApprovalStepNumber currentStepNumber = new ApprovalStepNumber(currentStep.StepNumber);
         currentStep.Status = EApprovalStepStatus.Approved;
         currentStep.ActionedAt = DateTime.UtcNow;
         currentStep.Comment = getTrimmedComment(comment);
-        request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Approved, currentStep.StepNumber, currentStep.Comment)));
+        request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Approved, currentStepNumber, currentStep.Comment)));
         if (currentStep.StepNumber == request.StepCount)
         {
             request.Status = EApprovalRequestStatus.Approved;
             request.CompletedAt = DateTime.UtcNow;
-            request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Completed, currentStep.StepNumber, "최종 결재 완료")));
+            request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Completed, currentStepNumber, "최종 결재 완료")));
             return;
         }
 
@@ -106,11 +107,12 @@ public sealed partial class ApprovalService
 
     private void rejectCurrentStep(UserSession userSession, ApprovalRequest request, ApprovalStep currentStep, string comment)
     {
+        ApprovalStepNumber currentStepNumber = new ApprovalStepNumber(currentStep.StepNumber);
         currentStep.Status = EApprovalStepStatus.Rejected;
         currentStep.ActionedAt = DateTime.UtcNow;
         currentStep.Comment = getTrimmedComment(comment);
         request.Status = EApprovalRequestStatus.Rejected;
         request.RejectedAt = DateTime.UtcNow;
-        request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Rejected, currentStep.StepNumber, currentStep.Comment)));
+        request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Rejected, currentStepNumber, currentStep.Comment)));
     }
 }

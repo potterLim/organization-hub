@@ -50,7 +50,7 @@ public sealed partial class ApprovalService
         auditLog.ActorUserId = request.UserSession.UserId;
         auditLog.ActorDisplayName = request.UserSession.DisplayName;
         auditLog.Action = request.Action;
-        auditLog.StepNumber = request.StepNumberOrNull;
+        auditLog.StepNumber = ApprovalStepNumber.GetValueOrNull(request.StepNumberOrNull);
         auditLog.Comment = getTrimmedComment(request.Comment);
         auditLog.PreviousApproverDisplayName = request.PreviousApproverDisplayName;
         auditLog.NewApproverDisplayName = request.NewApproverDisplayName;
@@ -61,7 +61,7 @@ public sealed partial class ApprovalService
     private ApprovalAuditLogCreationRequest createAuditLogRequest(
         UserSession userSession,
         EApprovalAuditAction action,
-        int? stepNumberOrNull,
+        ApprovalStepNumber? stepNumberOrNull,
         string comment)
     {
         return new ApprovalAuditLogCreationRequest(userSession, action, stepNumberOrNull, comment);
@@ -69,7 +69,7 @@ public sealed partial class ApprovalService
 
     private ApprovalAuditLogCreationRequest createApproverChangedAuditLogRequest(
         UserSession userSession,
-        int stepNumber,
+        ApprovalStepNumber stepNumber,
         string previousApproverDisplayName,
         string newApproverDisplayName)
     {
@@ -99,7 +99,7 @@ public sealed partial class ApprovalService
         {
             get; private init;
         }
-        public int? StepNumberOrNull
+        public ApprovalStepNumber? StepNumberOrNull
         {
             get; private init;
         }
@@ -107,7 +107,7 @@ public sealed partial class ApprovalService
         public string PreviousApproverDisplayName { get; set; } = string.Empty;
         public string NewApproverDisplayName { get; set; } = string.Empty;
 
-        public ApprovalAuditLogCreationRequest(UserSession userSession, EApprovalAuditAction action, int? stepNumberOrNull, string comment)
+        public ApprovalAuditLogCreationRequest(UserSession userSession, EApprovalAuditAction action, ApprovalStepNumber? stepNumberOrNull, string comment)
         {
             UserSession = userSession;
             Action = action;

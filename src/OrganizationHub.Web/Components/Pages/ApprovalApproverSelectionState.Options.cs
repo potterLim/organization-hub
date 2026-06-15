@@ -138,7 +138,8 @@ internal sealed partial class ApprovalApproverSelectionState
 
     private ApprovalDefaultLineOption? getDefaultLineOrNull()
     {
-        return mCreateContext.DefaultLineOptions.FirstOrDefault(defaultLine => defaultLine.StepCount == mFormModel.StepCount);
+        ApprovalStepCount selectedStepCount = new ApprovalStepCount(mFormModel.StepCount);
+        return mCreateContext.DefaultLineOptions.FirstOrDefault(defaultLine => defaultLine.StepCount == selectedStepCount);
     }
 
     private bool isApproverOptionSelected(ApprovalUserId userId)

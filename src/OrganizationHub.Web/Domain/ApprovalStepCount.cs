@@ -7,7 +7,7 @@ public readonly record struct ApprovalStepCount
     public const int MINIMUM_VALUE = 1;
     public const int MAXIMUM_VALUE = 3;
 
-    public int Value
+    private int Value
     {
         get;
     }
@@ -44,5 +44,30 @@ public readonly record struct ApprovalStepCount
         }
 
         Value = countValue;
+    }
+
+    public int GetRequiredValue()
+    {
+        if (Value < MINIMUM_VALUE || Value > MAXIMUM_VALUE)
+        {
+            throw new InvalidOperationException("Approval step count is outside the supported range.");
+        }
+
+        return Value;
+    }
+
+    public int GetIntermediateApproverCount()
+    {
+        return GetRequiredValue() - 1;
+    }
+
+    public ApprovalStepNumber GetFinalStepNumber()
+    {
+        return new ApprovalStepNumber(GetRequiredValue());
+    }
+
+    public bool ContainsStepNumber(ApprovalStepNumber stepNumber)
+    {
+        return stepNumber.GetRequiredValue() <= GetRequiredValue();
     }
 }

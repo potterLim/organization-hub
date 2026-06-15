@@ -105,7 +105,7 @@ public sealed partial class UploadAuditLogService : IUploadAuditLogService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<UploadAuditLog> auditLogs = await dbContext.UploadAuditLogs.AsNoTracking().Where(auditLog => readableFolderIds.Contains(auditLog.FolderId)).OrderByDescending(auditLog => auditLog.UploadedAt).Take(maximumCount.Value).ToListAsync(cancellationToken);
+            List<UploadAuditLog> auditLogs = await dbContext.UploadAuditLogs.AsNoTracking().Where(auditLog => readableFolderIds.Contains(auditLog.FolderId)).OrderByDescending(auditLog => auditLog.UploadedAt).Take(maximumCount.GetRequiredValue()).ToListAsync(cancellationToken);
             return createItems(auditLogs);
         }
     }

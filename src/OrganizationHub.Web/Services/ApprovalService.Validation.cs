@@ -12,7 +12,13 @@ public sealed partial class ApprovalService
 {
     private ServiceResult validateSubmitCommand(ApprovalRequestCommand command, ApprovalCreateContext context)
     {
-        if (command.StepCount.HasSupportedValue == false || context.AvailableStepCounts.Contains(command.StepCount.Value) == false)
+        if (command.StepCount.HasSupportedValue == false)
+        {
+            return ServiceResult.Fail("결재 단계를 선택해 주세요.");
+        }
+
+        ApprovalStepCount stepCount = command.StepCount.GetRequiredStepCount();
+        if (context.AvailableStepCounts.Contains(stepCount) == false)
         {
             return ServiceResult.Fail("결재 단계를 선택해 주세요.");
         }
@@ -31,10 +37,9 @@ public sealed partial class ApprovalService
         ApprovalUserId secondApproverUserId = command.SecondApproverUserId;
         ApprovalUserId requestedFinalApproverUserId = command.FinalApproverUserId;
         ApprovalUserId finalApproverUserId = resolveFinalApproverUserId(context.FinalApproverOptions, requestedFinalApproverUserId);
-        ApprovalStepCount stepCount = command.StepCount.GetRequiredStepCount();
-        string firstApproverLabel = ApprovalStepLabelUtility.GetStepRoleName(stepCount, 1);
-        string secondApproverLabel = command.StepCount.RequiresSecondApprover ? ApprovalStepLabelUtility.GetStepRoleName(stepCount, 2) : string.Empty;
-        string finalApproverLabel = ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepCount.Value);
+        string firstApproverLabel = ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(1));
+        string secondApproverLabel = command.StepCount.RequiresSecondApprover ? ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(2)) : string.Empty;
+        string finalApproverLabel = ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepCount.GetFinalStepNumber());
 
         if (command.StepCount.RequiresFirstApprover && firstApproverUserId.HasValue == false)
         {

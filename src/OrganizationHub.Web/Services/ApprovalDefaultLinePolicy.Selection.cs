@@ -85,7 +85,7 @@ public static partial class ApprovalDefaultLinePolicy
         ApprovalUserOption finalApproverOption,
         ApprovalStepCount stepCount)
     {
-        int requiredIntermediateApproverCount = stepCount.Value - 1;
+        int requiredIntermediateApproverCount = stepCount.GetIntermediateApproverCount();
         int availableIntermediateApproverCount = approverOptions
             .Where(option => option.UserId != finalApproverOption.UserId)
             .Select(option => ApprovalUserId.CreateExisting(option.UserId))

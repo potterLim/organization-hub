@@ -72,7 +72,7 @@ public partial class AdminApprovalWorkflows
         foreach (ApprovalWorkflowStepFormModel step in mFormModel.Steps.OrderBy(step => step.StepOrder))
         {
             step.StepOrder = stepOrder;
-            step.StepName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepOrder);
+            step.StepName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(stepOrder));
             stepOrder++;
         }
     }

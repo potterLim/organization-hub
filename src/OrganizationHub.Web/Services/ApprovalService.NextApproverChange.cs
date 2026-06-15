@@ -24,14 +24,16 @@ public sealed partial class ApprovalService
             return ServiceResult.Succeed();
         }
 
-        int nextStepNumber = request.CurrentStepNumber + 1;
-        ApprovalStep? nextStepOrNull = request.Steps.FirstOrDefault(step => step.StepNumber == nextStepNumber);
+        ApprovalStepNumber nextStepNumber = new ApprovalStepNumber(request.CurrentStepNumber + 1);
+        int nextStepNumberValue = nextStepNumber.GetRequiredValue();
+        ApprovalStep? nextStepOrNull = request.Steps.FirstOrDefault(step => step.StepNumber == nextStepNumberValue);
         if (nextStepOrNull == null)
         {
             return ServiceResult.Fail("다음 결재 단계를 찾을 수 없습니다.");
         }
 
-        if (nextStepNumber >= request.StepCount)
+        ApprovalStepCount requestStepCount = new ApprovalStepCount(request.StepCount);
+        if (requestStepCount.ContainsStepNumber(nextStepNumber) == false || nextStepNumber.IsFinalStepOf(requestStepCount))
         {
             if (nextStepOrNull.ApproverUserId == nextApproverUserId.GetRequiredValue())
             {
@@ -55,7 +57,7 @@ public sealed partial class ApprovalService
 
         foreach (ApprovalStep step in request.Steps)
         {
-            if (step.StepNumber == nextStepNumber)
+            if (step.StepNumber == nextStepNumberValue)
             {
                 continue;
             }

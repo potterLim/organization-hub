@@ -7,13 +7,13 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    private IReadOnlyList<int> createAvailableStepCounts(
+    private IReadOnlyList<ApprovalStepCount> createAvailableStepCounts(
         UserSession userSession,
         IReadOnlyList<ApprovalUserOption> approverOptions,
         IReadOnlyList<ApprovalUserOption> finalApproverOptions
     )
     {
-        List<int> stepCounts = new List<int>();
+        List<ApprovalStepCount> stepCounts = new List<ApprovalStepCount>();
         if (finalApproverOptions.Count == 0)
         {
             return stepCounts;
@@ -38,7 +38,7 @@ public sealed partial class ApprovalService
     }
 
     private void addStepCountIfAvailable(
-        List<int> stepCounts,
+        List<ApprovalStepCount> stepCounts,
         IReadOnlyList<ApprovalUserOption> approverOptions,
         IReadOnlyList<ApprovalUserOption> finalApproverOptions,
         ApprovalStepCount stepCount
@@ -46,7 +46,7 @@ public sealed partial class ApprovalService
     {
         if (canBuildApprovalLine(approverOptions, finalApproverOptions, stepCount))
         {
-            stepCounts.Add(stepCount.Value);
+            stepCounts.Add(stepCount);
         }
     }
 
@@ -56,7 +56,7 @@ public sealed partial class ApprovalService
         ApprovalStepCount stepCount
     )
     {
-        int requiredIntermediateApproverCount = stepCount.Value - 1;
+        int requiredIntermediateApproverCount = stepCount.GetIntermediateApproverCount();
         foreach (ApprovalUserOption finalApproverOption in finalApproverOptions)
         {
             int availableIntermediateApproverCount = approverOptions.Where(option => option.UserId != finalApproverOption.UserId).Select(option => option.UserId).Distinct().Count();

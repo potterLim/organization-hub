@@ -127,7 +127,7 @@ public partial class Dashboard
     private string getCurrentApprovalStepRoleName(ApprovalRequestItem approvalRequest)
     {
         ApprovalStepCount stepCount = new ApprovalStepCount(approvalRequest.StepCount);
-        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, approvalRequest.CurrentStepNumber);
+        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(approvalRequest.CurrentStepNumber));
     }
 
     private string formatDate(DateTime dateTime)

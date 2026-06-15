@@ -25,7 +25,7 @@ public partial class ApprovalRequest
 
         if (mCreateContext.AvailableStepCounts.Count > 0)
         {
-            mFormModel.StepCount = mCreateContext.AvailableStepCounts[0];
+            mFormModel.StepCount = mCreateContext.AvailableStepCounts[0].GetRequiredValue();
         }
 
         getApproverSelectionState().ApplyDefaultApproversForStepCount();
@@ -77,9 +77,9 @@ public partial class ApprovalRequest
         return getApproverSelectionState().GetFinalApproverOptions();
     }
 
-    private string getApprovalStepLabel(int stepCount)
+    private string getApprovalStepLabel(ApprovalStepCount stepCount)
     {
-        return getApproverSelectionState().GetApprovalStepLabel(new ApprovalStepCount(stepCount));
+        return getApproverSelectionState().GetApprovalStepLabel(stepCount);
     }
 
     private string getApprovalStepDescription()

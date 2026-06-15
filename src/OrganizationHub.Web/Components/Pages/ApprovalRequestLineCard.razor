@@ -5,9 +5,9 @@
     </div>
     <MudTextField T="string" Value="@FormModel.Title" ValueChanged="TitleChanged" Label="요청 제목" Variant="Variant.Outlined" Margin="Margin.Dense" />
     <MudSelect T="int" Label="결재 방식" Value="FormModel.StepCount" ValueChanged="StepCountChanged" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@StepDescription">
-        @foreach (int stepCount in CreateContext.AvailableStepCounts)
+        @foreach (ApprovalStepCount stepCount in CreateContext.AvailableStepCounts)
         {
-            <MudSelectItem T="int" Value="@stepCount">@GetApprovalStepLabel(stepCount)</MudSelectItem>
+            <MudSelectItem T="int" Value="@stepCount.GetRequiredValue()">@GetApprovalStepLabel(stepCount)</MudSelectItem>
         }
     </MudSelect>
     <div class="hub-approval-flow-preview" aria-label="결재 진행 순서">
@@ -25,7 +25,7 @@
     <div class="hub-approval-approver-fields">
         @if (FormModel.StepCount >= 2)
         {
-            <MudSelect @key="@("first-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(1)" Value="FormModel.FirstApproverUserId" ValueChanged="FirstApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect @key="@("first-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(new ApprovalStepNumber(1))" Value="FormModel.FirstApproverUserId" ValueChanged="FirstApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (ApprovalUserOption userOption in FirstApproverOptions)
                 {
                     <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -34,7 +34,7 @@
         }
         @if (FormModel.StepCount == 3)
         {
-            <MudSelect @key="@("second-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(2)" Value="FormModel.SecondApproverUserId" ValueChanged="SecondApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect @key="@("second-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(new ApprovalStepNumber(2))" Value="FormModel.SecondApproverUserId" ValueChanged="SecondApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (ApprovalUserOption userOption in SecondApproverOptions)
                 {
                     <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -43,11 +43,11 @@
         }
         @if (CreateContext.FinalApproverOptions.Count == 1)
         {
-            <MudTextField Value="@CreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="@getApproverFieldLabel(FormModel.StepCount)" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
+            <MudTextField Value="@CreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="@getApproverFieldLabel(new ApprovalStepNumber(FormModel.StepCount))" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
         }
         else
         {
-            <MudSelect @key="@("final-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(FormModel.StepCount)" Value="FormModel.FinalApproverUserId" ValueChanged="FinalApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect @key="@("final-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(new ApprovalStepNumber(FormModel.StepCount))" Value="FormModel.FinalApproverUserId" ValueChanged="FinalApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (ApprovalUserOption userOption in FinalApproverOptions)
                 {
                     <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -114,7 +114,7 @@
     }
 
     [Parameter]
-    public Func<int, string> GetApprovalStepLabel
+    public Func<ApprovalStepCount, string> GetApprovalStepLabel
     {
         get; set;
     } = _ => string.Empty;
@@ -161,7 +161,7 @@
         get; set;
     }
 
-    private string getApproverFieldLabel(int stepNumber)
+    private string getApproverFieldLabel(ApprovalStepNumber stepNumber)
     {
         ApprovalStepCount stepCount = new ApprovalStepCount(FormModel.StepCount);
         return ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepNumber);

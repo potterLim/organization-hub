@@ -10,12 +10,11 @@ public static partial class ApprovalDefaultLinePolicy
         UserSession userSession,
         IReadOnlyList<ApprovalUserOption> approverOptions,
         IReadOnlyList<ApprovalUserOption> finalApproverOptions,
-        IReadOnlyList<int> availableStepCounts)
+        IReadOnlyList<ApprovalStepCount> availableStepCounts)
     {
         List<ApprovalDefaultLineOption> defaultLineOptions = new List<ApprovalDefaultLineOption>();
-        foreach (int stepCount in availableStepCounts)
+        foreach (ApprovalStepCount approvalStepCount in availableStepCounts)
         {
-            ApprovalStepCount approvalStepCount = new ApprovalStepCount(stepCount);
             HashSet<ApprovalUserId> selectedUserIds = new HashSet<ApprovalUserId>();
             ApprovalUserId finalApproverUserId = getPreferredFinalApproverId(
                 userSession,
@@ -50,7 +49,7 @@ public static partial class ApprovalDefaultLinePolicy
             }
 
             ApprovalDefaultLineOption defaultLineOption = new ApprovalDefaultLineOption();
-            defaultLineOption.StepCount = approvalStepCount.Value;
+            defaultLineOption.StepCount = approvalStepCount;
             defaultLineOption.FirstApproverUserId = firstApproverUserId.GetOptionalValue();
             defaultLineOption.SecondApproverUserId = secondApproverUserId.GetOptionalValue();
             defaultLineOption.FinalApproverUserId = finalApproverUserId.GetOptionalValue();

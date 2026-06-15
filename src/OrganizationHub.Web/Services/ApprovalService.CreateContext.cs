@@ -76,7 +76,7 @@ public sealed partial class ApprovalService
         context.ApproverOptions = configuredLine.IntermediateApprovers;
         context.FinalApproverOptions = configuredLine.FinalApprovers;
         context.FinalApproverCandidates = configuredLine.FinalApprovers;
-        context.AvailableStepCounts = new List<int> { configuredLine.StepCount.Value };
+        context.AvailableStepCounts = new List<ApprovalStepCount> { configuredLine.StepCount };
         context.DefaultLineOptions = new List<ApprovalDefaultLineOption> { configuredLine.DefaultLine };
         context.CanCreateRequest = sourceFolders.Count > 0 && context.DestinationFolders.Count > 0 && context.FinalApproverOptions.Count > 0;
         if (context.CanCreateRequest == false)

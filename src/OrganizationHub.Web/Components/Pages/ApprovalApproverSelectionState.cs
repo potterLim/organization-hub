@@ -23,7 +23,7 @@ internal sealed partial class ApprovalApproverSelectionState
 
     public void ChangeStepCount(ApprovalStepCount stepCount)
     {
-        mFormModel.StepCount = stepCount.Value;
+        mFormModel.StepCount = stepCount.GetRequiredValue();
         ApplyDefaultApproversForStepCount();
     }
 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Models;
 
@@ -9,7 +10,7 @@ public sealed class ApprovalCreateContext
     public IReadOnlyList<ApprovalUserOption> ApproverOptions { get; set; } = new List<ApprovalUserOption>();
     public IReadOnlyList<ApprovalUserOption> FinalApproverCandidates { get; set; } = new List<ApprovalUserOption>();
     public IReadOnlyList<ApprovalUserOption> FinalApproverOptions { get; set; } = new List<ApprovalUserOption>();
-    public IReadOnlyList<int> AvailableStepCounts { get; set; } = new List<int>();
+    public IReadOnlyList<ApprovalStepCount> AvailableStepCounts { get; set; } = new List<ApprovalStepCount>();
     public IReadOnlyList<ApprovalDefaultLineOption> DefaultLineOptions { get; set; } = new List<ApprovalDefaultLineOption>();
     public bool UsesDefaultFinalApprover
     {

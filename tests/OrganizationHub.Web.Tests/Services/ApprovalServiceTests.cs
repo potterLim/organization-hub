@@ -93,7 +93,7 @@ public sealed class ApprovalServiceTests
                 Assert.True(createContext.CanCreateRequest);
                 Assert.Equal(new[] { 2 }, createContext.ApproverOptions.Select(option => option.UserId).ToArray());
                 Assert.Equal(new[] { 3 }, createContext.FinalApproverOptions.Select(option => option.UserId).ToArray());
-                Assert.Equal(2, createContext.DefaultLineOptions.Single().StepCount);
+                Assert.Equal(2, createContext.DefaultLineOptions.Single().StepCount.GetRequiredValue());
                 Assert.Equal(2, createContext.DefaultLineOptions.Single().FirstApproverUserId);
                 Assert.Equal(3, createContext.DefaultLineOptions.Single().FinalApproverUserId);
                 Assert.Equal("팀 결재자", createContext.ApproverOptions[0].RoleName);
@@ -284,7 +284,7 @@ public sealed class ApprovalServiceTests
                 ServiceResult submitResult = await approvalService.SubmitRequestAsync(responsibleSession, formModel.CreateCommand(), CancellationToken.None);
                 IReadOnlyList<ApprovalRequestItem> finalApproverApprovals = await approvalService.GetPendingApprovalsAsync(managerSession, CancellationToken.None);
 
-                Assert.Contains(1, createContext.AvailableStepCounts);
+                Assert.Contains(new ApprovalStepCount(1), createContext.AvailableStepCounts);
                 Assert.True(createContext.UsesDefaultFinalApprover);
                 Assert.True(submitResult.IsSuccess);
                 Assert.Single(finalApproverApprovals);
@@ -316,7 +316,7 @@ public sealed class ApprovalServiceTests
                 ServiceResult submitResult = await approvalService.SubmitRequestAsync(managementSession, formModel.CreateCommand(), CancellationToken.None);
                 IReadOnlyList<ApprovalRequestItem> directorApprovals = await approvalService.GetPendingApprovalsAsync(directorSession, CancellationToken.None);
 
-                Assert.Contains(1, createContext.AvailableStepCounts);
+                Assert.Contains(new ApprovalStepCount(1), createContext.AvailableStepCounts);
                 Assert.False(createContext.UsesDefaultFinalApprover);
                 Assert.Equal(new[] { 4, 5, 7, 2, 6, 9 }, createContext.ApproverOptions.Select(option => option.UserId).ToArray());
                 Assert.Equal(new[] { 4, 5, 7, 2, 6, 9 }, createContext.FinalApproverOptions.Select(option => option.UserId).ToArray());
@@ -379,7 +379,8 @@ public sealed class ApprovalServiceTests
                 UserSession requesterSession = createSession(requesterUserId, "requester", "요청자", requesterRole, null);
 
                 ApprovalCreateContext createContext = await approvalService.GetCreateContextAsync(requesterSession, CancellationToken.None);
-                ApprovalDefaultLineOption defaultLine = createContext.DefaultLineOptions.Single(defaultLine => defaultLine.StepCount == stepCount);
+                ApprovalStepCount selectedStepCount = new ApprovalStepCount(stepCount);
+                ApprovalDefaultLineOption defaultLine = createContext.DefaultLineOptions.Single(defaultLine => defaultLine.StepCount == selectedStepCount);
 
                 Assert.Equal(expectedFirstApproverUserId, defaultLine.FirstApproverUserId);
                 Assert.Equal(expectedSecondApproverUserId, defaultLine.SecondApproverUserId);
@@ -403,8 +404,9 @@ public sealed class ApprovalServiceTests
 
                 ApprovalCreateContext memberCreateContext = await approvalService.GetCreateContextAsync(teamMemberSession, CancellationToken.None);
                 ApprovalCreateContext leaderCreateContext = await approvalService.GetCreateContextAsync(teamLeaderSession, CancellationToken.None);
-                ApprovalDefaultLineOption memberDefaultLine = memberCreateContext.DefaultLineOptions.Single(defaultLine => defaultLine.StepCount == 3);
-                ApprovalDefaultLineOption leaderDefaultLine = leaderCreateContext.DefaultLineOptions.Single(defaultLine => defaultLine.StepCount == 3);
+                ApprovalStepCount threeStepApproval = new ApprovalStepCount(3);
+                ApprovalDefaultLineOption memberDefaultLine = memberCreateContext.DefaultLineOptions.Single(defaultLine => defaultLine.StepCount == threeStepApproval);
+                ApprovalDefaultLineOption leaderDefaultLine = leaderCreateContext.DefaultLineOptions.Single(defaultLine => defaultLine.StepCount == threeStepApproval);
 
                 Assert.Equal(2, memberDefaultLine.FirstApproverUserId);
                 Assert.Equal(6, memberDefaultLine.SecondApproverUserId);
@@ -431,7 +433,7 @@ public sealed class ApprovalServiceTests
             createApprovalUserOption(3, "매니저", EUserRole.ManagementManager, null)
         };
 
-        IReadOnlyList<ApprovalDefaultLineOption> defaultLines = ApprovalDefaultLinePolicy.CreateDefaultLineOptions(directorSession, approverOptions, finalApproverOptions, new[] { 3 });
+        IReadOnlyList<ApprovalDefaultLineOption> defaultLines = ApprovalDefaultLinePolicy.CreateDefaultLineOptions(directorSession, approverOptions, finalApproverOptions, new[] { new ApprovalStepCount(3) });
         ApprovalDefaultLineOption defaultLine = defaultLines.Single();
 
         Assert.Equal(6, defaultLine.FirstApproverUserId);

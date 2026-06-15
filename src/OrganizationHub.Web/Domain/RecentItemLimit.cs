@@ -8,7 +8,7 @@ public readonly record struct RecentItemLimit
     public const int MINIMUM_VALUE = 1;
     public const int MAXIMUM_VALUE = 200;
 
-    public int Value
+    private int Value
     {
         get;
     }
@@ -28,8 +28,18 @@ public readonly record struct RecentItemLimit
         Value = limitValue;
     }
 
+    public int GetRequiredValue()
+    {
+        if (Value < MINIMUM_VALUE || Value > MAXIMUM_VALUE)
+        {
+            throw new InvalidOperationException("Recent item limit is outside the supported range.");
+        }
+
+        return Value;
+    }
+
     public override string ToString()
     {
-        return Value.ToString(CultureInfo.InvariantCulture);
+        return GetRequiredValue().ToString(CultureInfo.InvariantCulture);
     }
 }

@@ -1,8 +1,10 @@
+using OrganizationHub.Web.Domain;
+
 namespace OrganizationHub.Web.Models;
 
 public sealed class ApprovalDefaultLineOption
 {
-    public int StepCount
+    public ApprovalStepCount StepCount
     {
         get; set;
     }

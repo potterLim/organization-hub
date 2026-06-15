@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct ApprovalStepCountSelection
 {
-    public int Value
+    private int Value
     {
         get;
     }
@@ -46,5 +46,10 @@ public readonly record struct ApprovalStepCountSelection
         }
 
         return new ApprovalStepCount(Value);
+    }
+
+    public int GetRequiredValue()
+    {
+        return GetRequiredStepCount().GetRequiredValue();
     }
 }

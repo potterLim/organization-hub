@@ -10,16 +10,6 @@ internal sealed partial class ApprovalApproverSelectionState
 {
     public string GetApprovalStepLabel(ApprovalStepCount stepCount)
     {
-        if (stepCount.Value == 2)
-        {
-            return ApprovalStepLabelUtility.GetStepOptionLabel(stepCount);
-        }
-
-        if (stepCount.Value == 3)
-        {
-            return ApprovalStepLabelUtility.GetStepOptionLabel(stepCount);
-        }
-
         return ApprovalStepLabelUtility.GetStepOptionLabel(stepCount);
     }
 
@@ -35,18 +25,21 @@ internal sealed partial class ApprovalApproverSelectionState
         ApprovalStepCount stepCount = new ApprovalStepCount(mFormModel.StepCount);
         if (stepCount.RequiresFirstApprover)
         {
-            string stepRoleName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, previewItems.Count + 1);
-            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, stepRoleName, ApprovalUserId.CreateExisting(mFormModel.FirstApproverUserId)));
+            ApprovalStepNumber stepNumber = new ApprovalStepNumber(previewItems.Count + 1);
+            string stepRoleName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepNumber);
+            previewItems.Add(createApprovalFlowPreviewItem(stepNumber, stepRoleName, ApprovalUserId.CreateExisting(mFormModel.FirstApproverUserId)));
         }
 
         if (stepCount.RequiresSecondApprover)
         {
-            string stepRoleName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, previewItems.Count + 1);
-            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, stepRoleName, ApprovalUserId.CreateExisting(mFormModel.SecondApproverUserId)));
+            ApprovalStepNumber stepNumber = new ApprovalStepNumber(previewItems.Count + 1);
+            string stepRoleName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepNumber);
+            previewItems.Add(createApprovalFlowPreviewItem(stepNumber, stepRoleName, ApprovalUserId.CreateExisting(mFormModel.SecondApproverUserId)));
         }
 
-        string finalStepRoleName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, previewItems.Count + 1);
-        previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, finalStepRoleName, ApprovalUserId.CreateExisting(mFormModel.FinalApproverUserId)));
+        ApprovalStepNumber finalStepNumber = new ApprovalStepNumber(previewItems.Count + 1);
+        string finalStepRoleName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, finalStepNumber);
+        previewItems.Add(createApprovalFlowPreviewItem(finalStepNumber, finalStepRoleName, ApprovalUserId.CreateExisting(mFormModel.FinalApproverUserId)));
         return previewItems;
     }
 
@@ -60,10 +53,10 @@ internal sealed partial class ApprovalApproverSelectionState
         return "hub-approval-flow-step hub-approval-flow-step-empty";
     }
 
-    private ApprovalFlowPreviewItem createApprovalFlowPreviewItem(int stepNumber, string title, ApprovalUserId approverUserId)
+    private ApprovalFlowPreviewItem createApprovalFlowPreviewItem(ApprovalStepNumber stepNumber, string title, ApprovalUserId approverUserId)
     {
         ApprovalFlowPreviewItem previewItem = new ApprovalFlowPreviewItem();
-        previewItem.StepNumber = stepNumber.ToString(CultureInfo.InvariantCulture);
+        previewItem.StepNumber = stepNumber.GetRequiredValue().ToString(CultureInfo.InvariantCulture);
         previewItem.Title = title;
         previewItem.ApproverLabel = getApproverLabelOrPlaceholder(approverUserId);
         previewItem.IsComplete = approverUserId.HasValue;

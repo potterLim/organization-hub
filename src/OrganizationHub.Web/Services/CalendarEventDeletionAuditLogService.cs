@@ -73,7 +73,7 @@ public sealed class CalendarEventDeletionAuditLogService : ICalendarEventDeletio
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<CalendarEventDeletionAuditLog> auditLogs = await dbContext.CalendarEventDeletionAuditLogs.OrderByDescending(auditLog => auditLog.DeletedAt).ThenByDescending(auditLog => auditLog.Id).Take(maximumCount.Value).ToListAsync(cancellationToken);
+            List<CalendarEventDeletionAuditLog> auditLogs = await dbContext.CalendarEventDeletionAuditLogs.OrderByDescending(auditLog => auditLog.DeletedAt).ThenByDescending(auditLog => auditLog.Id).Take(maximumCount.GetRequiredValue()).ToListAsync(cancellationToken);
             List<CalendarEventDeletionAuditLogItem> items = new List<CalendarEventDeletionAuditLogItem>();
             foreach (CalendarEventDeletionAuditLog auditLog in auditLogs)
             {

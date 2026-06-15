@@ -102,18 +102,19 @@ public sealed partial class ApprovalService
         ApprovalUserId requestedFinalApproverUserId = command.FinalApproverUserId;
         ApprovalUserId finalApproverUserId = resolveFinalApproverUserId(context.FinalApproverOptions, requestedFinalApproverUserId);
         ApprovalUserOption finalApprover = getRequiredUserOption(context.FinalApproverOptions, finalApproverUserId);
+        ApprovalStepCount stepCount = command.StepCount.GetRequiredStepCount();
         ApprovalRequest request = createApprovalRequest(userSession, command, sourceFolder, fileMetadata, destinationFolderMetadata);
         if (command.StepCount.RequiresFirstApprover && firstApproverOrNull != null)
         {
-            request.Steps.Add(createApprovalStep(1, firstApproverOrNull));
+            request.Steps.Add(createApprovalStep(new ApprovalStepNumber(1), firstApproverOrNull));
         }
 
         if (command.StepCount.RequiresSecondApprover && secondApproverOrNull != null)
         {
-            request.Steps.Add(createApprovalStep(2, secondApproverOrNull));
+            request.Steps.Add(createApprovalStep(new ApprovalStepNumber(2), secondApproverOrNull));
         }
 
-        request.Steps.Add(createApprovalStep(command.StepCount.Value, finalApprover));
+        request.Steps.Add(createApprovalStep(stepCount.GetFinalStepNumber(), finalApprover));
         request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Submitted, null, "결재 요청")));
         return request;
     }

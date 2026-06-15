@@ -5,36 +5,36 @@ namespace OrganizationHub.Web.Domain;
 
 public static class ApprovalStepLabelUtility
 {
-    public static string GetStepRoleName(ApprovalStepCount stepCount, int stepNumber)
+    public static string GetStepRoleName(ApprovalStepCount stepCount, ApprovalStepNumber stepNumber)
     {
-        if (stepNumber < ApprovalStepCount.MINIMUM_VALUE || stepNumber > stepCount.Value)
+        if (stepCount.ContainsStepNumber(stepNumber) == false)
         {
             Debug.Fail("invalid approval step number");
             return "-";
         }
 
-        if (stepNumber == stepCount.Value)
+        if (stepNumber.IsFinalStepOf(stepCount))
         {
             return "결재권자";
         }
 
-        int reviewStepCount = stepCount.Value - 1;
+        int reviewStepCount = stepCount.GetIntermediateApproverCount();
         if (reviewStepCount == 1)
         {
             return "검토자";
         }
 
-        return stepNumber.ToString(CultureInfo.InvariantCulture) + "차 검토자";
+        return stepNumber.GetRequiredValue().ToString(CultureInfo.InvariantCulture) + "차 검토자";
     }
 
     public static string GetStepOptionLabel(ApprovalStepCount stepCount)
     {
-        if (stepCount.Value == 1)
+        if (stepCount.IsSingleStep)
         {
             return "결재권자";
         }
 
-        if (stepCount.Value == 2)
+        if (stepCount.RequiresSecondApprover == false)
         {
             return "검토자 + 결재권자";
         }
@@ -44,12 +44,12 @@ public static class ApprovalStepLabelUtility
 
     public static string GetStepDescription(ApprovalStepCount stepCount)
     {
-        if (stepCount.Value == 1)
+        if (stepCount.IsSingleStep)
         {
             return "결재권자에게 바로 요청합니다.";
         }
 
-        if (stepCount.Value == 2)
+        if (stepCount.RequiresSecondApprover == false)
         {
             return "검토 후 결재권자에게 요청합니다.";
         }

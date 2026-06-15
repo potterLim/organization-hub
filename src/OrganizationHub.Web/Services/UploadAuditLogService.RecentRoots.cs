@@ -27,7 +27,8 @@ public sealed partial class UploadAuditLogService
             return new List<UploadAuditLogItem>();
         }
 
-        int candidateCount = Math.Max(maximumCount.Value * 10, RECENT_READABLE_ROOT_CANDIDATE_COUNT);
+        int maximumItemCount = maximumCount.GetRequiredValue();
+        int candidateCount = Math.Max(maximumItemCount * 10, RECENT_READABLE_ROOT_CANDIDATE_COUNT);
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             IQueryable<UploadAuditLog> query = createReadableRootQuery(dbContext, folderKind, readableRoots);
@@ -54,7 +55,8 @@ public sealed partial class UploadAuditLogService
             return new List<UploadAuditLogItem>();
         }
 
-        int candidateCount = Math.Max(maximumCount.Value * 5, maximumCount.Value);
+        int maximumItemCount = maximumCount.GetRequiredValue();
+        int candidateCount = Math.Max(maximumItemCount * 5, maximumItemCount);
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             IQueryable<UploadAuditLog> query = createRootQuery(dbContext, readableRootOrNull);
@@ -153,7 +155,7 @@ public sealed partial class UploadAuditLogService
             }
 
             items.Add(createItem(auditLog, fileMetadataOrNull));
-            if (items.Count >= maximumCount.Value)
+            if (items.Count >= maximumCount.GetRequiredValue())
             {
                 break;
             }
@@ -179,7 +181,7 @@ public sealed partial class UploadAuditLogService
             }
 
             items.Add(createItem(auditLog));
-            if (items.Count >= maximumCount.Value)
+            if (items.Count >= maximumCount.GetRequiredValue())
             {
                 break;
             }

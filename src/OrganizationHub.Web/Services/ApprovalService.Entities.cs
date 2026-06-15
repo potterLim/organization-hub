@@ -27,7 +27,7 @@ public sealed partial class ApprovalService
         request.RequesterDisplayName = userSession.DisplayName;
         request.RequestedAt = DateTime.UtcNow;
         request.Status = EApprovalRequestStatus.Pending;
-        request.StepCount = command.StepCount.Value;
+        request.StepCount = command.StepCount.GetRequiredValue();
         request.CurrentStepNumber = 1;
         request.ApprovedFileId = string.Empty;
         request.ApprovedFolderId = command.DestinationFolderId.GetRequiredValue();
@@ -35,10 +35,10 @@ public sealed partial class ApprovalService
         return request;
     }
 
-    private ApprovalStep createApprovalStep(int stepNumber, ApprovalUserOption approver)
+    private ApprovalStep createApprovalStep(ApprovalStepNumber stepNumber, ApprovalUserOption approver)
     {
         ApprovalStep step = new ApprovalStep();
-        step.StepNumber = stepNumber;
+        step.StepNumber = stepNumber.GetRequiredValue();
         step.ApproverUserId = approver.UserId;
         step.ApproverDisplayName = approver.DisplayName;
         step.Status = EApprovalStepStatus.Pending;

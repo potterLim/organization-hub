@@ -23,10 +23,9 @@ public sealed class AuthService : IAuthService
         mPasswordHashService = passwordHashService;
     }
 
-    public async Task<LoginResult> ValidateLoginAsync(string username, PlainPassword password, CancellationToken cancellationToken)
+    public async Task<LoginResult> ValidateLoginAsync(Username username, PlainPassword password, CancellationToken cancellationToken)
     {
-        string normalizedUsername = username.Trim();
-        if (string.IsNullOrWhiteSpace(normalizedUsername))
+        if (username.HasValue == false)
         {
             return LoginResult.Fail("아이디와 비밀번호를 확인해 주세요.");
         }
@@ -38,6 +37,7 @@ public sealed class AuthService : IAuthService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
+            string normalizedUsername = username.GetRequiredValue();
             UserAccount? userAccountOrNull = await dbContext.UserAccounts.Include(user => user.Team).FirstOrDefaultAsync(user => user.Username == normalizedUsername, cancellationToken);
             if (userAccountOrNull == null)
             {

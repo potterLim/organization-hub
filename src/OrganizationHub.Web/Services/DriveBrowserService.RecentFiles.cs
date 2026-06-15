@@ -43,7 +43,7 @@ public sealed partial class DriveBrowserService
             recentFileQuery = recentFileQuery.Where(file => isManagementFile(file) == false);
         }
 
-        List<DriveFileItem> recentFiles = recentFileQuery.Take(maximumCount.Value).ToList();
+        List<DriveFileItem> recentFiles = recentFileQuery.Take(maximumCount.GetRequiredValue()).ToList();
         mMemoryCache.Set(cacheKey, cloneDriveFileItems(recentFiles), RECENT_FILES_CACHE_DURATION);
         return recentFiles;
     }

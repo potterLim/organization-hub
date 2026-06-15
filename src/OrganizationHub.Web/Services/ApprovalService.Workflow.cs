@@ -66,7 +66,7 @@ public sealed partial class ApprovalService
         List<ApprovalUserOption> intermediateApprovers = selectedApprovers.Take(selectedApprovers.Count - 1).ToList();
         ApprovalStepCount selectedStepCount = new ApprovalStepCount(selectedApprovers.Count);
         ApprovalDefaultLineOption defaultLine = new ApprovalDefaultLineOption();
-        defaultLine.StepCount = selectedStepCount.Value;
+        defaultLine.StepCount = selectedStepCount;
         defaultLine.FinalApproverUserId = finalApprover.UserId;
         if (selectedApprovers.Count >= 2)
         {

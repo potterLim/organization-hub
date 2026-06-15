@@ -236,13 +236,13 @@ else
     private string getCurrentStepRoleName(ApprovalRequestItem approvalRequest)
     {
         ApprovalStepCount stepCount = new ApprovalStepCount(approvalRequest.StepCount);
-        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, approvalRequest.CurrentStepNumber);
+        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(approvalRequest.CurrentStepNumber));
     }
 
     private string getStepRoleName(ApprovalRequestItem approvalRequest, ApprovalStepItem step)
     {
         ApprovalStepCount stepCount = new ApprovalStepCount(approvalRequest.StepCount);
-        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, step.StepNumber);
+        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(step.StepNumber));
     }
 
     private string formatDate(DateTime dateTime)

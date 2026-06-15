@@ -125,7 +125,7 @@ else
     private string getStepRoleName(ApprovalRequestItem approvalRequest, ApprovalStepItem step)
     {
         ApprovalStepCount stepCount = new ApprovalStepCount(approvalRequest.StepCount);
-        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, step.StepNumber);
+        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(step.StepNumber));
     }
 
     private string getAuditActionText(ApprovalAuditLogItem auditLog)
