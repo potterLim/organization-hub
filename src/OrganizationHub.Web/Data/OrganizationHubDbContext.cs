@@ -73,6 +73,10 @@ public sealed class OrganizationHubDbContext : DbContext
     {
         get; set;
     }
+    public DbSet<WorkGuidelineSection> WorkGuidelineSections
+    {
+        get; set;
+    }
 
     public OrganizationHubDbContext(DbContextOptions<OrganizationHubDbContext> options) : base(options)
     {
@@ -93,6 +97,7 @@ public sealed class OrganizationHubDbContext : DbContext
         ApprovalAuditLogs = Set<ApprovalAuditLog>();
         TodoTaskMetadata = Set<TodoTaskMetadata>();
         CalendarEventMetadata = Set<CalendarEventMetadata>();
+        WorkGuidelineSections = Set<WorkGuidelineSection>();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

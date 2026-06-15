@@ -14,5 +14,6 @@ internal static partial class OrganizationHubModelConfiguration
         configureAuditLogs(modelBuilder);
         configureApprovals(modelBuilder);
         configureMetadata(modelBuilder);
+        configureWorkGuidelines(modelBuilder);
     }
 }

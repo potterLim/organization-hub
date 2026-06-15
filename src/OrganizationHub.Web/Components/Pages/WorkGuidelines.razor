@@ -1,56 +1,102 @@
 @page "/work-guidelines"
 @attribute [Authorize]
-@inject ITeamManagementService TeamManagementService
+@implements IAsyncDisposable
+@inject IWorkGuidelineService WorkGuidelineService
+@inject IJSRuntime JavaScriptRuntime
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("업무 기준")</PageTitle>
 
 <div class="hub-page-header">
     <div>
         <h1 class="hub-page-title">업무 기준</h1>
+        <div class="hub-page-description">조직에서 함께 지킬 자료 관리 기준을 확인합니다.</div>
     </div>
-    @if (string.IsNullOrWhiteSpace(mWorkGuidelineFileId) == false)
-    {
-        <MudButton Href="@("/files/" + mWorkGuidelineFileId + "/download")" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download">업무 기준 다운로드</MudButton>
-    }
+    <AuthorizeView Policy="@OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE">
+        <Authorized>
+            @if (mIsEditMode)
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="cancelEditAsync">편집 취소</MudButton>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="enterEditMode">업무 기준 편집</MudButton>
+            }
+        </Authorized>
+    </AuthorizeView>
 </div>
 
-<div class="hub-rule-grid">
-    <MudPaper Class="hub-card pa-4">
-        <MudText Typo="Typo.h6">파일명 규칙</MudText>
-        <ul class="hub-rule-list">
-            <li>날짜_팀명_문서주제 형식을 사용합니다.</li>
-            <li>예: 2026-05-21_운영팀_주간계획.pdf</li>
-            <li>예: 2026-05-22_인사팀_온보딩체크리스트.pdf</li>
-            <li>예: 2026-05-23_재무팀_예산검토안.pdf</li>
-        </ul>
-    </MudPaper>
-    <MudPaper Class="hub-card pa-4">
-        <MudText Typo="Typo.h6">폴더 관리 기준</MudText>
-        <ul class="hub-rule-list">
-            <li>루트 폴더 구조는 관리자 화면에서만 정리합니다.</li>
-            <li>각 팀은 자기 팀 폴더 안에서만 자료를 관리합니다.</li>
-            <li>일반 자료는 팀 자료 안의 적절한 하위 폴더에 올립니다.</li>
-        </ul>
-    </MudPaper>
-    <MudPaper Class="hub-card pa-4">
-        <MudText Typo="Typo.h6">파일 올리기 규칙</MudText>
-        <ul class="hub-rule-list">
-            <li>중복 파일 올리기를 피합니다.</li>
-            <li>팀 문서 안의 회의록 폴더에는 PDF만 올립니다.</li>
-            <li>수정본은 파일명에 v2, v3 등을 붙입니다.</li>
-            <li>최종본은 파일명에 Final을 붙입니다.</li>
-            <li>개인 정보가 포함된 파일은 외부 공유 자료 폴더에 올리지 않습니다.</li>
-        </ul>
-    </MudPaper>
-</div>
-
-@code
+@if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
-    private string mWorkGuidelineFileId = string.Empty;
+    <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
+}
 
-    protected override async Task OnInitializedAsync()
-    {
-        GlobalSettingFormModel setting = await TeamManagementService.GetGlobalSettingAsync(CancellationToken.None);
-        mWorkGuidelineFileId = setting.FileResources.WorkGuidelineFileId;
-    }
+@if (mIsEditMode)
+{
+    <MudGrid Spacing="6" Class="hub-management-grid hub-admin-page-grid hub-work-guideline-editor">
+        <MudItem xs="12" lg="5">
+            <MudPaper Class="hub-card hub-form-card pa-4">
+                <div class="hub-admin-form-heading">
+                    <MudText Typo="Typo.h6">업무 기준 편집</MudText>
+                    <span>@(mSectionCount)개 카드</span>
+                </div>
+                <div class="hub-form-hint">카드 수를 고르고, 목록을 드래그해 표시 순서를 정합니다. 일반 사용자 화면에는 오른쪽 미리보기와 같은 형태로 보입니다.</div>
+                <MudSelect T="int" Label="카드 수" Value="mSectionCount" ValueChanged="setSectionCount" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (int sectionCount in getAvailableSectionCounts())
+                    {
+                        <MudSelectItem T="int" Value="@sectionCount">@(sectionCount)개</MudSelectItem>
+                    }
+                </MudSelect>
+                <div @ref="mSortableRootElement" class="hub-sortable-list hub-work-guideline-sortable" data-sortable-list>
+                    @foreach (WorkGuidelineSectionFormModel sectionFormModel in mSectionFormModels)
+                    {
+                        <div class="hub-sortable-row hub-work-guideline-editor-row" data-sortable-item-id="@sectionFormModel.ClientKey" draggable="true">
+                            <span class="hub-sortable-handle" role="button" aria-label="업무 기준 순서 변경">
+                                <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
+                            </span>
+                            <div class="hub-sortable-main">
+                                <MudTextField @bind-Value="sectionFormModel.Title" Label="카드 제목" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                                <MudTextField @bind-Value="sectionFormModel.Body" Label="내용" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="4" Immediate="true" />
+                            </div>
+                        </div>
+                    }
+                </div>
+                <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save" OnClick="saveSectionsAsync" Class="hub-primary-action-button">저장</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="cancelEditAsync">취소</MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" lg="7">
+            <MudPaper Class="hub-card hub-list-card pa-4">
+                <div class="hub-admin-section-heading">
+                    <div>
+                        <MudText Typo="Typo.h6">미리보기</MudText>
+                        <div class="hub-muted">저장 후 사용자에게 보일 업무 기준입니다.</div>
+                    </div>
+                </div>
+                @renderGuidelineGrid(mSectionFormModels)
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+else
+{
+    @renderGuidelineGrid(mSectionFormModels)
+}
+
+@code {
+    private RenderFragment renderGuidelineGrid(IReadOnlyList<WorkGuidelineSectionFormModel> sectionFormModels) => @<div class="hub-rule-grid">
+        @foreach (WorkGuidelineSectionFormModel sectionFormModel in sectionFormModels)
+        {
+            <MudPaper Class="hub-card pa-4">
+                <MudText Typo="Typo.h6">@sectionFormModel.Title</MudText>
+                <ul class="hub-rule-list">
+                    @foreach (string line in getGuidelineLines(sectionFormModel.Body))
+                    {
+                        <li>@line</li>
+                    }
+                </ul>
+            </MudPaper>
+        }
+    </div>;
 }

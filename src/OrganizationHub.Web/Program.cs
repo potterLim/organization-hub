@@ -127,6 +127,7 @@ public class Program
         builder.Services.AddScoped<ICalendarEventDeletionAuditLogService, CalendarEventDeletionAuditLogService>();
         builder.Services.AddScoped<IApprovalService, ApprovalService>();
         builder.Services.AddScoped<IApprovalWorkflowManagementService, ApprovalWorkflowManagementService>();
+        builder.Services.AddScoped<IWorkGuidelineService, WorkGuidelineService>();
         builder.Services.AddScoped<OrganizationHubDataSeeder>();
     }
 

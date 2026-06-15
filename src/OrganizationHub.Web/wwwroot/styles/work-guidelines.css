@@ -2,7 +2,7 @@
     align-items: stretch;
     display: grid;
     gap: 20px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
 .hub-rule-grid .hub-card {
@@ -35,4 +35,24 @@
     position: absolute;
     top: .65em;
     width: 5px;
+}
+
+.hub-work-guideline-editor {
+    align-items: flex-start;
+}
+
+.hub-work-guideline-sortable {
+    margin-top: 12px;
+}
+
+.hub-work-guideline-editor-row {
+    align-items: flex-start;
+}
+
+.hub-work-guideline-editor-row .hub-sortable-handle {
+    margin-top: 8px;
+}
+
+.hub-work-guideline-editor-row .mud-input-control {
+    margin-bottom: 8px;
 }

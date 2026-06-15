@@ -63,6 +63,7 @@ public sealed partial class OrganizationHubDataSeeder
             await attachAdministratorsToSystemAdministratorPositionAsync(dbContext, administratorPosition, cancellationToken);
             await upgradeDefaultAdministratorDisplayNamesAsync(dbContext, cancellationToken);
             await seedNavigationMenusAsync(dbContext, cancellationToken);
+            await seedWorkGuidelineSectionsAsync(dbContext, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
     }
