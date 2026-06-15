@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct OrganizationPositionId
 {
-    public int Value
+    private int Value
     {
         get;
     }
@@ -79,6 +79,11 @@ public readonly record struct OrganizationPositionId
             throw new InvalidOperationException("Organization position ID is required.");
         }
 
+        return Value;
+    }
+
+    public int GetOptionalValue()
+    {
         return Value;
     }
 }

@@ -39,7 +39,7 @@ public sealed class FakeDriveService : IDriveService
     public Task<IReadOnlyList<DriveFileItem>> ListFilesAsync(DriveFolderId folderId, CancellationToken cancellationToken)
     {
         List<DriveFileItem> files = mMetadataByFileId.Values
-            .Where(metadata => metadata.ParentFolderIds.Count > 0 && metadata.ParentFolderIds[0] == folderId.Value)
+            .Where(metadata => metadata.ParentFolderIds.Count > 0 && metadata.ParentFolderIds[0] == folderId.GetRequiredValue())
             .Select(createDriveFileItem)
             .OrderBy(file => file.Name)
             .ToList();
@@ -55,14 +55,14 @@ public sealed class FakeDriveService : IDriveService
     public Task<DriveFileMetadata?> GetFileOrNullAsync(DriveItemId fileId, CancellationToken cancellationToken)
     {
         DriveFileMetadata? metadataOrNull;
-        mMetadataByFileId.TryGetValue(fileId.Value, out metadataOrNull);
+        mMetadataByFileId.TryGetValue(fileId.GetRequiredValue(), out metadataOrNull);
         return Task.FromResult(metadataOrNull);
     }
 
     public Task<IReadOnlySet<DriveFolderId>> GetAncestorFolderIdsAsync(DriveItemId fileId, CancellationToken cancellationToken)
     {
         IReadOnlySet<string>? ancestorFolderIdsOrNull;
-        if (mAncestorFolderIdsByItemId.TryGetValue(fileId.Value, out ancestorFolderIdsOrNull) == false)
+        if (mAncestorFolderIdsByItemId.TryGetValue(fileId.GetRequiredValue(), out ancestorFolderIdsOrNull) == false)
         {
             IReadOnlySet<DriveFolderId> emptyAncestorFolderIds = new HashSet<DriveFolderId>();
             return Task.FromResult(emptyAncestorFolderIds);
@@ -75,7 +75,7 @@ public sealed class FakeDriveService : IDriveService
     public Task<DriveFileMetadata> RenameDriveItemAsync(DriveItemId itemId, string name, CancellationToken cancellationToken)
     {
         DriveFileMetadata? metadataOrNull;
-        if (mMetadataByFileId.TryGetValue(itemId.Value, out metadataOrNull) == false || metadataOrNull == null)
+        if (mMetadataByFileId.TryGetValue(itemId.GetRequiredValue(), out metadataOrNull) == false || metadataOrNull == null)
         {
             throw new InvalidOperationException("Drive item was not found.");
         }
@@ -87,21 +87,23 @@ public sealed class FakeDriveService : IDriveService
     public Task<DriveFileMetadata> MoveDriveItemToFolderAsync(DriveItemId itemId, DriveFolderId targetFolderId, CancellationToken cancellationToken)
     {
         DriveFileMetadata? metadataOrNull;
-        if (mMetadataByFileId.TryGetValue(itemId.Value, out metadataOrNull) == false || metadataOrNull == null)
+        string requiredItemId = itemId.GetRequiredValue();
+        string requiredTargetFolderId = targetFolderId.GetRequiredValue();
+        if (mMetadataByFileId.TryGetValue(requiredItemId, out metadataOrNull) == false || metadataOrNull == null)
         {
             throw new InvalidOperationException("Drive item was not found.");
         }
 
         List<string> ancestorFolderIds = new List<string>();
-        ancestorFolderIds.Add(targetFolderId.Value);
+        ancestorFolderIds.Add(requiredTargetFolderId);
         IReadOnlySet<string>? targetAncestorFolderIdsOrNull;
-        if (mAncestorFolderIdsByItemId.TryGetValue(targetFolderId.Value, out targetAncestorFolderIdsOrNull))
+        if (mAncestorFolderIdsByItemId.TryGetValue(requiredTargetFolderId, out targetAncestorFolderIdsOrNull))
         {
             ancestorFolderIds.AddRange(targetAncestorFolderIdsOrNull);
         }
 
         metadataOrNull.ParentFolderIds = ancestorFolderIds;
-        mAncestorFolderIdsByItemId[itemId.Value] = new HashSet<string>(ancestorFolderIds);
+        mAncestorFolderIdsByItemId[requiredItemId] = new HashSet<string>(ancestorFolderIds);
         return Task.FromResult(metadataOrNull);
     }
 
@@ -116,11 +118,12 @@ public sealed class FakeDriveService : IDriveService
 
     public Task<DriveFileItem> CreateFolderAsync(DriveFolderId parentFolderId, string folderName, CancellationToken cancellationToken)
     {
-        string folderId = createFolderId(parentFolderId.Value, folderName);
+        string requiredParentFolderId = parentFolderId.GetRequiredValue();
+        string folderId = createFolderId(requiredParentFolderId, folderName);
         List<string> ancestorFolderIds = new List<string>();
-        ancestorFolderIds.Add(parentFolderId.Value);
+        ancestorFolderIds.Add(requiredParentFolderId);
         IReadOnlySet<string>? parentAncestorFolderIdsOrNull;
-        if (mAncestorFolderIdsByItemId.TryGetValue(parentFolderId.Value, out parentAncestorFolderIdsOrNull))
+        if (mAncestorFolderIdsByItemId.TryGetValue(requiredParentFolderId, out parentAncestorFolderIdsOrNull))
         {
             ancestorFolderIds.AddRange(parentAncestorFolderIdsOrNull);
         }
@@ -136,11 +139,13 @@ public sealed class FakeDriveService : IDriveService
 
     public Task<DriveFileItem> CopyFileToFolderAsync(DriveItemId fileId, DriveFolderId targetFolderId, string fileName, CancellationToken cancellationToken)
     {
-        string copiedFileId = "copied-" + fileId.Value;
+        string requiredFileId = fileId.GetRequiredValue();
+        string requiredTargetFolderId = targetFolderId.GetRequiredValue();
+        string copiedFileId = "copied-" + requiredFileId;
         List<string> ancestorFolderIds = new List<string>();
-        ancestorFolderIds.Add(targetFolderId.Value);
+        ancestorFolderIds.Add(requiredTargetFolderId);
         IReadOnlySet<string>? targetAncestorFolderIdsOrNull;
-        if (mAncestorFolderIdsByItemId.TryGetValue(targetFolderId.Value, out targetAncestorFolderIdsOrNull))
+        if (mAncestorFolderIdsByItemId.TryGetValue(requiredTargetFolderId, out targetAncestorFolderIdsOrNull))
         {
             ancestorFolderIds.AddRange(targetAncestorFolderIdsOrNull);
         }
@@ -155,15 +160,16 @@ public sealed class FakeDriveService : IDriveService
 
     public Task DeleteDriveItemAsync(DriveItemId itemId, CancellationToken cancellationToken)
     {
-        mMetadataByFileId.Remove(itemId.Value);
-        mAncestorFolderIdsByItemId.Remove(itemId.Value);
+        string requiredItemId = itemId.GetRequiredValue();
+        mMetadataByFileId.Remove(requiredItemId);
+        mAncestorFolderIdsByItemId.Remove(requiredItemId);
         return Task.CompletedTask;
     }
 
     public Task<FileDownloadResult> DownloadFileAsync(DriveItemId fileId, CancellationToken cancellationToken)
     {
         MemoryStream contentStream = new MemoryStream();
-        FileDownloadResult downloadResult = new FileDownloadResult(contentStream, fileId.Value + ".pdf", "application/pdf");
+        FileDownloadResult downloadResult = new FileDownloadResult(contentStream, fileId.GetRequiredValue() + ".pdf", "application/pdf");
         return Task.FromResult(downloadResult);
     }
 

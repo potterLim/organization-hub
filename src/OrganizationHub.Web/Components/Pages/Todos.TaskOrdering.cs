@@ -18,9 +18,16 @@ public partial class Todos
             return;
         }
 
+        if (sourceTaskId.HasValue == false || targetTaskId.HasValue == false)
+        {
+            return;
+        }
+
         List<TodoTaskItem> pendingTasks = getPendingTasks();
-        int sourceIndex = pendingTasks.FindIndex(task => task.Id == sourceTaskId.Value);
-        int targetIndex = pendingTasks.FindIndex(task => task.Id == targetTaskId.Value);
+        string requiredSourceTaskId = sourceTaskId.GetRequiredValue();
+        string requiredTargetTaskId = targetTaskId.GetRequiredValue();
+        int sourceIndex = pendingTasks.FindIndex(task => task.Id == requiredSourceTaskId);
+        int targetIndex = pendingTasks.FindIndex(task => task.Id == requiredTargetTaskId);
         if (sourceIndex < 0 || targetIndex < 0)
         {
             return;
@@ -33,7 +40,7 @@ public partial class Todos
         }
 
         pendingTasks.RemoveAt(sourceIndex);
-        targetIndex = pendingTasks.FindIndex(task => task.Id == targetTaskId.Value);
+        targetIndex = pendingTasks.FindIndex(task => task.Id == requiredTargetTaskId);
         if (targetIndex < 0)
         {
             return;
@@ -50,9 +57,16 @@ public partial class Todos
             return;
         }
 
+        if (sourceTaskId.HasValue == false || targetTaskId.HasValue == false)
+        {
+            return;
+        }
+
         List<TodoTaskItem> pendingTasks = getPendingTasks();
-        TodoTaskItem? sourceTaskOrNull = pendingTasks.FirstOrDefault(task => task.Id == sourceTaskId.Value);
-        TodoTaskItem? targetTaskOrNull = pendingTasks.FirstOrDefault(task => task.Id == targetTaskId.Value);
+        string requiredSourceTaskId = sourceTaskId.GetRequiredValue();
+        string requiredTargetTaskId = targetTaskId.GetRequiredValue();
+        TodoTaskItem? sourceTaskOrNull = pendingTasks.FirstOrDefault(task => task.Id == requiredSourceTaskId);
+        TodoTaskItem? targetTaskOrNull = pendingTasks.FirstOrDefault(task => task.Id == requiredTargetTaskId);
         if (sourceTaskOrNull == null || targetTaskOrNull == null)
         {
             return;

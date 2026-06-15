@@ -6,7 +6,7 @@ public readonly record struct PlainPassword
 {
     private readonly string? mValueOrNull;
 
-    public string Value
+    private string Value
     {
         get
         {

@@ -6,7 +6,7 @@ public readonly record struct OrganizationTeamKey
 {
     private readonly string? mValueOrNull;
 
-    public string Value
+    private string Value
     {
         get
         {
@@ -80,11 +80,26 @@ public readonly record struct OrganizationTeamKey
 
     public bool Matches(OrganizationTeamKey otherTeamKey)
     {
-        return string.Equals(Value, otherTeamKey.Value, StringComparison.OrdinalIgnoreCase);
+        return string.Equals(GetOptionalValue(), otherTeamKey.GetOptionalValue(), StringComparison.OrdinalIgnoreCase);
     }
 
     public override string ToString()
     {
+        return Value;
+    }
+
+    public string GetOptionalValue()
+    {
+        return Value;
+    }
+
+    public string GetRequiredValue()
+    {
+        if (HasValue == false)
+        {
+            throw new InvalidOperationException("Organization team key is required.");
+        }
+
         return Value;
     }
 }

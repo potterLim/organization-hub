@@ -64,7 +64,8 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         CancellationToken cancellationToken
     )
     {
-        if (PermissionCatalog.GetDefinitions().Any(definition => definition.Key == permissionKey.Value) == false)
+        string requiredPermissionKey = permissionKey.GetRequiredValue();
+        if (PermissionCatalog.GetDefinitions().Any(definition => definition.Key == requiredPermissionKey) == false)
         {
             return PermissionDecision.Deny("알 수 없는 권한입니다.", "권한");
         }
@@ -93,7 +94,7 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
             }
 
             List<PositionPermissionGrant> permissionGrants = userAccountOrNull.Position.PermissionGrants
-                .Where(permissionGrant => permissionGrant.IsAllowed && permissionGrant.PermissionKey == permissionKey.Value)
+                .Where(permissionGrant => permissionGrant.IsAllowed && permissionGrant.PermissionKey == requiredPermissionKey)
                 .ToList();
             foreach (PositionPermissionGrant permissionGrant in permissionGrants)
             {
@@ -136,7 +137,7 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
             return PermissionDecision.Allow("시스템 관리자");
         }
 
-        return PermissionDecision.Deny("사용자에게 직책이 배정되지 않았습니다.", permissionKey.Value);
+        return PermissionDecision.Deny("사용자에게 직책이 배정되지 않았습니다.", permissionKey.GetRequiredValue());
     }
 
     private bool isGrantAllowed(

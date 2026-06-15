@@ -4,7 +4,7 @@ public readonly record struct SearchKeyword
 {
     private readonly string? mValueOrNull;
 
-    public string Value
+    private string Value
     {
         get
         {

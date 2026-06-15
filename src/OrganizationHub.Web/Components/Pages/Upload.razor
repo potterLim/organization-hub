@@ -33,7 +33,7 @@
                     <MudSelect T="string" Label="자료 위치" Value="mSelectedRootFolderId" ValueChanged="handleRootFolderChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
                         @foreach (DriveFolderReference folder in mUploadRootFolders)
                         {
-                            <MudSelectItem T="string" Value="@folder.FolderId.Value">@folder.DisplayName</MudSelectItem>
+                            <MudSelectItem T="string" Value="@folder.FolderId.GetRequiredValue()">@folder.DisplayName</MudSelectItem>
                         }
                     </MudSelect>
                 </div>

@@ -37,7 +37,7 @@ else
                     <MudSelect T="string" Label="자료 위치" Value="mFormModel.SourceFolderId" ValueChanged="handleSourceFolderChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
                         @foreach (DriveFolderReference folder in mCreateContext.SourceFolders)
                         {
-                            <MudSelectItem T="string" Value="@folder.FolderId.Value">@folder.DisplayName</MudSelectItem>
+                            <MudSelectItem T="string" Value="@folder.FolderId.GetRequiredValue()">@folder.DisplayName</MudSelectItem>
                         }
                     </MudSelect>
                     <div class="hub-browser-search">
@@ -145,7 +145,7 @@ else
                 <MudSelect T="string" Label="보관 영역" Value="mSelectedDestinationRootFolderId" ValueChanged="handleDestinationRootChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
                     @foreach (DriveFolderReference folder in mCreateContext.DestinationFolders)
                     {
-                        <MudSelectItem T="string" Value="@folder.FolderId.Value">@folder.DisplayName</MudSelectItem>
+                        <MudSelectItem T="string" Value="@folder.FolderId.GetRequiredValue()">@folder.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
                 <div class="hub-browser-location">

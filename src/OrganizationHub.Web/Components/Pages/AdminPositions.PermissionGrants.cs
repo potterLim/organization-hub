@@ -90,14 +90,14 @@ public partial class AdminPositions
 
     private PositionPermissionGrantFormModel ensureGrantForm(PositionFormModel formModel, PermissionKey permissionKey)
     {
-        PositionPermissionGrantFormModel? grantFormOrNull = formModel.PermissionGrants.FirstOrDefault(grantForm => grantForm.PermissionKey == permissionKey.Value);
+        PositionPermissionGrantFormModel? grantFormOrNull = formModel.PermissionGrants.FirstOrDefault(grantForm => grantForm.PermissionKey == permissionKey.GetRequiredValue());
         if (grantFormOrNull != null)
         {
             return grantFormOrNull;
         }
 
         PositionPermissionGrantFormModel createdGrantForm = new PositionPermissionGrantFormModel();
-        createdGrantForm.PermissionKey = permissionKey.Value;
+        createdGrantForm.PermissionKey = permissionKey.GetRequiredValue();
         createdGrantForm.ScopeType = EPermissionScopeType.OwnTeam;
         formModel.PermissionGrants.Add(createdGrantForm);
         return createdGrantForm;

@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct CalendarEventId
 {
-    public string Value
+    private string Value
     {
         get;
     }

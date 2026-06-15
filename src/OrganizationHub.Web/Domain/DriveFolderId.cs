@@ -6,7 +6,7 @@ public readonly record struct DriveFolderId
 {
     public const string ROOT_VALUE = "root";
 
-    public string Value
+    private string Value
     {
         get;
     }

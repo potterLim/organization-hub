@@ -26,7 +26,8 @@ public sealed class ChangeVersionService : IChangeVersionService
         }
 
         long version;
-        if (mVersions.TryGetValue(key.Value, out version))
+        string requiredKey = key.GetRequiredValue();
+        if (mVersions.TryGetValue(requiredKey, out version))
         {
             return version;
         }
@@ -63,7 +64,8 @@ public sealed class ChangeVersionService : IChangeVersionService
         foreach (ChangeVersionKey key in normalizeKeys(changeVersionKeys))
         {
             int activeChangeCount;
-            if (mActiveChangeCounts.TryGetValue(key.Value, out activeChangeCount) && activeChangeCount > 0)
+            string requiredKey = key.GetRequiredValue();
+            if (mActiveChangeCounts.TryGetValue(requiredKey, out activeChangeCount) && activeChangeCount > 0)
             {
                 return true;
             }
@@ -77,7 +79,7 @@ public sealed class ChangeVersionService : IChangeVersionService
         List<ChangeVersionKey> normalizedKeys = normalizeKeys(changeVersionKeys);
         foreach (ChangeVersionKey key in normalizedKeys)
         {
-            mActiveChangeCounts.AddOrUpdate(key.Value, 1, (_, currentCount) => currentCount + 1);
+            mActiveChangeCounts.AddOrUpdate(key.GetRequiredValue(), 1, (_, currentCount) => currentCount + 1);
         }
 
         BumpMany(normalizedKeys);
@@ -140,7 +142,7 @@ public sealed class ChangeVersionService : IChangeVersionService
             return;
         }
 
-        mVersions.AddOrUpdate(key.Value, 1, (_, currentVersion) => currentVersion + 1);
+        mVersions.AddOrUpdate(key.GetRequiredValue(), 1, (_, currentVersion) => currentVersion + 1);
     }
 
     public void BumpMany(IReadOnlyList<ChangeVersionKey> changeVersionKeys)
@@ -161,7 +163,7 @@ public sealed class ChangeVersionService : IChangeVersionService
         BumpMany(changeVersionKeys);
         foreach (ChangeVersionKey key in normalizeKeys(changeVersionKeys))
         {
-            mActiveChangeCounts.AddOrUpdate(key.Value, 0, (_, currentCount) => Math.Max(0, currentCount - 1));
+            mActiveChangeCounts.AddOrUpdate(key.GetRequiredValue(), 0, (_, currentCount) => Math.Max(0, currentCount - 1));
         }
     }
 

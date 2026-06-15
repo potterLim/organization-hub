@@ -33,7 +33,7 @@ public sealed partial class ApprovalService
 
         if (nextStepNumber >= request.StepCount)
         {
-            if (nextStepOrNull.ApproverUserId == nextApproverUserId.Value)
+            if (nextStepOrNull.ApproverUserId == nextApproverUserId.GetRequiredValue())
             {
                 return ServiceResult.Succeed();
             }
@@ -41,7 +41,8 @@ public sealed partial class ApprovalService
             return ServiceResult.Fail("최종 결재권자는 변경할 수 없습니다.");
         }
 
-        UserAccount? nextApproverOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Id == nextApproverUserId.Value && user.IsActive, cancellationToken);
+        int requiredNextApproverUserId = nextApproverUserId.GetRequiredValue();
+        UserAccount? nextApproverOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Id == requiredNextApproverUserId && user.IsActive, cancellationToken);
         if (nextApproverOrNull == null || canUseAsChangedIntermediateApprover(request, nextApproverOrNull) == false)
         {
             return ServiceResult.Fail("변경할 결재권자를 찾을 수 없습니다.");

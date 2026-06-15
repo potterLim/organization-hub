@@ -6,7 +6,7 @@ public readonly record struct CalendarId
 {
     public const string ALL_CALENDARS_VALUE = "all";
 
-    public string Value
+    private string Value
     {
         get;
     }

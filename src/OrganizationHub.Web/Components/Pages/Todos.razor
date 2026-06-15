@@ -53,7 +53,7 @@ else
             <MudSelect T="string" Label="할 일 목록" Value="mSelectedTaskListId" ValueChanged="handleTaskListChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-todo-list-select hub-control-select-width">
                 @foreach (TodoTaskListReference taskList in mTaskLists)
                 {
-                    <MudSelectItem T="string" Value="@taskList.TaskListId.Value">@taskList.DisplayName</MudSelectItem>
+                    <MudSelectItem T="string" Value="@taskList.TaskListId.GetRequiredValue()">@taskList.DisplayName</MudSelectItem>
                 }
             </MudSelect>
             @if (canCreateTask())

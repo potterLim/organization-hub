@@ -100,7 +100,7 @@ public sealed partial class DriveBrowserService
 
     private static void applyFolderContext(DriveFileItem file, DriveFolderReference folder)
     {
-        file.TeamKey = folder.TeamKey.Value;
+        file.TeamKey = folder.TeamKey.GetOptionalValue();
         file.TeamName = folder.TeamName;
         if (string.IsNullOrWhiteSpace(file.TeamName))
         {

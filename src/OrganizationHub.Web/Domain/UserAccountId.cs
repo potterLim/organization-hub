@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct UserAccountId
 {
-    public int Value
+    private int Value
     {
         get;
     }
@@ -68,6 +68,11 @@ public readonly record struct UserAccountId
             throw new InvalidOperationException("User account ID is required.");
         }
 
+        return Value;
+    }
+
+    public int GetOptionalValue()
+    {
         return Value;
     }
 }

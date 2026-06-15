@@ -29,66 +29,69 @@ internal sealed partial class ApprovalApproverSelectionState
 
     public void ChangeFirstApprover(ApprovalUserId userId)
     {
-        mFormModel.FirstApproverUserId = userId.Value;
-        if (mFormModel.StepCount == 3 && mFormModel.SecondApproverUserId == userId.Value)
+        int selectedUserId = userId.GetOptionalValue();
+        mFormModel.FirstApproverUserId = selectedUserId;
+        if (mFormModel.StepCount == 3 && mFormModel.SecondApproverUserId == selectedUserId)
         {
             ApprovalUserId defaultSecondApproverUserId = getDefaultSecondApproverIdExcluding(
                 ApprovalUserId.CreateOptional(mFormModel.FirstApproverUserId),
                 ApprovalUserId.CreateOptional(mFormModel.FinalApproverUserId));
-            mFormModel.SecondApproverUserId = defaultSecondApproverUserId.Value;
+            mFormModel.SecondApproverUserId = defaultSecondApproverUserId.GetOptionalValue();
             mLastDefaultSecondApproverUserId = defaultSecondApproverUserId;
         }
 
-        if (mFormModel.FinalApproverUserId == userId.Value)
+        if (mFormModel.FinalApproverUserId == selectedUserId)
         {
             ApprovalUserId defaultFinalApproverUserId = getDefaultFinalApproverIdExcluding(
                 ApprovalUserId.CreateOptional(mFormModel.FirstApproverUserId),
                 ApprovalUserId.CreateOptional(mFormModel.SecondApproverUserId));
-            mFormModel.FinalApproverUserId = defaultFinalApproverUserId.Value;
+            mFormModel.FinalApproverUserId = defaultFinalApproverUserId.GetOptionalValue();
             mLastDefaultFinalApproverUserId = defaultFinalApproverUserId;
         }
     }
 
     public void ChangeSecondApprover(ApprovalUserId userId)
     {
-        mFormModel.SecondApproverUserId = userId.Value;
-        if (mFormModel.FirstApproverUserId == userId.Value)
+        int selectedUserId = userId.GetOptionalValue();
+        mFormModel.SecondApproverUserId = selectedUserId;
+        if (mFormModel.FirstApproverUserId == selectedUserId)
         {
             ApprovalUserId defaultFirstApproverUserId = getDefaultFirstApproverIdExcluding(
                 ApprovalUserId.CreateOptional(mFormModel.SecondApproverUserId),
                 ApprovalUserId.CreateOptional(mFormModel.FinalApproverUserId));
-            mFormModel.FirstApproverUserId = defaultFirstApproverUserId.Value;
+            mFormModel.FirstApproverUserId = defaultFirstApproverUserId.GetOptionalValue();
             mLastDefaultFirstApproverUserId = defaultFirstApproverUserId;
         }
 
-        if (mFormModel.FinalApproverUserId == userId.Value)
+        if (mFormModel.FinalApproverUserId == selectedUserId)
         {
             ApprovalUserId defaultFinalApproverUserId = getDefaultFinalApproverIdExcluding(
                 ApprovalUserId.CreateOptional(mFormModel.FirstApproverUserId),
                 ApprovalUserId.CreateOptional(mFormModel.SecondApproverUserId));
-            mFormModel.FinalApproverUserId = defaultFinalApproverUserId.Value;
+            mFormModel.FinalApproverUserId = defaultFinalApproverUserId.GetOptionalValue();
             mLastDefaultFinalApproverUserId = defaultFinalApproverUserId;
         }
     }
 
     public void ChangeFinalApprover(ApprovalUserId userId)
     {
-        mFormModel.FinalApproverUserId = userId.Value;
-        if (mFormModel.FirstApproverUserId == userId.Value)
+        int selectedUserId = userId.GetOptionalValue();
+        mFormModel.FinalApproverUserId = selectedUserId;
+        if (mFormModel.FirstApproverUserId == selectedUserId)
         {
             ApprovalUserId defaultFirstApproverUserId = getDefaultFirstApproverIdExcluding(
                 ApprovalUserId.CreateOptional(mFormModel.SecondApproverUserId),
                 ApprovalUserId.CreateOptional(mFormModel.FinalApproverUserId));
-            mFormModel.FirstApproverUserId = defaultFirstApproverUserId.Value;
+            mFormModel.FirstApproverUserId = defaultFirstApproverUserId.GetOptionalValue();
             mLastDefaultFirstApproverUserId = defaultFirstApproverUserId;
         }
 
-        if (mFormModel.StepCount == 3 && mFormModel.SecondApproverUserId == userId.Value)
+        if (mFormModel.StepCount == 3 && mFormModel.SecondApproverUserId == selectedUserId)
         {
             ApprovalUserId defaultSecondApproverUserId = getDefaultSecondApproverIdExcluding(
                 ApprovalUserId.CreateOptional(mFormModel.FirstApproverUserId),
                 ApprovalUserId.CreateOptional(mFormModel.FinalApproverUserId));
-            mFormModel.SecondApproverUserId = defaultSecondApproverUserId.Value;
+            mFormModel.SecondApproverUserId = defaultSecondApproverUserId.GetOptionalValue();
             mLastDefaultSecondApproverUserId = defaultSecondApproverUserId;
         }
     }

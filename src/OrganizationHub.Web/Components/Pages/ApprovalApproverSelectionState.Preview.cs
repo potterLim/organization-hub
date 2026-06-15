@@ -79,7 +79,7 @@ internal sealed partial class ApprovalApproverSelectionState
 
         ApprovalUserOption? userOptionOrNull = mCreateContext.ApproverOptions
             .Concat(mCreateContext.FinalApproverOptions)
-            .FirstOrDefault(userOption => userOption.UserId == approverUserId.Value);
+            .FirstOrDefault(userOption => userOption.UserId == approverUserId.GetRequiredValue());
         if (userOptionOrNull == null)
         {
             return "선택 필요";

@@ -159,7 +159,7 @@ public sealed class ChangeVersionServiceTests
             _ =>
             {
                 readCount++;
-                string cacheKey = folderKey.Value + ":" + service.GetVersion(folderKey).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                string cacheKey = folderKey.GetRequiredValue() + ":" + service.GetVersion(folderKey).ToString(System.Globalization.CultureInfo.InvariantCulture);
                 string? cachedValue;
                 if (cache.TryGetValue(cacheKey, out cachedValue))
                 {

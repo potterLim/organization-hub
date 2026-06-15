@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct PermissionKey
 {
-    public string Value
+    private string Value
     {
         get;
     }
@@ -20,6 +20,11 @@ public readonly record struct PermissionKey
     }
 
     public override string ToString()
+    {
+        return Value;
+    }
+
+    public string GetRequiredValue()
     {
         return Value;
     }

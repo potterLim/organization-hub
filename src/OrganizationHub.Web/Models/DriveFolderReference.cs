@@ -33,7 +33,7 @@ public sealed class DriveFolderReference
     {
         get
         {
-            return TeamKey.Value;
+            return TeamKey.GetOptionalValue();
         }
     }
     public string TeamName { get; private init; } = string.Empty;

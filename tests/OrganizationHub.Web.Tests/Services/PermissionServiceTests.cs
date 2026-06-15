@@ -31,18 +31,18 @@ public sealed class PermissionServiceTests
                 IReadOnlyList<DriveFolderReference> readableFolders = await permissionService.GetReadableDriveFoldersAsync(userSession, CancellationToken.None);
                 IReadOnlyList<DriveFolderReference> uploadableFolders = await permissionService.GetUploadableDriveFoldersAsync(userSession, CancellationToken.None);
 
-                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "public-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "common-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "work-resources-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "planning-approved-folder");
-                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.Value == "responsible-folder");
-                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.Value == "management-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "planning-approved-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "responsible-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "public-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "operation-materials-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.GetRequiredValue() == "public-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.GetRequiredValue() == "common-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.GetRequiredValue() == "work-resources-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.GetRequiredValue() == "planning-materials-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.GetRequiredValue() == "planning-approved-folder");
+                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.GetRequiredValue() == "responsible-folder");
+                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.GetRequiredValue() == "management-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "planning-materials-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "planning-approved-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "responsible-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "public-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "operation-materials-folder");
             }
         }
     }
@@ -63,8 +63,8 @@ public sealed class PermissionServiceTests
                 bool canReadResponsibleFile = await permissionService.CanReadFileAsync(responsibleSession, driveItemId("responsible-file"), CancellationToken.None);
                 bool canUploadToResponsibleFolder = await permissionService.CanUploadToFolderAsync(responsibleSession, driveFolderId("responsible-folder"), CancellationToken.None);
 
-                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "responsible-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "responsible-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.GetRequiredValue() == "responsible-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "responsible-folder");
                 Assert.True(canReadResponsibleFile);
                 Assert.True(canUploadToResponsibleFolder);
             }
@@ -88,10 +88,10 @@ public sealed class PermissionServiceTests
                 bool canUploadToResponsibleFolder = await permissionService.CanUploadToFolderAsync(deputyLeaderSession, driveFolderId("responsible-folder"), CancellationToken.None);
                 bool canDeleteOwnTeamFile = await permissionService.CanDeleteInFolderAsync(deputyLeaderSession, driveFolderId("planning-child-folder"), CancellationToken.None);
 
-                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
-                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.Value == "responsible-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "responsible-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.GetRequiredValue() == "planning-materials-folder");
+                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.GetRequiredValue() == "responsible-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "planning-materials-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "responsible-folder");
                 Assert.False(hasCalendar(readableCalendars, "responsible-calendar"));
                 Assert.False(canUploadToResponsibleFolder);
                 Assert.False(canDeleteOwnTeamFile);
@@ -113,16 +113,16 @@ public sealed class PermissionServiceTests
                 IReadOnlyList<DriveFolderReference> readableFolders = await permissionService.GetReadableDriveFoldersAsync(managementSession, CancellationToken.None);
                 IReadOnlyList<DriveFolderReference> uploadableFolders = await permissionService.GetUploadableDriveFoldersAsync(managementSession, CancellationToken.None);
 
-                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "operation-materials-folder");
-                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "responsible-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "management-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "common-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "work-resources-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "operation-materials-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "responsible-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "public-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.GetRequiredValue() == "planning-materials-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.GetRequiredValue() == "operation-materials-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.GetRequiredValue() == "responsible-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "management-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "common-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "work-resources-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "planning-materials-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "operation-materials-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "responsible-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "public-folder");
             }
         }
     }
@@ -146,13 +146,13 @@ public sealed class PermissionServiceTests
                 UserSession directorSession = createManagementSession(EUserRole.ManagementDirector);
 
                 IReadOnlyList<DriveFolderReference> uploadableFolders = await permissionService.GetUploadableDriveFoldersAsync(directorSession, CancellationToken.None);
-                List<DriveFolderReference> managementFolders = uploadableFolders.Where(folder => folder.FolderId.Value == "management-folder").ToList();
+                List<DriveFolderReference> managementFolders = uploadableFolders.Where(folder => folder.FolderId.GetRequiredValue() == "management-folder").ToList();
 
                 DriveFolderReference managementFolder = Assert.Single(managementFolders);
                 Assert.Equal("관리팀 자료", managementFolder.DisplayName);
                 Assert.Equal(EDriveFolderKind.TeamMaterials, managementFolder.FolderKind);
                 Assert.Equal(3, managementFolder.TeamIdValueOrNull);
-                Assert.Equal("Management", managementFolder.TeamKey.Value);
+                Assert.Equal("Management", managementFolder.TeamKey.GetRequiredValue());
                 Assert.True(managementFolder.IsManagementTeam);
             }
         }
@@ -240,11 +240,11 @@ public sealed class PermissionServiceTests
                 bool canDeleteOwnTeamFile = await permissionService.CanDeleteInFolderAsync(userSession, driveFolderId("planning-child-folder"), CancellationToken.None);
                 bool canDeleteOtherTeamFile = await permissionService.CanDeleteInFolderAsync(userSession, driveFolderId("operation-child-folder"), CancellationToken.None);
 
-                Assert.Contains(readableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
-                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.Value == "operation-materials-folder");
-                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.Value == "common-folder");
-                Assert.Contains(uploadableFolders, folder => folder.FolderId.Value == "planning-materials-folder");
-                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.Value == "operation-materials-folder");
+                Assert.Contains(readableFolders, folder => folder.FolderId.GetRequiredValue() == "planning-materials-folder");
+                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.GetRequiredValue() == "operation-materials-folder");
+                Assert.DoesNotContain(readableFolders, folder => folder.FolderId.GetRequiredValue() == "common-folder");
+                Assert.Contains(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "planning-materials-folder");
+                Assert.DoesNotContain(uploadableFolders, folder => folder.FolderId.GetRequiredValue() == "operation-materials-folder");
                 Assert.True(canDeleteOwnTeamFile);
                 Assert.False(canDeleteOtherTeamFile);
             }
@@ -611,13 +611,13 @@ public sealed class PermissionServiceTests
 
     private static bool hasCalendar(IReadOnlyList<CalendarReference> calendars, string calendarId)
     {
-        CalendarReference? calendarOrNull = calendars.FirstOrDefault(calendar => calendar.CalendarId.Value == calendarId);
+        CalendarReference? calendarOrNull = calendars.FirstOrDefault(calendar => calendar.CalendarId.GetRequiredValue() == calendarId);
         return calendarOrNull != null;
     }
 
     private static string getCalendarDisplayName(IReadOnlyList<CalendarReference> calendars, string calendarId)
     {
-        CalendarReference? calendarOrNull = calendars.FirstOrDefault(calendar => calendar.CalendarId.Value == calendarId);
+        CalendarReference? calendarOrNull = calendars.FirstOrDefault(calendar => calendar.CalendarId.GetRequiredValue() == calendarId);
         if (calendarOrNull == null)
         {
             return string.Empty;

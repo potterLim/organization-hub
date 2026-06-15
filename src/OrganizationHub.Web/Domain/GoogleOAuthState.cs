@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct GoogleOAuthState
 {
-    public string Value
+    private string Value
     {
         get;
     }
@@ -25,5 +25,15 @@ public readonly record struct GoogleOAuthState
         }
 
         Value = state.Trim();
+    }
+
+    public string GetRequiredValue()
+    {
+        if (HasValue == false)
+        {
+            throw new InvalidOperationException("Google OAuth state is required.");
+        }
+
+        return Value;
     }
 }

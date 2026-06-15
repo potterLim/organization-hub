@@ -50,7 +50,7 @@ internal sealed partial class ApprovalApproverSelectionState
     {
         return excludedUserIds
             .Where(userId => userId.HasValue && userId != currentUserId)
-            .Select(userId => userId.Value)
+            .Select(userId => userId.GetRequiredValue())
             .ToHashSet();
     }
 
@@ -93,7 +93,7 @@ internal sealed partial class ApprovalApproverSelectionState
     private ApprovalUserId getPreferredApproverIdExcluding(ApprovalUserId preferredUserId, params ApprovalUserId[] excludedUserIds)
     {
         HashSet<int> excludedIds = createExcludedUserIdSet(ApprovalUserId.Empty, excludedUserIds);
-        if (preferredUserId.HasValue && excludedIds.Contains(preferredUserId.Value) == false && isApproverOptionSelected(preferredUserId))
+        if (preferredUserId.HasValue && excludedIds.Contains(preferredUserId.GetRequiredValue()) == false && isApproverOptionSelected(preferredUserId))
         {
             return preferredUserId;
         }
@@ -104,7 +104,7 @@ internal sealed partial class ApprovalApproverSelectionState
     private ApprovalUserId getPreferredFinalApproverIdExcluding(ApprovalUserId preferredUserId, params ApprovalUserId[] excludedUserIds)
     {
         HashSet<int> excludedIds = createExcludedUserIdSet(ApprovalUserId.Empty, excludedUserIds);
-        if (preferredUserId.HasValue && excludedIds.Contains(preferredUserId.Value) == false && isFinalApproverOptionSelected(preferredUserId))
+        if (preferredUserId.HasValue && excludedIds.Contains(preferredUserId.GetRequiredValue()) == false && isFinalApproverOptionSelected(preferredUserId))
         {
             return preferredUserId;
         }
@@ -143,11 +143,11 @@ internal sealed partial class ApprovalApproverSelectionState
 
     private bool isApproverOptionSelected(ApprovalUserId userId)
     {
-        return userId.HasValue && mCreateContext.ApproverOptions.Any(userOption => userOption.UserId == userId.Value);
+        return userId.HasValue && mCreateContext.ApproverOptions.Any(userOption => userOption.UserId == userId.GetRequiredValue());
     }
 
     private bool isFinalApproverOptionSelected(ApprovalUserId userId)
     {
-        return userId.HasValue && mCreateContext.FinalApproverOptions.Any(userOption => userOption.UserId == userId.Value);
+        return userId.HasValue && mCreateContext.FinalApproverOptions.Any(userOption => userOption.UserId == userId.GetRequiredValue());
     }
 }

@@ -51,9 +51,9 @@ public static partial class ApprovalDefaultLinePolicy
 
             ApprovalDefaultLineOption defaultLineOption = new ApprovalDefaultLineOption();
             defaultLineOption.StepCount = approvalStepCount.Value;
-            defaultLineOption.FirstApproverUserId = firstApproverUserId.Value;
-            defaultLineOption.SecondApproverUserId = secondApproverUserId.Value;
-            defaultLineOption.FinalApproverUserId = finalApproverUserId.Value;
+            defaultLineOption.FirstApproverUserId = firstApproverUserId.GetOptionalValue();
+            defaultLineOption.SecondApproverUserId = secondApproverUserId.GetOptionalValue();
+            defaultLineOption.FinalApproverUserId = finalApproverUserId.GetOptionalValue();
             defaultLineOptions.Add(defaultLineOption);
         }
 

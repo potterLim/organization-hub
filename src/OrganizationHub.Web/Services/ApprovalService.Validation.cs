@@ -100,7 +100,7 @@ public sealed partial class ApprovalService
 
     private ApprovalUserOption getRequiredUserOption(IReadOnlyList<ApprovalUserOption> options, ApprovalUserId userId)
     {
-        ApprovalUserOption? optionOrNull = options.FirstOrDefault(option => option.UserId == userId.Value);
+        ApprovalUserOption? optionOrNull = options.FirstOrDefault(option => option.UserId == userId.GetRequiredValue());
         if (optionOrNull == null)
         {
             throw new InvalidOperationException("Approval user option was not found.");
@@ -111,7 +111,12 @@ public sealed partial class ApprovalService
 
     private bool hasUserOption(IReadOnlyList<ApprovalUserOption> options, ApprovalUserId userId)
     {
-        return options.Any(option => option.UserId == userId.Value);
+        if (userId.HasValue == false)
+        {
+            return false;
+        }
+
+        return options.Any(option => option.UserId == userId.GetRequiredValue());
     }
 
     private ApprovalUserOption? getFirstApproverOrNull(IReadOnlyList<ApprovalUserOption> options, ApprovalRequestCommand command)

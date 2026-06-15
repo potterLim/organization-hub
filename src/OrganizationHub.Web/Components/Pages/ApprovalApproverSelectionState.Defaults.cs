@@ -45,7 +45,7 @@ internal sealed partial class ApprovalApproverSelectionState
         ApprovalUserId defaultFirstApproverUserId = getDefaultFirstApproverIdExcluding(
             ApprovalUserId.CreateOptional(mFormModel.SecondApproverUserId),
             ApprovalUserId.CreateOptional(mFormModel.FinalApproverUserId));
-        mFormModel.FirstApproverUserId = defaultFirstApproverUserId.Value;
+        mFormModel.FirstApproverUserId = defaultFirstApproverUserId.GetOptionalValue();
         mLastDefaultFirstApproverUserId = defaultFirstApproverUserId;
     }
 
@@ -69,7 +69,7 @@ internal sealed partial class ApprovalApproverSelectionState
         ApprovalUserId defaultSecondApproverUserId = getDefaultSecondApproverIdExcluding(
             ApprovalUserId.CreateOptional(mFormModel.FirstApproverUserId),
             ApprovalUserId.CreateOptional(mFormModel.FinalApproverUserId));
-        mFormModel.SecondApproverUserId = defaultSecondApproverUserId.Value;
+        mFormModel.SecondApproverUserId = defaultSecondApproverUserId.GetOptionalValue();
         mLastDefaultSecondApproverUserId = defaultSecondApproverUserId;
     }
 
@@ -88,7 +88,7 @@ internal sealed partial class ApprovalApproverSelectionState
         ApprovalUserId defaultFinalApproverUserId = getDefaultFinalApproverIdExcluding(
             ApprovalUserId.CreateOptional(mFormModel.FirstApproverUserId),
             ApprovalUserId.CreateOptional(mFormModel.SecondApproverUserId));
-        mFormModel.FinalApproverUserId = defaultFinalApproverUserId.Value;
+        mFormModel.FinalApproverUserId = defaultFinalApproverUserId.GetOptionalValue();
         mLastDefaultFinalApproverUserId = defaultFinalApproverUserId;
     }
 

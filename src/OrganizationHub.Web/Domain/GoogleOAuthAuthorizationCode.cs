@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct GoogleOAuthAuthorizationCode
 {
-    public string Value
+    private string Value
     {
         get;
     }
@@ -25,5 +25,15 @@ public readonly record struct GoogleOAuthAuthorizationCode
         }
 
         Value = authorizationCode.Trim();
+    }
+
+    public string GetRequiredValue()
+    {
+        if (HasValue == false)
+        {
+            throw new InvalidOperationException("Google OAuth authorization code is required.");
+        }
+
+        return Value;
     }
 }

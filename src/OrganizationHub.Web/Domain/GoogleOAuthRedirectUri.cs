@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct GoogleOAuthRedirectUri
 {
-    public string Value
+    private string Value
     {
         get;
     }
@@ -30,5 +30,10 @@ public readonly record struct GoogleOAuthRedirectUri
         }
 
         Value = trimmedRedirectUri;
+    }
+
+    public string GetRequiredValue()
+    {
+        return Value;
     }
 }

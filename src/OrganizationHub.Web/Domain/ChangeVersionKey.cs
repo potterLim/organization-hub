@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct ChangeVersionKey
 {
-    public string Value
+    private string Value
     {
         get;
     }
@@ -32,6 +32,16 @@ public readonly record struct ChangeVersionKey
         if (Value == null)
         {
             return string.Empty;
+        }
+
+        return Value;
+    }
+
+    public string GetRequiredValue()
+    {
+        if (HasValue == false)
+        {
+            throw new InvalidOperationException("Change version key is required.");
         }
 
         return Value;

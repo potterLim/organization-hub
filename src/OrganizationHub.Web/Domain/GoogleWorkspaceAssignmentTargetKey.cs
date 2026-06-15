@@ -17,7 +17,7 @@ public readonly record struct GoogleWorkspaceAssignmentTargetKey
 
     private readonly string? mValueOrNull;
 
-    public string Value
+    private string Value
     {
         get
         {

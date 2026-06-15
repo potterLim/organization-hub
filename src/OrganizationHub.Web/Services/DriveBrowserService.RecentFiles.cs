@@ -105,7 +105,7 @@ public sealed partial class DriveBrowserService
     private static DriveFileItem createDriveFileItemFromRecentUpload(UploadAuditLogItem recentUpload, DriveFolderReference folder)
     {
         DriveFileItem file = createDriveFileItemFromRecentUpload(recentUpload);
-        file.TeamKey = folder.TeamKey.Value;
+        file.TeamKey = folder.TeamKey.GetOptionalValue();
         file.TeamName = string.IsNullOrWhiteSpace(recentUpload.TeamName) ? folder.TeamName : recentUpload.TeamName;
         if (string.IsNullOrWhiteSpace(file.TeamName))
         {

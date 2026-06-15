@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct NavigationMenuItemId
 {
-    public int Value
+    private int Value
     {
         get;
     }
@@ -57,6 +57,11 @@ public readonly record struct NavigationMenuItemId
             throw new InvalidOperationException("Navigation menu item ID is required.");
         }
 
+        return Value;
+    }
+
+    public int GetOptionalValue()
+    {
         return Value;
     }
 }

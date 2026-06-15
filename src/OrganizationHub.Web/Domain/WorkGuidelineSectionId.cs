@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct WorkGuidelineSectionId
 {
-    public int Value
+    private int Value
     {
         get;
     }
@@ -57,6 +57,11 @@ public readonly record struct WorkGuidelineSectionId
             throw new InvalidOperationException("Work guideline section ID is required.");
         }
 
+        return Value;
+    }
+
+    public int GetOptionalValue()
+    {
         return Value;
     }
 }

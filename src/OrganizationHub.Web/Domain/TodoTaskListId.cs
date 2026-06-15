@@ -6,7 +6,7 @@ public readonly record struct TodoTaskListId
 {
     public const string ALL_TASKS_VALUE = "__organizationhub_all_tasks__";
 
-    public string Value
+    private string Value
     {
         get;
     }

@@ -224,7 +224,8 @@ public sealed class PositionManagementService : IPositionManagementService
         }
 
         PermissionKey permissionKey = grantFormModel.PermissionKeyValue;
-        if (permissionKeys.Contains(permissionKey.Value) == false)
+        string requiredPermissionKey = permissionKey.GetRequiredValue();
+        if (permissionKeys.Contains(requiredPermissionKey) == false)
         {
             return ServiceResult.Fail("알 수 없는 권한이 포함되어 있습니다.");
         }
@@ -259,7 +260,7 @@ public sealed class PositionManagementService : IPositionManagementService
 
             PositionPermissionGrant permissionGrant = new PositionPermissionGrant();
             permissionGrant.Position = position;
-            permissionGrant.PermissionKey = grantFormModel.PermissionKeyValue.Value;
+            permissionGrant.PermissionKey = grantFormModel.PermissionKeyValue.GetRequiredValue();
             permissionGrant.ScopeType = grantFormModel.ScopeType;
             permissionGrant.TargetTeamId = null;
             if (grantFormModel.ScopeType == EPermissionScopeType.SelectedTeam)

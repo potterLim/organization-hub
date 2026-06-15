@@ -63,7 +63,7 @@ public sealed class UserSession
     {
         get
         {
-            return TeamKey.Value;
+            return TeamKey.GetOptionalValue();
         }
     }
 

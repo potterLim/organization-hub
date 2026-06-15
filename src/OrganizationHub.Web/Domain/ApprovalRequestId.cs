@@ -4,7 +4,7 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct ApprovalRequestId
 {
-    public int Value
+    private int Value
     {
         get;
     }
@@ -57,6 +57,11 @@ public readonly record struct ApprovalRequestId
             throw new InvalidOperationException("Approval request ID is required.");
         }
 
+        return Value;
+    }
+
+    public int GetOptionalValue()
+    {
         return Value;
     }
 }

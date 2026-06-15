@@ -34,7 +34,7 @@
             <MudSelect T="string" Label="일정 선택" Value="mSelectedCalendarId" ValueChanged="handleCalendarChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-control-select-width">
                 @foreach (CalendarReference calendar in mCalendars)
                 {
-                    <MudSelectItem T="string" Value="@calendar.CalendarId.Value">@calendar.DisplayName</MudSelectItem>
+                    <MudSelectItem T="string" Value="@calendar.CalendarId.GetRequiredValue()">@calendar.DisplayName</MudSelectItem>
                 }
             </MudSelect>
         </div>
@@ -117,7 +117,7 @@ else
                         <MudSelect T="string" Label="저장 위치" Value="mEditorCalendarId" ValueChanged="handleEditorCalendarChangedAsync" Disabled="mIsEditing" Variant="Variant.Outlined" Margin="Margin.Dense">
                             @foreach (CalendarReference calendar in mWritableCalendars)
                             {
-                                <MudSelectItem T="string" Value="@calendar.CalendarId.Value">@calendar.DisplayName</MudSelectItem>
+                                <MudSelectItem T="string" Value="@calendar.CalendarId.GetRequiredValue()">@calendar.DisplayName</MudSelectItem>
                             }
                         </MudSelect>
                         <MudTextField @bind-Value="mEditorSummary" Label="일정 제목" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />

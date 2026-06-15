@@ -54,7 +54,8 @@ public sealed class TeamManagementService : ITeamManagementService
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             OrganizationTeamKey teamKey = formModel.TeamKeyValue;
-            bool hasDuplicateTeamKey = await dbContext.Teams.AnyAsync(team => team.TeamKey == teamKey.Value, cancellationToken);
+            string requiredTeamKey = teamKey.GetRequiredValue();
+            bool hasDuplicateTeamKey = await dbContext.Teams.AnyAsync(team => team.TeamKey == requiredTeamKey, cancellationToken);
             if (hasDuplicateTeamKey)
             {
                 return ServiceResult.Fail("이미 사용 중인 팀 키입니다.");
@@ -87,7 +88,8 @@ public sealed class TeamManagementService : ITeamManagementService
             }
 
             OrganizationTeamKey teamKey = formModel.TeamKeyValue;
-            bool hasDuplicateTeamKey = await dbContext.Teams.AnyAsync(team => team.Id != requiredTeamId && team.TeamKey == teamKey.Value, cancellationToken);
+            string requiredTeamKey = teamKey.GetRequiredValue();
+            bool hasDuplicateTeamKey = await dbContext.Teams.AnyAsync(team => team.Id != requiredTeamId && team.TeamKey == requiredTeamKey, cancellationToken);
             if (hasDuplicateTeamKey)
             {
                 return ServiceResult.Fail("이미 사용 중인 팀 키입니다.");
@@ -208,7 +210,7 @@ public sealed class TeamManagementService : ITeamManagementService
 
     private void applyTeamForm(Team team, TeamFormModel formModel)
     {
-        team.TeamKey = formModel.TeamKeyValue.Value;
+        team.TeamKey = formModel.TeamKeyValue.GetRequiredValue();
         team.DisplayName = formModel.DisplayName.Trim();
         team.IsActive = formModel.IsActive;
         team.SortOrder = formModel.SortOrder;

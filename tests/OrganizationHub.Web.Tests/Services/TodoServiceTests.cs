@@ -199,7 +199,7 @@ public sealed class TodoServiceTests
 
     private static bool hasTaskList(IReadOnlyList<TodoTaskListReference> taskLists, string taskListId)
     {
-        TodoTaskListReference? taskListOrNull = taskLists.FirstOrDefault(taskList => taskList.TaskListId.Value == taskListId);
+        TodoTaskListReference? taskListOrNull = taskLists.FirstOrDefault(taskList => taskList.TaskListId.GetRequiredValue() == taskListId);
         return taskListOrNull != null;
     }
 

@@ -80,7 +80,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
         }
 
         GoogleAuthorizationCodeFlow flow = createAuthorizationCodeFlow(OAUTH_SCOPES);
-        AuthorizationCodeRequestUrl request = flow.CreateAuthorizationCodeRequest(redirectUri.Value);
+        AuthorizationCodeRequestUrl request = flow.CreateAuthorizationCodeRequest(redirectUri.GetRequiredValue());
         GoogleAuthorizationCodeRequestUrl googleRequest = (GoogleAuthorizationCodeRequestUrl)request;
         googleRequest.AccessType = "offline";
         googleRequest.Prompt = "consent";
@@ -111,7 +111,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
         }
 
         GoogleAuthorizationCodeFlow flow = createAuthorizationCodeFlow(OAUTH_SCOPES);
-        TokenResponse tokenResponse = await flow.ExchangeCodeForTokenAsync("organization-hub-storage", authorizationCode.Value, redirectUri.Value, cancellationToken);
+        TokenResponse tokenResponse = await flow.ExchangeCodeForTokenAsync("organization-hub-storage", authorizationCode.GetRequiredValue(), redirectUri.GetRequiredValue(), cancellationToken);
         if (string.IsNullOrWhiteSpace(tokenResponse.RefreshToken))
         {
             return ServiceResult.Fail("Google refresh token을 받지 못했습니다. Google 권한 연결을 해제한 뒤 다시 연결해 주세요.");
@@ -170,7 +170,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
 
         try
         {
-            string statePayload = mStateProtector.Unprotect(state.Value);
+            string statePayload = mStateProtector.Unprotect(state.GetRequiredValue());
             string[] parts = statePayload.Split(':');
             if (parts.Length != 2)
             {
