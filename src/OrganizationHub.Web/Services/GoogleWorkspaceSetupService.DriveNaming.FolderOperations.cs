@@ -33,7 +33,7 @@ public sealed partial class GoogleWorkspaceSetupService
     {
         try
         {
-            DriveFileItem createdFolder = await mDriveService.CreateFolderAsync(teamRootFolderId, teamDisplayName, cancellationToken);
+            DriveFileItem createdFolder = await mDriveService.CreateFolderAsync(teamRootFolderId, DriveItemName.CreateRequired(teamDisplayName), cancellationToken);
             syncContext.Summary.CreatedCount = syncContext.Summary.CreatedCount + 1;
             DriveFileMetadata? createdMetadataOrNull = await mDriveService.GetFileOrNullAsync(DriveItemId.CreateRequired(createdFolder.Id), cancellationToken);
             if (createdMetadataOrNull != null)
@@ -123,7 +123,7 @@ public sealed partial class GoogleWorkspaceSetupService
 
             DriveFileMetadata renamedMetadata = await mDriveService.RenameDriveItemAsync(
                 DriveItemId.CreateRequired(requiredFolderId),
-                standardName,
+                DriveItemName.CreateRequired(standardName),
                 cancellationToken);
             syncContext.Summary.RenamedCount = syncContext.Summary.RenamedCount + 1;
             return renamedMetadata;

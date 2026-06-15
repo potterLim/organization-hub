@@ -12,9 +12,9 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class NavigationMenuService
 {
-    public async Task<bool> CanAccessPathAsync(UserSession userSession, string path, CancellationToken cancellationToken)
+    public async Task<bool> CanAccessPathAsync(UserSession userSession, NavigationPath path, CancellationToken cancellationToken)
     {
-        string routePath = normalizePath(path);
+        string routePath = path.GetRequiredValue();
         if (shouldBypassMenuGuard(routePath))
         {
             return true;
@@ -40,22 +40,6 @@ public sealed partial class NavigationMenuService
         return true;
     }
 
-    private string normalizePath(string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || path == "/")
-        {
-            return "/dashboard";
-        }
-
-        string normalizedPath = path.Trim();
-        if (normalizedPath.EndsWith("/") && normalizedPath.Length > 1)
-        {
-            normalizedPath = normalizedPath.TrimEnd('/');
-        }
-
-        return normalizedPath;
-    }
-
     private bool shouldBypassMenuGuard(string routePath)
     {
         return
@@ -69,7 +53,7 @@ public sealed partial class NavigationMenuService
 
     private bool isPathMatch(string routePath, string menuHref)
     {
-        string normalizedMenuHref = normalizePath(menuHref);
+        string normalizedMenuHref = NavigationPath.CreateOptional(menuHref).GetRequiredValue();
         return routePath == normalizedMenuHref || routePath.StartsWith(normalizedMenuHref + "/");
     }
 }

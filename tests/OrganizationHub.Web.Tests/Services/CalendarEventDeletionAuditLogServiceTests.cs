@@ -49,7 +49,7 @@ public sealed class CalendarEventDeletionAuditLogServiceTests
             CalendarEventItem calendarEvent = createCalendarEvent();
 
             CalendarEventDeletionAuditLogId auditLogId = await auditLogService.RecordPendingDeletionAsync(teamLeaderSession, calendarEvent, CancellationToken.None);
-            await auditLogService.MarkDeletionFailedAsync(auditLogId, "Google Calendar deletion failed.", CancellationToken.None);
+            await auditLogService.MarkDeletionFailedAsync(auditLogId, CalendarEventDeletionFailureMessage.CreateOptional("Google Calendar deletion failed."), CancellationToken.None);
 
             IReadOnlyList<CalendarEventDeletionAuditLogItem> auditLogs = await auditLogService.GetRecentDeletedEventsAsync(managementSession, new RecentItemLimit(20), CancellationToken.None);
 

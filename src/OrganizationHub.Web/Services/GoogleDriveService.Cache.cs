@@ -64,7 +64,7 @@ public sealed partial class GoogleDriveService
         mMemoryCache.Set(cacheKey, new HashSet<DriveFolderId>(ancestorFolderIds), cacheEntryOptions);
     }
 
-    private void setFileDownloadCache(DriveItemId fileId, byte[] contentBytes, string fileName, string contentType)
+    private void setFileDownloadCache(DriveItemId fileId, byte[] contentBytes, DriveItemName fileName, FileContentType contentType)
     {
         FileDownloadCacheEntry cacheEntry = new FileDownloadCacheEntry(contentBytes, fileName, contentType);
         MemoryCacheEntryOptions cacheEntryOptions = new MemoryCacheEntryOptions();
@@ -145,9 +145,9 @@ public sealed partial class GoogleDriveService
         }
     }
 
-    private bool shouldCacheDownload(string contentType, long contentLength)
+    private bool shouldCacheDownload(FileContentType contentType, long contentLength)
     {
-        return contentType == "application/pdf" && contentLength <= MAX_CACHED_DOWNLOAD_BYTES;
+        return contentType.GetRequiredValue() == "application/pdf" && contentLength <= MAX_CACHED_DOWNLOAD_BYTES;
     }
 
     private string createFolderListCacheKey(DriveFolderId folderId)
@@ -177,16 +177,16 @@ public sealed partial class GoogleDriveService
         {
             get; private init;
         }
-        public string FileName
+        public DriveItemName FileName
         {
             get; private init;
         }
-        public string ContentType
+        public FileContentType ContentType
         {
             get; private init;
         }
 
-        public FileDownloadCacheEntry(byte[] contentBytes, string fileName, string contentType)
+        public FileDownloadCacheEntry(byte[] contentBytes, DriveItemName fileName, FileContentType contentType)
         {
             ContentBytes = contentBytes;
             FileName = fileName;

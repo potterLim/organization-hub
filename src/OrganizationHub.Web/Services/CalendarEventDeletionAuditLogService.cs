@@ -52,12 +52,12 @@ public sealed class CalendarEventDeletionAuditLogService : ICalendarEventDeletio
 
     public async Task MarkDeletionSucceededAsync(CalendarEventDeletionAuditLogId auditLogId, CancellationToken cancellationToken)
     {
-        await updateStatusAsync(auditLogId, ECalendarEventDeletionAuditStatus.Succeeded, string.Empty, cancellationToken);
+        await updateStatusAsync(auditLogId, ECalendarEventDeletionAuditStatus.Succeeded, CalendarEventDeletionFailureMessage.Empty, cancellationToken);
     }
 
-    public async Task MarkDeletionFailedAsync(CalendarEventDeletionAuditLogId auditLogId, string errorMessage, CancellationToken cancellationToken)
+    public async Task MarkDeletionFailedAsync(CalendarEventDeletionAuditLogId auditLogId, CalendarEventDeletionFailureMessage failureMessage, CancellationToken cancellationToken)
     {
-        await updateStatusAsync(auditLogId, ECalendarEventDeletionAuditStatus.Failed, errorMessage, cancellationToken);
+        await updateStatusAsync(auditLogId, ECalendarEventDeletionAuditStatus.Failed, failureMessage, cancellationToken);
     }
 
     public async Task<IReadOnlyList<CalendarEventDeletionAuditLogItem>> GetRecentDeletedEventsAsync(
@@ -87,7 +87,7 @@ public sealed class CalendarEventDeletionAuditLogService : ICalendarEventDeletio
     private async Task updateStatusAsync(
         CalendarEventDeletionAuditLogId auditLogId,
         ECalendarEventDeletionAuditStatus status,
-        string errorMessage,
+        CalendarEventDeletionFailureMessage failureMessage,
         CancellationToken cancellationToken
     )
     {
@@ -101,7 +101,7 @@ public sealed class CalendarEventDeletionAuditLogService : ICalendarEventDeletio
             }
 
             auditLogOrNull.Status = status;
-            auditLogOrNull.ErrorMessage = errorMessage;
+            auditLogOrNull.ErrorMessage = failureMessage.GetOptionalValue();
             await dbContext.SaveChangesAsync(cancellationToken);
         }
     }

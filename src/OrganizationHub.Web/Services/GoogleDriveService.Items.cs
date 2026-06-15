@@ -16,20 +16,16 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleDriveService
 {
-    public async Task<DriveFileMetadata> RenameDriveItemAsync(DriveItemId itemId, string name, CancellationToken cancellationToken)
+    public async Task<DriveFileMetadata> RenameDriveItemAsync(DriveItemId itemId, DriveItemName itemName, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("Google Drive item name is required.", nameof(name));
-        }
-
         string requiredItemId = itemId.GetRequiredValue();
+        string requiredItemName = itemName.GetRequiredValue();
         DriveFileMetadata? previousMetadataOrNull = await GetFileOrNullAsync(itemId, cancellationToken);
         using (mChangeVersionService.BeginChange(createDriveChangeKeys(previousMetadataOrNull)))
         {
             DriveService driveService = await createDriveServiceAsync(cancellationToken);
             DriveDataFile updateMetadata = new DriveDataFile();
-            updateMetadata.Name = name.Trim();
+            updateMetadata.Name = requiredItemName;
             FilesResource.UpdateRequest request = driveService.Files.Update(updateMetadata, requiredItemId);
             request.Fields = "id,name,mimeType,parents";
             request.SupportsAllDrives = true;
@@ -78,19 +74,21 @@ public sealed partial class GoogleDriveService
     public async Task<DriveFileItem> UploadFileAsync(
         DriveFolderId targetFolderId,
         Stream fileStream,
-        string fileName,
-        string contentType,
+        DriveItemName fileName,
+        FileContentType contentType,
         CancellationToken cancellationToken
     )
     {
         string requiredTargetFolderId = targetFolderId.GetRequiredValue();
+        string requiredFileName = fileName.GetRequiredValue();
+        string requiredContentType = contentType.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createDriveChangeKeys(targetFolderId)))
         {
             DriveService driveService = await createDriveServiceAsync(cancellationToken);
             DriveDataFile metadata = new DriveDataFile();
-            metadata.Name = fileName;
+            metadata.Name = requiredFileName;
             metadata.Parents = new List<string> { requiredTargetFolderId };
-            FilesResource.CreateMediaUpload upload = driveService.Files.Create(metadata, fileStream, contentType);
+            FilesResource.CreateMediaUpload upload = driveService.Files.Create(metadata, fileStream, requiredContentType);
             upload.Fields = "id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size";
             upload.SupportsAllDrives = true;
             IUploadProgress uploadProgress = await upload.UploadAsync(cancellationToken);
@@ -105,14 +103,15 @@ public sealed partial class GoogleDriveService
         }
     }
 
-    public async Task<DriveFileItem> CreateFolderAsync(DriveFolderId parentFolderId, string folderName, CancellationToken cancellationToken)
+    public async Task<DriveFileItem> CreateFolderAsync(DriveFolderId parentFolderId, DriveItemName folderName, CancellationToken cancellationToken)
     {
         string requiredParentFolderId = parentFolderId.GetRequiredValue();
+        string requiredFolderName = folderName.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createDriveChangeKeys(parentFolderId)))
         {
             DriveService driveService = await createDriveServiceAsync(cancellationToken);
             DriveDataFile metadata = new DriveDataFile();
-            metadata.Name = folderName.Trim();
+            metadata.Name = requiredFolderName;
             metadata.MimeType = "application/vnd.google-apps.folder";
             metadata.Parents = new List<string> { requiredParentFolderId };
             FilesResource.CreateRequest request = driveService.Files.Create(metadata);
@@ -127,17 +126,18 @@ public sealed partial class GoogleDriveService
     public async Task<DriveFileItem> CopyFileToFolderAsync(
         DriveItemId fileId,
         DriveFolderId targetFolderId,
-        string fileName,
+        DriveItemName fileName,
         CancellationToken cancellationToken
     )
     {
         string requiredFileId = fileId.GetRequiredValue();
         string requiredTargetFolderId = targetFolderId.GetRequiredValue();
+        string requiredFileName = fileName.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createDriveChangeKeys(targetFolderId)))
         {
             DriveService driveService = await createDriveServiceAsync(cancellationToken);
             DriveDataFile metadata = new DriveDataFile();
-            metadata.Name = fileName;
+            metadata.Name = requiredFileName;
             metadata.Parents = new List<string> { requiredTargetFolderId };
             FilesResource.CopyRequest request = driveService.Files.Copy(metadata, requiredFileId);
             request.Fields = "id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size";
@@ -194,18 +194,15 @@ public sealed partial class GoogleDriveService
         }
 
         memoryStream.Position = 0;
-        string contentType = metadata.MimeType;
-        if (string.IsNullOrWhiteSpace(contentType))
-        {
-            contentType = "application/octet-stream";
-        }
+        DriveItemName downloadedFileName = DriveItemName.CreateRequired(metadata.Name);
+        FileContentType contentType = FileContentType.CreateOptional(metadata.MimeType);
 
         if (shouldCacheDownload(contentType, memoryStream.Length))
         {
-            setFileDownloadCache(fileId, memoryStream.ToArray(), metadata.Name, contentType);
+            setFileDownloadCache(fileId, memoryStream.ToArray(), downloadedFileName, contentType);
             memoryStream.Position = 0;
         }
 
-        return new FileDownloadResult(memoryStream, metadata.Name, contentType);
+        return new FileDownloadResult(memoryStream, downloadedFileName, contentType);
     }
 }

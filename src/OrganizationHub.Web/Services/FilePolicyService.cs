@@ -57,33 +57,33 @@ public sealed class FilePolicyService : IFilePolicyService
         return extension == ".pdf";
     }
 
-    public string GetContentType(string fileName)
+    public FileContentType GetContentType(DriveItemName fileName)
     {
-        string extension = Path.GetExtension(fileName).ToLowerInvariant();
+        string extension = Path.GetExtension(fileName.GetRequiredValue()).ToLowerInvariant();
         switch (extension)
         {
             case ".pdf":
-                return "application/pdf";
+                return FileContentType.CreateOptional("application/pdf");
             case ".docx":
-                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                return FileContentType.CreateOptional("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
             case ".xlsx":
-                return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                return FileContentType.CreateOptional("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             case ".pptx":
-                return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+                return FileContentType.CreateOptional("application/vnd.openxmlformats-officedocument.presentationml.presentation");
             case ".png":
-                return "image/png";
+                return FileContentType.CreateOptional("image/png");
             case ".jpg":
-                return "image/jpeg";
+                return FileContentType.CreateOptional("image/jpeg");
             case ".jpeg":
-                return "image/jpeg";
+                return FileContentType.CreateOptional("image/jpeg");
             case ".zip":
-                return "application/zip";
+                return FileContentType.CreateOptional("application/zip");
             case ".txt":
-                return "text/plain";
+                return FileContentType.CreateOptional("text/plain");
             case ".md":
-                return "text/markdown";
+                return FileContentType.CreateOptional("text/markdown");
             default:
-                return "application/octet-stream";
+                return FileContentType.Default;
         }
     }
 }

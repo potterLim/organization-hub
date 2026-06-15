@@ -75,7 +75,7 @@ public sealed partial class GoogleCalendarService
         return mOptions.CalendarTimeZone;
     }
 
-    private IReadOnlyList<CalendarEventItem> createCalendarEventItems(Events events, CalendarId calendarId, string calendarName)
+    private IReadOnlyList<CalendarEventItem> createCalendarEventItems(Events events, CalendarId calendarId, CalendarName calendarName)
     {
         List<CalendarEventItem> items = new List<CalendarEventItem>();
         if (events.Items == null)
@@ -121,12 +121,12 @@ public sealed partial class GoogleCalendarService
         return clonedEvent;
     }
 
-    private CalendarEventItem createCalendarEventItem(Event googleEvent, CalendarId calendarId, string calendarName)
+    private CalendarEventItem createCalendarEventItem(Event googleEvent, CalendarId calendarId, CalendarName calendarName)
     {
         CalendarEventItem item = new CalendarEventItem();
         item.Id = getTextOrEmpty(googleEvent.Id);
         item.CalendarId = calendarId.GetRequiredValue();
-        item.CalendarName = calendarName;
+        item.CalendarName = calendarName.GetOptionalValue();
         item.Summary = getTextOrEmpty(googleEvent.Summary);
         item.Description = getTextOrEmpty(googleEvent.Description);
         item.Location = getTextOrEmpty(googleEvent.Location);

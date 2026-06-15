@@ -72,7 +72,7 @@ public sealed class FakeDriveService : IDriveService
         return Task.FromResult(ancestorFolderIds);
     }
 
-    public Task<DriveFileMetadata> RenameDriveItemAsync(DriveItemId itemId, string name, CancellationToken cancellationToken)
+    public Task<DriveFileMetadata> RenameDriveItemAsync(DriveItemId itemId, DriveItemName itemName, CancellationToken cancellationToken)
     {
         DriveFileMetadata? metadataOrNull;
         if (mMetadataByFileId.TryGetValue(itemId.GetRequiredValue(), out metadataOrNull) == false || metadataOrNull == null)
@@ -80,7 +80,7 @@ public sealed class FakeDriveService : IDriveService
             throw new InvalidOperationException("Drive item was not found.");
         }
 
-        metadataOrNull.Name = name;
+        metadataOrNull.Name = itemName.GetRequiredValue();
         return Task.FromResult(metadataOrNull);
     }
 
@@ -107,19 +107,20 @@ public sealed class FakeDriveService : IDriveService
         return Task.FromResult(metadataOrNull);
     }
 
-    public Task<DriveFileItem> UploadFileAsync(DriveFolderId targetFolderId, Stream fileStream, string fileName, string contentType, CancellationToken cancellationToken)
+    public Task<DriveFileItem> UploadFileAsync(DriveFolderId targetFolderId, Stream fileStream, DriveItemName fileName, FileContentType contentType, CancellationToken cancellationToken)
     {
         DriveFileItem driveFileItem = new DriveFileItem();
         driveFileItem.Id = "uploaded-file";
-        driveFileItem.Name = fileName;
-        driveFileItem.MimeType = contentType;
+        driveFileItem.Name = fileName.GetRequiredValue();
+        driveFileItem.MimeType = contentType.GetRequiredValue();
         return Task.FromResult(driveFileItem);
     }
 
-    public Task<DriveFileItem> CreateFolderAsync(DriveFolderId parentFolderId, string folderName, CancellationToken cancellationToken)
+    public Task<DriveFileItem> CreateFolderAsync(DriveFolderId parentFolderId, DriveItemName folderName, CancellationToken cancellationToken)
     {
         string requiredParentFolderId = parentFolderId.GetRequiredValue();
-        string folderId = createFolderId(requiredParentFolderId, folderName);
+        string requiredFolderName = folderName.GetRequiredValue();
+        string folderId = createFolderId(requiredParentFolderId, requiredFolderName);
         List<string> ancestorFolderIds = new List<string>();
         ancestorFolderIds.Add(requiredParentFolderId);
         IReadOnlySet<string>? parentAncestorFolderIdsOrNull;
@@ -128,19 +129,20 @@ public sealed class FakeDriveService : IDriveService
             ancestorFolderIds.AddRange(parentAncestorFolderIdsOrNull);
         }
 
-        AddFolder(folderId, folderName, ancestorFolderIds.ToArray());
+        AddFolder(folderId, requiredFolderName, ancestorFolderIds.ToArray());
         DriveFileItem driveFileItem = new DriveFileItem();
         driveFileItem.Id = folderId;
-        driveFileItem.Name = folderName;
+        driveFileItem.Name = requiredFolderName;
         driveFileItem.MimeType = "application/vnd.google-apps.folder";
         driveFileItem.IsFolder = true;
         return Task.FromResult(driveFileItem);
     }
 
-    public Task<DriveFileItem> CopyFileToFolderAsync(DriveItemId fileId, DriveFolderId targetFolderId, string fileName, CancellationToken cancellationToken)
+    public Task<DriveFileItem> CopyFileToFolderAsync(DriveItemId fileId, DriveFolderId targetFolderId, DriveItemName fileName, CancellationToken cancellationToken)
     {
         string requiredFileId = fileId.GetRequiredValue();
         string requiredTargetFolderId = targetFolderId.GetRequiredValue();
+        string requiredFileName = fileName.GetRequiredValue();
         string copiedFileId = "copied-" + requiredFileId;
         List<string> ancestorFolderIds = new List<string>();
         ancestorFolderIds.Add(requiredTargetFolderId);
@@ -150,10 +152,10 @@ public sealed class FakeDriveService : IDriveService
             ancestorFolderIds.AddRange(targetAncestorFolderIdsOrNull);
         }
 
-        AddFile(copiedFileId, fileName, "application/pdf", ancestorFolderIds.ToArray());
+        AddFile(copiedFileId, requiredFileName, "application/pdf", ancestorFolderIds.ToArray());
         DriveFileItem driveFileItem = new DriveFileItem();
         driveFileItem.Id = copiedFileId;
-        driveFileItem.Name = fileName;
+        driveFileItem.Name = requiredFileName;
         driveFileItem.MimeType = "application/pdf";
         return Task.FromResult(driveFileItem);
     }
@@ -169,7 +171,7 @@ public sealed class FakeDriveService : IDriveService
     public Task<FileDownloadResult> DownloadFileAsync(DriveItemId fileId, CancellationToken cancellationToken)
     {
         MemoryStream contentStream = new MemoryStream();
-        FileDownloadResult downloadResult = new FileDownloadResult(contentStream, fileId.GetRequiredValue() + ".pdf", "application/pdf");
+        FileDownloadResult downloadResult = new FileDownloadResult(contentStream, DriveItemName.CreateRequired(fileId.GetRequiredValue() + ".pdf"), FileContentType.CreateOptional("application/pdf"));
         return Task.FromResult(downloadResult);
     }
 

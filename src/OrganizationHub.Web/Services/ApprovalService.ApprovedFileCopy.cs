@@ -27,7 +27,7 @@ public sealed partial class ApprovalService
         try
         {
             DriveFolderId approvedFolderId = DriveFolderId.CreateOptional(request.ApprovedFolderId);
-            DriveFileItem copiedFile = await mDriveService.CopyFileToFolderAsync(DriveItemId.CreateOptional(request.FileId), approvedFolderId, request.FileName, cancellationToken);
+            DriveFileItem copiedFile = await mDriveService.CopyFileToFolderAsync(DriveItemId.CreateOptional(request.FileId), approvedFolderId, DriveItemName.CreateRequired(request.FileName), cancellationToken);
             request.ApprovedFileId = copiedFile.Id;
             dbContext.UploadAuditLogs.Add(createUploadAuditLogForApprovedCopy(request, copiedFile));
             if (mDriveBrowserServiceOrNull != null)

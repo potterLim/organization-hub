@@ -56,7 +56,7 @@ public partial class Calendar
         {
             if (auditLogId.HasValue)
             {
-                await markDeletionFailedAsync(auditLogId, exception.Message);
+                await markDeletionFailedAsync(auditLogId, CalendarEventDeletionFailureMessage.CreateOptional(exception.Message));
             }
 
             mErrorMessage = "일정을 삭제하지 못했습니다. 일정은 아직 남아 있습니다. 잠시 후 다시 시도해 주세요.";
@@ -83,11 +83,11 @@ public partial class Calendar
         }
     }
 
-    private async Task markDeletionFailedAsync(CalendarEventDeletionAuditLogId auditLogId, string errorMessage)
+    private async Task markDeletionFailedAsync(CalendarEventDeletionAuditLogId auditLogId, CalendarEventDeletionFailureMessage failureMessage)
     {
         try
         {
-            await CalendarEventDeletionAuditLogService.MarkDeletionFailedAsync(auditLogId, errorMessage, CancellationToken.None);
+            await CalendarEventDeletionAuditLogService.MarkDeletionFailedAsync(auditLogId, failureMessage, CancellationToken.None);
         }
         catch
         {

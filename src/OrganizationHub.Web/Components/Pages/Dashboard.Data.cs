@@ -108,7 +108,8 @@ public partial class Dashboard
             DateTime today = DateTime.Today;
             DateTime weekStart = CalendarWeekUtility.GetStartOfWeek(today);
             DateTime weekEnd = CalendarWeekUtility.GetEndOfWeek(today);
-            IReadOnlyList<CalendarEventItem> events = await CalendarService.GetAggregateEventsAsync(CurrentUserSessionOrNull, weekStart, weekEnd, CancellationToken.None);
+            CalendarEventDateRange dateRange = new CalendarEventDateRange(weekStart, weekEnd);
+            IReadOnlyList<CalendarEventItem> events = await CalendarService.GetAggregateEventsAsync(CurrentUserSessionOrNull, dateRange, CancellationToken.None);
             mWeekEvents = events.Take(6).ToList();
         }
         catch

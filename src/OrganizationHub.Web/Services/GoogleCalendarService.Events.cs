@@ -17,9 +17,8 @@ public sealed partial class GoogleCalendarService
 {
     public async Task<IReadOnlyList<CalendarEventItem>> GetEventsAsync(
         CalendarId calendarId,
-        string calendarName,
-        DateTime start,
-        DateTime end,
+        CalendarName calendarName,
+        CalendarEventDateRange dateRange,
         CancellationToken cancellationToken)
     {
         if (calendarId.HasValue == false)
@@ -28,13 +27,13 @@ public sealed partial class GoogleCalendarService
         }
 
         CalendarService calendarService = await createCalendarServiceAsync(cancellationToken);
-        CalendarEventFetchRequest request = new CalendarEventFetchRequest(calendarService, calendarId, calendarName, start, end);
+        CalendarEventFetchRequest request = new CalendarEventFetchRequest(calendarService, calendarId, calendarName, dateRange);
         return await getEventsAsync(request, cancellationToken);
     }
 
     private async Task<IReadOnlyList<CalendarEventItem>> getEventsAsync(CalendarEventFetchRequest request, CancellationToken cancellationToken)
     {
-        string cacheKey = createEventListCacheKey(request.CalendarId, request.CalendarName, request.Start, request.End);
+        string cacheKey = createEventListCacheKey(request.CalendarId, request.CalendarName, request.DateRange);
         IReadOnlyList<CalendarEventItem>? cachedEventsOrNull = getCachedCalendarEventsOrNull(cacheKey);
         if (cachedEventsOrNull != null)
         {
@@ -43,8 +42,8 @@ public sealed partial class GoogleCalendarService
 
         string requiredCalendarId = request.CalendarId.GetRequiredValue();
         EventsResource.ListRequest listRequest = request.CalendarService.Events.List(requiredCalendarId);
-        listRequest.TimeMinDateTimeOffset = new DateTimeOffset(request.Start);
-        listRequest.TimeMaxDateTimeOffset = new DateTimeOffset(request.End);
+        listRequest.TimeMinDateTimeOffset = new DateTimeOffset(request.DateRange.Start);
+        listRequest.TimeMaxDateTimeOffset = new DateTimeOffset(request.DateRange.End);
         listRequest.SingleEvents = true;
         listRequest.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
         listRequest.Fields = "items(" + EVENT_FIELDS + "),nextPageToken";
@@ -55,12 +54,7 @@ public sealed partial class GoogleCalendarService
         return cloneCalendarEvents(calendarEvents);
     }
 
-    public async Task<IReadOnlyList<CalendarEventItem>> GetTeamEventsAsync(
-        OrganizationTeamId teamId,
-        DateTime start,
-        DateTime end,
-        CancellationToken cancellationToken
-    )
+    public async Task<IReadOnlyList<CalendarEventItem>> GetTeamEventsAsync(OrganizationTeamId teamId, CalendarEventDateRange dateRange, CancellationToken cancellationToken)
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
@@ -71,14 +65,13 @@ public sealed partial class GoogleCalendarService
                 return new List<CalendarEventItem>();
             }
 
-            return await GetEventsAsync(CalendarId.CreateOptional(teamOrNull.CalendarId), teamOrNull.DisplayName, start, end, cancellationToken);
+            return await GetEventsAsync(CalendarId.CreateOptional(teamOrNull.CalendarId), CalendarName.CreateOptional(teamOrNull.DisplayName), dateRange, cancellationToken);
         }
     }
 
     public async Task<IReadOnlyList<CalendarEventItem>> GetAggregateEventsAsync(
         UserSession userSession,
-        DateTime start,
-        DateTime end,
+        CalendarEventDateRange dateRange,
         CancellationToken cancellationToken
     )
     {
@@ -125,7 +118,7 @@ public sealed partial class GoogleCalendarService
         List<Task<IReadOnlyList<CalendarEventItem>>> eventTasks = new List<Task<IReadOnlyList<CalendarEventItem>>>();
         foreach (CalendarFetchTarget fetchTarget in fetchTargets)
         {
-            CalendarEventFetchRequest request = new CalendarEventFetchRequest(calendarService, fetchTarget.CalendarId, fetchTarget.CalendarName, start, end);
+            CalendarEventFetchRequest request = new CalendarEventFetchRequest(calendarService, fetchTarget.CalendarId, fetchTarget.CalendarName, dateRange);
             eventTasks.Add(getEventsAsync(request, cancellationToken));
         }
 
@@ -143,7 +136,7 @@ public sealed partial class GoogleCalendarService
     public async Task<CalendarEventItem> CreateEventAsync(
         UserSession userSession,
         CalendarEventFormModel formModel,
-        string calendarName,
+        CalendarName calendarName,
         CancellationToken cancellationToken
     )
     {
@@ -164,7 +157,7 @@ public sealed partial class GoogleCalendarService
         }
     }
 
-    public async Task<CalendarEventItem> UpdateEventAsync(CalendarEventFormModel formModel, string calendarName, CancellationToken cancellationToken)
+    public async Task<CalendarEventItem> UpdateEventAsync(CalendarEventFormModel formModel, CalendarName calendarName, CancellationToken cancellationToken)
     {
         CalendarId calendarId = formModel.CalendarIdValue;
         CalendarEventId eventId = formModel.EventIdValue;
@@ -201,15 +194,13 @@ public sealed partial class GoogleCalendarService
         public CalendarEventFetchRequest(
             CalendarService calendarService,
             CalendarId calendarId,
-            string calendarName,
-            DateTime start,
-            DateTime end)
+            CalendarName calendarName,
+            CalendarEventDateRange dateRange)
         {
             CalendarService = calendarService;
             CalendarId = calendarId;
             CalendarName = calendarName;
-            Start = start;
-            End = end;
+            DateRange = dateRange;
         }
 
         public CalendarService CalendarService
@@ -222,17 +213,12 @@ public sealed partial class GoogleCalendarService
             get; private init;
         }
 
-        public string CalendarName
+        public CalendarName CalendarName
         {
             get; private init;
         }
 
-        public DateTime Start
-        {
-            get; private init;
-        }
-
-        public DateTime End
+        public CalendarEventDateRange DateRange
         {
             get; private init;
         }

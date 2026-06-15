@@ -66,7 +66,7 @@ public sealed partial class GoogleCalendarService
         return "OrganizationHub:Calendar:Version:" + calendarId.GetRequiredValue();
     }
 
-    private string createEventListCacheKey(CalendarId calendarId, string calendarName, DateTime start, DateTime end)
+    private string createEventListCacheKey(CalendarId calendarId, CalendarName calendarName, CalendarEventDateRange dateRange)
     {
         List<string> cacheKeyParts = new List<string>
         {
@@ -75,9 +75,9 @@ public sealed partial class GoogleCalendarService
             "Events",
             calendarId.GetRequiredValue(),
             getCalendarEventCacheVersion(calendarId),
-            calendarName,
-            start.Ticks.ToString(CultureInfo.InvariantCulture),
-            end.Ticks.ToString(CultureInfo.InvariantCulture)
+            calendarName.GetOptionalValue(),
+            dateRange.Start.Ticks.ToString(CultureInfo.InvariantCulture),
+            dateRange.End.Ticks.ToString(CultureInfo.InvariantCulture)
         };
         return string.Join(":", cacheKeyParts);
     }

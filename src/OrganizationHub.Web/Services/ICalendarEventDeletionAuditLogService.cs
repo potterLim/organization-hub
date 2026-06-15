@@ -10,6 +10,6 @@ public interface ICalendarEventDeletionAuditLogService
 {
     Task<CalendarEventDeletionAuditLogId> RecordPendingDeletionAsync(UserSession userSession, CalendarEventItem calendarEvent, CancellationToken cancellationToken);
     Task MarkDeletionSucceededAsync(CalendarEventDeletionAuditLogId auditLogId, CancellationToken cancellationToken);
-    Task MarkDeletionFailedAsync(CalendarEventDeletionAuditLogId auditLogId, string errorMessage, CancellationToken cancellationToken);
+    Task MarkDeletionFailedAsync(CalendarEventDeletionAuditLogId auditLogId, CalendarEventDeletionFailureMessage failureMessage, CancellationToken cancellationToken);
     Task<IReadOnlyList<CalendarEventDeletionAuditLogItem>> GetRecentDeletedEventsAsync(UserSession userSession, RecentItemLimit maximumCount, CancellationToken cancellationToken);
 }

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using OrganizationHub.Web.Configuration;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Services;
 using Xunit;
 
@@ -23,8 +24,8 @@ public sealed class FilePolicyServiceTests
         OrganizationHubOptions options = new OrganizationHubOptions();
         FilePolicyService filePolicyService = new FilePolicyService(Options.Create(options));
 
-        string contentType = filePolicyService.GetContentType(fileName);
+        FileContentType contentType = filePolicyService.GetContentType(DriveItemName.CreateRequired(fileName));
 
-        Assert.Equal(expectedContentType, contentType);
+        Assert.Equal(expectedContentType, contentType.GetRequiredValue());
     }
 }

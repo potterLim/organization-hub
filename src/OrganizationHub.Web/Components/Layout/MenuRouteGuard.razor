@@ -51,7 +51,8 @@ else
             return;
         }
 
-        bool canAccessPath = await NavigationMenuService.CanAccessPathAsync(CurrentUserSessionOrNull, currentUri.AbsolutePath, CancellationToken.None);
+        NavigationPath navigationPath = NavigationPath.CreateOptional(currentUri.AbsolutePath);
+        bool canAccessPath = await NavigationMenuService.CanAccessPathAsync(CurrentUserSessionOrNull, navigationPath, CancellationToken.None);
         if (canAccessPath)
         {
             mLastCheckedPath = currentPath;

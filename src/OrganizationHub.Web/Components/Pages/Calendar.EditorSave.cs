@@ -46,7 +46,8 @@ public partial class Calendar
         CalendarEventItem? previousSelectedEventOrNull = cloneCalendarEventOrNull(mSelectedEventOrNull);
         try
         {
-            CalendarEventItem optimisticEvent = createOptimisticCalendarEvent(formModelOrNull, calendarOrNull.DisplayName, currentUserSession);
+            CalendarName calendarName = CalendarName.CreateOptional(calendarOrNull.DisplayName);
+            CalendarEventItem optimisticEvent = createOptimisticCalendarEvent(formModelOrNull, calendarName, currentUserSession);
             applyWritableState(optimisticEvent);
             mErrorMessage = string.Empty;
             closeEditor();
@@ -55,11 +56,11 @@ public partial class Calendar
             CalendarEventItem savedEvent;
             if (isEditing)
             {
-                savedEvent = await CalendarService.UpdateEventAsync(formModelOrNull, calendarOrNull.DisplayName, CancellationToken.None);
+                savedEvent = await CalendarService.UpdateEventAsync(formModelOrNull, calendarName, CancellationToken.None);
             }
             else
             {
-                savedEvent = await CalendarService.CreateEventAsync(currentUserSession, formModelOrNull, calendarOrNull.DisplayName, CancellationToken.None);
+                savedEvent = await CalendarService.CreateEventAsync(currentUserSession, formModelOrNull, calendarName, CancellationToken.None);
             }
 
             applyWritableState(savedEvent);

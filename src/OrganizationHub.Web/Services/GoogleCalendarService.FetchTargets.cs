@@ -9,7 +9,7 @@ public sealed partial class GoogleCalendarService
         List<CalendarFetchTarget> fetchTargets,
         HashSet<string> fetchedCalendarIds,
         string? calendarIdOrNull,
-        string calendarName
+        string calendarNameText
     )
     {
         string calendarIdValue = string.Empty;
@@ -29,7 +29,7 @@ public sealed partial class GoogleCalendarService
             return;
         }
 
-        fetchTargets.Add(new CalendarFetchTarget(calendarId, calendarName));
+        fetchTargets.Add(new CalendarFetchTarget(calendarId, CalendarName.CreateOptional(calendarNameText)));
     }
 
     private sealed class CalendarFetchTarget
@@ -38,12 +38,12 @@ public sealed partial class GoogleCalendarService
         {
             get; private init;
         }
-        public string CalendarName
+        public CalendarName CalendarName
         {
             get; private init;
         }
 
-        public CalendarFetchTarget(CalendarId calendarId, string calendarName)
+        public CalendarFetchTarget(CalendarId calendarId, CalendarName calendarName)
         {
             CalendarId = calendarId;
             CalendarName = calendarName;

@@ -32,8 +32,8 @@ public sealed class NavigationMenuServiceTests
 
             IReadOnlyList<NavigationMenuItem> teamMenus = await navigationMenuService.GetVisibleMenuItemsAsync(teamUserSession, CancellationToken.None);
             IReadOnlyList<NavigationMenuItem> managementMenus = await navigationMenuService.GetVisibleMenuItemsAsync(managementSession, CancellationToken.None);
-            bool teamCanAccessManagementFiles = await navigationMenuService.CanAccessPathAsync(teamUserSession, "/management-files", CancellationToken.None);
-            bool managementCanAccessManagementFiles = await navigationMenuService.CanAccessPathAsync(managementSession, "/management-files", CancellationToken.None);
+            bool teamCanAccessManagementFiles = await navigationMenuService.CanAccessPathAsync(teamUserSession, NavigationPath.CreateOptional("/management-files"), CancellationToken.None);
+            bool managementCanAccessManagementFiles = await navigationMenuService.CanAccessPathAsync(managementSession, NavigationPath.CreateOptional("/management-files"), CancellationToken.None);
 
             Assert.DoesNotContain(teamMenus, menuItem => menuItem.MenuKey == "ManagementFiles");
             Assert.Contains(managementMenus, menuItem => menuItem.MenuKey == "ManagementFiles");
@@ -80,10 +80,10 @@ public sealed class NavigationMenuServiceTests
             Assert.Contains(adminMenus, menuItem => menuItem.MenuKey == "AdminTeams");
             Assert.Contains(adminMenus, menuItem => menuItem.MenuKey == "AdminSettings");
             Assert.Contains(adminMenus, menuItem => menuItem.MenuKey == "AdminMenus");
-            Assert.False(await navigationMenuService.CanAccessPathAsync(generalManagementSession, "/admin/users", CancellationToken.None));
-            Assert.True(await navigationMenuService.CanAccessPathAsync(managerSession, "/admin/users", CancellationToken.None));
-            Assert.False(await navigationMenuService.CanAccessPathAsync(managerSession, "/admin/menus", CancellationToken.None));
-            Assert.True(await navigationMenuService.CanAccessPathAsync(adminSession, "/admin/menus", CancellationToken.None));
+            Assert.False(await navigationMenuService.CanAccessPathAsync(generalManagementSession, NavigationPath.CreateOptional("/admin/users"), CancellationToken.None));
+            Assert.True(await navigationMenuService.CanAccessPathAsync(managerSession, NavigationPath.CreateOptional("/admin/users"), CancellationToken.None));
+            Assert.False(await navigationMenuService.CanAccessPathAsync(managerSession, NavigationPath.CreateOptional("/admin/menus"), CancellationToken.None));
+            Assert.True(await navigationMenuService.CanAccessPathAsync(adminSession, NavigationPath.CreateOptional("/admin/menus"), CancellationToken.None));
         }
     }
 
@@ -106,7 +106,7 @@ public sealed class NavigationMenuServiceTests
 
             Assert.Contains(menus, menuItem => menuItem.MenuKey == "Materials");
             Assert.DoesNotContain(menus, menuItem => menuItem.MenuKey == "ResponsibleResources");
-            Assert.False(await navigationMenuService.CanAccessPathAsync(deputyLeaderSession, "/responsible-resources", CancellationToken.None));
+            Assert.False(await navigationMenuService.CanAccessPathAsync(deputyLeaderSession, NavigationPath.CreateOptional("/responsible-resources"), CancellationToken.None));
         }
     }
 
@@ -133,9 +133,9 @@ public sealed class NavigationMenuServiceTests
             Assert.DoesNotContain(menus, menuItem => menuItem.MenuKey == "ApprovalRequest");
             Assert.DoesNotContain(menus, menuItem => menuItem.MenuKey == "ManagementFiles");
             Assert.Contains(menus, menuItem => menuItem.MenuKey == "AdminMenus");
-            Assert.False(await navigationMenuService.CanAccessPathAsync(adminSession, "/approvals/request", CancellationToken.None));
-            Assert.False(await navigationMenuService.CanAccessPathAsync(adminSession, "/management-files", CancellationToken.None));
-            Assert.True(await navigationMenuService.CanAccessPathAsync(adminSession, "/admin/menus", CancellationToken.None));
+            Assert.False(await navigationMenuService.CanAccessPathAsync(adminSession, NavigationPath.CreateOptional("/approvals/request"), CancellationToken.None));
+            Assert.False(await navigationMenuService.CanAccessPathAsync(adminSession, NavigationPath.CreateOptional("/management-files"), CancellationToken.None));
+            Assert.True(await navigationMenuService.CanAccessPathAsync(adminSession, NavigationPath.CreateOptional("/admin/menus"), CancellationToken.None));
         }
     }
 
@@ -186,8 +186,8 @@ public sealed class NavigationMenuServiceTests
             Assert.Contains(menus, menuItem => menuItem.MenuKey == "Materials");
             Assert.Contains(menus, menuItem => menuItem.MenuKey == "AdminUsers");
             Assert.DoesNotContain(menus, menuItem => menuItem.MenuKey == "AdminMenus");
-            Assert.True(await navigationMenuService.CanAccessPathAsync(userSession, "/admin/users", CancellationToken.None));
-            Assert.False(await navigationMenuService.CanAccessPathAsync(userSession, "/admin/menus", CancellationToken.None));
+            Assert.True(await navigationMenuService.CanAccessPathAsync(userSession, NavigationPath.CreateOptional("/admin/users"), CancellationToken.None));
+            Assert.False(await navigationMenuService.CanAccessPathAsync(userSession, NavigationPath.CreateOptional("/admin/menus"), CancellationToken.None));
         }
     }
 
@@ -213,9 +213,9 @@ public sealed class NavigationMenuServiceTests
             Assert.Contains(menus, menuItem => menuItem.MenuKey == "Calendar");
             Assert.Contains(menus, menuItem => menuItem.MenuKey == "Todos");
             Assert.DoesNotContain(menus, menuItem => menuItem.MenuKey == "AdminSettings");
-            Assert.True(await navigationMenuService.CanAccessPathAsync(userSession, "/calendar", CancellationToken.None));
-            Assert.True(await navigationMenuService.CanAccessPathAsync(userSession, "/todos", CancellationToken.None));
-            Assert.False(await navigationMenuService.CanAccessPathAsync(userSession, "/admin/settings", CancellationToken.None));
+            Assert.True(await navigationMenuService.CanAccessPathAsync(userSession, NavigationPath.CreateOptional("/calendar"), CancellationToken.None));
+            Assert.True(await navigationMenuService.CanAccessPathAsync(userSession, NavigationPath.CreateOptional("/todos"), CancellationToken.None));
+            Assert.False(await navigationMenuService.CanAccessPathAsync(userSession, NavigationPath.CreateOptional("/admin/settings"), CancellationToken.None));
         }
     }
 

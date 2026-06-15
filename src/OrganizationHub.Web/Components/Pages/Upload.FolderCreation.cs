@@ -34,7 +34,7 @@ public partial class Upload
         try
         {
             DriveFolderId currentFolderId = DriveFolderId.CreateOptional(getCurrentFolderId());
-            DriveFileItem createdFolder = await DriveService.CreateFolderAsync(currentFolderId, folderName, CancellationToken.None);
+            DriveFileItem createdFolder = await DriveService.CreateFolderAsync(currentFolderId, DriveItemName.CreateRequired(folderName), CancellationToken.None);
             DriveBrowserService.InvalidateRecentFiles(currentFolderId);
             mNewFolderName = string.Empty;
             mIsFolderCreateOpen = false;

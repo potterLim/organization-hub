@@ -63,12 +63,13 @@ public partial class Upload
         mIsUploading = true;
         try
         {
-            string contentType = FilePolicyService.GetContentType(mSelectedFileOrNull.Name);
+            DriveItemName selectedFileName = DriveItemName.CreateRequired(mSelectedFileOrNull.Name);
+            FileContentType contentType = FilePolicyService.GetContentType(selectedFileName);
             using (Stream fileStream = mSelectedFileOrNull.OpenReadStream(uploadPolicy.MaximumUploadBytes))
             {
                 string currentFolderIdValue = getCurrentFolderId();
                 DriveFolderId uploadFolderId = DriveFolderId.CreateOptional(currentFolderIdValue);
-                DriveFileItem uploadedFile = await DriveService.UploadFileAsync(uploadFolderId, fileStream, mSelectedFileOrNull.Name, contentType, CancellationToken.None);
+                DriveFileItem uploadedFile = await DriveService.UploadFileAsync(uploadFolderId, fileStream, selectedFileName, contentType, CancellationToken.None);
                 DriveFolderOwnerContext ownerContext = new DriveFolderOwnerContext(rootFolderOrNull.TeamIdOrNull, rootFolderOrNull.TeamKey, rootFolderOrNull.TeamName);
                 DriveFolderReferenceCreationRequest referenceRequest = new DriveFolderReferenceCreationRequest(uploadFolderId, getCurrentFolderDisplayName(), rootFolderOrNull.FolderKind, EDriveFolderUploadAccess.UploadAllowed, ownerContext);
                 DriveFolderReference targetFolder = new DriveFolderReference(referenceRequest);

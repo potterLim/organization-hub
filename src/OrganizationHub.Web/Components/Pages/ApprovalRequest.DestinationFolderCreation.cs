@@ -36,7 +36,7 @@ public partial class ApprovalRequest
         mIsCreatingDestinationFolder = true;
         try
         {
-            DriveFileItem createdFolder = await DriveService.CreateFolderAsync(destinationFolderId, folderName, CancellationToken.None);
+            DriveFileItem createdFolder = await DriveService.CreateFolderAsync(destinationFolderId, DriveItemName.CreateRequired(folderName), CancellationToken.None);
             mNewDestinationFolderName = string.Empty;
             mIsDestinationFolderCreateOpen = false;
             await loadDestinationFoldersAsync();
