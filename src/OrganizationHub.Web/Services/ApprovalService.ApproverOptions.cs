@@ -8,10 +8,18 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    private List<ApprovalUserOption> createApproverOptions(IReadOnlyList<UserAccount> users, UserSession userSession)
+    private List<ApprovalUserOption> createApproverOptions(
+        IReadOnlyList<UserAccount> users,
+        UserSession userSession,
+        bool usesConfiguredPermissions)
     {
         List<ApprovalUserOption> options = new List<ApprovalUserOption>();
-        List<UserAccount> approverUsers = users.Where(user => user.Id != userSession.UserId && UserPermissionPolicy.CanUseAsIntermediateApprovalApprover(userSession.Role, user.Role)).OrderBy(user => getApproverSortOrder(user, userSession)).ThenBy(user => user.DisplayName).ToList();
+        List<UserAccount> approverUsers = users
+            .Where(user => user.Id != userSession.UserId)
+            .Where(user => canUseAsIntermediateApprover(user, userSession, usesConfiguredPermissions))
+            .OrderBy(user => getApproverSortOrder(user, userSession))
+            .ThenBy(user => user.DisplayName)
+            .ToList();
         foreach (UserAccount user in approverUsers)
         {
             options.Add(createApprovalUserOption(user));
@@ -20,23 +28,10 @@ public sealed partial class ApprovalService
         return options;
     }
 
-    private List<ApprovalUserOption> createFinalApproverOptions(IReadOnlyList<UserAccount> users)
-    {
-        List<ApprovalUserOption> options = new List<ApprovalUserOption>();
-        foreach (UserAccount user in users)
-        {
-            if (UserRoleUtility.IsFinalApprovalManagerRole(user.Role) == false)
-            {
-                continue;
-            }
-
-            options.Add(createApprovalUserOption(user));
-        }
-
-        return options;
-    }
-
-    private List<ApprovalUserOption> createFinalApproverOptions(IReadOnlyList<UserAccount> users, UserSession userSession)
+    private List<ApprovalUserOption> createFinalApproverOptions(
+        IReadOnlyList<UserAccount> users,
+        UserSession userSession,
+        bool usesConfiguredPermissions)
     {
         List<UserAccount> finalApproverUsers = new List<UserAccount>();
         foreach (UserAccount user in users)
@@ -46,7 +41,7 @@ public sealed partial class ApprovalService
                 continue;
             }
 
-            bool isAllowedFinalApprover = UserPermissionPolicy.CanUseAsFinalApprovalApprover(userSession.Role, user.Role);
+            bool isAllowedFinalApprover = canUseAsFinalApprover(user, userSession, usesConfiguredPermissions);
             if (isAllowedFinalApprover == false)
             {
                 continue;
@@ -63,6 +58,32 @@ public sealed partial class ApprovalService
         }
 
         return options;
+    }
+
+    private bool canUseAsIntermediateApprover(
+        UserAccount user,
+        UserSession userSession,
+        bool usesConfiguredPermissions)
+    {
+        if (usesConfiguredPermissions)
+        {
+            return userHasApprovalPermission(user, userSession, PermissionKeys.APPROVAL_APPROVE);
+        }
+
+        return UserPermissionPolicy.CanUseAsIntermediateApprovalApprover(userSession.Role, user.Role);
+    }
+
+    private bool canUseAsFinalApprover(
+        UserAccount user,
+        UserSession userSession,
+        bool usesConfiguredPermissions)
+    {
+        if (usesConfiguredPermissions)
+        {
+            return userHasApprovalPermission(user, userSession, PermissionKeys.APPROVAL_FINAL_APPROVE);
+        }
+
+        return UserPermissionPolicy.CanUseAsFinalApprovalApprover(userSession.Role, user.Role);
     }
 
     private ApprovalUserOption createApprovalUserOption(UserAccount user)

@@ -52,9 +52,9 @@ public sealed partial class ApprovalService
                 return context;
             }
 
-            context.ApproverOptions = createApproverOptions(users, userSession);
-            context.FinalApproverCandidates = createFinalApproverOptions(users);
-            context.FinalApproverOptions = createFinalApproverOptions(users, userSession);
+            context.ApproverOptions = createApproverOptions(users, userSession, usesConfiguredPermissions);
+            context.FinalApproverCandidates = createFinalApproverOptions(users, userSession, usesConfiguredPermissions);
+            context.FinalApproverOptions = createFinalApproverOptions(users, userSession, usesConfiguredPermissions);
         }
 
         context.AvailableStepCounts = createAvailableStepCounts(userSession, context.ApproverOptions, context.FinalApproverOptions);

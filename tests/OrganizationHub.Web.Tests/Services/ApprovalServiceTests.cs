@@ -507,11 +507,29 @@ public sealed class ApprovalServiceTests
             leaderPosition.Description = string.Empty;
             leaderPosition.SortOrder = 20;
             leaderPosition.IsActive = true;
+            addPermissionGrant(leaderPosition, PermissionKeys.APPROVAL_APPROVE, EPermissionScopeType.OwnTeam);
+
+            Team managementTeam = new Team();
+            managementTeam.Id = 2;
+            managementTeam.TeamKey = "Management";
+            managementTeam.DisplayName = "관리팀";
+            managementTeam.IsActive = true;
+            managementTeam.SortOrder = 20;
+
+            OrganizationPosition finalApproverPosition = new OrganizationPosition();
+            finalApproverPosition.TeamId = 2;
+            finalApproverPosition.Name = "최종 결재자";
+            finalApproverPosition.Description = string.Empty;
+            finalApproverPosition.SortOrder = 10;
+            finalApproverPosition.IsActive = true;
+            addPermissionGrant(finalApproverPosition, PermissionKeys.APPROVAL_FINAL_APPROVE, EPermissionScopeType.Global);
 
             UserAccount requester = dbContext.UserAccounts.Single(user => user.Id == 1);
             UserAccount leader = dbContext.UserAccounts.Single(user => user.Id == 2);
+            UserAccount finalApprover = dbContext.UserAccounts.Single(user => user.Id == 3);
             requester.Position = requesterPosition;
             leader.Position = leaderPosition;
+            finalApprover.Position = finalApproverPosition;
 
             ApprovalWorkflow workflow = new ApprovalWorkflow();
             workflow.Name = "팀 자료 결재";
@@ -537,8 +555,10 @@ public sealed class ApprovalServiceTests
             finalStep.IsRequired = true;
             workflow.Steps.Add(firstStep);
             workflow.Steps.Add(finalStep);
+            dbContext.Teams.Add(managementTeam);
             dbContext.Positions.Add(requesterPosition);
             dbContext.Positions.Add(leaderPosition);
+            dbContext.Positions.Add(finalApproverPosition);
             dbContext.ApprovalWorkflows.Add(workflow);
             await dbContext.SaveChangesAsync(CancellationToken.None);
             return leaderPosition.Id;

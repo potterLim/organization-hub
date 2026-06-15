@@ -90,6 +90,7 @@ public sealed partial class ApprovalService
     {
         List<UserAccount> candidates = getWorkflowStepCandidates(users, userSession, step, stepRole)
             .Where(user => user.Id != userSession.UserId && usedUserIds.Contains(user.Id) == false)
+            .Where(user => userHasWorkflowPermission(user, userSession, step, stepRole))
             .OrderBy(user => getApproverSortOrder(user, userSession))
             .ThenBy(user => user.DisplayName)
             .ToList();
@@ -188,26 +189,8 @@ public sealed partial class ApprovalService
 
     private bool userHasWorkflowPermission(UserAccount user, UserSession userSession, ApprovalWorkflowStep step, EApprovalWorkflowStepRole stepRole)
     {
-        if (user.Position == null || user.Position.IsActive == false)
-        {
-            return false;
-        }
-
         string permissionKey = getWorkflowStepPermissionKey(step, stepRole);
-        foreach (PositionPermissionGrant permissionGrant in user.Position.PermissionGrants)
-        {
-            if (permissionGrant.IsAllowed == false || permissionGrant.PermissionKey != permissionKey)
-            {
-                continue;
-            }
-
-            if (isWorkflowPermissionGrantInScope(permissionGrant, user, createUserTeamIdOrNull(userSession)))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return userHasApprovalPermission(user, userSession, permissionKey);
     }
 
     private string getWorkflowStepPermissionKey(ApprovalWorkflowStep step, EApprovalWorkflowStepRole stepRole)
@@ -223,26 +206,6 @@ public sealed partial class ApprovalService
         }
 
         return PermissionKeys.APPROVAL_APPROVE;
-    }
-
-    private bool isWorkflowPermissionGrantInScope(
-        PositionPermissionGrant permissionGrant,
-        UserAccount user,
-        OrganizationTeamId? requesterTeamIdOrNull)
-    {
-        int? requesterTeamIdValueOrNull = OrganizationTeamId.GetValueOrNull(requesterTeamIdOrNull);
-        switch (permissionGrant.ScopeType)
-        {
-            case EPermissionScopeType.Global:
-                return true;
-            case EPermissionScopeType.OwnTeam:
-            case EPermissionScopeType.OwnTeamAndChildren:
-                return requesterTeamIdValueOrNull.HasValue && user.TeamId == requesterTeamIdValueOrNull;
-            case EPermissionScopeType.SelectedTeam:
-                return requesterTeamIdValueOrNull.HasValue && permissionGrant.TargetTeamId == requesterTeamIdValueOrNull;
-            default:
-                return false;
-        }
     }
 
     private enum EApprovalWorkflowStepRole
