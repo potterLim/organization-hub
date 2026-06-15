@@ -1,13 +1,15 @@
 @page "/admin/teams"
 @attribute [Authorize(Policy = OrganizationHubPolicies.ORGANIZATION_MANAGE)]
+@implements IAsyncDisposable
 @inject ITeamManagementService TeamManagementService
+@inject IJSRuntime JavaScriptRuntime
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("팀 관리")</PageTitle>
 
 <div class="hub-page-header">
     <div>
         <h1 class="hub-page-title">팀 관리</h1>
-        <div class="hub-page-description">조직에서 사용할 팀 이름과 표시 순서를 관리합니다. 자료 위치와 일정/할 일 연결은 Google 연결 또는 고급 설정에서 조정합니다.</div>
+        <div class="hub-page-description">조직에서 사용할 팀을 만들고, 목록에서 드래그해 표시 순서를 정합니다.</div>
     </div>
 </div>
 
@@ -23,10 +25,9 @@
                 <MudText Typo="Typo.h6">@mFormTitle</MudText>
                 <span>@(mFormModel.Id == 0 ? "새 팀" : "수정 중")</span>
             </div>
-            <div class="hub-form-hint">팀 이름은 사용자 화면에 그대로 표시됩니다. 고유 코드는 영문/숫자로 짧게 정해두면 나중에 연동과 정리에 도움이 됩니다.</div>
+            <div class="hub-form-hint">팀 이름은 사용자 화면에 그대로 표시됩니다. 고유 코드는 영문과 숫자로 짧게 정해두면 연동과 정리에 도움이 됩니다.</div>
             <MudTextField @bind-Value="mFormModel.DisplayName" Label="팀 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             <MudTextField @bind-Value="mFormModel.TeamKey" Label="팀 고유 코드" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-            <MudNumericField T="int" @bind-Value="mFormModel.SortOrder" Label="표시 순서" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="활성 상태" Color="Color.Primary" />
             <MudExpansionPanels Elevation="0" Class="hub-advanced-settings hub-team-advanced-settings">
                 <MudExpansionPanel Text="고급: 이 팀의 Google 연결 ID">
@@ -48,24 +49,29 @@
     </MudItem>
     <MudItem xs="12" lg="7" xl="8">
         <MudPaper Class="hub-card hub-list-card pa-4">
-            <MudText Typo="Typo.h6">팀 목록</MudText>
-            <MudTable Items="mTeams" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
-                <HeaderContent>
-                    <MudTh>순서</MudTh>
-                    <MudTh>팀 이름</MudTh>
-                    <MudTh>고유 코드</MudTh>
-                    <MudTh>사용자</MudTh>
-                    <MudTh>상태</MudTh>
-                    <MudTh></MudTh>
-                </HeaderContent>
-                <RowTemplate Context="team">
-                    <MudTd DataLabel="순서">@team.SortOrder</MudTd>
-                    <MudTd DataLabel="팀 이름">@team.DisplayName</MudTd>
-                    <MudTd DataLabel="고유 코드">@team.TeamKey</MudTd>
-                    <MudTd DataLabel="사용자">@team.UserAccounts.Count</MudTd>
-                    <MudTd DataLabel="상태"><span class="@(team.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(team.IsActive ? "활성" : "비활성")</span></MudTd>
-                    <MudTd DataLabel="작업" Class="hub-action-cell">
-                        <div class="hub-table-actions">
+            <div class="hub-admin-section-heading">
+                <div>
+                    <MudText Typo="Typo.h6">팀 목록</MudText>
+                    <div class="hub-muted">사용자 화면과 선택 목록에 보일 순서대로 드래그합니다.</div>
+                </div>
+            </div>
+            <div @ref="mSortableRootElement" class="hub-sortable-list" data-sortable-list>
+                @foreach (Team team in mTeams)
+                {
+                    <div class="hub-sortable-row" data-sortable-item-id="@team.Id" draggable="true">
+                        <span class="hub-sortable-handle" role="button" aria-label="팀 순서 변경">
+                            <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
+                        </span>
+                        <div class="hub-sortable-main">
+                            <div class="hub-sortable-title">@team.DisplayName</div>
+                            <div class="hub-sortable-meta">
+                                <span>@team.TeamKey</span>
+                                <span>·</span>
+                                <span>@(team.UserAccounts.Count)명</span>
+                            </div>
+                        </div>
+                        <div class="hub-sortable-actions">
+                            <span class="hub-sortable-status @(team.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(team.IsActive ? "활성" : "비활성")</span>
                             <MudTooltip Text="팀 수정">
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editTeam(team))" aria-label="팀 수정" />
                             </MudTooltip>
@@ -73,95 +79,9 @@
                                 <MudIconButton Icon="@(team.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => toggleTeamActiveAsync(team))" aria-label="@(team.IsActive ? "팀 비활성화" : "팀 활성화")" />
                             </MudTooltip>
                         </div>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
+                    </div>
+                }
+            </div>
         </MudPaper>
     </MudItem>
 </MudGrid>
-
-@code
-{
-    private List<Team> mTeams = new List<Team>();
-    private TeamFormModel mFormModel = new TeamFormModel();
-    private string mFormTitle = "새 팀";
-    private string mMessage = string.Empty;
-    private Severity mMessageSeverity = Severity.Info;
-
-    protected override async Task OnInitializedAsync()
-    {
-        clearForm();
-        await loadDataAsync();
-    }
-
-    private async Task loadDataAsync()
-    {
-        IReadOnlyList<Team> teams = await TeamManagementService.GetTeamsAsync(CancellationToken.None);
-        mTeams = teams.ToList();
-    }
-
-    private async Task saveTeamAsync()
-    {
-        ServiceResult saveResult = mFormModel.Id == 0 ? await TeamManagementService.CreateTeamAsync(mFormModel, CancellationToken.None) : await TeamManagementService.UpdateTeamAsync(mFormModel, CancellationToken.None);
-        showOperationResult(saveResult, "팀 정보가 저장되었습니다.");
-        if (saveResult.IsSuccess)
-        {
-            clearForm();
-            await loadDataAsync();
-        }
-    }
-
-    private void editTeam(Team team)
-    {
-        mFormModel = new TeamFormModel();
-        mFormModel.Id = team.Id;
-        mFormModel.TeamKey = team.TeamKey;
-        mFormModel.DisplayName = team.DisplayName;
-        mFormModel.IsActive = team.IsActive;
-        mFormModel.SortOrder = team.SortOrder;
-        mFormModel.MaterialsFolderId = getTextOrEmpty(team.MaterialsFolderId);
-        mFormModel.ApprovedFolderId = getTextOrEmpty(team.ApprovedFolderId);
-        mFormModel.CalendarId = getTextOrEmpty(team.CalendarId);
-        mFormModel.TaskListId = getTextOrEmpty(team.TaskListId);
-        mFormTitle = "팀 수정";
-    }
-
-    private async Task toggleTeamActiveAsync(Team team)
-    {
-        OrganizationTeamId teamId = OrganizationTeamId.CreateExisting(team.Id);
-        ServiceResult activationResult = team.IsActive ? await TeamManagementService.DeactivateTeamAsync(teamId, CancellationToken.None) : await TeamManagementService.ActivateTeamAsync(teamId, CancellationToken.None);
-        showOperationResult(activationResult, "팀 상태가 변경되었습니다.");
-        await loadDataAsync();
-    }
-
-    private void clearForm()
-    {
-        mFormModel = new TeamFormModel();
-        mFormModel.IsActive = true;
-        mFormModel.SortOrder = 100;
-        mFormTitle = "새 팀";
-    }
-
-    private void showOperationResult(ServiceResult operationResult, string successMessage)
-    {
-        if (operationResult.IsSuccess)
-        {
-            mMessage = successMessage;
-            mMessageSeverity = Severity.Success;
-            return;
-        }
-
-        mMessage = operationResult.ErrorMessage;
-        mMessageSeverity = Severity.Error;
-    }
-
-    private string getTextOrEmpty(string? textOrNull)
-    {
-        if (textOrNull == null)
-        {
-            return string.Empty;
-        }
-
-        return textOrNull;
-    }
-}

@@ -12,6 +12,8 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class NavigationMenuService
 {
+    private const int SORT_ORDER_STEP = 10;
+
     public async Task<IReadOnlyList<NavigationMenuItem>> GetManageableMenuItemsAsync(CancellationToken cancellationToken)
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
@@ -68,6 +70,38 @@ public sealed partial class NavigationMenuService
                     permission.TeamId = teamIdValue;
                     dbContext.NavigationMenuTeamPermissions.Add(permission);
                 }
+            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ServiceResult.Succeed();
+        }
+    }
+
+    public async Task<ServiceResult> UpdateMenuItemOrderAsync(NavigationMenuItemOrderUpdateRequest request, CancellationToken cancellationToken)
+    {
+        if (request.OrderedMenuItemIds.Count == 0)
+        {
+            return ServiceResult.Succeed();
+        }
+
+        await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            List<int> orderedMenuItemIdValues = request.OrderedMenuItemIds.Select(menuItemId => menuItemId.GetRequiredValue()).Distinct().ToList();
+            List<NavigationMenuItem> menuItems = await dbContext.NavigationMenuItems
+                .Where(menuItem => orderedMenuItemIdValues.Contains(menuItem.Id))
+                .ToListAsync(cancellationToken);
+            if (menuItems.Count != orderedMenuItemIdValues.Count)
+            {
+                return ServiceResult.Fail("정렬할 메뉴를 찾을 수 없습니다.");
+            }
+
+            Dictionary<int, NavigationMenuItem> menuItemsById = menuItems.ToDictionary(menuItem => menuItem.Id);
+            int sortOrder = SORT_ORDER_STEP;
+            foreach (NavigationMenuItemId menuItemId in request.OrderedMenuItemIds)
+            {
+                NavigationMenuItem menuItem = menuItemsById[menuItemId.GetRequiredValue()];
+                menuItem.SortOrder = sortOrder;
+                sortOrder += SORT_ORDER_STEP;
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);

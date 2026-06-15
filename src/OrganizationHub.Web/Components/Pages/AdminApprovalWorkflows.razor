@@ -1,8 +1,10 @@
 @page "/admin/approval-workflows"
 @attribute [Authorize(Policy = OrganizationHubPolicies.APPROVAL_WORKFLOWS_MANAGE)]
+@implements IAsyncDisposable
 @inject IApprovalWorkflowManagementService ApprovalWorkflowManagementService
 @inject IPositionManagementService PositionManagementService
 @inject ITeamManagementService TeamManagementService
+@inject IJSRuntime JavaScriptRuntime
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("결재 경로 설정")</PageTitle>
 
@@ -35,8 +37,7 @@
                         <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
-                <MudNumericField T="int" @bind-Value="mFormModel.Priority" Label="적용 우선순위" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" HelperText="숫자가 낮을수록 먼저 적용됩니다." />
-                <div class="hub-form-hint">여러 경로가 같은 요청에 맞으면 적용 우선순위가 낮은 경로를 먼저 사용합니다. 팀 전용 경로는 낮게, 기본 경로는 높게 두면 관리하기 쉽습니다.</div>
+                <div class="hub-form-hint">여러 경로가 같은 요청에 맞으면 오른쪽 목록에서 위에 있는 경로를 먼저 사용합니다. 저장한 뒤 목록을 드래그해 적용 순서를 조정하세요.</div>
                 <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="저장 후 바로 사용" Color="Color.Primary" />
             </section>
 
@@ -150,26 +151,26 @@
             <div class="hub-admin-section-heading">
                 <div>
                     <MudText Typo="Typo.h6">저장된 결재 경로</MudText>
-                    <div class="hub-muted">적용 우선순위가 낮은 경로부터 요청에 맞는지 확인합니다.</div>
+                    <div class="hub-muted">위에 있는 경로부터 요청 조건에 맞는지 확인합니다.</div>
                 </div>
             </div>
-            <MudTable Items="mWorkflows" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
-                <HeaderContent>
-                    <MudTh>적용 우선순위</MudTh>
-                    <MudTh>이름</MudTh>
-                    <MudTh>요청 팀</MudTh>
-                    <MudTh>단계</MudTh>
-                    <MudTh>상태</MudTh>
-                    <MudTh></MudTh>
-                </HeaderContent>
-                <RowTemplate Context="workflow">
-                    <MudTd DataLabel="적용 우선순위">@workflow.Priority</MudTd>
-                    <MudTd DataLabel="이름">@workflow.Name</MudTd>
-                    <MudTd DataLabel="요청 팀">@getWorkflowTeamName(workflow)</MudTd>
-                    <MudTd DataLabel="단계">@workflow.Steps.Count</MudTd>
-                    <MudTd DataLabel="상태"><span class="@(workflow.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(workflow.IsActive ? "사용 중" : "비활성")</span></MudTd>
-                    <MudTd DataLabel="작업" Class="hub-action-cell">
-                        <div class="hub-table-actions">
+            <div @ref="mSortableRootElement" class="hub-sortable-list" data-sortable-list>
+                @foreach (ApprovalWorkflow workflow in mWorkflows)
+                {
+                    <div class="hub-sortable-row" data-sortable-item-id="@workflow.Id" draggable="true">
+                        <span class="hub-sortable-handle" role="button" aria-label="결재 경로 적용 순서 변경">
+                            <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
+                        </span>
+                        <div class="hub-sortable-main">
+                            <div class="hub-sortable-title">@workflow.Name</div>
+                            <div class="hub-sortable-meta">
+                                <span>@getWorkflowTeamName(workflow)</span>
+                                <span>·</span>
+                                <span>@(workflow.Steps.Count)단계</span>
+                            </div>
+                        </div>
+                        <div class="hub-sortable-actions">
+                            <span class="hub-sortable-status @(workflow.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(workflow.IsActive ? "사용 중" : "비활성")</span>
                             <MudTooltip Text="결재 경로 수정">
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editWorkflow(workflow))" aria-label="결재 경로 수정" />
                             </MudTooltip>
@@ -177,9 +178,9 @@
                                 <MudIconButton Icon="@(workflow.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => toggleWorkflowActiveAsync(workflow))" aria-label="@(workflow.IsActive ? "결재 경로 비활성화" : "결재 경로 활성화")" />
                             </MudTooltip>
                         </div>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
+                    </div>
+                }
+            </div>
         </MudPaper>
     </MudItem>
 </MudGrid>

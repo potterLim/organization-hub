@@ -53,7 +53,7 @@ public partial class AdminPositions
     {
         PositionFormModel formModel = new PositionFormModel();
         formModel.IsActive = true;
-        formModel.SortOrder = 100;
+        formModel.SortOrder = getNextPositionSortOrder(teamId);
         formModel.TeamId = teamId;
 
         foreach (PermissionDefinition definition in mPermissionDefinitions)

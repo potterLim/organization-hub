@@ -12,6 +12,8 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalWorkflowManagementService : IApprovalWorkflowManagementService
 {
+    private const int PRIORITY_STEP = 10;
+
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;
 
     public ApprovalWorkflowManagementService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory)
@@ -99,6 +101,36 @@ public sealed partial class ApprovalWorkflowManagementService : IApprovalWorkflo
             applyWorkflowForm(workflowOrNull, formModel);
             dbContext.ApprovalWorkflowSteps.RemoveRange(workflowOrNull.Steps);
             addWorkflowSteps(dbContext, workflowOrNull, formModel);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ServiceResult.Succeed();
+        }
+    }
+
+    public async Task<ServiceResult> UpdateWorkflowOrderAsync(ApprovalWorkflowOrderUpdateRequest request, CancellationToken cancellationToken)
+    {
+        if (request.OrderedWorkflowIds.Count == 0)
+        {
+            return ServiceResult.Succeed();
+        }
+
+        await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            List<int> orderedWorkflowIdValues = request.OrderedWorkflowIds.Select(workflowId => workflowId.GetRequiredValue()).Distinct().ToList();
+            List<ApprovalWorkflow> workflows = await dbContext.ApprovalWorkflows.Where(workflow => orderedWorkflowIdValues.Contains(workflow.Id)).ToListAsync(cancellationToken);
+            if (workflows.Count != orderedWorkflowIdValues.Count)
+            {
+                return ServiceResult.Fail("정렬할 결재 경로를 찾을 수 없습니다.");
+            }
+
+            Dictionary<int, ApprovalWorkflow> workflowsById = workflows.ToDictionary(workflow => workflow.Id);
+            int priority = PRIORITY_STEP;
+            foreach (ApprovalWorkflowId workflowId in request.OrderedWorkflowIds)
+            {
+                ApprovalWorkflow workflow = workflowsById[workflowId.GetRequiredValue()];
+                workflow.Priority = priority;
+                priority += PRIORITY_STEP;
+            }
+
             await dbContext.SaveChangesAsync(cancellationToken);
             return ServiceResult.Succeed();
         }

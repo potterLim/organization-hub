@@ -13,6 +13,7 @@ public interface IApprovalWorkflowManagementService
     Task<IReadOnlyList<UserAccount>> GetApproverUsersAsync(CancellationToken cancellationToken);
     Task<ServiceResult> CreateWorkflowAsync(ApprovalWorkflowFormModel formModel, CancellationToken cancellationToken);
     Task<ServiceResult> UpdateWorkflowAsync(ApprovalWorkflowFormModel formModel, CancellationToken cancellationToken);
+    Task<ServiceResult> UpdateWorkflowOrderAsync(ApprovalWorkflowOrderUpdateRequest request, CancellationToken cancellationToken);
     Task<ServiceResult> ActivateWorkflowAsync(ApprovalWorkflowId workflowId, CancellationToken cancellationToken);
     Task<ServiceResult> DeactivateWorkflowAsync(ApprovalWorkflowId workflowId, CancellationToken cancellationToken);
 }

@@ -9,6 +9,7 @@ public partial class AdminPositions
     private void setNewPositionTeamId(int teamId)
     {
         mNewPositionFormModel.TeamId = teamId;
+        mNewPositionFormModel.SortOrder = getNextPositionSortOrder(teamId);
     }
 
     private void setPermissionTeamId(int teamId)
@@ -87,11 +88,27 @@ public partial class AdminPositions
 
     private List<OrganizationPosition> getPositionsForSelectedPermissionTeam()
     {
+        return getPositionsForTeam(mSelectedPermissionTeamId);
+    }
+
+    private List<OrganizationPosition> getPositionsForTeam(int teamId)
+    {
         return mPositions
-            .Where(position => position.TeamId == mSelectedPermissionTeamId)
+            .Where(position => position.TeamId == teamId)
             .OrderBy(position => position.SortOrder)
             .ThenBy(position => position.Name)
             .ToList();
+    }
+
+    private int getNextPositionSortOrder(int teamId)
+    {
+        List<OrganizationPosition> positions = getPositionsForTeam(teamId);
+        if (positions.Count == 0)
+        {
+            return 100;
+        }
+
+        return positions.Max(position => position.SortOrder) + 10;
     }
 
     private OrganizationPosition? getSelectedPositionOrNull()

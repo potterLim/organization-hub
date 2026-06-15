@@ -12,6 +12,8 @@ namespace OrganizationHub.Web.Services;
 
 public sealed class TeamManagementService : ITeamManagementService
 {
+    private const int SORT_ORDER_STEP = 10;
+
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;
 
     public TeamManagementService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory)
@@ -92,6 +94,36 @@ public sealed class TeamManagementService : ITeamManagementService
             }
 
             applyTeamForm(teamOrNull, formModel);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ServiceResult.Succeed();
+        }
+    }
+
+    public async Task<ServiceResult> UpdateTeamOrderAsync(OrganizationTeamOrderUpdateRequest request, CancellationToken cancellationToken)
+    {
+        if (request.OrderedTeamIds.Count == 0)
+        {
+            return ServiceResult.Succeed();
+        }
+
+        await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            List<int> orderedTeamIdValues = request.OrderedTeamIds.Select(teamId => teamId.GetRequiredValue()).Distinct().ToList();
+            List<Team> teams = await dbContext.Teams.Where(team => orderedTeamIdValues.Contains(team.Id)).ToListAsync(cancellationToken);
+            if (teams.Count != orderedTeamIdValues.Count)
+            {
+                return ServiceResult.Fail("정렬할 팀을 찾을 수 없습니다.");
+            }
+
+            Dictionary<int, Team> teamsById = teams.ToDictionary(team => team.Id);
+            int sortOrder = SORT_ORDER_STEP;
+            foreach (OrganizationTeamId teamId in request.OrderedTeamIds)
+            {
+                Team team = teamsById[teamId.GetRequiredValue()];
+                team.SortOrder = sortOrder;
+                sortOrder += SORT_ORDER_STEP;
+            }
+
             await dbContext.SaveChangesAsync(cancellationToken);
             return ServiceResult.Succeed();
         }

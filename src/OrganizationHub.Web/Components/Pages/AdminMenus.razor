@@ -1,14 +1,16 @@
 @page "/admin/menus"
 @attribute [Authorize(Policy = OrganizationHubPolicies.MENUS_MANAGE)]
+@implements IAsyncDisposable
 @inject INavigationMenuService NavigationMenuService
 @inject ITeamManagementService TeamManagementService
+@inject IJSRuntime JavaScriptRuntime
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("메뉴 보이기 설정")</PageTitle>
 
 <div class="hub-page-header">
     <div>
         <h1 class="hub-page-title">메뉴 보이기 설정</h1>
-        <div class="hub-page-description">왼쪽 메뉴의 이름, 표시 대상, 팀 범위, 표시 순서를 관리합니다.</div>
+        <div class="hub-page-description">왼쪽 메뉴의 이름과 표시 대상을 정하고, 목록에서 드래그해 메뉴 순서를 조정합니다.</div>
     </div>
 </div>
 
@@ -28,17 +30,19 @@
             {
                 <div class="hub-admin-form-heading">
                     <MudText Typo="Typo.h6">@mSelectedMenuItemOrNull.DisplayName</MudText>
-                    <span>@MenuAccessLevelUtility.GetDisplayName(mFormModel.AccessLevel)</span>
+                    <span>@MenuAccessLevelUtility.GetShortDisplayName(mFormModel.AccessLevel)</span>
                 </div>
-                <div class="hub-form-hint">선택한 메뉴가 누구에게 보일지 정합니다. 화면 주소는 시스템이 관리하므로 일반 목록에는 표시하지 않습니다.</div>
+                <div class="hub-form-hint">
+                    선택한 메뉴가 누구에게 보일지 정합니다.<br />
+                    화면 주소는 시스템이 관리하므로 일반 목록에는 표시하지 않습니다.
+                </div>
                 <MudTextField @bind-Value="mFormModel.DisplayName" Label="메뉴 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-                <MudNumericField T="int" @bind-Value="mFormModel.SortOrder" Label="메뉴 표시 순서" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" HelperText="숫자가 낮을수록 왼쪽 메뉴 위쪽에 표시됩니다." />
                 <MudSelect T="EMenuAccessLevel" Label="표시 대상" Value="mFormModel.AccessLevel" ValueChanged="setAccessLevel" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@mSelectedMenuItemOrNull.IsLocked">
-                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Authenticated">로그인한 모든 사용자</MudSelectItem>
-                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.TeamMember">선택한 팀의 구성원</MudSelectItem>
-                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.TeamLeader">선택한 팀의 책임자 이상</MudSelectItem>
+                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Authenticated">전체</MudSelectItem>
+                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.TeamMember">팀 구성원</MudSelectItem>
+                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.TeamLeader">팀 책임자 이상</MudSelectItem>
                     <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.ManagementManager">관리팀 책임자 이상</MudSelectItem>
-                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Management">관리팀 전체</MudSelectItem>
+                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Management">관리팀</MudSelectItem>
                     <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Admin">시스템 관리자</MudSelectItem>
                 </MudSelect>
                 <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="메뉴 사용" Color="Color.Primary" Disabled="@mSelectedMenuItemOrNull.IsLocked" />
@@ -62,7 +66,6 @@
                 {
                     <MudAlert Severity="Severity.Info" Class="mt-4">이 메뉴는 표시 대상만으로 관리되며 팀 범위를 따로 고르지 않습니다.</MudAlert>
                 }
-                <div class="hub-menu-technical-note">화면 주소: @mSelectedMenuItemOrNull.Href</div>
                 <div class="hub-submit-row">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveMenuAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
                 </div>
@@ -71,167 +74,36 @@
     </MudItem>
     <MudItem xs="12" lg="7" xl="8">
         <MudPaper Class="hub-card hub-list-card pa-4">
-            <MudText Typo="Typo.h6">메뉴 목록</MudText>
-            <MudTable Items="mMenuItems" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table hub-menu-table">
-                <HeaderContent>
-                    <MudTh>표시 순서</MudTh>
-                    <MudTh>메뉴</MudTh>
-                    <MudTh>표시 대상</MudTh>
-                    <MudTh>팀 범위</MudTh>
-                    <MudTh>사용 여부</MudTh>
-                    <MudTh></MudTh>
-                </HeaderContent>
-                <RowTemplate Context="menuItem">
-                    <MudTd DataLabel="표시 순서">@menuItem.SortOrder</MudTd>
-                    <MudTd DataLabel="메뉴">@menuItem.DisplayName</MudTd>
-                    <MudTd DataLabel="표시 대상">@MenuAccessLevelUtility.GetDisplayName(menuItem.AccessLevel)</MudTd>
-                    <MudTd DataLabel="팀 범위">@getTeamPermissionText(menuItem)</MudTd>
-                    <MudTd DataLabel="사용 여부"><span class="@(menuItem.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(menuItem.IsActive ? "사용 중" : "숨김")</span></MudTd>
-                    <MudTd DataLabel="작업" Class="hub-action-cell">
-                        <div class="hub-table-actions">
+            <div class="hub-admin-section-heading">
+                <div>
+                    <MudText Typo="Typo.h6">메뉴 목록</MudText>
+                    <div class="hub-muted">왼쪽 메뉴에 보일 순서대로 드래그해 정렬합니다.</div>
+                </div>
+            </div>
+            <div @ref="mSortableRootElement" class="hub-sortable-list hub-menu-sortable-list" data-sortable-list>
+                @foreach (NavigationMenuItem menuItem in mMenuItems)
+                {
+                    <div class="hub-sortable-row hub-menu-sortable-row" data-sortable-item-id="@menuItem.Id" draggable="true">
+                        <span class="hub-sortable-handle" role="button" aria-label="메뉴 순서 변경">
+                            <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
+                        </span>
+                        <div class="hub-sortable-main">
+                            <div class="hub-sortable-title">@menuItem.DisplayName</div>
+                            <div class="hub-sortable-meta">
+                                <span>@MenuAccessLevelUtility.GetShortDisplayName(menuItem.AccessLevel)</span>
+                                <span>·</span>
+                                <span>@getTeamPermissionText(menuItem)</span>
+                            </div>
+                        </div>
+                        <div class="hub-sortable-actions">
+                            <span class="hub-sortable-status @(menuItem.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(menuItem.IsActive ? "사용 중" : "숨김")</span>
                             <MudTooltip Text="메뉴 수정">
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editMenu(menuItem))" aria-label="메뉴 수정" />
                             </MudTooltip>
                         </div>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
+                    </div>
+                }
+            </div>
         </MudPaper>
     </MudItem>
 </MudGrid>
-
-@code
-{
-    private List<NavigationMenuItem> mMenuItems = new List<NavigationMenuItem>();
-    private List<Team> mTeams = new List<Team>();
-    private NavigationMenuItem? mSelectedMenuItemOrNull;
-    private NavigationMenuItemFormModel mFormModel = new NavigationMenuItemFormModel();
-    private string mMessage = string.Empty;
-    private Severity mMessageSeverity = Severity.Info;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await loadDataAsync();
-        if (mMenuItems.Count > 0)
-        {
-            editMenu(mMenuItems[0]);
-        }
-    }
-
-    private async Task loadDataAsync()
-    {
-        IReadOnlyList<NavigationMenuItem> menuItems = await NavigationMenuService.GetManageableMenuItemsAsync(CancellationToken.None);
-        IReadOnlyList<Team> teams = await TeamManagementService.GetTeamsAsync(CancellationToken.None);
-        mMenuItems = menuItems.ToList();
-        mTeams = teams.Where(team => team.IsActive).ToList();
-    }
-
-    private void editMenu(NavigationMenuItem menuItem)
-    {
-        mSelectedMenuItemOrNull = menuItem;
-        mFormModel = new NavigationMenuItemFormModel();
-        mFormModel.Id = menuItem.Id;
-        mFormModel.DisplayName = menuItem.DisplayName;
-        mFormModel.SortOrder = menuItem.SortOrder;
-        mFormModel.AccessLevel = menuItem.AccessLevel;
-        mFormModel.IsActive = menuItem.IsActive;
-        mFormModel.IsVisibleToAllTeams = menuItem.IsVisibleToAllTeams;
-        mFormModel.TeamIds = menuItem.TeamPermissions.Select(permission => permission.TeamId).ToList();
-    }
-
-    private async Task saveMenuAsync()
-    {
-        int menuId = mFormModel.Id;
-        ServiceResult saveResult = await NavigationMenuService.UpdateMenuItemAsync(mFormModel, CancellationToken.None);
-        showOperationResult(saveResult, "메뉴 표시 설정이 저장되었습니다.");
-        if (saveResult.IsSuccess)
-        {
-            await loadDataAsync();
-            NavigationMenuItem? menuItemOrNull = mMenuItems.FirstOrDefault(menuItem => menuItem.Id == menuId);
-            if (menuItemOrNull != null)
-            {
-                editMenu(menuItemOrNull);
-            }
-        }
-    }
-
-    private void setVisibleToAllTeams(EMenuTeamVisibility menuTeamVisibility)
-    {
-        mFormModel.IsVisibleToAllTeams = menuTeamVisibility == EMenuTeamVisibility.AllTeams;
-        if (menuTeamVisibility == EMenuTeamVisibility.AllTeams)
-        {
-            mFormModel.TeamIds.Clear();
-        }
-    }
-
-    private void setAccessLevel(EMenuAccessLevel accessLevel)
-    {
-        mFormModel.AccessLevel = accessLevel;
-        if (MenuAccessLevelUtility.IsTeamScoped(accessLevel) == false)
-        {
-            mFormModel.IsVisibleToAllTeams = false;
-            mFormModel.TeamIds.Clear();
-        }
-    }
-
-    private void setTeamSelected(int teamId, ETeamSelectionState selectionState)
-    {
-        if (selectionState == ETeamSelectionState.Selected)
-        {
-            if (mFormModel.TeamIds.Contains(teamId) == false)
-            {
-                mFormModel.TeamIds.Add(teamId);
-            }
-
-            return;
-        }
-
-        mFormModel.TeamIds.Remove(teamId);
-    }
-
-    private bool isTeamSelected(int teamId)
-    {
-        return mFormModel.TeamIds.Contains(teamId);
-    }
-
-    private string getTeamPermissionText(NavigationMenuItem menuItem)
-    {
-        if (MenuAccessLevelUtility.IsTeamScoped(menuItem.AccessLevel) == false)
-        {
-            return "팀 제한 없음";
-        }
-
-        if (menuItem.IsVisibleToAllTeams)
-        {
-            return "모든 팀";
-        }
-
-        List<string> teamNames = new List<string>();
-        foreach (NavigationMenuTeamPermission permission in menuItem.TeamPermissions)
-        {
-            if (permission.Team != null && permission.Team.IsActive)
-            {
-                teamNames.Add(permission.Team.DisplayName);
-            }
-        }
-        if (teamNames.Count == 0)
-        {
-            return "아직 선택한 팀 없음";
-        }
-
-        return string.Join(", ", teamNames);
-    }
-
-    private void showOperationResult(ServiceResult operationResult, string successMessage)
-    {
-        if (operationResult.IsSuccess)
-        {
-            mMessage = successMessage;
-            mMessageSeverity = Severity.Success;
-            return;
-        }
-
-        mMessage = operationResult.ErrorMessage;
-        mMessageSeverity = Severity.Error;
-    }
-}

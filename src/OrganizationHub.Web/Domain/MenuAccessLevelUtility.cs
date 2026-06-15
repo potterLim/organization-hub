@@ -26,6 +26,28 @@ public static class MenuAccessLevelUtility
         }
     }
 
+    public static string GetShortDisplayName(EMenuAccessLevel accessLevel)
+    {
+        switch (accessLevel)
+        {
+            case EMenuAccessLevel.Authenticated:
+                return "전체";
+            case EMenuAccessLevel.TeamMember:
+                return "팀 구성원";
+            case EMenuAccessLevel.TeamLeader:
+                return "팀 책임자 이상";
+            case EMenuAccessLevel.ManagementManager:
+                return "관리팀 책임자 이상";
+            case EMenuAccessLevel.Management:
+                return "관리팀";
+            case EMenuAccessLevel.Admin:
+                return "시스템 관리자";
+            default:
+                Debug.Fail("unknown menu access level");
+                return "-";
+        }
+    }
+
     public static bool IsTeamScoped(EMenuAccessLevel accessLevel)
     {
         switch (accessLevel)

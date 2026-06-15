@@ -1,7 +1,9 @@
 @page "/admin/positions"
 @attribute [Authorize(Policy = OrganizationHubPolicies.POSITIONS_MANAGE)]
+@implements IAsyncDisposable
 @inject IPositionManagementService PositionManagementService
 @inject ITeamManagementService TeamManagementService
+@inject IJSRuntime JavaScriptRuntime
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("직책과 권한 설정")</PageTitle>
 
@@ -39,7 +41,6 @@ else
                 </MudSelect>
                 <MudTextField @bind-Value="mNewPositionFormModel.Name" Label="새 직책 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                 <MudTextField @bind-Value="mNewPositionFormModel.Description" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Immediate="true" />
-                <MudNumericField T="int" @bind-Value="mNewPositionFormModel.SortOrder" Label="목록 표시 순서" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                 <MudStack Row="true" Spacing="3" Class="hub-position-switch-row mt-2">
                     <MudSwitch T="bool" @bind-Value="mNewPositionFormModel.IsActive" Label="바로 사용" Color="Color.Primary" />
                     <MudSwitch T="bool" @bind-Value="mNewPositionFormModel.IsSystemAdministrator" Label="시스템 관리자 직책" Color="Color.Warning" />
@@ -165,40 +166,63 @@ else
         </MudItem>
         <MudItem xs="12">
             <MudPaper Class="hub-card hub-list-card pa-4">
-                <MudText Typo="Typo.h6">직책 목록</MudText>
-                <MudTable Items="mPositions" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
-                    <HeaderContent>
-                        <MudTh>팀</MudTh>
-                        <MudTh>직책</MudTh>
-                        <MudTh>권한</MudTh>
-                        <MudTh>사용자</MudTh>
-                        <MudTh>상태</MudTh>
-                        <MudTh></MudTh>
-                    </HeaderContent>
-                    <RowTemplate Context="position">
-                        <MudTd DataLabel="팀">@getTeamName(position)</MudTd>
-                        <MudTd DataLabel="직책">
-                            <div>@position.Name</div>
-                            @if (position.IsSystemAdministrator)
-                            {
-                                <div class="hub-muted">시스템 관리자 직책</div>
-                            }
-                        </MudTd>
-                        <MudTd DataLabel="권한">@position.PermissionGrants.Count</MudTd>
-                        <MudTd DataLabel="사용자">@position.UserAccounts.Count</MudTd>
-                        <MudTd DataLabel="상태"><span class="@(position.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(position.IsActive ? "사용 중" : "비활성")</span></MudTd>
-                        <MudTd DataLabel="작업" Class="hub-action-cell">
-                            <div class="hub-table-actions">
-                                <MudTooltip Text="이 직책 권한 설정">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" Size="Size.Small" OnClick="@(() => selectPositionForPermissions(position))" aria-label="이 직책 권한 설정" />
-                                </MudTooltip>
-                                <MudTooltip Text="@(position.IsActive ? "직책 비활성화" : "직책 활성화")">
-                                    <MudIconButton Icon="@(position.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => togglePositionActiveAsync(position))" aria-label="@(position.IsActive ? "직책 비활성화" : "직책 활성화")" Disabled="@position.IsSystemAdministrator" />
-                                </MudTooltip>
+                <div class="hub-admin-section-heading">
+                    <div>
+                        <MudText Typo="Typo.h6">직책 목록</MudText>
+                        <div class="hub-muted">팀 안에서 보일 직책 순서를 드래그해 정합니다.</div>
+                    </div>
+                </div>
+                <div @ref="mSortableRootElement" class="hub-position-group-list">
+                    @foreach (Team team in mActiveTeams)
+                    {
+                        IReadOnlyList<OrganizationPosition> teamPositions = getPositionsForTeam(team.Id);
+                        <section class="hub-sortable-group">
+                            <div class="hub-sortable-group-title">
+                                <span>@team.DisplayName</span>
+                                <span>@(teamPositions.Count)개 직책</span>
                             </div>
-                        </MudTd>
-                    </RowTemplate>
-                </MudTable>
+                            @if (teamPositions.Count == 0)
+                            {
+                                <div class="hub-empty hub-empty-state">아직 만든 직책이 없습니다.</div>
+                            }
+                            else
+                            {
+                                <div class="hub-sortable-list" data-sortable-list>
+                                    @foreach (OrganizationPosition position in teamPositions)
+                                    {
+                                        <div class="hub-sortable-row" data-sortable-item-id="@position.Id" draggable="true">
+                                            <span class="hub-sortable-handle" role="button" aria-label="직책 순서 변경">
+                                                <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
+                                            </span>
+                                            <div class="hub-sortable-main">
+                                                <div class="hub-sortable-title">@position.Name</div>
+                                                <div class="hub-sortable-meta">
+                                                    @if (position.IsSystemAdministrator)
+                                                    {
+                                                        <span>시스템 관리자 직책</span>
+                                                        <span>·</span>
+                                                    }
+                                                    <span>권한 @(position.PermissionGrants.Count)개</span>
+                                                    <span>·</span>
+                                                    <span>사용자 @(position.UserAccounts.Count)명</span>
+                                                </div>
+                                            </div>
+                                            <div class="hub-sortable-actions">
+                                                <span class="hub-sortable-status @(position.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(position.IsActive ? "사용 중" : "비활성")</span>
+                                                <MudTooltip Text="이 직책 권한 설정">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" Size="Size.Small" OnClick="@(() => selectPositionForPermissions(position))" aria-label="이 직책 권한 설정" />
+                                                </MudTooltip>
+                                                <MudTooltip Text="@(position.IsActive ? "직책 비활성화" : "직책 활성화")">
+                                                    <MudIconButton Icon="@(position.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => togglePositionActiveAsync(position))" aria-label="@(position.IsActive ? "직책 비활성화" : "직책 활성화")" Disabled="@position.IsSystemAdministrator" />
+                                                </MudTooltip>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </section>
+                    }
+                </div>
             </MudPaper>
         </MudItem>
     </MudGrid>

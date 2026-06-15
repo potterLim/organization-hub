@@ -12,6 +12,8 @@ namespace OrganizationHub.Web.Services;
 
 public sealed class PositionManagementService : IPositionManagementService
 {
+    private const int SORT_ORDER_STEP = 10;
+
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;
 
     public PositionManagementService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory)
@@ -105,6 +107,39 @@ public sealed class PositionManagementService : IPositionManagementService
             applyPositionForm(positionOrNull, formModel);
             dbContext.PositionPermissionGrants.RemoveRange(positionOrNull.PermissionGrants);
             addPermissionGrants(dbContext, positionOrNull, formModel);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ServiceResult.Succeed();
+        }
+    }
+
+    public async Task<ServiceResult> UpdatePositionOrderAsync(OrganizationPositionOrderUpdateRequest request, CancellationToken cancellationToken)
+    {
+        if (request.OrderedPositionIds.Count == 0)
+        {
+            return ServiceResult.Succeed();
+        }
+
+        await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            int requiredTeamId = request.TeamId.GetRequiredValue();
+            List<int> orderedPositionIdValues = request.OrderedPositionIds.Select(positionId => positionId.GetRequiredValue()).Distinct().ToList();
+            List<OrganizationPosition> positions = await dbContext.Positions
+                .Where(position => position.TeamId == requiredTeamId && orderedPositionIdValues.Contains(position.Id))
+                .ToListAsync(cancellationToken);
+            if (positions.Count != orderedPositionIdValues.Count)
+            {
+                return ServiceResult.Fail("정렬할 직책을 찾을 수 없습니다.");
+            }
+
+            Dictionary<int, OrganizationPosition> positionsById = positions.ToDictionary(position => position.Id);
+            int sortOrder = SORT_ORDER_STEP;
+            foreach (OrganizationPositionId positionId in request.OrderedPositionIds)
+            {
+                OrganizationPosition position = positionsById[positionId.GetRequiredValue()];
+                position.SortOrder = sortOrder;
+                sortOrder += SORT_ORDER_STEP;
+            }
+
             await dbContext.SaveChangesAsync(cancellationToken);
             return ServiceResult.Succeed();
         }

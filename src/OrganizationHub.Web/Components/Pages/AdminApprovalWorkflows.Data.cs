@@ -21,5 +21,6 @@ public partial class AdminApprovalWorkflows
         mUsers = users.ToList();
         mPermissionDefinitions = permissionDefinitions.OrderBy(definition => definition.Category).ThenBy(definition => definition.DisplayName).ToList();
         mWorkflows = workflows.ToList();
+        mShouldInitializeSortable = true;
     }
 }

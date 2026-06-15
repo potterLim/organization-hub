@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Linq;
 using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
@@ -39,7 +38,7 @@ public partial class AdminApprovalWorkflows
     private void clearForm()
     {
         mFormModel = new ApprovalWorkflowFormModel();
-        mFormModel.Priority = 100;
+        mFormModel.Priority = getNextWorkflowPriority();
         mFormModel.IsActive = true;
         addStep();
         mFormTitle = "새 결재 경로";
@@ -50,9 +49,9 @@ public partial class AdminApprovalWorkflows
         int stepOrder = mFormModel.Steps.Count + 1;
         ApprovalWorkflowStepFormModel step = new ApprovalWorkflowStepFormModel();
         step.StepOrder = stepOrder;
-        step.StepName = getDefaultStepName(stepOrder);
         step.IsRequired = true;
         mFormModel.Steps.Add(step);
+        renumberSteps();
     }
 
     private void removeStep(ApprovalWorkflowStepFormModel step)
@@ -69,9 +68,11 @@ public partial class AdminApprovalWorkflows
     private void renumberSteps()
     {
         int stepOrder = 1;
+        ApprovalStepCount stepCount = new ApprovalStepCount(mFormModel.Steps.Count);
         foreach (ApprovalWorkflowStepFormModel step in mFormModel.Steps.OrderBy(step => step.StepOrder))
         {
             step.StepOrder = stepOrder;
+            step.StepName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepOrder);
             stepOrder++;
         }
     }
@@ -100,8 +101,4 @@ public partial class AdminApprovalWorkflows
             selectionType == EApproverSelectionType.PositionInSelectedTeam;
     }
 
-    private string getDefaultStepName(int stepOrder)
-    {
-        return stepOrder.ToString(CultureInfo.InvariantCulture) + "차 결재";
-    }
 }

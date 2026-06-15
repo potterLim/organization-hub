@@ -17,5 +17,6 @@ public partial class AdminPositions
         mActiveTeams = teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName).ToList();
         mPositions = positions.ToList();
         mPermissionDefinitions = permissionDefinitions.OrderBy(definition => definition.Category).ThenBy(definition => definition.DisplayName).ToList();
+        mShouldInitializeSortable = true;
     }
 }
