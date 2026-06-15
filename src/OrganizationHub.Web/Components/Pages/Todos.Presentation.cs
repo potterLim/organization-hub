@@ -73,11 +73,6 @@ public partial class Todos
         return completionState != ETodoTaskCompletionState.Completed && canSortTasks();
     }
 
-    private string getNewTaskPlaceholder()
-    {
-        return canCreateTask() ? "새 할 일" : "목록 선택 후 추가";
-    }
-
     private bool isSelectedTaskListWritable()
     {
         return mWritableTaskListIds.Contains(mSelectedTaskListId);

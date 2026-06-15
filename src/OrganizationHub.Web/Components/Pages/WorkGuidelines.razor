@@ -39,7 +39,10 @@
                     <MudText Typo="Typo.h6">업무 기준 편집</MudText>
                     <span>@(mSectionCount)개 카드</span>
                 </div>
-                <div class="hub-form-hint">카드 수를 고르고, 목록을 드래그해 표시 순서를 정합니다. 일반 사용자 화면에는 오른쪽 미리보기와 같은 형태로 보입니다.</div>
+                <div class="hub-form-hint">
+                    <span>카드 수를 고르고 목록을 드래그해 순서를 정합니다.</span>
+                    <span>일반 사용자에게는 오른쪽 미리보기처럼 보입니다.</span>
+                </div>
                 <MudSelect T="int" Label="카드 수" Value="mSectionCount" ValueChanged="setSectionCount" Variant="Variant.Outlined" Margin="Margin.Dense">
                     @foreach (int sectionCount in getAvailableSectionCounts())
                     {

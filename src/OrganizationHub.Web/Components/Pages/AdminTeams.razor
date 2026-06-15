@@ -25,13 +25,19 @@
                 <MudText Typo="Typo.h6">@mFormTitle</MudText>
                 <span>@(mFormModel.Id == 0 ? "새 팀" : "수정 중")</span>
             </div>
-            <div class="hub-form-hint">팀 이름은 사용자 화면에 그대로 표시됩니다. 고유 코드는 영문과 숫자로 짧게 정해두면 연동과 정리에 도움이 됩니다.</div>
+            <div class="hub-form-hint">
+                <span>팀 이름은 사용자 화면에 그대로 표시됩니다.</span>
+                <span>고유 코드는 영문과 숫자로 짧게 정하면 관리하기 쉽습니다.</span>
+            </div>
             <MudTextField @bind-Value="mFormModel.DisplayName" Label="팀 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             <MudTextField @bind-Value="mFormModel.TeamKey" Label="팀 고유 코드" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="활성 상태" Color="Color.Primary" />
             <MudExpansionPanels Elevation="0" Class="hub-advanced-settings hub-team-advanced-settings">
                 <MudExpansionPanel Text="고급: 이 팀의 Google 연결 ID">
-                    <div class="hub-form-hint">대부분은 Google 연결 메뉴에서 목록을 선택해 연결하면 됩니다. 정확한 ID를 직접 입력해야 할 때만 수정하세요.</div>
+                    <div class="hub-form-hint">
+                        <span>대부분은 Google 연결 메뉴에서 목록을 선택하면 됩니다.</span>
+                        <span>정확한 ID를 직접 입력해야 할 때만 수정하세요.</span>
+                    </div>
                     <SettingIdField @bind-Value="mFormModel.MaterialsFolderId" Label="팀 자료 폴더 ID" />
                     <SettingIdField @bind-Value="mFormModel.ApprovedFolderId" Label="결재 완료 자료 폴더 ID" />
                     <SettingIdField @bind-Value="mFormModel.CalendarId" Label="Calendar ID" />

@@ -37,7 +37,10 @@
                         <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
-                <div class="hub-form-hint">여러 경로가 같은 요청에 맞으면 오른쪽 목록에서 위에 있는 경로를 먼저 사용합니다. 저장한 뒤 목록을 드래그해 적용 순서를 조정하세요.</div>
+                <div class="hub-form-hint">
+                    <span>조건이 같은 경로가 여러 개면 목록의 위쪽 경로를 먼저 사용합니다.</span>
+                    <span>저장한 뒤 드래그해 적용 순서를 조정하세요.</span>
+                </div>
                 <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="저장 후 바로 사용" Color="Color.Primary" />
             </section>
 
@@ -151,7 +154,7 @@
             <div class="hub-admin-section-heading">
                 <div>
                     <MudText Typo="Typo.h6">저장된 결재 경로</MudText>
-                    <div class="hub-muted">위에 있는 경로부터 요청 조건에 맞는지 확인합니다.</div>
+                    <div class="hub-muted">위쪽 경로부터 요청 조건에 맞는지 확인합니다.</div>
                 </div>
             </div>
             <div @ref="mSortableRootElement" class="hub-sortable-list" data-sortable-list>

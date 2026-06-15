@@ -1,7 +1,7 @@
 <MudPaper Class="hub-card hub-form-card hub-approval-line-card pa-4">
     <div class="hub-approval-line-head">
         <MudText Typo="Typo.h6">결재 경로</MudText>
-        <MudText Typo="Typo.body2" Class="hub-muted">요청 후 아래 순서대로 결재가 진행됩니다.</MudText>
+        <MudText Typo="Typo.body2" Class="hub-muted">아래 순서로 결재가 진행됩니다.</MudText>
     </div>
     <MudTextField T="string" Value="@FormModel.Title" ValueChanged="TitleChanged" Label="요청 제목" Variant="Variant.Outlined" Margin="Margin.Dense" />
     <MudSelect T="int" Label="결재 방식" Value="FormModel.StepCount" ValueChanged="StepCountChanged" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@StepDescription">
@@ -25,7 +25,7 @@
     <div class="hub-approval-approver-fields">
         @if (FormModel.StepCount >= 2)
         {
-            <MudSelect @key="@("first-" + FormModel.StepCount)" T="int" Label="1차 결재자" Value="FormModel.FirstApproverUserId" ValueChanged="FirstApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect @key="@("first-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(1)" Value="FormModel.FirstApproverUserId" ValueChanged="FirstApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (ApprovalUserOption userOption in FirstApproverOptions)
                 {
                     <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -34,7 +34,7 @@
         }
         @if (FormModel.StepCount == 3)
         {
-            <MudSelect @key="@("second-" + FormModel.StepCount)" T="int" Label="2차 결재자" Value="FormModel.SecondApproverUserId" ValueChanged="SecondApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect @key="@("second-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(2)" Value="FormModel.SecondApproverUserId" ValueChanged="SecondApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (ApprovalUserOption userOption in SecondApproverOptions)
                 {
                     <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -43,11 +43,11 @@
         }
         @if (CreateContext.FinalApproverOptions.Count == 1)
         {
-            <MudTextField Value="@CreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="최종 결재자" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
+            <MudTextField Value="@CreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="@getApproverFieldLabel(FormModel.StepCount)" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
         }
         else
         {
-            <MudSelect @key="@("final-" + FormModel.StepCount)" T="int" Label="최종 결재자" Value="FormModel.FinalApproverUserId" ValueChanged="FinalApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect @key="@("final-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(FormModel.StepCount)" Value="FormModel.FinalApproverUserId" ValueChanged="FinalApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (ApprovalUserOption userOption in FinalApproverOptions)
                 {
                     <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -159,5 +159,11 @@
     public EventCallback SubmitRequested
     {
         get; set;
+    }
+
+    private string getApproverFieldLabel(int stepNumber)
+    {
+        ApprovalStepCount stepCount = new ApprovalStepCount(FormModel.StepCount);
+        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepNumber);
     }
 }

@@ -10,7 +10,7 @@
 <div class="hub-page-header">
     <div>
         <h1 class="hub-page-title">직책과 권한 설정</h1>
-        <div class="hub-page-description">팀에서 사용할 직책을 만들고, 만든 직책을 선택해 자료, 일정, 할 일, 결재, 관리 권한을 정합니다.</div>
+        <div class="hub-page-description">팀별 직책을 만들고 자료, 일정, 할 일, 결재, 관리 권한을 정합니다.</div>
     </div>
 </div>
 
@@ -32,7 +32,10 @@ else
                     <MudText Typo="Typo.h6">직책 만들기</MudText>
                     <span>새 직책</span>
                 </div>
-                <div class="hub-form-hint">팀에서 사용할 직책 이름을 먼저 만듭니다. 만든 직책은 오른쪽에서 선택해 권한을 정합니다.</div>
+                <div class="hub-form-hint">
+                    <span>팀에서 사용할 직책 이름을 먼저 만듭니다.</span>
+                    <span>만든 직책은 오른쪽에서 선택해 권한을 정합니다.</span>
+                </div>
                 <MudSelect T="int" Label="팀" Value="mNewPositionFormModel.TeamId" ValueChanged="setNewPositionTeamId" Variant="Variant.Outlined" Margin="Margin.Dense">
                     @foreach (Team team in mActiveTeams)
                     {

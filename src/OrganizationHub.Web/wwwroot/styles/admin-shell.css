@@ -87,6 +87,10 @@
     word-break: keep-all;
 }
 
+.hub-form-hint span {
+    display: block;
+}
+
 .hub-menu-technical-note {
     background: rgba(248, 250, 255, .72);
     border: 1px solid rgba(200, 211, 231, .72);

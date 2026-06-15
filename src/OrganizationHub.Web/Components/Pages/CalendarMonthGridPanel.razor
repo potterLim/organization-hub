@@ -22,13 +22,9 @@
             @if (dayCell.Events.Count > 0)
             {
                 <button type="button" class="hub-calendar-day-time-list" @onclick="@(() => DaySelected.InvokeAsync(dayCell))" aria-label="@getDaySummaryLabel(dayCell)">
-                    @foreach (CalendarEventItem calendarEvent in getPreviewDayEvents(dayCell))
+                    @foreach (CalendarEventItem calendarEvent in getDayTimeEvents(dayCell))
                     {
                         <span class="hub-calendar-day-time-line">@formatCalendarChipTime(calendarEvent)</span>
-                    }
-                    @if (getHiddenDayEventCount(dayCell) > 0)
-                    {
-                        <span class="hub-calendar-day-more">+@getHiddenDayEventCount(dayCell).ToString(CultureInfo.InvariantCulture)</span>
                     }
                 </button>
             }
@@ -76,14 +72,9 @@
         return className;
     }
 
-    private IReadOnlyList<CalendarEventItem> getPreviewDayEvents(CalendarDayCell dayCell)
+    private IReadOnlyList<CalendarEventItem> getDayTimeEvents(CalendarDayCell dayCell)
     {
-        return dayCell.Events.Take(4).ToList();
-    }
-
-    private int getHiddenDayEventCount(CalendarDayCell dayCell)
-    {
-        return Math.Max(0, dayCell.Events.Count - getPreviewDayEvents(dayCell).Count);
+        return dayCell.Events;
     }
 
     private string getDayEventCountText(CalendarDayCell dayCell)

@@ -56,15 +56,18 @@ else
                     <MudSelectItem T="string" Value="@taskList.TaskListId.Value">@taskList.DisplayName</MudSelectItem>
                 }
             </MudSelect>
-            <div class="hub-todo-create">
-                <div class="hub-todo-create-bar">
-                    <span class="hub-todo-create-glyph" aria-hidden="true">
-                        <MudIcon Icon="@Icons.Material.Filled.PlaylistAddCheck" Size="Size.Small" />
-                    </span>
-                    <MudTextField @bind-Value="mNewTaskTitle" Placeholder="@getNewTaskPlaceholder()" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Disabled="@(canCreateTask() == false)" OnKeyDown="handleNewTaskKeyDownAsync" Class="hub-todo-create-input" />
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddTask" OnClick="createTaskAsync" Disabled="@(mIsSaving || canSubmitNewTask() == false)" Class="hub-todo-create-button">추가</MudButton>
+            @if (canCreateTask())
+            {
+                <div class="hub-todo-create">
+                    <div class="hub-todo-create-bar">
+                        <span class="hub-todo-create-glyph" aria-hidden="true">
+                            <MudIcon Icon="@Icons.Material.Filled.PlaylistAddCheck" Size="Size.Small" />
+                        </span>
+                        <MudTextField @bind-Value="mNewTaskTitle" Placeholder="새 할 일" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" OnKeyDown="handleNewTaskKeyDownAsync" Class="hub-todo-create-input" />
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddTask" OnClick="createTaskAsync" Disabled="@(mIsSaving || canSubmitNewTask() == false)" Class="hub-todo-create-button">추가</MudButton>
+                    </div>
                 </div>
-            </div>
+            }
         </div>
 
         @if (mIsLoadingTasks)

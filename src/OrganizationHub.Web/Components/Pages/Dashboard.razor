@@ -55,7 +55,7 @@
                             <MudText Typo="Typo.body1" Class="hub-dashboard-approval-title">@approvalRequest.Title</MudText>
                             <MudText Typo="Typo.caption" Class="hub-muted">@approvalRequest.RequesterDisplayName · @formatDate(approvalRequest.RequestedAt)</MudText>
                         </div>
-                        <span class="hub-status-pill hub-status-active">@approvalRequest.CurrentStepNumber.ToString(CultureInfo.InvariantCulture)차 결재</span>
+                        <span class="hub-status-pill hub-status-active">@getCurrentApprovalStepRoleName(approvalRequest)</span>
                     </div>
                 }
             </div>

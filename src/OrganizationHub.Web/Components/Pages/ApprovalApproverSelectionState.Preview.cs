@@ -12,25 +12,21 @@ internal sealed partial class ApprovalApproverSelectionState
     {
         if (stepCount.Value == 2)
         {
-            return "1차 결재 + 최종 결재";
+            return ApprovalStepLabelUtility.GetStepOptionLabel(stepCount);
         }
 
         if (stepCount.Value == 3)
         {
-            return "1차 결재 + 2차 결재 + 최종 결재";
+            return ApprovalStepLabelUtility.GetStepOptionLabel(stepCount);
         }
 
-        return stepCount.Value.ToString(CultureInfo.InvariantCulture) + "단계";
+        return ApprovalStepLabelUtility.GetStepOptionLabel(stepCount);
     }
 
     public string GetApprovalStepDescription()
     {
-        if (mFormModel.StepCount == 3)
-        {
-            return "중간 결재자를 한 명 더 거친 뒤 최종 결재를 받습니다.";
-        }
-
-        return "1차 결재 후 최종 결재를 받습니다.";
+        ApprovalStepCount stepCount = new ApprovalStepCount(mFormModel.StepCount);
+        return ApprovalStepLabelUtility.GetStepDescription(stepCount);
     }
 
     public IReadOnlyList<ApprovalFlowPreviewItem> GetApprovalFlowPreviewItems()
@@ -39,15 +35,18 @@ internal sealed partial class ApprovalApproverSelectionState
         ApprovalStepCount stepCount = new ApprovalStepCount(mFormModel.StepCount);
         if (stepCount.RequiresFirstApprover)
         {
-            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "1차 결재", ApprovalUserId.CreateExisting(mFormModel.FirstApproverUserId)));
+            string stepRoleName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, previewItems.Count + 1);
+            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, stepRoleName, ApprovalUserId.CreateExisting(mFormModel.FirstApproverUserId)));
         }
 
         if (stepCount.RequiresSecondApprover)
         {
-            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "2차 결재", ApprovalUserId.CreateExisting(mFormModel.SecondApproverUserId)));
+            string stepRoleName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, previewItems.Count + 1);
+            previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, stepRoleName, ApprovalUserId.CreateExisting(mFormModel.SecondApproverUserId)));
         }
 
-        previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, "최종 결재", ApprovalUserId.CreateExisting(mFormModel.FinalApproverUserId)));
+        string finalStepRoleName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, previewItems.Count + 1);
+        previewItems.Add(createApprovalFlowPreviewItem(previewItems.Count + 1, finalStepRoleName, ApprovalUserId.CreateExisting(mFormModel.FinalApproverUserId)));
         return previewItems;
     }
 

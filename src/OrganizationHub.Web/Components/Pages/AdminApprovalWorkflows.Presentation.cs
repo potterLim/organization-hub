@@ -42,7 +42,7 @@ public partial class AdminApprovalWorkflows
     {
         if (mFormModel.AppliesToTeamId.HasValue == false)
         {
-            return "모든 팀 요청에 적용됩니다. 저장된 경로 목록에서 위에 있는 경로를 먼저 사용합니다.";
+            return "모든 팀 요청에 적용됩니다. 목록의 위쪽 경로를 먼저 사용합니다.";
         }
 
         Team? teamOrNull = mTeams.FirstOrDefault(team => team.Id == mFormModel.AppliesToTeamId.Value);

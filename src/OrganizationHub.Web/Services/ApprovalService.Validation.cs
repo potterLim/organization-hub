@@ -31,35 +31,39 @@ public sealed partial class ApprovalService
         ApprovalUserId secondApproverUserId = command.SecondApproverUserId;
         ApprovalUserId requestedFinalApproverUserId = command.FinalApproverUserId;
         ApprovalUserId finalApproverUserId = resolveFinalApproverUserId(context.FinalApproverOptions, requestedFinalApproverUserId);
+        ApprovalStepCount stepCount = command.StepCount.GetRequiredStepCount();
+        string firstApproverLabel = ApprovalStepLabelUtility.GetStepRoleName(stepCount, 1);
+        string secondApproverLabel = command.StepCount.RequiresSecondApprover ? ApprovalStepLabelUtility.GetStepRoleName(stepCount, 2) : string.Empty;
+        string finalApproverLabel = ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepCount.Value);
 
         if (command.StepCount.RequiresFirstApprover && firstApproverUserId.HasValue == false)
         {
-            return ServiceResult.Fail("1차 결재권자를 선택해 주세요.");
+            return ServiceResult.Fail(firstApproverLabel + "를 선택해 주세요.");
         }
 
         if (command.StepCount.RequiresFirstApprover && hasUserOption(context.ApproverOptions, firstApproverUserId) == false)
         {
-            return ServiceResult.Fail("1차 결재권자를 찾을 수 없습니다.");
+            return ServiceResult.Fail(firstApproverLabel + "를 찾을 수 없습니다.");
         }
 
         if (command.StepCount.RequiresSecondApprover && secondApproverUserId.HasValue == false)
         {
-            return ServiceResult.Fail("2차 결재권자를 선택해 주세요.");
+            return ServiceResult.Fail(secondApproverLabel + "를 선택해 주세요.");
         }
 
         if (command.StepCount.RequiresSecondApprover && hasUserOption(context.ApproverOptions, secondApproverUserId) == false)
         {
-            return ServiceResult.Fail("2차 결재권자를 찾을 수 없습니다.");
+            return ServiceResult.Fail(secondApproverLabel + "를 찾을 수 없습니다.");
         }
 
         if (finalApproverUserId.HasValue == false)
         {
-            return ServiceResult.Fail("최종 결재권자를 선택해 주세요.");
+            return ServiceResult.Fail(finalApproverLabel + "를 선택해 주세요.");
         }
 
         if (hasUserOption(context.FinalApproverOptions, finalApproverUserId) == false)
         {
-            return ServiceResult.Fail("최종 결재권자를 찾을 수 없습니다.");
+            return ServiceResult.Fail(finalApproverLabel + "를 찾을 수 없습니다.");
         }
 
         HashSet<ApprovalUserId> approverUserIds = new HashSet<ApprovalUserId>();

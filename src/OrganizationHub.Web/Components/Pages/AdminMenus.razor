@@ -33,8 +33,8 @@
                     <span>@MenuAccessLevelUtility.GetShortDisplayName(mFormModel.AccessLevel)</span>
                 </div>
                 <div class="hub-form-hint">
-                    선택한 메뉴가 누구에게 보일지 정합니다.<br />
-                    화면 주소는 시스템이 관리하므로 일반 목록에는 표시하지 않습니다.
+                    <span>메뉴가 보일 대상을 정합니다.</span>
+                    <span>화면 주소는 시스템이 관리합니다.</span>
                 </div>
                 <MudTextField @bind-Value="mFormModel.DisplayName" Label="메뉴 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                 <MudSelect T="EMenuAccessLevel" Label="표시 대상" Value="mFormModel.AccessLevel" ValueChanged="setAccessLevel" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@mSelectedMenuItemOrNull.IsLocked">

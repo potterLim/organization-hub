@@ -101,13 +101,6 @@
     line-height: 1.15;
 }
 
-.hub-calendar-day-more {
-    color: var(--hub-brand-deep);
-    font-size: 12px;
-    font-weight: 900;
-    line-height: 1.15;
-}
-
 .hub-calendar-row-button {
     background: transparent;
     border: 0;

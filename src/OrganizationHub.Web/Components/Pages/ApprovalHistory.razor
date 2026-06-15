@@ -45,7 +45,7 @@ else
                 <div class="hub-approval-steps">
                     @foreach (ApprovalStepItem step in approvalRequest.Steps)
                     {
-                        <span class="@getStepClass(step)">@step.StepNumber.ToString(CultureInfo.InvariantCulture)차 @step.ApproverDisplayName</span>
+                        <span class="@getStepClass(step)">@getStepRoleName(approvalRequest, step) @step.ApproverDisplayName</span>
                     }
                 </div>
                 <MudExpansionPanels Elevation="0" Class="hub-approval-log-panel">
@@ -120,6 +120,12 @@ else
         }
 
         return "hub-status-pill";
+    }
+
+    private string getStepRoleName(ApprovalRequestItem approvalRequest, ApprovalStepItem step)
+    {
+        ApprovalStepCount stepCount = new ApprovalStepCount(approvalRequest.StepCount);
+        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, step.StepNumber);
     }
 
     private string getAuditActionText(ApprovalAuditLogItem auditLog)

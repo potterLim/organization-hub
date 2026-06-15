@@ -38,7 +38,7 @@ else
                         <MudText Typo="Typo.h6">@approvalRequest.Title</MudText>
                         <MudText Typo="Typo.body2" Class="hub-muted">@approvalRequest.TeamName · @approvalRequest.RequesterDisplayName · @formatDate(approvalRequest.RequestedAt)</MudText>
                     </div>
-                    <span class="hub-status-pill hub-status-active">@approvalRequest.CurrentStepNumber.ToString(CultureInfo.InvariantCulture)차 결재</span>
+                    <span class="hub-status-pill hub-status-active">@getCurrentStepRoleName(approvalRequest)</span>
                 </div>
                 <div class="hub-approval-file-row">
                     <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" />
@@ -60,7 +60,7 @@ else
                 <div class="hub-approval-steps">
                     @foreach (ApprovalStepItem step in approvalRequest.Steps)
                     {
-                        <span class="@getStepClass(step)">@step.StepNumber.ToString(CultureInfo.InvariantCulture)차 @step.ApproverDisplayName</span>
+                        <span class="@getStepClass(step)">@getStepRoleName(approvalRequest, step) @step.ApproverDisplayName</span>
                     }
                 </div>
                 <MudStack Row="true" Spacing="2" Class="hub-form-actions mt-3">
@@ -231,6 +231,18 @@ else
         }
 
         return "hub-status-pill";
+    }
+
+    private string getCurrentStepRoleName(ApprovalRequestItem approvalRequest)
+    {
+        ApprovalStepCount stepCount = new ApprovalStepCount(approvalRequest.StepCount);
+        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, approvalRequest.CurrentStepNumber);
+    }
+
+    private string getStepRoleName(ApprovalRequestItem approvalRequest, ApprovalStepItem step)
+    {
+        ApprovalStepCount stepCount = new ApprovalStepCount(approvalRequest.StepCount);
+        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, step.StepNumber);
     }
 
     private string formatDate(DateTime dateTime)

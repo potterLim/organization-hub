@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using MudBlazor;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -121,6 +122,12 @@ public partial class Dashboard
         }
 
         return Icons.Material.Filled.InsertDriveFile;
+    }
+
+    private string getCurrentApprovalStepRoleName(ApprovalRequestItem approvalRequest)
+    {
+        ApprovalStepCount stepCount = new ApprovalStepCount(approvalRequest.StepCount);
+        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, approvalRequest.CurrentStepNumber);
     }
 
     private string formatDate(DateTime dateTime)
