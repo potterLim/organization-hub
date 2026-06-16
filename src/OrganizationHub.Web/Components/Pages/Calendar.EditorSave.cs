@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -89,25 +88,20 @@ public partial class Calendar
             return null;
         }
 
-        DateTime startLocal;
-        DateTime endLocal;
-        bool isStartParsed = DateTime.TryParse(mEditorStartText, CultureInfo.CurrentCulture, DateTimeStyles.None, out startLocal);
-        bool isEndParsed = DateTime.TryParse(mEditorEndText, CultureInfo.CurrentCulture, DateTimeStyles.None, out endLocal);
-        if (isStartParsed == false || isEndParsed == false)
+        if (createEditorScheduleOrNull() is not CalendarEditorSchedule schedule)
         {
-            mEditorMessage = "시작과 종료 시간을 입력해 주세요. 예: 2026-05-22 10:00";
             return null;
         }
 
-        if (mEditorIsAllDay && endLocal.Date < startLocal.Date)
+        if (mEditorIsAllDay && schedule.EndLocal.Date < schedule.StartLocal.Date)
         {
             mEditorMessage = "종일 일정의 종료일은 시작일보다 빠를 수 없습니다.";
             return null;
         }
 
-        if (mEditorIsAllDay == false && endLocal <= startLocal)
+        if (mEditorIsAllDay == false && schedule.EndLocal < schedule.StartLocal)
         {
-            mEditorMessage = "종료 시간은 시작 시간보다 늦어야 합니다.";
+            mEditorMessage = "종료 일시는 시작 일시보다 빠를 수 없습니다.";
             return null;
         }
 
@@ -117,9 +111,25 @@ public partial class Calendar
         formModel.Summary = mEditorSummary;
         formModel.Description = mEditorDescription;
         formModel.Location = mEditorLocation;
-        formModel.StartLocal = startLocal;
-        formModel.EndLocal = endLocal;
+        formModel.StartLocal = schedule.StartLocal;
+        formModel.EndLocal = schedule.EndLocal;
         formModel.IsAllDay = mEditorIsAllDay;
         return formModel;
+    }
+
+    private CalendarEditorSchedule? createEditorScheduleOrNull()
+    {
+        if (mEditorStartLocalOrNull is not DateTime startLocal || mEditorEndLocalOrNull is not DateTime endLocal)
+        {
+            mEditorMessage = "시작 일시와 종료 일시를 선택해 주세요.";
+            return null;
+        }
+
+        if (mEditorIsAllDay)
+        {
+            return new CalendarEditorSchedule(startLocal.Date, endLocal.Date);
+        }
+
+        return new CalendarEditorSchedule(startLocal, endLocal);
     }
 }

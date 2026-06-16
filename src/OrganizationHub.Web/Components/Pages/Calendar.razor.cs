@@ -34,10 +34,11 @@ public partial class Calendar
     private string mEditorSummary = string.Empty;
     private string mEditorDescription = string.Empty;
     private string mEditorLocation = string.Empty;
-    private string mEditorStartText = string.Empty;
-    private string mEditorEndText = string.Empty;
+    private DateTime? mEditorStartLocalOrNull;
+    private DateTime? mEditorEndLocalOrNull;
     private string mEditorMessage = string.Empty;
     private DateTime mCurrentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private ECalendarEditorDateTimeField? mOpenEditorDateTimeFieldOrNull;
     private ElementReference mRefreshScopeElement;
     private ChangeVersionSnapshot mLoadedChangeSnapshot = new ChangeVersionSnapshot();
     private IJSObjectReference? mRefreshModuleOrNull;

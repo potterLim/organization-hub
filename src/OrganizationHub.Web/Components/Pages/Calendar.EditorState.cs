@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Models;
 
@@ -23,8 +22,7 @@ public partial class Calendar
         mEditorSummary = string.Empty;
         mEditorDescription = string.Empty;
         mEditorLocation = string.Empty;
-        mEditorStartText = formatEditorDateTime(nextStart);
-        mEditorEndText = formatEditorDateTime(nextStart.AddHours(1));
+        setEditorSchedule(nextStart, nextStart.AddHours(1));
         mEditorIsAllDay = false;
         mEditorMessage = string.Empty;
         mEditorCalendarId = mWritableCalendars.Count > 0 ? mWritableCalendars[0].CalendarId.GetRequiredValue() : string.Empty;
@@ -42,14 +40,16 @@ public partial class Calendar
         mEditorDescription = calendarEvent.Description;
         mEditorLocation = calendarEvent.Location;
         mEditorIsAllDay = calendarEvent.IsAllDay;
-        mEditorStartText = calendarEvent.Start.HasValue ? formatEditorDateTime(calendarEvent.Start.Value.ToLocalTime().DateTime) : formatEditorDateTime(DateTime.Now);
-        mEditorEndText = calendarEvent.End.HasValue ? formatEditorDateTime(calendarEvent.End.Value.ToLocalTime().DateTime) : formatEditorDateTime(DateTime.Now.AddHours(1));
+        DateTime startLocal = calendarEvent.Start is DateTimeOffset start ? start.ToLocalTime().DateTime : DateTime.Now;
+        DateTime endLocal = calendarEvent.End is DateTimeOffset end ? end.ToLocalTime().DateTime : DateTime.Now.AddHours(1);
+        setEditorSchedule(startLocal, endLocal);
         mEditorMessage = string.Empty;
     }
 
     private void closeEditor()
     {
         mIsEditorOpen = false;
+        mOpenEditorDateTimeFieldOrNull = null;
         mEditorMessage = string.Empty;
     }
 
@@ -58,6 +58,7 @@ public partial class Calendar
         mSelectedEventOrNull = calendarEvent;
         mSelectedDayOrNull = getEventLocalDateOrNull(calendarEvent);
         mIsEditorOpen = false;
+        mOpenEditorDateTimeFieldOrNull = null;
         mEditorMessage = string.Empty;
     }
 
@@ -65,6 +66,7 @@ public partial class Calendar
     {
         mSelectedEventOrNull = null;
         mIsEditorOpen = false;
+        mOpenEditorDateTimeFieldOrNull = null;
         mEditorMessage = string.Empty;
     }
 
@@ -74,8 +76,39 @@ public partial class Calendar
         return Task.CompletedTask;
     }
 
-    private string formatEditorDateTime(DateTime dateTime)
+    private Task handleEditorStartChangedAsync(DateTime? startLocalOrNull)
     {
-        return dateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+        mEditorStartLocalOrNull = startLocalOrNull;
+        if (startLocalOrNull is DateTime startLocal && (mEditorEndLocalOrNull == null || mEditorEndLocalOrNull < startLocal))
+        {
+            mEditorEndLocalOrNull = startLocal;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task handleEditorEndChangedAsync(DateTime? endLocalOrNull)
+    {
+        if (endLocalOrNull is DateTime endLocal && mEditorStartLocalOrNull is DateTime startLocal && endLocal < startLocal)
+        {
+            mEditorEndLocalOrNull = startLocal;
+            return Task.CompletedTask;
+        }
+
+        mEditorEndLocalOrNull = endLocalOrNull;
+        return Task.CompletedTask;
+    }
+
+    private Task handleEditorDateTimeFieldOpenChangedAsync(ECalendarEditorDateTimeField dateTimeField, bool isOpen)
+    {
+        mOpenEditorDateTimeFieldOrNull = isOpen ? dateTimeField : null;
+        return Task.CompletedTask;
+    }
+
+    private void setEditorSchedule(DateTime startLocal, DateTime endLocal)
+    {
+        mEditorStartLocalOrNull = startLocal;
+        mEditorEndLocalOrNull = endLocal < startLocal ? startLocal : endLocal;
+        mOpenEditorDateTimeFieldOrNull = null;
     }
 }
