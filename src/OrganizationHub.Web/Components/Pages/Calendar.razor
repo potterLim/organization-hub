@@ -24,7 +24,10 @@
         <MudTooltip Text="새로고침">
             <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" OnClick="loadEventsAsync" Disabled="mIsLoading" aria-label="새로고침" />
         </MudTooltip>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(mWritableCalendars.Count == 0)" OnClick="openCreateEditor" StartIcon="@Icons.Material.Filled.Add">일정 추가</MudButton>
+        @if (mWritableCalendars.Count > 0)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="openCreateEditor" StartIcon="@Icons.Material.Filled.Add">일정 추가</MudButton>
+        }
     </div>
 </div>
 
