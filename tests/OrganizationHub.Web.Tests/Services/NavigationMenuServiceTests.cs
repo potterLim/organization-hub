@@ -201,6 +201,7 @@ public sealed class NavigationMenuServiceTests
             {
                 dbContext.NavigationMenuItems.Add(createMenuItem("Calendar", "일정", "/calendar", EMenuAccessLevel.Authenticated, 20));
                 dbContext.NavigationMenuItems.Add(createMenuItem("Todos", "할 일", "/todos", EMenuAccessLevel.Authenticated, 30));
+                dbContext.NavigationMenuItems.Add(createMenuItem("ApprovalRequest", "결재 요청", "/approvals/request", EMenuAccessLevel.TeamMember, 40));
                 dbContext.NavigationMenuItems.Add(createMenuItem("AdminSettings", "기본 설정", "/admin/settings", EMenuAccessLevel.Admin, 340));
                 dbContext.SaveChanges();
             }
@@ -212,9 +213,11 @@ public sealed class NavigationMenuServiceTests
 
             Assert.Contains(menus, menuItem => menuItem.MenuKey == "Calendar");
             Assert.Contains(menus, menuItem => menuItem.MenuKey == "Todos");
+            Assert.DoesNotContain(menus, menuItem => menuItem.MenuKey == "ApprovalRequest");
             Assert.DoesNotContain(menus, menuItem => menuItem.MenuKey == "AdminSettings");
             Assert.True(await navigationMenuService.CanAccessPathAsync(userSession, NavigationPath.CreateOptional("/calendar"), CancellationToken.None));
             Assert.True(await navigationMenuService.CanAccessPathAsync(userSession, NavigationPath.CreateOptional("/todos"), CancellationToken.None));
+            Assert.False(await navigationMenuService.CanAccessPathAsync(userSession, NavigationPath.CreateOptional("/approvals/request"), CancellationToken.None));
             Assert.False(await navigationMenuService.CanAccessPathAsync(userSession, NavigationPath.CreateOptional("/admin/settings"), CancellationToken.None));
         }
     }

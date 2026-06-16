@@ -32,7 +32,7 @@ public sealed partial class NavigationMenuService
                 if (isPathMatch(routePath, menuItem.Href))
                 {
                     EPermissionConfigurationMode configurationMode = await getNavigationPermissionConfigurationModeAsync(userSession, cancellationToken);
-                    return await isVisibleForUserAsync(menuItem, userSession, configurationMode, cancellationToken);
+                    return await canUseMenuItemAsync(menuItem, userSession, configurationMode, cancellationToken);
                 }
             }
         }

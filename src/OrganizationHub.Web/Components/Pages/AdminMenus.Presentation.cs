@@ -3,6 +3,7 @@ using MudBlazor;
 using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;
 
@@ -35,6 +36,11 @@ public partial class AdminMenus
         }
 
         return string.Join(", ", teamNames);
+    }
+
+    private string getRequiredPermissionText(NavigationMenuItem menuItem)
+    {
+        return NavigationMenuPermissionCatalog.GetRequiredPermissionSummary(menuItem.MenuKey);
     }
 
     private void showOperationResult(ServiceResult operationResult, string successMessage)

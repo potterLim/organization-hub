@@ -22,7 +22,7 @@ public sealed partial class NavigationMenuService
             EPermissionConfigurationMode configurationMode = await getNavigationPermissionConfigurationModeAsync(userSession, cancellationToken);
             foreach (NavigationMenuItem menuItem in menuItems)
             {
-                if (await isVisibleForUserAsync(menuItem, userSession, configurationMode, cancellationToken))
+                if (await canUseMenuItemAsync(menuItem, userSession, configurationMode, cancellationToken))
                 {
                     visibleMenuItems.Add(menuItem);
                 }
@@ -33,7 +33,7 @@ public sealed partial class NavigationMenuService
         }
     }
 
-    private async Task<bool> isVisibleForUserAsync(
+    private async Task<bool> canUseMenuItemAsync(
         NavigationMenuItem menuItem,
         UserSession userSession,
         EPermissionConfigurationMode configurationMode,
@@ -45,8 +45,8 @@ public sealed partial class NavigationMenuService
             return false;
         }
 
-        bool isAccessAllowed = await isAccessLevelAllowedAsync(menuItem, userSession, configurationMode, cancellationToken);
-        if (isAccessAllowed == false)
+        bool canUseMenuPermission = await canUseMenuPermissionAsync(menuItem, userSession, configurationMode, cancellationToken);
+        if (canUseMenuPermission == false)
         {
             return false;
         }
@@ -93,7 +93,7 @@ public sealed partial class NavigationMenuService
         return false;
     }
 
-    private async Task<bool> isAccessLevelAllowedAsync(
+    private async Task<bool> canUseMenuPermissionAsync(
         NavigationMenuItem menuItem,
         UserSession userSession,
         EPermissionConfigurationMode configurationMode,
@@ -102,7 +102,7 @@ public sealed partial class NavigationMenuService
     {
         if (configurationMode == EPermissionConfigurationMode.ConfiguredPermissions)
         {
-            IReadOnlyList<string> permissionKeys = getMenuPermissionKeys(menuItem);
+            IReadOnlyList<string> permissionKeys = NavigationMenuPermissionCatalog.GetRequiredPermissionKeys(menuItem.MenuKey);
             if (permissionKeys.Count == 0)
             {
                 return true;

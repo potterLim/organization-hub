@@ -107,6 +107,39 @@
     white-space: nowrap;
 }
 
+.hub-menu-access-summary {
+    background: rgba(248, 250, 255, .82);
+    border: 1px solid rgba(200, 211, 231, .72);
+    border-radius: 14px;
+    display: grid;
+    gap: 4px;
+    margin-bottom: 12px;
+    padding: 12px 14px;
+}
+
+.hub-menu-access-summary span {
+    color: var(--hub-text-muted);
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.hub-menu-access-summary strong {
+    color: var(--hub-text-strong);
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.35;
+}
+
+.hub-menu-access-summary small {
+    color: var(--hub-text-muted);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.45;
+    text-wrap: pretty;
+    word-break: keep-all;
+}
+
 .hub-admin-section-heading {
     align-items: flex-start;
     display: flex;
