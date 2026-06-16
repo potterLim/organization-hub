@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Google.Apis.Calendar.v3.Data;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
@@ -43,9 +44,15 @@ public sealed partial class GoogleCalendarService
             return eventDateTime;
         }
 
-        eventDateTime.DateTimeDateTimeOffset = new DateTimeOffset(DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified), getCalendarUtcOffset(localDateTime));
+        eventDateTime.DateTimeDateTimeOffset = createCalendarDateTimeOffset(localDateTime);
         eventDateTime.TimeZone = getCalendarTimeZoneId();
         return eventDateTime;
+    }
+
+    private DateTimeOffset createCalendarDateTimeOffset(DateTime localDateTime)
+    {
+        DateTime unspecifiedLocalDateTime = DateTime.SpecifyKind(localDateTime, DateTimeKind.Unspecified);
+        return new DateTimeOffset(unspecifiedLocalDateTime, getCalendarUtcOffset(unspecifiedLocalDateTime));
     }
 
     private TimeSpan getCalendarUtcOffset(DateTime localDateTime)
@@ -151,10 +158,15 @@ public sealed partial class GoogleCalendarService
         if (string.IsNullOrWhiteSpace(eventDateTimeOrNull.Date) == false)
         {
             DateTime dateTime;
-            bool isParsed = DateTime.TryParse(eventDateTimeOrNull.Date, out dateTime);
+            bool isParsed = DateTime.TryParseExact(
+                eventDateTimeOrNull.Date,
+                "yyyy-MM-dd",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out dateTime);
             if (isParsed)
             {
-                return new DateTimeOffset(dateTime);
+                return createCalendarDateTimeOffset(dateTime);
             }
         }
 

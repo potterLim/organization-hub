@@ -42,8 +42,8 @@ public sealed partial class GoogleCalendarService
 
         string requiredCalendarId = request.CalendarId.GetRequiredValue();
         EventsResource.ListRequest listRequest = request.CalendarService.Events.List(requiredCalendarId);
-        listRequest.TimeMinDateTimeOffset = new DateTimeOffset(request.DateRange.Start);
-        listRequest.TimeMaxDateTimeOffset = new DateTimeOffset(request.DateRange.End);
+        listRequest.TimeMinDateTimeOffset = createCalendarDateTimeOffset(request.DateRange.Start);
+        listRequest.TimeMaxDateTimeOffset = createCalendarDateTimeOffset(request.DateRange.End);
         listRequest.SingleEvents = true;
         listRequest.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
         listRequest.Fields = "items(" + EVENT_FIELDS + "),nextPageToken";
