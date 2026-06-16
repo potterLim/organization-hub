@@ -67,7 +67,14 @@
     margin: 10px 0 12px;
 }
 
+.hub-folder-create-toggle {
+    min-width: 112px !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+}
+
 .hub-folder-create-toggle .mud-button-label {
+    gap: 6px;
     white-space: nowrap;
 }
 
@@ -126,8 +133,18 @@
 .hub-folder-create-actions {
     align-items: center;
     display: flex;
-    gap: 8px;
+    gap: 10px;
     justify-content: flex-end;
+}
+
+.hub-folder-create-actions .mud-button-root {
+    min-width: 80px !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+}
+
+.hub-folder-create-actions .mud-button-filled-primary {
+    min-width: 92px !important;
 }
 
 .hub-folder-tile-list {
@@ -244,6 +261,67 @@
 .hub-approval-approver-fields {
     display: grid;
     gap: 12px;
+}
+
+.hub-approval-fixed-approver {
+    background: rgba(255, 255, 255, .58);
+    border: 1px solid rgba(78, 104, 145, .16);
+    border-radius: var(--hub-radius-sm);
+    display: grid;
+    gap: 7px;
+    min-height: 74px;
+    padding: 10px 12px 12px;
+}
+
+.hub-approval-fixed-label {
+    color: var(--hub-text-muted);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.hub-approval-fixed-body {
+    align-items: center;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    min-width: 0;
+}
+
+.hub-approval-fixed-icon {
+    align-items: center;
+    background: rgba(33, 107, 255, .1);
+    border: 1px solid rgba(33, 107, 255, .14);
+    border-radius: 999px;
+    color: var(--hub-brand-deep);
+    display: inline-flex;
+    height: 32px;
+    justify-content: center;
+    width: 32px;
+}
+
+.hub-approval-fixed-body strong,
+.hub-approval-fixed-body span {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-approval-fixed-body strong {
+    color: var(--hub-text-strong);
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.3;
+}
+
+.hub-approval-fixed-body span {
+    color: var(--hub-text-muted);
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.35;
+    margin-top: 2px;
 }
 
 .hub-approval-submit-button {

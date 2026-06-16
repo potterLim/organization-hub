@@ -125,7 +125,7 @@ else
                         <MudTextField @bind-Value="mEditorEndText" Label="종료" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                         <MudSwitch T="bool" @bind-Value="mEditorIsAllDay" Label="종일 일정" Color="Color.Primary" />
                         <MudTextField @bind-Value="mEditorLocation" Label="위치" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-                        <MudTextField @bind-Value="mEditorDescription" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                        <MudTextField @bind-Value="mEditorDescription" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" Immediate="true" />
                     </div>
                     <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveEventAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>

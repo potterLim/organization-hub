@@ -25,7 +25,7 @@
     <div class="hub-approval-approver-fields">
         @if (FormModel.StepCount >= 2)
         {
-            <MudSelect @key="@("first-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(new ApprovalStepNumber(1))" Value="FormModel.FirstApproverUserId" ValueChanged="FirstApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect @key="@("first-" + FormModel.StepCount)" T="int" Label="@getApproverSelectLabel(new ApprovalStepNumber(1))" Value="FormModel.FirstApproverUserId" ValueChanged="FirstApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (ApprovalUserOption userOption in FirstApproverOptions)
                 {
                     <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -34,20 +34,31 @@
         }
         @if (FormModel.StepCount == 3)
         {
-            <MudSelect @key="@("second-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(new ApprovalStepNumber(2))" Value="FormModel.SecondApproverUserId" ValueChanged="SecondApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect @key="@("second-" + FormModel.StepCount)" T="int" Label="@getApproverSelectLabel(new ApprovalStepNumber(2))" Value="FormModel.SecondApproverUserId" ValueChanged="SecondApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (ApprovalUserOption userOption in SecondApproverOptions)
                 {
                     <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
                 }
             </MudSelect>
         }
-        @if (CreateContext.FinalApproverOptions.Count == 1)
+        @if (FinalApproverOptions.Count == 1)
         {
-            <MudTextField Value="@CreateContext.FinalApproverOptions[0].GetDisplayLabel()" Label="@getApproverFieldLabel(new ApprovalStepNumber(FormModel.StepCount))" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" />
+            <div class="hub-approval-fixed-approver" role="group" aria-label="@getApproverFieldLabel(new ApprovalStepNumber(FormModel.StepCount))">
+                <span class="hub-approval-fixed-label">@getApproverFieldLabel(new ApprovalStepNumber(FormModel.StepCount))</span>
+                <div class="hub-approval-fixed-body">
+                    <span class="hub-approval-fixed-icon">
+                        <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Size="Size.Small" />
+                    </span>
+                    <div>
+                        <strong>@FinalApproverOptions[0].GetDisplayLabel()</strong>
+                        <span>설정된 결재 경로에 따라 자동 지정됩니다.</span>
+                    </div>
+                </div>
+            </div>
         }
         else
         {
-            <MudSelect @key="@("final-" + FormModel.StepCount)" T="int" Label="@getApproverFieldLabel(new ApprovalStepNumber(FormModel.StepCount))" Value="FormModel.FinalApproverUserId" ValueChanged="FinalApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect @key="@("final-" + FormModel.StepCount)" T="int" Label="@getApproverSelectLabel(new ApprovalStepNumber(FormModel.StepCount))" Value="FormModel.FinalApproverUserId" ValueChanged="FinalApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (ApprovalUserOption userOption in FinalApproverOptions)
                 {
                     <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -165,5 +176,10 @@
     {
         ApprovalStepCount stepCount = new ApprovalStepCount(FormModel.StepCount);
         return ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepNumber);
+    }
+
+    private string getApproverSelectLabel(ApprovalStepNumber stepNumber)
+    {
+        return getApproverFieldLabel(stepNumber) + " 선택";
     }
 }

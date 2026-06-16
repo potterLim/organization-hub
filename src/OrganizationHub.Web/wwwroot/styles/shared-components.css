@@ -67,6 +67,26 @@
     color: #ffffff !important;
 }
 
+.mud-button-filled-primary:not(:disabled):not(.mud-disabled) .mud-button-label,
+.mud-button-filled-primary:not(:disabled):not(.mud-disabled) .mud-icon-root {
+    color: #ffffff !important;
+}
+
+.mud-button-filled-primary:disabled,
+.mud-button-filled-primary.mud-disabled {
+    background: rgba(232, 238, 247, .92) !important;
+    border: 1px solid rgba(78, 104, 145, .14) !important;
+    box-shadow: none !important;
+    color: rgba(78, 104, 145, .68) !important;
+}
+
+.mud-button-filled-primary:disabled .mud-button-label,
+.mud-button-filled-primary:disabled .mud-icon-root,
+.mud-button-filled-primary.mud-disabled .mud-button-label,
+.mud-button-filled-primary.mud-disabled .mud-icon-root {
+    color: rgba(78, 104, 145, .68) !important;
+}
+
 .mud-button-outlined-primary {
     background: rgba(255, 255, 255, .58) !important;
     border-color: rgba(33, 107, 255, .24) !important;
@@ -106,13 +126,13 @@
 .mud-input-control input.mud-input-slot {
     box-sizing: border-box;
     height: 100%;
-    line-height: 1.4;
+    line-height: 56px;
     min-height: inherit;
 }
 
 .mud-input-control input.mud-input-slot:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
 .mud-input-control .mud-select-input {
-    transform: translateY(1px);
+    transform: none;
 }
 
 .mud-input-control .mud-input-outlined input.mud-input-slot {
@@ -121,6 +141,7 @@
 }
 
 .mud-input-control .mud-input-outlined.mud-input-margin-dense input.mud-input-slot {
+    line-height: 48px;
     padding-bottom: 0;
     padding-top: 0;
 }
@@ -128,6 +149,12 @@
 .mud-input-control .mud-select-input {
     align-items: center;
     display: inline-flex;
+    line-height: 56px;
+    min-height: inherit;
+}
+
+.mud-input-control .mud-input-outlined.mud-input-margin-dense .mud-select-input {
+    line-height: 48px;
 }
 
 .mud-input-control textarea.mud-input-slot {
