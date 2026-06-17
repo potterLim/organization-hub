@@ -122,6 +122,7 @@ public sealed class OrganizationHubDataSeederTests
         menuItem.DisplayName = displayName;
         menuItem.Href = href;
         menuItem.IconKey = "Folder";
+        menuItem.SectionId = 1;
         menuItem.SortOrder = sortOrder;
         menuItem.AccessLevel = EMenuAccessLevel.Authenticated;
         menuItem.IsActive = true;

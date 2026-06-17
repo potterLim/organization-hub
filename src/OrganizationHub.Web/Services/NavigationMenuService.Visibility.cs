@@ -17,7 +17,14 @@ public sealed partial class NavigationMenuService
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<NavigationMenuItem> menuItems = await dbContext.NavigationMenuItems.Include(menuItem => menuItem.TeamPermissions).ThenInclude(menuPermission => menuPermission.Team).OrderBy(menuItem => menuItem.SortOrder).ThenBy(menuItem => menuItem.DisplayName).ToListAsync(cancellationToken);
+            List<NavigationMenuItem> menuItems = await dbContext.NavigationMenuItems
+                .Include(menuItem => menuItem.Section)
+                .Include(menuItem => menuItem.TeamPermissions)
+                .ThenInclude(menuPermission => menuPermission.Team)
+                .OrderBy(menuItem => menuItem.Section == null ? int.MaxValue : menuItem.Section.SortOrder)
+                .ThenBy(menuItem => menuItem.SortOrder)
+                .ThenBy(menuItem => menuItem.DisplayName)
+                .ToListAsync(cancellationToken);
             List<NavigationMenuItem> visibleMenuItems = new List<NavigationMenuItem>();
             EPermissionConfigurationMode configurationMode = await getNavigationPermissionConfigurationModeAsync(userSession, cancellationToken);
             foreach (NavigationMenuItem menuItem in menuItems)
@@ -28,7 +35,11 @@ public sealed partial class NavigationMenuService
                 }
             }
 
-            List<NavigationMenuItem> orderedVisibleMenuItems = visibleMenuItems.OrderBy(menuItem => getVisibleMenuGroupOrder(menuItem)).ThenBy(menuItem => menuItem.SortOrder).ThenBy(menuItem => menuItem.DisplayName).ToList();
+            List<NavigationMenuItem> orderedVisibleMenuItems = visibleMenuItems
+                .OrderBy(menuItem => menuItem.Section == null ? int.MaxValue : menuItem.Section.SortOrder)
+                .ThenBy(menuItem => menuItem.SortOrder)
+                .ThenBy(menuItem => menuItem.DisplayName)
+                .ToList();
             return orderedVisibleMenuItems;
         }
     }

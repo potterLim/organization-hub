@@ -23,6 +23,7 @@ public sealed partial class NavigationMenuService
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             List<NavigationMenuItem> menuItems = await dbContext.NavigationMenuItems
+                .Include(menuItem => menuItem.Section)
                 .Include(menuItem => menuItem.TeamPermissions)
                 .ThenInclude(menuPermission => menuPermission.Team)
                 .OrderByDescending(menuItem => menuItem.Href.Length)

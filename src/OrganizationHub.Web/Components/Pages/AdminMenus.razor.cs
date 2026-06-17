@@ -12,10 +12,12 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminMenus
 {
+    private List<NavigationMenuSection> mSections = new List<NavigationMenuSection>();
     private List<NavigationMenuItem> mMenuItems = new List<NavigationMenuItem>();
     private List<Team> mTeams = new List<Team>();
     private NavigationMenuItem? mSelectedMenuItemOrNull;
     private NavigationMenuItemFormModel mFormModel = new NavigationMenuItemFormModel();
+    private NavigationMenuSectionFormModel mSectionFormModel = new NavigationMenuSectionFormModel();
     private ElementReference mSortableRootElement;
     private IJSObjectReference? mSortableModuleOrNull;
     private DotNetObjectReference<AdminMenus>? mDotNetReferenceOrNull;
@@ -34,8 +36,10 @@ public partial class AdminMenus
 
     private async Task loadDataAsync()
     {
+        IReadOnlyList<NavigationMenuSection> sections = await NavigationMenuService.GetMenuSectionsAsync(CancellationToken.None);
         IReadOnlyList<NavigationMenuItem> menuItems = await NavigationMenuService.GetManageableMenuItemsAsync(CancellationToken.None);
         IReadOnlyList<Team> teams = await TeamManagementService.GetTeamsAsync(CancellationToken.None);
+        mSections = sections.ToList();
         mMenuItems = menuItems.ToList();
         mTeams = teams.Where(team => team.IsActive).ToList();
         mShouldInitializeSortable = true;

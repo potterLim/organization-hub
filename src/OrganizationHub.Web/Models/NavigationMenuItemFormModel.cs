@@ -16,6 +16,17 @@ public sealed class NavigationMenuItemFormModel
             return NavigationMenuItemId.CreateOptional(Id);
         }
     }
+    public int SectionId
+    {
+        get; set;
+    }
+    public NavigationMenuSectionId NavigationMenuSectionIdValue
+    {
+        get
+        {
+            return NavigationMenuSectionId.CreateOptional(SectionId);
+        }
+    }
     public string DisplayName { get; set; } = string.Empty;
     public int SortOrder
     {

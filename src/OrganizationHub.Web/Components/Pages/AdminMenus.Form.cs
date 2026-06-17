@@ -14,6 +14,7 @@ public partial class AdminMenus
         mSelectedMenuItemOrNull = menuItem;
         mFormModel = new NavigationMenuItemFormModel();
         mFormModel.Id = menuItem.Id;
+        mFormModel.SectionId = menuItem.SectionId;
         mFormModel.DisplayName = menuItem.DisplayName;
         mFormModel.SortOrder = menuItem.SortOrder;
         mFormModel.AccessLevel = menuItem.AccessLevel;
@@ -35,6 +36,40 @@ public partial class AdminMenus
             {
                 editMenu(menuItemOrNull);
             }
+        }
+    }
+
+    private void editSection(NavigationMenuSection section)
+    {
+        mSectionFormModel = new NavigationMenuSectionFormModel();
+        mSectionFormModel.Id = section.Id;
+        mSectionFormModel.DisplayName = section.DisplayName;
+    }
+
+    private void clearSectionForm()
+    {
+        mSectionFormModel = new NavigationMenuSectionFormModel();
+    }
+
+    private async Task saveSectionAsync()
+    {
+        int sectionId = mSectionFormModel.Id;
+        ServiceResult saveResult = await NavigationMenuService.SaveMenuSectionAsync(mSectionFormModel, CancellationToken.None);
+        showOperationResult(saveResult, "메뉴 섹션이 저장되었습니다.");
+        if (saveResult.IsSuccess)
+        {
+            await loadDataAsync();
+            NavigationMenuSection? sectionOrNull = mSections.FirstOrDefault(section => section.Id == sectionId);
+            if (sectionOrNull != null)
+            {
+                editSection(sectionOrNull);
+            }
+            else
+            {
+                clearSectionForm();
+            }
+
+            restoreSelectedMenu();
         }
     }
 

@@ -8,8 +8,18 @@ internal static partial class OrganizationHubModelConfiguration
 {
     private static void configureNavigation(ModelBuilder modelBuilder)
     {
+        configureNavigationMenuSections(modelBuilder);
         configureNavigationMenuItems(modelBuilder);
         configureNavigationMenuTeamPermissions(modelBuilder);
+    }
+
+    private static void configureNavigationMenuSections(ModelBuilder modelBuilder)
+    {
+        EntityTypeBuilder<NavigationMenuSection> sectionBuilder = modelBuilder.Entity<NavigationMenuSection>();
+        sectionBuilder.HasKey(section => section.Id);
+        sectionBuilder.HasIndex(section => section.SectionKey).IsUnique();
+        sectionBuilder.Property(section => section.SectionKey).HasMaxLength(64).IsRequired();
+        sectionBuilder.Property(section => section.DisplayName).HasMaxLength(40).IsRequired();
     }
 
     private static void configureNavigationMenuItems(ModelBuilder modelBuilder)
@@ -22,6 +32,11 @@ internal static partial class OrganizationHubModelConfiguration
         menuBuilder.Property(menuItem => menuItem.Href).HasMaxLength(256).IsRequired();
         menuBuilder.Property(menuItem => menuItem.IconKey).HasMaxLength(64).IsRequired();
         menuBuilder.Property(menuItem => menuItem.AccessLevel).HasConversion<string>().HasMaxLength(32).IsRequired();
+        menuBuilder
+            .HasOne(menuItem => menuItem.Section)
+            .WithMany(section => section.MenuItems)
+            .HasForeignKey(menuItem => menuItem.SectionId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     private static void configureNavigationMenuTeamPermissions(ModelBuilder modelBuilder)

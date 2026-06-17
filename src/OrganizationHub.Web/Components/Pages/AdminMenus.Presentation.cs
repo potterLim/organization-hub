@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using MudBlazor;
 using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
@@ -9,6 +11,36 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminMenus
 {
+    private IReadOnlyList<NavigationMenuItem> getMenuItemsForSection(NavigationMenuSection section)
+    {
+        return mMenuItems
+            .Where(menuItem => menuItem.SectionId == section.Id)
+            .OrderBy(menuItem => menuItem.SortOrder)
+            .ThenBy(menuItem => menuItem.DisplayName)
+            .ToList();
+    }
+
+    private string getMenuSortableItemId(NavigationMenuItem menuItem)
+    {
+        return MENU_SORTABLE_ITEM_PREFIX + menuItem.Id.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private string getSectionSortableItemId(NavigationMenuSection section)
+    {
+        return SECTION_SORTABLE_ITEM_PREFIX + section.Id.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private string getSectionMenuCountText(NavigationMenuSection section)
+    {
+        int menuCount = mMenuItems.Count(menuItem => menuItem.SectionId == section.Id);
+        if (menuCount == 0)
+        {
+            return "메뉴 없음";
+        }
+
+        return "메뉴 " + menuCount.ToString(CultureInfo.InvariantCulture) + "개";
+    }
+
     private string getTeamPermissionText(NavigationMenuItem menuItem)
     {
         if (MenuAccessLevelUtility.IsTeamScoped(menuItem.AccessLevel) == false)

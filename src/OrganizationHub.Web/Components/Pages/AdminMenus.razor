@@ -10,7 +10,7 @@
 <div class="hub-page-header">
     <div>
         <h1 class="hub-page-title">메뉴 보이기 설정</h1>
-        <div class="hub-page-description">왼쪽 메뉴의 이름과 표시 대상을 정하고, 목록에서 드래그해 메뉴 순서를 조정합니다. 실제 접근은 직책 권한까지 함께 확인합니다.</div>
+        <div class="hub-page-description">왼쪽 메뉴의 섹션, 이름, 표시 대상을 정합니다. 실제 접근은 직책 권한까지 함께 확인합니다.</div>
     </div>
 </div>
 
@@ -41,6 +41,12 @@
                     <strong>@getRequiredPermissionText(mSelectedMenuItemOrNull)</strong>
                     <small>직책 권한 관리에서 허용되어야 메뉴 표시와 직접 접근이 가능합니다.</small>
                 </div>
+                <MudSelect T="int" Label="메뉴 섹션" @bind-Value="mFormModel.SectionId" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (NavigationMenuSection section in mSections)
+                    {
+                        <MudSelectItem T="int" Value="@section.Id">@section.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
                 <MudTextField @bind-Value="mFormModel.DisplayName" Label="메뉴 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                 <MudSelect T="EMenuAccessLevel" Label="표시 대상" Value="mFormModel.AccessLevel" ValueChanged="setAccessLevel" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@mSelectedMenuItemOrNull.IsLocked">
                     <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Authenticated">전체</MudSelectItem>
@@ -76,38 +82,93 @@
                 </div>
             }
         </MudPaper>
+        <MudPaper Class="hub-card hub-form-card hub-menu-section-card pa-4 mt-4">
+            <div class="hub-admin-form-heading">
+                <MudText Typo="Typo.h6">섹션 관리</MudText>
+                <span>@(mSectionFormModel.Id == 0 ? "새 섹션" : "수정 중")</span>
+            </div>
+            <div class="hub-form-hint">
+                <span>섹션은 왼쪽 메뉴의 묶음 제목입니다.</span>
+                <span>오른쪽에서 드래그해 섹션 순서를 바꿀 수 있습니다.</span>
+            </div>
+            <MudTextField @bind-Value="mSectionFormModel.DisplayName" Label="섹션 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveSectionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
+                @if (mSectionFormModel.Id != 0)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="clearSectionForm">새 섹션</MudButton>
+                }
+            </MudStack>
+        </MudPaper>
     </MudItem>
     <MudItem xs="12" lg="7" xl="8">
         <MudPaper Class="hub-card hub-list-card pa-4">
             <div class="hub-admin-section-heading">
                 <div>
-                    <MudText Typo="Typo.h6">메뉴 목록</MudText>
-                    <div class="hub-muted">사용자에게 보일 순서대로 드래그해 정렬합니다.</div>
+                    <MudText Typo="Typo.h6">메뉴 구조</MudText>
+                    <div class="hub-muted">섹션 순서와 메뉴 순서를 드래그해 조정합니다.</div>
                 </div>
             </div>
-            <div @ref="mSortableRootElement" class="hub-sortable-list hub-menu-sortable-list" data-sortable-list>
-                @foreach (NavigationMenuItem menuItem in mMenuItems)
-                {
-                    <div class="hub-sortable-row hub-menu-sortable-row" data-sortable-item-id="@menuItem.Id" draggable="true">
-                        <span class="hub-sortable-handle" role="button" aria-label="메뉴 순서 변경">
-                            <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
-                        </span>
-                        <div class="hub-sortable-main">
-                            <div class="hub-sortable-title">@menuItem.DisplayName</div>
-                            <div class="hub-sortable-meta">
-                                <span>@MenuAccessLevelUtility.GetShortDisplayName(menuItem.AccessLevel)</span>
-                                <span>·</span>
-                                <span>@getTeamPermissionText(menuItem)</span>
+            <div class="hub-menu-structure" @ref="mSortableRootElement">
+                <section>
+                    <div class="hub-menu-structure-heading">섹션 순서</div>
+                    <div class="hub-sortable-list hub-menu-section-list" data-sortable-list>
+                        @foreach (NavigationMenuSection section in mSections)
+                        {
+                            <div class="hub-sortable-row hub-menu-section-row" data-sortable-item-id="@getSectionSortableItemId(section)" draggable="true">
+                                <span class="hub-sortable-handle" role="button" aria-label="섹션 순서 변경">
+                                    <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
+                                </span>
+                                <div class="hub-sortable-main">
+                                    <div class="hub-sortable-title">@section.DisplayName</div>
+                                    <div class="hub-sortable-meta">@getSectionMenuCountText(section)</div>
+                                </div>
+                                <div class="hub-sortable-actions">
+                                    <MudTooltip Text="섹션 수정">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editSection(section))" aria-label="섹션 수정" />
+                                    </MudTooltip>
+                                </div>
                             </div>
-                        </div>
-                        <div class="hub-sortable-actions">
-                            <span class="hub-sortable-status @(menuItem.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(menuItem.IsActive ? "사용 중" : "숨김")</span>
-                            <MudTooltip Text="메뉴 수정">
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editMenu(menuItem))" aria-label="메뉴 수정" />
-                            </MudTooltip>
-                        </div>
+                        }
                     </div>
-                }
+                </section>
+                <section>
+                    <div class="hub-menu-structure-heading">메뉴 순서</div>
+                    @foreach (NavigationMenuSection section in mSections)
+                    {
+                        IReadOnlyList<NavigationMenuItem> sectionMenuItems = getMenuItemsForSection(section);
+                        if (sectionMenuItems.Count == 0)
+                        {
+                            continue;
+                        }
+
+                        <div class="hub-menu-section-heading-row">@section.DisplayName</div>
+                        <div class="hub-sortable-list hub-menu-sortable-list" data-sortable-list>
+                            @foreach (NavigationMenuItem menuItem in sectionMenuItems)
+                            {
+                                <div class="hub-sortable-row hub-menu-sortable-row" data-sortable-item-id="@getMenuSortableItemId(menuItem)" draggable="true">
+                                    <span class="hub-sortable-handle" role="button" aria-label="메뉴 순서 변경">
+                                        <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
+                                    </span>
+                                    <div class="hub-sortable-main">
+                                        <div class="hub-sortable-title">@menuItem.DisplayName</div>
+                                        <div class="hub-sortable-meta">
+                                            <span>@MenuAccessLevelUtility.GetShortDisplayName(menuItem.AccessLevel)</span>
+                                            <span>·</span>
+                                            <span>@getTeamPermissionText(menuItem)</span>
+                                        </div>
+                                    </div>
+                                    <div class="hub-sortable-actions">
+                                        <span class="hub-sortable-status @(menuItem.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(menuItem.IsActive ? "사용 중" : "숨김")</span>
+                                        <MudTooltip Text="메뉴 수정">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editMenu(menuItem))" aria-label="메뉴 수정" />
+                                        </MudTooltip>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </section>
             </div>
         </MudPaper>
     </MudItem>

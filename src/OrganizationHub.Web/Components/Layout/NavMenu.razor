@@ -66,48 +66,12 @@
 
     private string getSectionTitle(NavigationMenuItem menuItem)
     {
-        switch (menuItem.MenuKey)
+        if (menuItem.Section != null && string.IsNullOrWhiteSpace(menuItem.Section.DisplayName) == false)
         {
-            case "Dashboard":
-                return "기본";
-            case "Calendar":
-            case "Todos":
-            case "WorkGuidelines":
-            case "WorkResources":
-                return "운영";
-            case "Materials":
-            case "ManagementFiles":
-            case "Common":
-            case "Public":
-            case "Upload":
-            case "ResponsibleResources":
-                return "자료실";
-            case "ApprovalRequest":
-            case "ApprovalInbox":
-            case "ApprovalHistory":
-            case "ApprovedFiles":
-                return "결재";
-            default:
-                break;
+            return menuItem.Section.DisplayName;
         }
 
-        switch (menuItem.AccessLevel)
-        {
-            case EMenuAccessLevel.Authenticated:
-                return "자료실";
-            case EMenuAccessLevel.TeamMember:
-                return "자료실";
-            case EMenuAccessLevel.TeamLeader:
-                return "자료실";
-            case EMenuAccessLevel.ManagementManager:
-                return "관리";
-            case EMenuAccessLevel.Management:
-                return "관리";
-            case EMenuAccessLevel.Admin:
-                return "관리";
-            default:
-                return "메뉴";
-        }
+        return "메뉴";
     }
 
     private string getIcon(string iconKey)

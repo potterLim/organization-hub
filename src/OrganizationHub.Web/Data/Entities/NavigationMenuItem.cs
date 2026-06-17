@@ -13,6 +13,11 @@ public class NavigationMenuItem
     public string DisplayName { get; set; } = string.Empty;
     public string Href { get; set; } = string.Empty;
     public string IconKey { get; set; } = string.Empty;
+    public int SectionId
+    {
+        get; set;
+    }
+    public NavigationMenuSection? Section { get; set; }
     public int SortOrder
     {
         get; set;

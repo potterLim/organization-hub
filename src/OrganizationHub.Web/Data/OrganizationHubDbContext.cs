@@ -41,6 +41,10 @@ public sealed class OrganizationHubDbContext : DbContext
     {
         get; set;
     }
+    public DbSet<NavigationMenuSection> NavigationMenuSections
+    {
+        get; set;
+    }
     public DbSet<NavigationMenuTeamPermission> NavigationMenuTeamPermissions
     {
         get; set;
@@ -89,6 +93,7 @@ public sealed class OrganizationHubDbContext : DbContext
         GlobalSettings = Set<GlobalSetting>();
         GoogleStorageConnections = Set<GoogleStorageConnection>();
         NavigationMenuItems = Set<NavigationMenuItem>();
+        NavigationMenuSections = Set<NavigationMenuSection>();
         NavigationMenuTeamPermissions = Set<NavigationMenuTeamPermission>();
         UploadAuditLogs = Set<UploadAuditLog>();
         CalendarEventDeletionAuditLogs = Set<CalendarEventDeletionAuditLog>();

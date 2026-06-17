@@ -582,6 +582,9 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("SectionId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("INTEGER");
 
@@ -590,7 +593,36 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.HasIndex("MenuKey")
                         .IsUnique();
 
+                    b.HasIndex("SectionId");
+
                     b.ToTable("NavigationMenuItems");
+                });
+
+            modelBuilder.Entity("OrganizationHub.Web.Data.Entities.NavigationMenuSection", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SectionKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SectionKey")
+                        .IsUnique();
+
+                    b.ToTable("NavigationMenuSections");
                 });
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.NavigationMenuTeamPermission", b =>
@@ -1002,6 +1034,17 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Navigation("ApproverUser");
                 });
 
+            modelBuilder.Entity("OrganizationHub.Web.Data.Entities.NavigationMenuItem", b =>
+                {
+                    b.HasOne("OrganizationHub.Web.Data.Entities.NavigationMenuSection", "Section")
+                        .WithMany("MenuItems")
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Section");
+                });
+
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.NavigationMenuTeamPermission", b =>
                 {
                     b.HasOne("OrganizationHub.Web.Data.Entities.NavigationMenuItem", "NavigationMenuItem")
@@ -1082,6 +1125,11 @@ namespace OrganizationHub.Web.Data.Migrations
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.NavigationMenuItem", b =>
                 {
                     b.Navigation("TeamPermissions");
+                });
+
+            modelBuilder.Entity("OrganizationHub.Web.Data.Entities.NavigationMenuSection", b =>
+                {
+                    b.Navigation("MenuItems");
                 });
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.OrganizationPosition", b =>

@@ -307,11 +307,21 @@ public sealed class NavigationMenuServiceTests
         menuItem.DisplayName = displayName;
         menuItem.Href = href;
         menuItem.IconKey = "Folder";
+        menuItem.Section = createMenuSection(menuKey);
         menuItem.AccessLevel = accessLevel;
         menuItem.SortOrder = sortOrder;
         menuItem.IsActive = true;
         menuItem.IsVisibleToAllTeams = true;
         menuItem.IsLocked = false;
         return menuItem;
+    }
+
+    private static NavigationMenuSection createMenuSection(string menuKey)
+    {
+        NavigationMenuSection section = new NavigationMenuSection();
+        section.SectionKey = "Test-" + menuKey;
+        section.DisplayName = "테스트";
+        section.SortOrder = 10;
+        return section;
     }
 }
