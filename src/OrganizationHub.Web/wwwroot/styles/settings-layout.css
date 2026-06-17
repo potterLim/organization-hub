@@ -66,6 +66,18 @@
     margin-bottom: 0 !important;
 }
 
+.hub-setting-status-note {
+    display: grid;
+    gap: 2px;
+    line-height: 1.35;
+    text-wrap: pretty;
+    word-break: keep-all;
+}
+
+.hub-setting-status-note span {
+    display: block;
+}
+
 .hub-advanced-settings .mud-expand-panel {
     background: rgba(255, 255, 255, .62) !important;
     border: 1px solid rgba(200, 211, 231, .78) !important;

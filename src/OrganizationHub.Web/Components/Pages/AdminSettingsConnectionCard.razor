@@ -7,7 +7,17 @@
         <span class="@(Status.IsConnected ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(Status.IsConnected ? "연결됨" : "미연결")</span>
         <div>
             <div class="hub-google-status-title">@(Status.IsConnected ? Status.ConnectedEmail : "Google 계정 없음")</div>
-            <div class="hub-muted">@(Status.IsConnected ? "아래 목록에서 사용할 Drive 폴더와 파일을 선택할 수 있습니다." : "Google 연결 메뉴에서 계정을 먼저 연결해 주세요.")</div>
+            <div class="hub-muted hub-setting-status-note">
+                @if (Status.IsConnected)
+                {
+                    <span>아래 목록에서 Drive 폴더와 파일을</span>
+                    <span>선택할 수 있습니다.</span>
+                }
+                else
+                {
+                    <span>Google 연결 메뉴에서 계정을 먼저 연결해 주세요.</span>
+                }
+            </div>
         </div>
     </div>
 </MudPaper>

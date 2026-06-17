@@ -3,7 +3,10 @@
         <MudText Typo="Typo.h6">표시 옵션</MudText>
         <span>운영 화면</span>
     </div>
-    <div class="hub-form-hint">Calendar와 Google Tasks 화면에 작성자 정보를 표시할지 정합니다.</div>
+    <div class="hub-form-hint">
+        <span>Calendar와 Google Tasks 화면에</span>
+        <span>작성자 정보를 표시할지 정합니다.</span>
+    </div>
     <MudStack Spacing="1" Class="hub-settings-switches">
         <MudSwitch T="bool" @bind-Value="FormModel.ShowTodoAuthor" Label="할 일 작성자 표시" Color="Color.Primary" />
         <MudSwitch T="bool" @bind-Value="FormModel.ShowCalendarAuthor" Label="일정 작성자 표시" Color="Color.Primary" />
