@@ -92,15 +92,15 @@
     border-radius: 20px;
     box-shadow: var(--hub-shadow-medium);
     display: grid;
-    gap: 12px;
-    padding: 14px;
+    gap: 6px;
+    padding: 10px;
 }
 
 .hub-calendar-date-time-panel-header {
     align-items: center;
     display: grid;
-    gap: 8px;
-    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    gap: 6px;
+    grid-template-columns: 30px minmax(0, 1fr) 30px;
 }
 
 .hub-calendar-date-time-panel-header strong {
@@ -124,18 +124,18 @@
 }
 
 .hub-calendar-date-time-days {
-    gap: 4px;
+    gap: 2px 3px;
 }
 
 .hub-calendar-date-time-day {
     align-items: center;
-    aspect-ratio: 1;
     background: transparent;
     border-radius: 999px;
     color: var(--hub-text);
     display: inline-flex;
     font-size: 13px;
     font-weight: 800;
+    height: 26px;
     justify-content: center;
 }
 
@@ -167,8 +167,8 @@
 .hub-calendar-date-time-time-section {
     border-top: 1px solid var(--hub-line);
     display: grid;
-    gap: 10px;
-    padding-top: 12px;
+    gap: 6px;
+    padding-top: 7px;
 }
 
 .hub-calendar-date-time-time-heading {
@@ -191,7 +191,7 @@
 
 .hub-calendar-date-time-parts {
     display: grid;
-    gap: 10px;
+    gap: 6px;
 }
 
 .hub-calendar-date-time-part-title {
@@ -199,17 +199,17 @@
     display: block;
     font-size: 11px;
     font-weight: 900;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .hub-calendar-date-time-hours,
 .hub-calendar-date-time-minutes {
     display: grid;
-    gap: 6px;
+    gap: 4px;
 }
 
 .hub-calendar-date-time-hours {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .hub-calendar-date-time-minutes {
@@ -223,7 +223,7 @@
     color: var(--hub-text);
     font-size: 12px;
     font-weight: 800;
-    height: 30px;
+    height: 24px;
 }
 
 .hub-calendar-date-time-slot:hover:not(:disabled) {
@@ -264,7 +264,7 @@
     color: var(--hub-text);
     font-size: 12px;
     font-weight: 900;
-    height: 32px;
+    height: 30px;
     padding: 0 14px;
 }
 
