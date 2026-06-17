@@ -1,16 +1,16 @@
 <MudPaper Class="hub-card hub-form-card hub-approval-line-card pa-4">
     <div class="hub-approval-line-head">
-        <MudText Typo="Typo.h6">결재 경로</MudText>
-        <MudText Typo="Typo.body2" Class="hub-muted">아래 순서로 결재가 진행됩니다.</MudText>
+        <MudText Typo="Typo.h6">결재 정보</MudText>
+        <MudText Typo="Typo.body2" Class="hub-muted">요청 제목과 결재 단계를 확인합니다.</MudText>
     </div>
     <MudTextField T="string" Value="@FormModel.Title" ValueChanged="TitleChanged" Label="요청 제목" Variant="Variant.Outlined" Margin="Margin.Dense" />
-    <MudSelect T="int" Label="결재 방식" Value="FormModel.StepCount" ValueChanged="StepCountChanged" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@StepDescription">
+    <MudSelect T="int" Label="결재 단계" Value="FormModel.StepCount" ValueChanged="StepCountChanged" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@StepDescription">
         @foreach (ApprovalStepCount stepCount in CreateContext.AvailableStepCounts)
         {
             <MudSelectItem T="int" Value="@stepCount.GetRequiredValue()">@GetApprovalStepLabel(stepCount)</MudSelectItem>
         }
     </MudSelect>
-    <div class="hub-approval-flow-preview" aria-label="결재 진행 순서">
+    <div class="hub-approval-flow-preview" aria-label="선택한 결재 단계">
         @foreach (ApprovalFlowPreviewItem previewItem in ApprovalFlowPreviewItems)
         {
             <div class="@GetApprovalFlowStepClass(previewItem)">

@@ -111,7 +111,7 @@ public sealed partial class GoogleWorkspaceSetupService
 
             if (metadataOrNull.MimeType != GOOGLE_DRIVE_FOLDER_MIME_TYPE)
             {
-                syncContext.FailureMessages.Add(standardName + " 저장 대상이 폴더가 아닙니다.");
+                syncContext.FailureMessages.Add(standardName + " 연결 대상이 폴더가 아닙니다.");
                 return null;
             }
 

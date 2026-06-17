@@ -11,14 +11,14 @@
     }
     else
     {
-        <div class="hub-google-toolbar">
+        <div class="hub-google-toolbar hub-settings-current-toolbar">
             <MudSelect T="string" Label="연결할 화면" Value="State.SelectedTaskListTargetKey.GetSelectionValue()" ValueChanged="handleTaskListTargetSelectionChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (GoogleTaskListAssignmentOption option in State.TaskListAssignmentOptions)
                 {
                     <MudSelectItem T="string" Value="@option.TargetSelectionValue">@option.DisplayName</MudSelectItem>
                 }
             </MudSelect>
-            <div class="hub-selected-resource">
+            <div class="hub-selected-resource hub-selected-resource-current">
                 <div class="hub-muted">현재 연결</div>
                 <strong>@State.SelectedTaskListAssignmentDisplayName</strong>
                 <span>@State.SelectedTaskListAssignmentDetail</span>

@@ -51,6 +51,14 @@
     padding: 12px;
 }
 
+.hub-settings-current-toolbar {
+    grid-template-columns: minmax(260px, 1fr) minmax(220px, 260px);
+}
+
+.hub-selected-resource-current {
+    width: 100%;
+}
+
 .hub-selected-resource strong {
     color: var(--hub-text-strong);
     font-size: 14px;

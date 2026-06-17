@@ -22,7 +22,7 @@ public partial class AdminSettings
         GoogleFolderAssignmentOption? optionOrNull = getSelectedFolderAssignmentOptionOrNull();
         if (optionOrNull == null)
         {
-            return "저장 대상이 없습니다.";
+            return "연결할 대상이 없습니다.";
         }
 
         return getDriveResourceName(getFolderAssignmentId(optionOrNull));
@@ -64,7 +64,7 @@ public partial class AdminSettings
         GoogleCalendarAssignmentOption? optionOrNull = getSelectedCalendarAssignmentOptionOrNull();
         if (optionOrNull == null)
         {
-            return "저장 대상이 없습니다.";
+            return "연결할 대상이 없습니다.";
         }
 
         return getCalendarName(getCalendarAssignmentId(optionOrNull));
@@ -86,7 +86,7 @@ public partial class AdminSettings
         GoogleTaskListAssignmentOption? optionOrNull = getSelectedTaskListAssignmentOptionOrNull();
         if (optionOrNull == null)
         {
-            return "저장 대상이 없습니다.";
+            return "연결할 대상이 없습니다.";
         }
 
         return getTaskListName(getTaskListAssignmentId(optionOrNull));

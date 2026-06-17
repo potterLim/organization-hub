@@ -33,13 +33,13 @@
             <MudTextField @bind-Value="mFormModel.TeamKey" Label="팀 고유 코드" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="활성 상태" Color="Color.Primary" />
             <MudExpansionPanels Elevation="0" Class="hub-advanced-settings hub-team-advanced-settings">
-                <MudExpansionPanel Text="고급: 이 팀의 Google 연결 ID">
+                <MudExpansionPanel Text="고급: 연결된 Google 위치">
                     <div class="hub-form-hint">
-                        <span>대부분은 Google 연결 메뉴에서 목록을 선택하면 됩니다.</span>
-                        <span>정확한 ID를 직접 입력해야 할 때만 수정하세요.</span>
+                        <span>대부분은 Google 연결 설정에서 선택하면 됩니다.</span>
+                        <span>문제가 있을 때만 정확한 ID를 직접 수정하세요.</span>
                     </div>
-                    <SettingIdField @bind-Value="mFormModel.MaterialsFolderId" Label="팀 자료 폴더 ID" />
-                    <SettingIdField @bind-Value="mFormModel.ApprovedFolderId" Label="결재 완료 자료 폴더 ID" />
+                    <SettingIdField @bind-Value="mFormModel.MaterialsFolderId" Label="팀 자료 Drive 폴더 ID" />
+                    <SettingIdField @bind-Value="mFormModel.ApprovedFolderId" Label="결재 완료 Drive 폴더 ID" />
                     <SettingIdField @bind-Value="mFormModel.CalendarId" Label="Calendar ID" />
                     <SettingIdField @bind-Value="mFormModel.TaskListId" Label="Google Tasks 목록 ID" />
                 </MudExpansionPanel>

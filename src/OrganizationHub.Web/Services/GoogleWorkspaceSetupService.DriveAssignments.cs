@@ -43,7 +43,7 @@ public sealed partial class GoogleWorkspaceSetupService
     {
         if (targetKey.HasValue == false)
         {
-            return ServiceResult.Fail("저장 대상을 선택해 주세요.");
+            return ServiceResult.Fail("연결할 대상을 선택해 주세요.");
         }
 
         if (folderId.HasValue == false)
@@ -55,7 +55,7 @@ public sealed partial class GoogleWorkspaceSetupService
         GoogleFolderAssignmentOption? optionOrNull = options.FirstOrDefault(option => targetKey.Matches(option.TargetKey));
         if (optionOrNull == null)
         {
-            return ServiceResult.Fail("저장 대상을 찾을 수 없습니다.");
+            return ServiceResult.Fail("연결할 대상을 찾을 수 없습니다.");
         }
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
@@ -119,7 +119,7 @@ public sealed partial class GoogleWorkspaceSetupService
             return ServiceResult.Succeed();
         }
 
-        return ServiceResult.Fail("기본 자료 위치 안의 폴더만 저장 대상으로 지정할 수 있습니다.");
+        return ServiceResult.Fail("기본 자료 위치 안의 폴더만 연결할 수 있습니다.");
     }
 
     private async Task<ServiceResult> applyFolderAssignmentAsync(
@@ -152,7 +152,7 @@ public sealed partial class GoogleWorkspaceSetupService
             case EGoogleFolderAssignmentKind.TeamApproved:
                 return await assignTeamFolderAsync(dbContext, option, folderId, EGoogleFolderAssignmentKind.TeamApproved, cancellationToken);
             default:
-                return ServiceResult.Fail("지원하지 않는 폴더 저장 대상입니다.");
+                return ServiceResult.Fail("지원하지 않는 폴더 연결 대상입니다.");
         }
     }
 

@@ -128,6 +128,6 @@ public sealed partial class GoogleWorkspaceSetupService
 
     private string createGoogleCalendarSetupErrorMessage(Exception exception)
     {
-        return GoogleApiExceptionMessageFormatter.CreateGoogleCalendarMessage(exception, "표준 Calendar를 만들지 못했습니다.");
+        return GoogleApiExceptionMessageFormatter.CreateGoogleCalendarMessage(exception, "기본 Calendar를 만들지 못했습니다.");
     }
 }

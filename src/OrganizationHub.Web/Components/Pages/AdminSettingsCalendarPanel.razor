@@ -11,14 +11,14 @@
     }
     else
     {
-        <div class="hub-google-toolbar">
+        <div class="hub-google-toolbar hub-settings-current-toolbar">
             <MudSelect T="string" Label="연결할 화면" Value="State.SelectedCalendarTargetKey.GetSelectionValue()" ValueChanged="handleCalendarTargetSelectionChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (GoogleCalendarAssignmentOption option in State.CalendarAssignmentOptions)
                 {
                     <MudSelectItem T="string" Value="@option.TargetSelectionValue">@option.DisplayName</MudSelectItem>
                 }
             </MudSelect>
-            <div class="hub-selected-resource">
+            <div class="hub-selected-resource hub-selected-resource-current">
                 <div class="hub-muted">현재 연결</div>
                 <strong>@State.SelectedCalendarAssignmentDisplayName</strong>
                 <span>@State.SelectedCalendarAssignmentDetail</span>

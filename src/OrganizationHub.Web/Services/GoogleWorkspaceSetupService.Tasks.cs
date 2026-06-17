@@ -95,7 +95,7 @@ public sealed partial class GoogleWorkspaceSetupService
     {
         if (targetKey.HasValue == false)
         {
-            return ServiceResult.Fail("저장 대상을 선택해 주세요.");
+            return ServiceResult.Fail("연결할 대상을 선택해 주세요.");
         }
 
         if (taskListId.HasValue == false)
@@ -107,7 +107,7 @@ public sealed partial class GoogleWorkspaceSetupService
         GoogleTaskListAssignmentOption? optionOrNull = options.FirstOrDefault(option => targetKey.Matches(option.TargetKey));
         if (optionOrNull == null)
         {
-            return ServiceResult.Fail("저장 대상을 찾을 수 없습니다.");
+            return ServiceResult.Fail("연결할 대상을 찾을 수 없습니다.");
         }
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
