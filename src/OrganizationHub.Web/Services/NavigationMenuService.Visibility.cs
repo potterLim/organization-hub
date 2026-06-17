@@ -56,6 +56,11 @@ public sealed partial class NavigationMenuService
             return false;
         }
 
+        if (userSession.Role == EUserRole.Admin)
+        {
+            return true;
+        }
+
         bool canUseMenuPermission = await canUseMenuPermissionAsync(menuItem, userSession, configurationMode, cancellationToken);
         if (canUseMenuPermission == false)
         {

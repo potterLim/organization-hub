@@ -472,6 +472,21 @@ public sealed class ApprovalServiceTests
     {
         using (TestDbContextFactory dbContextFactory = createApprovalDbContextFactory(EFinalApproverSeedMode.SingleFinalApprover))
         {
+            using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+            {
+                OrganizationPosition adminPosition = new OrganizationPosition();
+                adminPosition.TeamId = 1;
+                adminPosition.Name = "관리자 직책";
+                adminPosition.Description = string.Empty;
+                adminPosition.SortOrder = 10;
+                adminPosition.IsActive = true;
+                addPermissionGrant(adminPosition, PermissionKeys.APPROVAL_REQUEST, EPermissionScopeType.Global);
+                UserAccount adminUser = dbContext.UserAccounts.Single(user => user.Id == 8);
+                adminUser.Position = adminPosition;
+                dbContext.Positions.Add(adminPosition);
+                dbContext.SaveChanges();
+            }
+
             using (MemoryCache memoryCache = new MemoryCache(new MemoryCacheOptions()))
             {
                 FakeDriveService driveService = createApprovalDriveService();
@@ -482,6 +497,7 @@ public sealed class ApprovalServiceTests
                 ApprovalCreateContext createContext = await approvalService.GetCreateContextAsync(adminSession, CancellationToken.None);
 
                 Assert.False(createContext.CanCreateRequest);
+                Assert.Equal("관리자 계정은 결재 요청자가 아닙니다.", createContext.BlockReason);
                 Assert.Empty(createContext.ApproverOptions);
                 Assert.Empty(createContext.FinalApproverOptions);
             }

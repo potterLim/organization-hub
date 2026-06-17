@@ -50,6 +50,23 @@ public sealed class PermissionAuthorizationHandlerTests
     }
 
     [Fact]
+    public async Task AdministratorRoleSatisfiesRequirementWithConfiguredPositionAsync()
+    {
+        using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
+        {
+            await seedConfiguredAdministratorAsync(dbContextFactory);
+            OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
+            PermissionAuthorizationHandler handler = new PermissionAuthorizationHandler(permissionService);
+            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(new[] { new PermissionKey(PermissionKeys.GOOGLE_CONNECTION_MANAGE) }, new List<string>());
+            AuthorizationHandlerContext context = new AuthorizationHandlerContext(new[] { requirement }, createPrincipal(3, EUserRole.Admin, null), null);
+
+            await handler.HandleAsync(context);
+
+            Assert.True(context.HasSucceeded);
+        }
+    }
+
+    [Fact]
     public async Task ConfiguredOwnTeamPermissionSatisfiesUserTeamRequirementAsync()
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
@@ -124,6 +141,37 @@ public sealed class PermissionAuthorizationHandlerTests
             userAccount.Role = EUserRole.Admin;
             userAccount.IsActive = true;
             userAccount.CreatedAt = DateTime.UtcNow;
+            dbContext.UserAccounts.Add(userAccount);
+            await dbContext.SaveChangesAsync(CancellationToken.None);
+        }
+    }
+
+    private static async Task seedConfiguredAdministratorAsync(TestDbContextFactory dbContextFactory)
+    {
+        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+        {
+            Team team = new Team();
+            team.Id = 3;
+            team.TeamKey = "Administration";
+            team.DisplayName = "관리팀";
+            team.IsActive = true;
+            OrganizationPosition position = new OrganizationPosition();
+            position.Team = team;
+            position.Name = "일반 직책";
+            position.Description = string.Empty;
+            position.SortOrder = 10;
+            position.IsActive = true;
+            UserAccount userAccount = new UserAccount();
+            userAccount.Id = 3;
+            userAccount.Username = "configured.admin";
+            userAccount.DisplayName = "설정형 관리자";
+            userAccount.PasswordHash = "test";
+            userAccount.Role = EUserRole.Admin;
+            userAccount.Position = position;
+            userAccount.IsActive = true;
+            userAccount.CreatedAt = DateTime.UtcNow;
+            dbContext.Teams.Add(team);
+            dbContext.Positions.Add(position);
             dbContext.UserAccounts.Add(userAccount);
             await dbContext.SaveChangesAsync(CancellationToken.None);
         }

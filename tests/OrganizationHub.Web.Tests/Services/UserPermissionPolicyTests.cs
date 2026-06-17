@@ -6,16 +6,16 @@ namespace OrganizationHub.Web.Tests.Services;
 public sealed class UserPermissionPolicyTests
 {
     [Fact]
-    public void MenuPolicyKeepsAdministratorOutOfGeneralUserMenus()
+    public void MenuPolicyAllowsAdministratorToManageAllMenus()
     {
         PermissionDecision teamMemberDecision = UserPermissionPolicy.DecideMenuAccess(EMenuAccessLevel.TeamMember, EUserRole.Admin);
         PermissionDecision managementDecision = UserPermissionPolicy.DecideMenuAccess(EMenuAccessLevel.Management, EUserRole.Admin);
         PermissionDecision adminDecision = UserPermissionPolicy.DecideMenuAccess(EMenuAccessLevel.Admin, EUserRole.Admin);
 
-        Assert.False(teamMemberDecision.IsAllowed);
-        Assert.False(managementDecision.IsAllowed);
+        Assert.True(teamMemberDecision.IsAllowed);
+        Assert.True(managementDecision.IsAllowed);
         Assert.True(adminDecision.IsAllowed);
-        Assert.Equal("조직 사용자 메뉴", teamMemberDecision.ScopeLabel);
+        Assert.Equal("시스템 관리자 메뉴", teamMemberDecision.ScopeLabel);
     }
 
     [Fact]

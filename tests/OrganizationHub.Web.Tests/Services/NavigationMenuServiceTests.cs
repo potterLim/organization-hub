@@ -111,7 +111,7 @@ public sealed class NavigationMenuServiceTests
     }
 
     [Fact]
-    public async Task AdministratorDoesNotReceiveGeneralUserMenusAsync()
+    public async Task AdministratorReceivesAllActiveMenusAsync()
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
@@ -130,11 +130,11 @@ public sealed class NavigationMenuServiceTests
             IReadOnlyList<NavigationMenuItem> menus = await navigationMenuService.GetVisibleMenuItemsAsync(adminSession, CancellationToken.None);
 
             Assert.Contains(menus, menuItem => menuItem.MenuKey == "Dashboard");
-            Assert.DoesNotContain(menus, menuItem => menuItem.MenuKey == "ApprovalRequest");
-            Assert.DoesNotContain(menus, menuItem => menuItem.MenuKey == "ManagementFiles");
+            Assert.Contains(menus, menuItem => menuItem.MenuKey == "ApprovalRequest");
+            Assert.Contains(menus, menuItem => menuItem.MenuKey == "ManagementFiles");
             Assert.Contains(menus, menuItem => menuItem.MenuKey == "AdminMenus");
-            Assert.False(await navigationMenuService.CanAccessPathAsync(adminSession, NavigationPath.CreateOptional("/approvals/request"), CancellationToken.None));
-            Assert.False(await navigationMenuService.CanAccessPathAsync(adminSession, NavigationPath.CreateOptional("/management-files"), CancellationToken.None));
+            Assert.True(await navigationMenuService.CanAccessPathAsync(adminSession, NavigationPath.CreateOptional("/approvals/request"), CancellationToken.None));
+            Assert.True(await navigationMenuService.CanAccessPathAsync(adminSession, NavigationPath.CreateOptional("/management-files"), CancellationToken.None));
             Assert.True(await navigationMenuService.CanAccessPathAsync(adminSession, NavigationPath.CreateOptional("/admin/menus"), CancellationToken.None));
         }
     }

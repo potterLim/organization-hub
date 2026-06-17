@@ -78,9 +78,14 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
                 return PermissionDecision.Deny("활성 사용자를 찾을 수 없습니다.", "권한");
             }
 
+            if (userAccountOrNull.Role == EUserRole.Admin)
+            {
+                return PermissionDecision.Allow("시스템 관리자");
+            }
+
             if (userAccountOrNull.Position == null)
             {
-                return decideUnpositionedAdministratorPermission(userAccountOrNull, permissionKey);
+                return decideUnpositionedUserPermission(permissionKey);
             }
 
             if (userAccountOrNull.Position.IsActive == false)
@@ -130,13 +135,8 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         return userAccountOrNull;
     }
 
-    private PermissionDecision decideUnpositionedAdministratorPermission(UserAccount userAccount, PermissionKey permissionKey)
+    private PermissionDecision decideUnpositionedUserPermission(PermissionKey permissionKey)
     {
-        if (userAccount.Role == EUserRole.Admin)
-        {
-            return PermissionDecision.Allow("시스템 관리자");
-        }
-
         return PermissionDecision.Deny("사용자에게 직책이 배정되지 않았습니다.", permissionKey.GetRequiredValue());
     }
 

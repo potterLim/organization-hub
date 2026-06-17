@@ -4,6 +4,11 @@ public static partial class UserPermissionPolicy
 {
     public static PermissionDecision DecideMenuAccess(EMenuAccessLevel accessLevel, EUserRole role)
     {
+        if (role == EUserRole.Admin)
+        {
+            return PermissionDecision.Allow("시스템 관리자 메뉴");
+        }
+
         switch (accessLevel)
         {
             case EMenuAccessLevel.Authenticated:

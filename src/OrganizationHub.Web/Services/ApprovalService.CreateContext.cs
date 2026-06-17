@@ -15,6 +15,13 @@ public sealed partial class ApprovalService
     public async Task<ApprovalCreateContext> GetCreateContextAsync(UserSession userSession, CancellationToken cancellationToken)
     {
         ApprovalCreateContext context = new ApprovalCreateContext();
+        PermissionDecision createApprovalRequestDecision = UserPermissionPolicy.DecideCreateApprovalRequest(userSession.Role);
+        if (createApprovalRequestDecision.IsAllowed == false)
+        {
+            context.BlockReason = createApprovalRequestDecision.Reason;
+            return context;
+        }
+
         bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSession, cancellationToken);
         OrganizationTeamId? userTeamIdOrNull = createUserTeamIdOrNull(userSession);
         bool canCreateApprovalRequest;
