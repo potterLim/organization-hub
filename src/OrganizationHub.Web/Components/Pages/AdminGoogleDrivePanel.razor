@@ -1,6 +1,9 @@
 <MudPaper Class="hub-card hub-list-card pa-4">
     <div class="hub-google-panel-heading">
-        <MudText Typo="Typo.h6">Drive 폴더 선택</MudText>
+        <div>
+            <MudText Typo="Typo.h6">Drive 연결 준비</MudText>
+            <div class="hub-muted">표준 폴더를 준비하거나 필요한 폴더를 직접 선택합니다.</div>
+        </div>
         <div class="hub-google-panel-actions">
             <MudTooltip Text="표준 Drive 폴더가 없으면 만들고 설정에 연결합니다.">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(State.Status.IsConnected == false || State.IsEnsuringStandardFolders)" OnClick="@(() => Actions.EnsureStandardFoldersRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.CreateNewFolder">표준 Drive 폴더 준비</MudButton>
@@ -17,48 +20,62 @@
                 <MudSelectItem T="string" Value="@option.TargetSelectionValue">@option.DisplayName</MudSelectItem>
             }
         </MudSelect>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Actions.RefreshRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Refresh">새로고침</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="toggleDrivePicker" StartIcon="@(mIsDrivePickerVisible ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" Disabled="@(State.Status.IsConnected == false)">@(mIsDrivePickerVisible ? "목록 닫기" : "직접 선택")</MudButton>
     </div>
-    <div class="hub-google-path">
-        @for (int index = 0; index < State.FolderPath.Count; index++)
+    <div class="hub-resource-picker-shell">
+        <div class="hub-resource-picker-header">
+            <div>
+                <strong>Drive 폴더 목록</strong>
+                <span>직접 선택을 열면 현재 위치의 하위 폴더가 표시됩니다.</span>
+            </div>
+            <div class="hub-resource-picker-actions">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Actions.RefreshRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(State.Status.IsConnected == false)">새로고침</MudButton>
+            </div>
+        </div>
+        @if (mIsDrivePickerVisible)
         {
-            int pathIndex = index;
-            GoogleDriveFolderPathItem pathItem = State.FolderPath[index];
-            <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => Actions.OpenPathRequested.InvokeAsync(pathIndex))">@pathItem.Name</MudButton>
-            @if (index < State.FolderPath.Count - 1)
+            <div class="hub-google-path">
+                @for (int index = 0; index < State.FolderPath.Count; index++)
+                {
+                    int pathIndex = index;
+                    GoogleDriveFolderPathItem pathItem = State.FolderPath[index];
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => Actions.OpenPathRequested.InvokeAsync(pathIndex))">@pathItem.Name</MudButton>
+                    @if (index < State.FolderPath.Count - 1)
+                    {
+                        <span>/</span>
+                    }
+                }
+            </div>
+            @if (State.Folders.Count == 0)
             {
-                <span>/</span>
+                <div class="hub-empty">표시할 하위 폴더가 없습니다.</div>
+            }
+            else
+            {
+                <MudTable Items="State.Folders" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
+                    <HeaderContent>
+                        <MudTh>폴더</MudTh>
+                        <MudTh>수정일</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="folder">
+                        <MudTd DataLabel="폴더">@folder.Name</MudTd>
+                        <MudTd DataLabel="수정일">@State.FormatDate(folder.ModifiedTime)</MudTd>
+                        <MudTd DataLabel="작업" Class="hub-action-cell">
+                            <div class="hub-table-actions">
+                                <MudTooltip Text="하위 폴더 열기">
+                                    <MudIconButton Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Actions.OpenFolderRequested.InvokeAsync(folder))" aria-label="하위 폴더 열기" />
+                                </MudTooltip>
+                                <MudTooltip Text="이 폴더로 연결">
+                                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => Actions.AssignFolderRequested.InvokeAsync(folder))" aria-label="이 폴더로 연결" />
+                                </MudTooltip>
+                            </div>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
             }
         }
     </div>
-    @if (State.Folders.Count == 0)
-    {
-        <div class="hub-empty">표시할 하위 폴더가 없습니다.</div>
-    }
-    else
-    {
-        <MudTable Items="State.Folders" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
-            <HeaderContent>
-                <MudTh>폴더</MudTh>
-                <MudTh>수정일</MudTh>
-                <MudTh></MudTh>
-            </HeaderContent>
-            <RowTemplate Context="folder">
-                <MudTd DataLabel="폴더">@folder.Name</MudTd>
-                <MudTd DataLabel="수정일">@State.FormatDate(folder.ModifiedTime)</MudTd>
-                <MudTd DataLabel="작업" Class="hub-action-cell">
-                    <div class="hub-table-actions">
-                        <MudTooltip Text="하위 폴더 열기">
-                            <MudIconButton Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Actions.OpenFolderRequested.InvokeAsync(folder))" aria-label="하위 폴더 열기" />
-                        </MudTooltip>
-                        <MudTooltip Text="이 폴더로 연결">
-                            <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => Actions.AssignFolderRequested.InvokeAsync(folder))" aria-label="이 폴더로 연결" />
-                        </MudTooltip>
-                    </div>
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
-    }
 </MudPaper>
 
 @code {
@@ -74,9 +91,16 @@
         get; set;
     } = new AdminGoogleDrivePanelActions();
 
+    private bool mIsDrivePickerVisible;
+
     private async Task handleFolderTargetSelectionChangedAsync(string targetSelectionValue)
     {
         GoogleWorkspaceAssignmentTargetKey targetKey = GoogleWorkspaceAssignmentTargetKey.FromSelectionValue(targetSelectionValue);
         await Actions.SelectedFolderTargetKeyChanged.InvokeAsync(targetKey);
+    }
+
+    private void toggleDrivePicker()
+    {
+        mIsDrivePickerVisible = mIsDrivePickerVisible == false;
     }
 }

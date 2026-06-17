@@ -4,10 +4,6 @@
             <MudText Typo="Typo.h6">Drive 폴더 선택</MudText>
             <div class="hub-muted">폴더를 열어 위치를 확인하고, 선택한 폴더나 파일을 운영 설정에 연결합니다.</div>
         </div>
-        <div class="hub-google-panel-actions">
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Actions.DriveRootRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.CloudQueue" Disabled="@(State.Status.IsConnected == false)">내 Drive</MudButton>
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Actions.OfficialRootRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Home" Disabled="@(State.Status.IsConnected == false || State.HasOfficialRootFolder == false)">기본 자료</MudButton>
-        </div>
     </div>
 
     @if (State.Status.IsConnected == false)
@@ -42,70 +38,86 @@
             </div>
         </div>
 
-        <div class="hub-google-path">
-            @for (int index = 0; index < State.FolderPath.Count; index++)
+        <div class="hub-resource-picker-shell">
+            <div class="hub-resource-picker-header">
+                <div>
+                    <strong>Drive에서 선택</strong>
+                    <span>필요할 때 탐색기를 열어 연결할 폴더나 파일을 선택합니다.</span>
+                </div>
+                <div class="hub-resource-picker-actions">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="openDriveRootAsync" StartIcon="@Icons.Material.Filled.CloudQueue">내 Drive</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="openOfficialRootAsync" StartIcon="@Icons.Material.Filled.Home" Disabled="@(State.HasOfficialRootFolder == false)">기본 자료</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="toggleDrivePicker" StartIcon="@(mIsDrivePickerVisible ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)">@(mIsDrivePickerVisible ? "탐색기 닫기" : "탐색기 열기")</MudButton>
+                </div>
+            </div>
+            @if (mIsDrivePickerVisible)
             {
-                int pathIndex = index;
-                GoogleDriveFolderPathItem pathItem = State.FolderPath[index];
-                <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => Actions.OpenPathRequested.InvokeAsync(pathIndex))">@pathItem.Name</MudButton>
-                @if (index < State.FolderPath.Count - 1)
+                <div class="hub-google-path">
+                    @for (int index = 0; index < State.FolderPath.Count; index++)
+                    {
+                        int pathIndex = index;
+                        GoogleDriveFolderPathItem pathItem = State.FolderPath[index];
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => Actions.OpenPathRequested.InvokeAsync(pathIndex))">@pathItem.Name</MudButton>
+                        @if (index < State.FolderPath.Count - 1)
+                        {
+                            <span>/</span>
+                        }
+                    }
+                    <MudTooltip Text="현재 폴더 새로고침">
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Actions.RefreshRequested.InvokeAsync())" Disabled="State.IsLoadingDriveItems" aria-label="현재 폴더 새로고침" />
+                    </MudTooltip>
+                </div>
+
+                @if (State.IsLoadingDriveItems)
                 {
-                    <span>/</span>
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                }
+                else if (State.DriveItems.Count == 0)
+                {
+                    <div class="hub-empty">이 위치에는 선택할 폴더나 파일이 없습니다.</div>
+                }
+                else
+                {
+                    <MudTable Items="State.DriveItems" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table hub-resource-picker-table">
+                        <HeaderContent>
+                            <MudTh>이름</MudTh>
+                            <MudTh>종류</MudTh>
+                            <MudTh>수정일</MudTh>
+                            <MudTh></MudTh>
+                        </HeaderContent>
+                        <RowTemplate Context="driveItem">
+                            <MudTd DataLabel="이름">
+                                <div class="hub-resource-name-cell">
+                                    <MudIcon Icon="@(driveItem.IsFolder ? Icons.Material.Filled.Folder : Icons.Material.Filled.Description)" Size="Size.Small" />
+                                    <span>@driveItem.Name</span>
+                                </div>
+                            </MudTd>
+                            <MudTd DataLabel="종류">@(driveItem.IsFolder ? "폴더" : State.GetFileTypeDisplayName(driveItem))</MudTd>
+                            <MudTd DataLabel="수정일">@State.FormatDate(driveItem.ModifiedTime)</MudTd>
+                            <MudTd DataLabel="작업" Class="hub-action-cell">
+                                <div class="hub-table-actions">
+                                    @if (driveItem.IsFolder)
+                                    {
+                                        <MudTooltip Text="폴더 열기">
+                                            <MudIconButton Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Actions.OpenFolderRequested.InvokeAsync(driveItem))" aria-label="폴더 열기" />
+                                        </MudTooltip>
+                                        <MudTooltip Text="이 폴더로 연결">
+                                            <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => Actions.AssignFolderRequested.InvokeAsync(driveItem))" aria-label="이 폴더로 연결" />
+                                        </MudTooltip>
+                                    }
+                                    else
+                                    {
+                                        <MudTooltip Text="이 파일로 연결">
+                                            <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => Actions.AssignFileRequested.InvokeAsync(driveItem))" aria-label="이 파일로 연결" />
+                                        </MudTooltip>
+                                    }
+                                </div>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
                 }
             }
-            <MudTooltip Text="현재 폴더 새로고침">
-                <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Actions.RefreshRequested.InvokeAsync())" Disabled="State.IsLoadingDriveItems" aria-label="현재 폴더 새로고침" />
-            </MudTooltip>
         </div>
-
-        @if (State.IsLoadingDriveItems)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (State.DriveItems.Count == 0)
-        {
-            <div class="hub-empty">이 위치에는 선택할 폴더나 파일이 없습니다.</div>
-        }
-        else
-        {
-            <MudTable Items="State.DriveItems" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table hub-resource-picker-table">
-                <HeaderContent>
-                    <MudTh>이름</MudTh>
-                    <MudTh>종류</MudTh>
-                    <MudTh>수정일</MudTh>
-                    <MudTh></MudTh>
-                </HeaderContent>
-                <RowTemplate Context="driveItem">
-                    <MudTd DataLabel="이름">
-                        <div class="hub-resource-name-cell">
-                            <MudIcon Icon="@(driveItem.IsFolder ? Icons.Material.Filled.Folder : Icons.Material.Filled.Description)" Size="Size.Small" />
-                            <span>@driveItem.Name</span>
-                        </div>
-                    </MudTd>
-                    <MudTd DataLabel="종류">@(driveItem.IsFolder ? "폴더" : State.GetFileTypeDisplayName(driveItem))</MudTd>
-                    <MudTd DataLabel="수정일">@State.FormatDate(driveItem.ModifiedTime)</MudTd>
-                    <MudTd DataLabel="작업" Class="hub-action-cell">
-                        <div class="hub-table-actions">
-                            @if (driveItem.IsFolder)
-                            {
-                                <MudTooltip Text="폴더 열기">
-                                    <MudIconButton Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Actions.OpenFolderRequested.InvokeAsync(driveItem))" aria-label="폴더 열기" />
-                                </MudTooltip>
-                                <MudTooltip Text="이 폴더로 연결">
-                                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => Actions.AssignFolderRequested.InvokeAsync(driveItem))" aria-label="이 폴더로 연결" />
-                                </MudTooltip>
-                            }
-                            else
-                            {
-                                <MudTooltip Text="이 파일로 연결">
-                                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => Actions.AssignFileRequested.InvokeAsync(driveItem))" aria-label="이 파일로 연결" />
-                                </MudTooltip>
-                            }
-                        </div>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
     }
 </MudPaper>
 
@@ -122,9 +134,28 @@
         get; set;
     } = new AdminSettingsDrivePanelActions();
 
+    private bool mIsDrivePickerVisible;
+
     private async Task handleFolderTargetSelectionChangedAsync(string targetSelectionValue)
     {
         GoogleWorkspaceAssignmentTargetKey targetKey = GoogleWorkspaceAssignmentTargetKey.FromSelectionValue(targetSelectionValue);
         await Actions.SelectedFolderTargetKeyChanged.InvokeAsync(targetKey);
+    }
+
+    private void toggleDrivePicker()
+    {
+        mIsDrivePickerVisible = mIsDrivePickerVisible == false;
+    }
+
+    private async Task openDriveRootAsync()
+    {
+        mIsDrivePickerVisible = true;
+        await Actions.DriveRootRequested.InvokeAsync();
+    }
+
+    private async Task openOfficialRootAsync()
+    {
+        mIsDrivePickerVisible = true;
+        await Actions.OfficialRootRequested.InvokeAsync();
     }
 }

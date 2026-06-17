@@ -1,7 +1,10 @@
 <MudPaper Class="hub-card hub-list-card pa-4">
     <div class="hub-google-panel-heading">
-        <MudText Typo="Typo.h6">Google Tasks 목록 선택</MudText>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(State.Status.IsConnected == false || State.IsEnsuringStandardTaskLists)" OnClick="@(() => Actions.EnsureStandardTaskListsRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.AutoAwesomeMotion">표준 Google Tasks 목록 준비</MudButton>
+        <div>
+            <MudText Typo="Typo.h6">Google Tasks 연결 준비</MudText>
+            <div class="hub-muted">표준 Google Tasks 목록을 준비하거나 필요한 목록을 직접 선택합니다.</div>
+        </div>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(State.Status.IsConnected == false || State.IsEnsuringStandardTaskLists)" OnClick="@(() => Actions.EnsureStandardTaskListsRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.AutoAwesomeMotion">표준 Google Tasks 준비</MudButton>
     </div>
     <div class="hub-google-toolbar">
         <MudSelect T="string" Label="저장 대상" Value="State.SelectedTaskListTargetKey.GetSelectionValue()" ValueChanged="handleTaskListTargetSelectionChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
@@ -10,33 +13,47 @@
                 <MudSelectItem T="string" Value="@option.TargetSelectionValue">@option.DisplayName</MudSelectItem>
             }
         </MudSelect>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Actions.RefreshRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Refresh">새로고침</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="toggleTaskListPicker" StartIcon="@(mIsTaskListPickerVisible ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" Disabled="@(State.Status.IsConnected == false)">@(mIsTaskListPickerVisible ? "목록 닫기" : "직접 선택")</MudButton>
     </div>
-    @if (State.TaskLists.Count == 0)
-    {
-        <div class="hub-empty">표시할 Google Tasks 목록이 없습니다.</div>
-    }
-    else
-    {
-        <MudTable Items="State.TaskLists" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
-            <HeaderContent>
-                <MudTh>목록</MudTh>
-                <MudTh>종류</MudTh>
-                <MudTh></MudTh>
-            </HeaderContent>
-            <RowTemplate Context="taskList">
-                <MudTd DataLabel="목록">@taskList.Title</MudTd>
-                <MudTd DataLabel="종류">Google Tasks</MudTd>
-                <MudTd DataLabel="작업" Class="hub-action-cell">
-                    <div class="hub-table-actions">
-                        <MudTooltip Text="이 목록으로 연결">
-                            <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => Actions.AssignTaskListRequested.InvokeAsync(taskList))" aria-label="이 목록으로 연결" />
-                        </MudTooltip>
-                    </div>
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
-    }
+    <div class="hub-resource-picker-shell">
+        <div class="hub-resource-picker-header">
+            <div>
+                <strong>Google Tasks 목록</strong>
+                <span>직접 선택을 열면 연결 가능한 Google Tasks 목록이 표시됩니다.</span>
+            </div>
+            <div class="hub-resource-picker-actions">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Actions.RefreshRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(State.Status.IsConnected == false)">새로고침</MudButton>
+            </div>
+        </div>
+        @if (mIsTaskListPickerVisible)
+        {
+            @if (State.TaskLists.Count == 0)
+            {
+                <div class="hub-empty">표시할 Google Tasks 목록이 없습니다.</div>
+            }
+            else
+            {
+                <MudTable Items="State.TaskLists" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
+                    <HeaderContent>
+                        <MudTh>목록</MudTh>
+                        <MudTh>종류</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="taskList">
+                        <MudTd DataLabel="목록">@taskList.Title</MudTd>
+                        <MudTd DataLabel="종류">Google Tasks 목록</MudTd>
+                        <MudTd DataLabel="작업" Class="hub-action-cell">
+                            <div class="hub-table-actions">
+                                <MudTooltip Text="이 목록으로 연결">
+                                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => Actions.AssignTaskListRequested.InvokeAsync(taskList))" aria-label="이 목록으로 연결" />
+                                </MudTooltip>
+                            </div>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        }
+    </div>
 </MudPaper>
 
 @code {
@@ -52,9 +69,16 @@
         get; set;
     } = new AdminGoogleTaskListPanelActions();
 
+    private bool mIsTaskListPickerVisible;
+
     private async Task handleTaskListTargetSelectionChangedAsync(string targetSelectionValue)
     {
         GoogleWorkspaceAssignmentTargetKey targetKey = GoogleWorkspaceAssignmentTargetKey.FromSelectionValue(targetSelectionValue);
         await Actions.SelectedTaskListTargetKeyChanged.InvokeAsync(targetKey);
+    }
+
+    private void toggleTaskListPicker()
+    {
+        mIsTaskListPickerVisible = mIsTaskListPickerVisible == false;
     }
 }

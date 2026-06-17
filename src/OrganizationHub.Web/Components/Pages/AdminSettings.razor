@@ -11,7 +11,7 @@
 <div class="hub-page-header">
     <div>
         <h1 class="hub-page-title">시스템 설정</h1>
-        <div class="hub-page-description">Drive, Calendar, Google Tasks, 공지 파일을 목록에서 선택해 연결합니다.</div>
+        <div class="hub-page-description">Drive, Calendar, Google Tasks와 공지 파일을 각 화면에 연결합니다.</div>
     </div>
 </div>
 
@@ -37,7 +37,7 @@
             <MudTabPanel Text="Calendar">
                 <AdminSettingsCalendarPanel State="@createCalendarPanelState()" Actions="@createCalendarPanelActions()" />
             </MudTabPanel>
-            <MudTabPanel Text="Tasks">
+            <MudTabPanel Text="Google Tasks">
                 <AdminSettingsTaskListPanel State="@createTaskListPanelState()" Actions="@createTaskListPanelActions()" />
             </MudTabPanel>
             <MudTabPanel Text="고급">
