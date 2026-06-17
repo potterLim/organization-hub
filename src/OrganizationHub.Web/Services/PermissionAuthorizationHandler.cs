@@ -26,9 +26,10 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
         bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSessionOrNull, CancellationToken.None);
         if (usesConfiguredPermissions)
         {
+            OrganizationTeamId? targetTeamIdOrNull = getTargetTeamIdOrNull(requirement, userSessionOrNull);
             foreach (PermissionKey permissionKey in requirement.PermissionKeys)
             {
-                bool hasPermission = await mOrganizationPermissionService.HasPermissionAsync(userSessionOrNull, permissionKey, null, CancellationToken.None);
+                bool hasPermission = await mOrganizationPermissionService.HasPermissionAsync(userSessionOrNull, permissionKey, targetTeamIdOrNull, CancellationToken.None);
                 if (hasPermission)
                 {
                     context.Succeed(requirement);
@@ -46,6 +47,19 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
                 context.Succeed(requirement);
                 return;
             }
+        }
+    }
+
+    private static OrganizationTeamId? getTargetTeamIdOrNull(PermissionAuthorizationRequirement requirement, UserSession userSession)
+    {
+        switch (requirement.Target)
+        {
+            case EPermissionAuthorizationTarget.Global:
+                return null;
+            case EPermissionAuthorizationTarget.UserTeam:
+                return userSession.HasTeam ? userSession.GetRequiredOrganizationTeamId() : null;
+            default:
+                return null;
         }
     }
 }

@@ -14,10 +14,19 @@ public sealed class PermissionAuthorizationRequirement : IAuthorizationRequireme
     {
         get; private init;
     }
+    public EPermissionAuthorizationTarget Target
+    {
+        get; private init;
+    }
 
-    public PermissionAuthorizationRequirement(IReadOnlyList<PermissionKey> permissionKeys, IReadOnlyList<string> fallbackRoleNames)
+    public PermissionAuthorizationRequirement(
+        IReadOnlyList<PermissionKey> permissionKeys,
+        IReadOnlyList<string> fallbackRoleNames,
+        EPermissionAuthorizationTarget target = EPermissionAuthorizationTarget.Global
+    )
     {
         PermissionKeys = permissionKeys;
         FallbackRoleNames = fallbackRoleNames;
+        Target = target;
     }
 }

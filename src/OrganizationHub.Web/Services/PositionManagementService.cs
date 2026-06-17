@@ -30,6 +30,7 @@ public sealed class PositionManagementService : IPositionManagementService
                 .Include(position => position.UserAccounts)
                 .Include(position => position.PermissionGrants)
                 .ThenInclude(permissionGrant => permissionGrant.TargetTeam)
+                .AsSplitQuery()
                 .OrderBy(position => position.Team == null ? 0 : position.Team.SortOrder)
                 .ThenBy(position => position.SortOrder)
                 .ThenBy(position => position.Name)

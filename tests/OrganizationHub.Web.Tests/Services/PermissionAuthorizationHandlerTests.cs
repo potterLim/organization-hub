@@ -49,7 +49,32 @@ public sealed class PermissionAuthorizationHandlerTests
         }
     }
 
-    private static async Task seedConfiguredUserAsync(TestDbContextFactory dbContextFactory, string permissionKey)
+    [Fact]
+    public async Task ConfiguredOwnTeamPermissionSatisfiesUserTeamRequirementAsync()
+    {
+        using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
+        {
+            await seedConfiguredUserAsync(dbContextFactory, PermissionKeys.FILES_READ, EPermissionScopeType.OwnTeam);
+            OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
+            PermissionAuthorizationHandler handler = new PermissionAuthorizationHandler(permissionService);
+            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(
+                new[] { new PermissionKey(PermissionKeys.FILES_READ) },
+                new List<string>(),
+                EPermissionAuthorizationTarget.UserTeam
+            );
+            AuthorizationHandlerContext context = new AuthorizationHandlerContext(new[] { requirement }, createPrincipal(1, EUserRole.TeamLeader, 1), null);
+
+            await handler.HandleAsync(context);
+
+            Assert.True(context.HasSucceeded);
+        }
+    }
+
+    private static async Task seedConfiguredUserAsync(
+        TestDbContextFactory dbContextFactory,
+        string permissionKey,
+        EPermissionScopeType scopeType = EPermissionScopeType.Global
+    )
     {
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
@@ -67,7 +92,7 @@ public sealed class PermissionAuthorizationHandlerTests
             PositionPermissionGrant permissionGrant = new PositionPermissionGrant();
             permissionGrant.Position = position;
             permissionGrant.PermissionKey = permissionKey;
-            permissionGrant.ScopeType = EPermissionScopeType.Global;
+            permissionGrant.ScopeType = scopeType;
             permissionGrant.IsAllowed = true;
             UserAccount userAccount = new UserAccount();
             userAccount.Id = 1;

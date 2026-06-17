@@ -93,7 +93,7 @@ public class Program
         builder.Services.AddAuthorization(options =>
         {
             addPermissionPolicy(options, OrganizationHubPolicies.MANAGEMENT_ACCESS, createPermissionKeys(PermissionKeys.FILES_READ), getManagementFallbackRoles());
-            addPermissionPolicy(options, OrganizationHubPolicies.LEADER_ACCESS, createPermissionKeys(PermissionKeys.FILES_READ), getLeaderFallbackRoles());
+            addPermissionPolicy(options, OrganizationHubPolicies.LEADER_ACCESS, createPermissionKeys(PermissionKeys.FILES_READ), getLeaderFallbackRoles(), EPermissionAuthorizationTarget.UserTeam);
             addPermissionPolicy(options, OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE, createPermissionKeys(PermissionKeys.SYSTEM_SETTINGS_MANAGE), getAdministratorFallbackRoles());
             addPermissionPolicy(options, OrganizationHubPolicies.ORGANIZATION_MANAGE, createPermissionKeys(PermissionKeys.ORGANIZATION_MANAGE), getAdministratorFallbackRoles());
             addPermissionPolicy(options, OrganizationHubPolicies.POSITIONS_MANAGE, createPermissionKeys(PermissionKeys.POSITIONS_MANAGE, PermissionKeys.PERMISSIONS_MANAGE), getAdministratorFallbackRoles());
@@ -135,10 +135,11 @@ public class Program
         AuthorizationOptions options,
         string policyName,
         IReadOnlyList<PermissionKey> permissionKeys,
-        IReadOnlyList<string> fallbackRoleNames
+        IReadOnlyList<string> fallbackRoleNames,
+        EPermissionAuthorizationTarget target = EPermissionAuthorizationTarget.Global
     )
     {
-        options.AddPolicy(policyName, policy => policy.Requirements.Add(new PermissionAuthorizationRequirement(permissionKeys, fallbackRoleNames)));
+        options.AddPolicy(policyName, policy => policy.Requirements.Add(new PermissionAuthorizationRequirement(permissionKeys, fallbackRoleNames, target)));
     }
 
     private static IReadOnlyList<PermissionKey> createPermissionKeys(params string[] permissionKeyValues)
