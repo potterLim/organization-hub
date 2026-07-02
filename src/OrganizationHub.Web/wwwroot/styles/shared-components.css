@@ -8,7 +8,7 @@
     font-size: 14px;
     font-weight: 750;
     justify-content: center;
-    min-height: 104px;
+    min-height: 92px;
     padding: 22px;
     text-align: center;
     word-break: keep-all;
@@ -17,7 +17,7 @@
 .hub-empty-state {
     flex-direction: column;
     gap: 10px;
-    min-height: 136px;
+    min-height: 116px;
 }
 
 .hub-empty-copy {
@@ -44,8 +44,176 @@
     color: var(--hub-text-muted);
 }
 
+.hub-alert-line-stack {
+    display: grid;
+    gap: 2px;
+    line-height: 1.45;
+}
+
+.hub-alert-line-stack span {
+    display: block;
+}
+
+.hub-list-title {
+    color: var(--hub-text-strong);
+    display: block;
+    font-family: var(--hub-font-family) !important;
+    font-size: var(--hub-list-title-font-size) !important;
+    font-weight: var(--hub-list-title-font-weight) !important;
+    line-height: var(--hub-list-title-line-height) !important;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-list-title.hub-approval-title {
+    white-space: normal;
+}
+
+.hub-list-meta {
+    color: var(--hub-text-muted);
+    display: block;
+    font-family: var(--hub-font-family) !important;
+    font-size: var(--hub-list-meta-font-size) !important;
+    font-weight: var(--hub-list-meta-font-weight) !important;
+    line-height: var(--hub-list-meta-line-height) !important;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-list-side {
+    color: var(--hub-text-soft);
+    display: inline-flex;
+    font-family: var(--hub-font-family);
+    font-feature-settings: "tnum";
+    font-size: var(--hub-list-side-font-size);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--hub-list-side-font-weight);
+    justify-content: flex-end;
+    line-height: var(--hub-list-side-line-height);
+    white-space: nowrap;
+}
+
+.hub-due-status {
+    align-items: center;
+    display: inline-flex;
+    gap: 5px;
+    min-height: 26px;
+}
+
+.hub-due-status-today,
+.hub-due-status-overdue {
+    border-radius: 999px;
+    font-weight: 900;
+    padding: 0 9px;
+}
+
+.hub-due-status-today {
+    background: rgba(245, 158, 11, .13);
+    border: 1px solid rgba(217, 119, 6, .22);
+    color: #8a4b08;
+}
+
+.hub-due-status-today::before {
+    background: #d97706;
+    border-radius: 999px;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, .16);
+    content: "";
+    display: inline-flex;
+    height: 7px;
+    width: 7px;
+}
+
+.hub-due-status-overdue {
+    background: rgba(180, 35, 24, .1);
+    border: 1px solid rgba(180, 35, 24, .2);
+    color: #9f3329;
+}
+
+.hub-due-status-overdue::before {
+    align-items: center;
+    background: rgba(180, 35, 24, .14);
+    border-radius: 999px;
+    color: #912018;
+    content: "!";
+    display: inline-flex;
+    font-size: 10px;
+    font-weight: 950;
+    height: 16px;
+    justify-content: center;
+    line-height: 1;
+    width: 16px;
+}
+
 .hub-card .hub-empty-state {
-    min-height: 96px;
+    min-height: 84px;
+}
+
+.hub-file-conflict-panel {
+    align-items: center;
+    background: rgba(255, 255, 255, .68);
+    border: 1px solid rgba(245, 158, 11, .26);
+    border-radius: 18px;
+    display: grid;
+    gap: 14px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin-top: 14px;
+    padding: 14px;
+}
+
+.hub-file-conflict-copy {
+    align-items: center;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 36px minmax(0, 1fr);
+    min-width: 0;
+}
+
+.hub-file-conflict-copy strong {
+    color: var(--hub-text-strong);
+    display: block;
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.3;
+}
+
+.hub-file-conflict-copy span:not(.hub-file-conflict-icon) {
+    color: var(--hub-text-muted);
+    display: block;
+    font-size: 12px;
+    font-weight: 760;
+    line-height: 1.35;
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-file-conflict-icon {
+    align-items: center;
+    background: rgba(245, 158, 11, .13);
+    border: 1px solid rgba(217, 119, 6, .22);
+    border-radius: 13px;
+    color: #a15c09;
+    display: inline-flex;
+    height: 36px;
+    justify-content: center;
+    width: 36px;
+}
+
+.hub-file-conflict-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.hub-file-conflict-actions .mud-button-root {
+    min-width: 128px !important;
 }
 
 .mud-button-root {
@@ -116,17 +284,17 @@
 }
 
 .mud-input-control .mud-input-outlined {
-    min-height: 56px;
+    min-height: var(--hub-field-height);
 }
 
 .mud-input-control .mud-input-outlined.mud-input-margin-dense {
-    min-height: 48px;
+    min-height: var(--hub-field-height-dense);
 }
 
 .mud-input-control input.mud-input-slot {
     box-sizing: border-box;
     height: 100%;
-    line-height: 56px;
+    line-height: var(--hub-field-height);
     min-height: inherit;
 }
 
@@ -141,7 +309,7 @@
 }
 
 .mud-input-control .mud-input-outlined.mud-input-margin-dense input.mud-input-slot {
-    line-height: 48px;
+    line-height: var(--hub-field-height-dense);
     padding-bottom: 0;
     padding-top: 0;
 }
@@ -149,12 +317,27 @@
 .mud-input-control .mud-select-input {
     align-items: center;
     display: inline-flex;
-    line-height: 56px;
+    line-height: var(--hub-field-height);
     min-height: inherit;
 }
 
+.mud-input-control .mud-input-outlined.mud-input-margin-dense.mud-select-input {
+    line-height: var(--hub-field-height-dense) !important;
+}
+
 .mud-input-control .mud-input-outlined.mud-input-margin-dense .mud-select-input {
-    line-height: 48px;
+    line-height: var(--hub-field-height-dense);
+}
+
+.mud-input-control .mud-input-outlined.mud-input-margin-dense .mud-input-slot.mud-select-input:not(input) {
+    box-sizing: border-box !important;
+    height: var(--hub-field-height-dense) !important;
+    line-height: var(--hub-field-height-dense) !important;
+    overflow: hidden;
+    padding-bottom: 0 !important;
+    padding-top: 0 !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .mud-input-control textarea.mud-input-slot {

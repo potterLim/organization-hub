@@ -83,6 +83,18 @@
     white-space: nowrap;
 }
 
+.hub-page-command-row {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+.hub-page-command-row .mud-button-root {
+    min-width: 128px;
+}
+
 .hub-freshness-actions {
     gap: 10px;
 }
@@ -98,6 +110,6 @@
 }
 
 .hub-control-select-width {
-    max-width: 360px;
+    max-width: var(--hub-primary-select-width);
     width: 100%;
 }

@@ -1,4 +1,5 @@
 :root {
+    --hub-font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
     --hub-bg: #eef3fb;
     --hub-bg-strong: #dde7f6;
     --hub-surface: rgba(255, 255, 255, .76);
@@ -25,6 +26,18 @@
     --hub-shadow-soft: 0 12px 32px rgba(34, 53, 92, .08);
     --hub-shadow-medium: 0 18px 44px rgba(22, 42, 78, .12);
     --hub-shadow-strong: 0 26px 70px rgba(15, 30, 58, .18);
+    --hub-list-title-font-size: 17px;
+    --hub-list-title-font-weight: 850;
+    --hub-list-title-line-height: 1.24;
+    --hub-list-meta-font-size: 12px;
+    --hub-list-meta-font-weight: 800;
+    --hub-list-meta-line-height: 1.45;
+    --hub-list-side-font-size: 12px;
+    --hub-list-side-font-weight: 850;
+    --hub-list-side-line-height: 1.45;
+    --hub-field-height: 52px;
+    --hub-field-height-dense: 44px;
+    --hub-primary-select-width: 280px;
 }
 
 html,
@@ -32,7 +45,7 @@ body {
     background: linear-gradient(135deg, #f8fbff 0%, #f1f6fd 38%, #e8f0fa 72%, #f2f0eb 100%);
     background-attachment: fixed;
     color: var(--hub-text-strong);
-    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    font-family: var(--hub-font-family);
     letter-spacing: 0;
     min-height: 100%;
 }
@@ -48,6 +61,18 @@ a {
 
 h1:focus {
     outline: none;
+}
+
+.hub-sr-only {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
 }
 
 .mud-layout {
