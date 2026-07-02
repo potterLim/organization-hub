@@ -1,14 +1,16 @@
-# Build output
+# Build and test output
 bin/
 obj/
 out/
 publish/
 TestResults/
+test-results/
 coverage/
 coverage-*/
 *.trx
 *.coverage
 *.coveragexml
+playwright-report/
 
 # IDE and editor state
 .vs/
@@ -25,13 +27,22 @@ coverage-*/
 *.db
 *.db-*
 *.sqlite
+*.sqlite-*
 *.sqlite3
+*.sqlite3-*
 *.log
+*.pid
 logs/
+
+# Generated verification output
+# Public README and documentation images belong in docs/assets/.
+.artifacts/
 artifacts/
 captures/
-tmp/
-scratch/
+/screenshots/
+/qa-screenshots/
+/tmp/
+/scratch/
 
 # Local configuration and secrets
 .env
@@ -53,6 +64,7 @@ dist/
 
 # Local-only helper scripts and generated QA data
 tools/local/
+tools/qa/
 tools/tmp/
 *.local.ps1
 *.local.mjs

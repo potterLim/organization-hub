@@ -17,6 +17,7 @@
 # Build output
 **/bin
 **/obj
+.artifacts
 artifacts
 publish
 
@@ -75,9 +76,14 @@ playwright-report
 *.pptm
 *.pdf
 ~$*
-screenshots
-captures
-qa-screenshots
+/screenshots
+/captures
+/qa-screenshots
+/tmp
+/scratch
+/tools/local
+/tools/qa
+/tools/tmp
 
 # Operating system files
 Thumbs.db

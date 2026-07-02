@@ -7,6 +7,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
+      AllowedHosts: ${ORGANIZATION_HUB_ALLOWED_HOSTS:-localhost;127.0.0.1}
       ConnectionStrings__OrganizationHub: Data Source=/app/Data/organizationhub.db;Cache=Shared;Default Timeout=30
       OrganizationHub__SeedUsername: ${ORGANIZATION_HUB_SEED_USERNAME}
       OrganizationHub__SeedPassword: ${ORGANIZATION_HUB_SEED_PASSWORD}
