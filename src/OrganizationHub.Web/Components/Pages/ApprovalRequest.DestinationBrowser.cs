@@ -12,6 +12,7 @@ public partial class ApprovalRequest
     private async Task handleDestinationRootChangedAsync(string folderId)
     {
         mSelectedDestinationRootFolderId = folderId;
+        clearDestinationFolderMessage();
         DriveFolderReference? folderOrNull = getSelectedDestinationRootFolderOrNull();
         if (folderOrNull != null)
         {
@@ -41,10 +42,12 @@ public partial class ApprovalRequest
             DriveFolderBrowseRequest request = new DriveFolderBrowseRequest(CurrentUserSessionOrNull, destinationFolderOrNull.FolderKind, destinationFolderOrNull.FolderId, DriveFolderId.CreateOptional(getCurrentDestinationFolderId()));
             IReadOnlyList<DriveFileItem> files = await DriveBrowserService.GetFolderFilesAsync(request, CancellationToken.None);
             mDestinationFoldersInCurrentFolder = files.Where(file => file.IsFolder).OrderBy(file => file.Name).ToList();
+            mDestinationFilesInCurrentFolder = files.Where(file => file.IsFolder == false).OrderBy(file => file.Name).ToList();
         }
         catch
         {
             mDestinationFoldersInCurrentFolder = new List<DriveFileItem>();
+            mDestinationFilesInCurrentFolder = new List<DriveFileItem>();
             mDestinationFolderLoadErrorMessage = "저장 위치를 불러오지 못했습니다.";
         }
         finally
@@ -65,6 +68,7 @@ public partial class ApprovalRequest
         pathItem.Name = file.Name;
         mDestinationFolderPath.Add(pathItem);
         mFormModel.DestinationFolderId = file.Id;
+        clearDestinationFolderMessage();
         await loadDestinationFoldersAsync();
     }
 
@@ -77,6 +81,7 @@ public partial class ApprovalRequest
 
         mDestinationFolderPath = mDestinationFolderPath.Take(index + 1).ToList();
         mFormModel.DestinationFolderId = getCurrentDestinationFolderId();
+        clearDestinationFolderMessage();
         await loadDestinationFoldersAsync();
     }
 

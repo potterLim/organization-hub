@@ -16,11 +16,10 @@ public partial class ApprovalRequest
             return;
         }
 
-        string folderName = getValidFolderNameOrEmpty(mNewDestinationFolderName);
-        if (string.IsNullOrWhiteSpace(folderName))
+        DriveFolderName folderName = DriveFolderName.CreateOptional(mNewDestinationFolderName);
+        if (folderName.HasValue == false)
         {
-            mMessage = "새 폴더 이름을 입력해 주세요.";
-            mMessageSeverity = Severity.Warning;
+            showDestinationFolderMessage("새 폴더 이름을 입력해 주세요.", Severity.Warning);
             return;
         }
 
@@ -28,26 +27,23 @@ public partial class ApprovalRequest
         PermissionDecision createDecision = await PermissionService.DecideStoreApprovedFileToFolderAsync(CurrentUserSessionOrNull, destinationFolderId, CancellationToken.None);
         if (createDecision.IsAllowed == false)
         {
-            mMessage = createDecision.Reason;
-            mMessageSeverity = Severity.Error;
+            showDestinationFolderMessage(createDecision.Reason, Severity.Error);
             return;
         }
 
         mIsCreatingDestinationFolder = true;
         try
         {
-            DriveFileItem createdFolder = await DriveService.CreateFolderAsync(destinationFolderId, DriveItemName.CreateRequired(folderName), CancellationToken.None);
+            DriveFileItem createdFolder = await DriveService.CreateFolderAsync(destinationFolderId, folderName.ToDriveItemName(), CancellationToken.None);
             mNewDestinationFolderName = string.Empty;
             mIsDestinationFolderCreateOpen = false;
             await loadDestinationFoldersAsync();
             await openDestinationFolderAsync(createdFolder);
-            mMessage = "새 폴더를 만들었습니다.";
-            mMessageSeverity = Severity.Success;
+            showDestinationFolderMessage("새 폴더를 만들고 해당 위치로 이동했습니다.", Severity.Success);
         }
         catch
         {
-            mMessage = "폴더를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.";
-            mMessageSeverity = Severity.Error;
+            showDestinationFolderMessage("폴더를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.", Severity.Error);
         }
 
         mIsCreatingDestinationFolder = false;
@@ -68,6 +64,17 @@ public partial class ApprovalRequest
         mNewDestinationFolderName = string.Empty;
     }
 
+    private void showDestinationFolderMessage(string message, Severity severity)
+    {
+        mDestinationFolderMessage = message;
+        mDestinationFolderMessageSeverity = severity;
+    }
+
+    private void clearDestinationFolderMessage()
+    {
+        mDestinationFolderMessage = string.Empty;
+    }
+
     private async Task handleDestinationFolderCreateKeyDownAsync(KeyboardEventArgs keyboardEventArgs)
     {
         if (keyboardEventArgs.Key == "Enter" && mIsCreatingDestinationFolder == false)
@@ -80,26 +87,5 @@ public partial class ApprovalRequest
         {
             closeDestinationFolderCreate();
         }
-    }
-
-    private string getValidFolderNameOrEmpty(string folderName)
-    {
-        if (string.IsNullOrWhiteSpace(folderName))
-        {
-            return string.Empty;
-        }
-
-        string trimmedName = folderName.Trim();
-        if (trimmedName.Length > 80)
-        {
-            return string.Empty;
-        }
-
-        if (trimmedName.Contains("/") || trimmedName.Contains("\\"))
-        {
-            return string.Empty;
-        }
-
-        return trimmedName;
     }
 }

@@ -58,7 +58,7 @@ public partial class ApprovalRequest
     private Task handleTitleChangedAsync(string title)
     {
         mFormModel.Title = title;
-        mHasCustomTitle = true;
+        mHasCustomTitle = string.IsNullOrWhiteSpace(title) == false;
         return Task.CompletedTask;
     }
 
@@ -85,16 +85,6 @@ public partial class ApprovalRequest
     private string getApprovalStepDescription()
     {
         return getApproverSelectionState().GetApprovalStepDescription();
-    }
-
-    private IReadOnlyList<ApprovalFlowPreviewItem> getApprovalFlowPreviewItems()
-    {
-        return getApproverSelectionState().GetApprovalFlowPreviewItems();
-    }
-
-    private string getApprovalFlowStepClass(ApprovalFlowPreviewItem previewItem)
-    {
-        return getApproverSelectionState().GetApprovalFlowStepClass(previewItem);
     }
 
     private ApprovalApproverSelectionState getApproverSelectionState()

@@ -58,7 +58,16 @@ public partial class DriveFileBrowser
                 CancellationToken.None);
             mFiles = readResult.Value.ToList();
             DriveFolderReference? currentRootFolderOrNull = getCurrentRootFolderOrNull();
-            mCanDeleteFiles = currentRootFolderOrNull != null && PermissionService.DecideDeleteInsideRoot(CurrentUserSessionOrNull, currentRootFolderOrNull).IsAllowed;
+            if (currentRootFolderOrNull == null)
+            {
+                mCanDeleteFiles = false;
+            }
+            else
+            {
+                PermissionDecision deleteDecision = await PermissionService.DecideDeleteInFolderAsync(CurrentUserSessionOrNull, currentRootFolderOrNull.FolderId, CancellationToken.None);
+                mCanDeleteFiles = deleteDecision.IsAllowed;
+            }
+
             mDeleteCandidateOrNull = null;
             recordLoadedChangeSnapshot(readResult.Snapshot);
         }
@@ -142,12 +151,12 @@ public partial class DriveFileBrowser
 
     private IEnumerable<DriveFolderReference> filterRootFolders(IReadOnlyList<DriveFolderReference> folders)
     {
-        if (ManagementTeamOnly)
+        if (IsManagementTeamOnly)
         {
             return folders.Where(folder => folder.IsManagementTeam);
         }
 
-        if (ExcludeManagementTeam)
+        if (ShouldExcludeManagementTeam)
         {
             return folders.Where(folder => folder.IsManagementTeam == false);
         }

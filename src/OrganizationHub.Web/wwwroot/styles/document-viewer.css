@@ -3,6 +3,21 @@
     max-width: 1180px;
 }
 
+.hub-document-download-button {
+    border-color: rgba(82, 111, 255, .28) !important;
+    border-radius: 999px !important;
+    box-shadow: 0 10px 22px rgba(62, 90, 185, .1);
+    font-weight: 900 !important;
+    min-height: 44px;
+    min-width: 132px;
+    padding: 0 18px !important;
+}
+
+.hub-document-download-button:hover {
+    background: rgba(82, 111, 255, .08) !important;
+    border-color: rgba(82, 111, 255, .4) !important;
+}
+
 .hub-pdfjs-viewer {
     align-items: center;
     background: #f2f5f9;
@@ -105,4 +120,3 @@
     box-shadow: 0 14px 32px rgba(40, 57, 78, .14);
     max-width: 100%;
 }
-

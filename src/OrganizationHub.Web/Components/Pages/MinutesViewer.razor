@@ -14,9 +14,13 @@
         <div class="hub-page-description">문서 보기</div>
     </div>
     <div class="hub-page-actions">
-        <MudTooltip Text="다운로드">
-            <MudIconButton Href="@("/files/" + FileId + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" aria-label="다운로드" />
-        </MudTooltip>
+        <MudButton Href="@getDownloadHref()"
+                   Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Download"
+                   Class="hub-document-download-button">
+            다운로드
+        </MudButton>
     </div>
 </div>
 
@@ -52,9 +56,14 @@ else
     private bool mIsLoading = true;
     private bool mIsViewerRendered;
 
+    private string getDownloadHref()
+    {
+        return "/files/" + Uri.EscapeDataString(FileId) + "/download";
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        bool hasSession = await loadUserSessionAsync();
+        bool hasSession = await tryLoadUserSessionAsync();
         if (hasSession == false || CurrentUserSessionOrNull == null)
         {
             mErrorMessage = "로그인이 필요합니다.";

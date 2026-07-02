@@ -7,7 +7,7 @@
                 {
                     <button type="button" class="hub-file-inline-name hub-file-folder-link" @onclick="@(() => openFolderAsync(file))" aria-label="@("폴더 열기: " + file.Name)">
                         <MudIcon Icon="@getFileIcon(file)" Size="Size.Small" Class="@getFileIconClass(file)" />
-                        <MudText Typo="Typo.body2" Class="hub-file-compact-name">@file.Name</MudText>
+                        <MudText Typo="Typo.body2" Class="hub-list-title hub-file-compact-name">@file.Name</MudText>
                     </button>
                 }
                 else
@@ -18,14 +18,14 @@
                     </div>
                 }
                 <div class="hub-file-compact-meta">
-                    @if (ShowTeam)
+                    @if (ShouldShowTeam)
                     {
                         <span>@getTeamName(file)</span>
                     }
                     <span>@formatDate(file.ModifiedTime)</span>
-                    @if (file.IsFolder == false && string.IsNullOrWhiteSpace(file.UploadedByDisplayName) == false)
+                    @if (shouldShowUploader(file))
                     {
-                        <span>@UploadedByLabel @file.UploadedByDisplayName</span>
+                        <span>@getUploaderLabelText() @getUploaderText(file)</span>
                     }
                 </div>
             </div>
@@ -36,7 +36,7 @@
                         <MudIconButton Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" Size="Size.Small" Disabled="@(FolderOpened.HasDelegate == false)" OnClick="@(() => openFolderAsync(file))" aria-label="폴더 열기" />
                     </MudTooltip>
                 }
-                else if (ShowPreview && file.CanPreviewInSite)
+                else if (ShouldShowPreview && file.CanPreviewInSite)
                 {
                     <MudTooltip Text="PDF 보기">
                         <MudIconButton Href="@("/files/" + file.Id + "/viewer")" Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" Size="Size.Small" aria-label="PDF 보기" />
@@ -65,13 +65,19 @@
     public IReadOnlyList<DriveFileItem> Files { get; set; } = new List<DriveFileItem>();
 
     [Parameter]
-    public bool ShowTeam { get; set; } = true;
+    public bool ShouldShowTeam { get; set; } = true;
 
     [Parameter]
-    public bool ShowPreview { get; set; }
+    public bool ShouldShowPreview { get; set; }
 
     [Parameter]
-    public string UploadedByLabel { get; set; } = "올린 사람";
+    public bool ShouldShowUploaderTeamName { get; set; } = true;
+
+    [Parameter]
+    public string UploadedByLabel { get; set; } = "업로드";
+
+    [Parameter]
+    public TimeZoneInfo ClientTimeZoneInfo { get; set; } = TimeZoneInfo.Local;
 
     [Parameter]
     public EventCallback<DriveFileItem> FolderOpened { get; set; }
@@ -106,15 +112,46 @@
     {
         if (canPreviewFile(file))
         {
-            return @<MudLink Href="@getViewerHref(file)" Class="hub-file-compact-name hub-file-preview-link">@file.Name</MudLink>;
-        }
+        return @<MudLink Href="@getViewerHref(file)" Class="hub-list-title hub-file-compact-name hub-file-preview-link">@file.Name</MudLink>;
+    }
 
-        return @<MudText Typo="Typo.body2" Class="hub-file-compact-name">@file.Name</MudText>;
+        return @<MudText Typo="Typo.body2" Class="hub-list-title hub-file-compact-name">@file.Name</MudText>;
     }
 
     private bool canPreviewFile(DriveFileItem file)
     {
-        return file.IsFolder == false && ShowPreview && file.CanPreviewInSite;
+        return file.IsFolder == false && ShouldShowPreview && file.CanPreviewInSite;
+    }
+
+    private bool shouldShowUploader(DriveFileItem file)
+    {
+        if (file.IsFolder)
+        {
+            return false;
+        }
+
+        return string.IsNullOrWhiteSpace(getUploaderText(file)) == false;
+    }
+
+    private string getUploaderText(DriveFileItem file)
+    {
+        if (ShouldShowUploaderTeamName)
+        {
+            return file.GetUploaderAffiliationText();
+        }
+
+        return file.GetUploaderPositionText();
+    }
+
+    private string getUploaderLabelText()
+    {
+        string label = UploadedByLabel.Trim();
+        if (label.EndsWith(":", StringComparison.Ordinal))
+        {
+            return label;
+        }
+
+        return label + ":";
     }
 
     private string getViewerHref(DriveFileItem file)
@@ -139,7 +176,7 @@
             return "-";
         }
 
-        return dateTimeOrNull.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+        return PresentationDateTimeFormatter.formatClientDateTime(dateTimeOrNull.Value, ClientTimeZoneInfo, PresentationDateTimeFormatter.FULL_DATE_TIME_FORMAT);
     }
 
     private string getFileIcon(DriveFileItem file)
@@ -149,7 +186,7 @@
             return Icons.Material.Filled.Folder;
         }
 
-        if (file.MimeType == "application/pdf")
+        if (file.MimeType == GoogleMimeTypes.PDF)
         {
             return Icons.Material.Filled.PictureAsPdf;
         }

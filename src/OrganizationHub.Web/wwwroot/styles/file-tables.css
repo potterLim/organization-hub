@@ -81,6 +81,10 @@
 
 .hub-file-table th,
 .hub-calendar-table th {
+    color: var(--hub-text-muted);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.25;
     padding: 12px 16px !important;
     vertical-align: middle;
 }
@@ -89,6 +93,42 @@
 .hub-calendar-table td {
     padding: 14px 16px !important;
     vertical-align: middle;
+}
+
+.hub-file-table .hub-file-name-heading {
+    padding-left: 46px !important;
+    text-align: left !important;
+}
+
+.hub-file-team-heading,
+.hub-file-date-heading {
+    text-align: left !important;
+}
+
+.hub-file-action-heading {
+    text-align: right !important;
+}
+
+.hub-file-team-cell,
+.hub-file-date-cell {
+    text-align: left;
+    white-space: nowrap;
+}
+
+.hub-file-date-text {
+    color: var(--hub-text-muted) !important;
+    font-feature-settings: "tnum";
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 750 !important;
+}
+
+.hub-file-table .hub-action-cell {
+    text-align: right;
+}
+
+.hub-file-table .hub-table-actions {
+    justify-content: flex-end;
 }
 
 .hub-calendar-time-cell {

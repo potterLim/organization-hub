@@ -13,6 +13,8 @@ public partial class Upload
     {
         mSelectedRootFolderId = folderId;
         mMessage = string.Empty;
+        mUploadConflictOrNull = null;
+        clearFolderMessage();
         DriveFolderReference? selectedFolderOrNull = getSelectedRootFolderOrNull();
         if (selectedFolderOrNull != null)
         {
@@ -33,6 +35,8 @@ public partial class Upload
         DriveFolderReference? rootFolderOrNull = getSelectedRootFolderOrNull();
         if (rootFolderOrNull == null)
         {
+            mFoldersInCurrentFolder = new List<DriveFileItem>();
+            mFilesInCurrentFolder = new List<DriveFileItem>();
             return;
         }
 
@@ -51,17 +55,20 @@ public partial class Upload
             if (mCurrentFolderUploadDecision.IsAllowed == false)
             {
                 mFoldersInCurrentFolder = new List<DriveFileItem>();
+                mFilesInCurrentFolder = new List<DriveFileItem>();
                 return;
             }
 
             DriveFolderBrowseRequest request = new DriveFolderBrowseRequest(CurrentUserSessionOrNull, rootFolderOrNull.FolderKind, rootFolderOrNull.FolderId, currentFolderId);
             IReadOnlyList<DriveFileItem> files = await DriveBrowserService.GetFolderFilesAsync(request, CancellationToken.None);
             mFoldersInCurrentFolder = files.Where(file => file.IsFolder).OrderBy(file => file.Name).ToList();
+            mFilesInCurrentFolder = files.Where(file => file.IsFolder == false).OrderBy(file => file.Name).ToList();
         }
         catch
         {
             mFoldersInCurrentFolder = new List<DriveFileItem>();
-            mFolderLoadErrorMessage = "하위 폴더를 불러오지 못했습니다.";
+            mFilesInCurrentFolder = new List<DriveFileItem>();
+            mFolderLoadErrorMessage = "현재 위치의 항목을 불러오지 못했습니다.";
         }
         finally
         {
@@ -80,6 +87,8 @@ public partial class Upload
         pathItem.Id = folder.Id;
         pathItem.Name = folder.Name;
         mFolderPath.Add(pathItem);
+        mUploadConflictOrNull = null;
+        clearFolderMessage();
         await loadFoldersAsync();
     }
 
@@ -91,6 +100,8 @@ public partial class Upload
         }
 
         mFolderPath = mFolderPath.Take(index + 1).ToList();
+        mUploadConflictOrNull = null;
+        clearFolderMessage();
         await loadFoldersAsync();
     }
 
@@ -120,7 +131,7 @@ public partial class Upload
 
     private DriveFolderReference getDefaultUploadRootFolder()
     {
-        if (CurrentUserSessionOrNull != null && CurrentUserSessionOrNull.IsManagementRole())
+        if (CurrentUserSessionOrNull != null && CurrentUserSessionOrNull.TeamKey.IsManagementTeamKey)
         {
             DriveFolderReference? managementFolderOrNull = mUploadRootFolders.FirstOrDefault(folder => folder.FolderKind == EDriveFolderKind.TeamMaterials && folder.IsManagementTeam);
             if (managementFolderOrNull != null)

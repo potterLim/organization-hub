@@ -15,13 +15,17 @@ public partial class ApprovalRequest
     private List<DriveFolderPathItem> mDestinationFolderPath = new List<DriveFolderPathItem>();
     private List<DriveFileItem> mFiles = new List<DriveFileItem>();
     private List<DriveFileItem> mDestinationFoldersInCurrentFolder = new List<DriveFileItem>();
+    private List<DriveFileItem> mDestinationFilesInCurrentFolder = new List<DriveFileItem>();
     private string mSelectedDestinationRootFolderId = string.Empty;
     private string mNewDestinationFolderName = string.Empty;
     private string mKeyword = string.Empty;
+    private string mSuggestedRequestTitle = string.Empty;
     private string mMessage = string.Empty;
+    private string mDestinationFolderMessage = string.Empty;
     private string mFileLoadErrorMessage = string.Empty;
     private string mDestinationFolderLoadErrorMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
+    private Severity mDestinationFolderMessageSeverity = Severity.Info;
     private bool mIsLoading = true;
     private bool mIsLoadingFiles;
     private bool mIsLoadingDestinationFolders;
@@ -32,7 +36,7 @@ public partial class ApprovalRequest
 
     protected override async Task OnInitializedAsync()
     {
-        bool hasSession = await loadUserSessionAsync();
+        bool hasSession = await tryLoadUserSessionAsync();
         if (hasSession == false || CurrentUserSessionOrNull == null)
         {
             return;

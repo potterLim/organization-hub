@@ -1,19 +1,16 @@
 @page "/upload"
 @attribute [Authorize]
-@inherits OrganizationHubComponentBase
+@inherits TimeZoneAwareOrganizationHubComponentBase
 @inject IPermissionService PermissionService
 @inject IDriveBrowserService DriveBrowserService
 @inject IDriveService DriveService
+@inject IDriveFileNameConflictService DriveFileNameConflictService
 @inject IFilePolicyService FilePolicyService
 @inject IUploadAuditLogService UploadAuditLogService
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("파일 올리기")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">파일 올리기</h1>
-    </div>
-</div>
+<h1 class="hub-sr-only">파일 올리기</h1>
 
 <MudGrid Spacing="5" Class="hub-upload-grid">
     <MudItem xs="12" md="7">
@@ -29,33 +26,43 @@
             }
             else
             {
-                <div class="hub-browser-toolbar">
+                <div class="hub-browser-toolbar hub-browser-toolbar-upload">
                     <MudSelect T="string" Label="자료 위치" Value="mSelectedRootFolderId" ValueChanged="handleRootFolderChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
                         @foreach (DriveFolderReference folder in mUploadRootFolders)
                         {
                             <MudSelectItem T="string" Value="@folder.FolderId.GetRequiredValue()">@folder.DisplayName</MudSelectItem>
                         }
                     </MudSelect>
-                </div>
-                <div class="hub-browser-location">
-                    <div class="hub-browser-breadcrumbs" aria-label="현재 폴더 위치">
-                        @for (int index = 0; index < mFolderPath.Count; index++)
-                        {
-                            int pathIndex = index;
-                            DriveFolderPathItem pathItem = mFolderPath[index];
-                            @if (index > 0)
-                            {
-                                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="hub-browser-breadcrumb-separator" />
-                            }
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Disabled="@(index == mFolderPath.Count - 1)" OnClick="@(() => navigateToPathAsync(pathIndex))">@pathItem.Name</MudButton>
-                        }
-                    </div>
                     <div class="hub-browser-count">@getFolderCountText()</div>
+                    <MudTooltip Text="현재 위치 새로고침">
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Size="Size.Small" OnClick="loadFoldersAsync" Disabled="mIsLoadingFiles" aria-label="현재 위치 새로고침" />
+                    </MudTooltip>
+                    @if (mCurrentFolderCreateDecision.IsAllowed)
+                    {
+                        <div class="hub-browser-folder-action">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.CreateNewFolder" OnClick="toggleFolderCreate" Class="hub-folder-create-toggle">새 폴더</MudButton>
+                        </div>
+                    }
                 </div>
-                @if (mCurrentFolderCreateDecision.IsAllowed)
+                @if (string.IsNullOrWhiteSpace(mFolderMessage) == false)
                 {
-                    <div class="hub-folder-actionbar">
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.CreateNewFolder" OnClick="toggleFolderCreate" Class="hub-folder-create-toggle">새 폴더</MudButton>
+                    <MudAlert Severity="@mFolderMessageSeverity" Dense="true" Class="hub-browser-inline-alert">@mFolderMessage</MudAlert>
+                }
+                @if (shouldShowFolderPath())
+                {
+                    <div class="hub-browser-location">
+                        <div class="hub-browser-breadcrumbs" aria-label="현재 폴더 위치">
+                            @for (int index = 0; index < mFolderPath.Count; index++)
+                            {
+                                int pathIndex = index;
+                                DriveFolderPathItem pathItem = mFolderPath[index];
+                                @if (index > 0)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="hub-browser-breadcrumb-separator" />
+                                }
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Disabled="@(index == mFolderPath.Count - 1)" OnClick="@(() => navigateToPathAsync(pathIndex))">@pathItem.Name</MudButton>
+                            }
+                        </div>
                     </div>
                 }
                 @if (mIsFolderCreateOpen)
@@ -99,21 +106,55 @@
                 {
                     <ResourceStateMessage Icon="@Icons.Material.Filled.Lock" Title="@mCurrentFolderUploadDecision.Reason" />
                 }
-                else if (mFoldersInCurrentFolder.Count == 0)
+                else if (mFoldersInCurrentFolder.Count == 0 && mFilesInCurrentFolder.Count == 0)
                 {
                     <ResourceStateMessage Icon="@Icons.Material.Filled.FolderOpen"
-                                          Title="하위 폴더가 없습니다."
+                                          Title="현재 위치에 항목이 없습니다."
                                           Description="현재 위치에 바로 올릴 수 있습니다." />
                 }
                 else
                 {
-                    <div class="hub-folder-tile-list">
-                        @foreach (DriveFileItem folder in mFoldersInCurrentFolder)
+                    <div class="hub-location-contents">
+                        @if (mFoldersInCurrentFolder.Count > 0)
                         {
-                            <button type="button" class="hub-folder-tile" @onclick="@(() => openFolderAsync(folder))">
-                                <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" />
-                                <span>@folder.Name</span>
-                            </button>
+                            <section class="hub-location-section">
+                                <div class="hub-location-section-heading">하위 폴더</div>
+                                <div class="hub-folder-tile-list">
+                                    @foreach (DriveFileItem folder in mFoldersInCurrentFolder)
+                                    {
+                                        <button type="button" class="hub-folder-tile" @onclick="@(() => openFolderAsync(folder))">
+                                            <span class="hub-folder-tile-icon">
+                                                <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" />
+                                            </span>
+                                            <span class="hub-folder-tile-content">
+                                                <strong>@folder.Name</strong>
+                                                <small>폴더 열기</small>
+                                            </span>
+                                            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="hub-folder-tile-arrow" />
+                                        </button>
+                                    }
+                                </div>
+                            </section>
+                        }
+                        @if (mFilesInCurrentFolder.Count > 0)
+                        {
+                            <section class="hub-location-section">
+                                <div class="hub-location-section-heading">현재 위치의 파일</div>
+                                <div class="hub-location-file-list">
+                                    @foreach (DriveFileItem file in mFilesInCurrentFolder)
+                                    {
+                                        <div class="hub-location-file-card">
+                                            <span class="hub-location-file-icon">
+                                                <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" />
+                                            </span>
+                                            <span class="hub-location-file-content">
+                                                <strong>@file.Name</strong>
+                                                <small>@formatOptionalDate(file.ModifiedTime)</small>
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                            </section>
                         }
                     </div>
                 }
@@ -145,6 +186,24 @@
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.UploadFile" Disabled="@(mIsUploading || mSelectedFileOrNull == null)" OnClick="uploadFileAsync" Class="hub-primary-action-button hub-upload-button">파일 올리기</MudButton>
                     </div>
                 </div>
+                @if (mUploadConflictOrNull != null && mUploadConflictOrNull.HasConflict)
+                {
+                    <div class="hub-file-conflict-panel">
+                        <div class="hub-file-conflict-copy">
+                            <span class="hub-file-conflict-icon">
+                                <MudIcon Icon="@Icons.Material.Filled.ReportProblem" Size="Size.Small" />
+                            </span>
+                            <div>
+                                <strong>@getUploadConflictTitle()</strong>
+                                <span>새 파일로 추가할 이름: @getUploadSuggestedFileName()</span>
+                            </div>
+                        </div>
+                        <div class="hub-file-conflict-actions">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="@(() => uploadFileWithConflictResolutionAsync(EDriveFileNameConflictResolution.ReplaceExistingFile))">기존 파일 교체</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(() => uploadFileWithConflictResolutionAsync(EDriveFileNameConflictResolution.AddNewFile))">새 파일로 추가</MudButton>
+                        </div>
+                    </div>
+                }
             }
             @if (string.IsNullOrWhiteSpace(mMessage) == false)
             {
@@ -173,12 +232,15 @@
                     <div class="hub-upload-log-list">
                         @foreach (UploadAuditLogItem auditLog in mRecentUploads)
                         {
+                            string recentUploadLocationText = getRecentUploadLocationText(auditLog);
                             <div class="hub-upload-log-row">
-                                <div>
-                                    <MudText Typo="Typo.body2" Class="hub-file-compact-name">@auditLog.FileName</MudText>
-                                    <MudText Typo="Typo.caption" Class="hub-muted">@auditLog.FolderDisplayName · @formatDate(auditLog.UploadedAt)</MudText>
+                                <div class="hub-upload-log-content">
+                                    <MudText Typo="Typo.body2" Class="hub-list-title hub-file-compact-name">@auditLog.FileName</MudText>
+                                    <div class="hub-upload-log-meta-row">
+                                        <span class="hub-list-meta">@recentUploadLocationText</span>
+                                        <span class="hub-list-meta hub-uploaded-by">업로드: @auditLog.GetUploaderAffiliationText()</span>
+                                    </div>
                                 </div>
-                                <span class="hub-uploaded-by">@auditLog.UploaderDisplayName</span>
                             </div>
                         }
                     </div>

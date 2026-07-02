@@ -1,4 +1,4 @@
-@inherits OrganizationHubComponentBase
+@inherits TimeZoneAwareOrganizationHubComponentBase
 @implements IAsyncDisposable
 @inject IDriveBrowserService DriveBrowserService
 @inject IDriveService DriveService
@@ -22,7 +22,7 @@
     else
     {
         <div class="hub-drive-browser">
-            <div class="hub-browser-toolbar">
+            <div class="@getBrowserToolbarClass()">
                 @if (mRootFolders.Count > 1)
                 {
                     <MudSelect T="string" Label="@RootFolderLabel" Value="mSelectedRootFolderId" ValueChanged="handleRootFolderChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-browser-root-select">
@@ -36,10 +36,10 @@
                 {
                     <div class="hub-browser-root-pill">
                         <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" />
-                        <span>@getSelectedRootDisplayName()</span>
+                        <span>@getBrowserTitle()</span>
                     </div>
                 }
-                @if (EnableSearch)
+                @if (IsSearchEnabled)
                 {
                     <div class="hub-browser-search">
                         <MudTextField @bind-Value="mKeyword" Placeholder="@SearchPlaceholder" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" />
@@ -54,27 +54,28 @@
                         }
                     </div>
                 }
+                <div class="hub-browser-count">@getCountSummary()</div>
+                <MudTooltip Text="새로고침">
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Size="Size.Small" OnClick="loadCurrentFolderAsync" Disabled="mIsLoadingFiles" aria-label="새로고침" />
+                </MudTooltip>
             </div>
-            <div class="hub-browser-location">
-                <div class="hub-browser-breadcrumbs" aria-label="현재 폴더 위치">
-                    @for (int index = 0; index < mFolderPath.Count; index++)
-                    {
-                        int pathIndex = index;
-                        DriveFolderPathItem pathItem = mFolderPath[index];
-                        @if (index > 0)
+            @if (shouldShowFolderPath())
+            {
+                <div class="hub-browser-location">
+                    <div class="hub-browser-breadcrumbs" aria-label="현재 폴더 위치">
+                        @for (int index = 0; index < mFolderPath.Count; index++)
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="hub-browser-breadcrumb-separator" />
+                            int pathIndex = index;
+                            DriveFolderPathItem pathItem = mFolderPath[index];
+                            @if (index > 0)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Class="hub-browser-breadcrumb-separator" />
+                            }
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Disabled="@(index == mFolderPath.Count - 1)" OnClick="@(() => navigateToPathAsync(pathIndex))">@pathItem.Name</MudButton>
                         }
-                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Disabled="@(index == mFolderPath.Count - 1)" OnClick="@(() => navigateToPathAsync(pathIndex))">@pathItem.Name</MudButton>
-                    }
+                    </div>
                 </div>
-                <div class="hub-browser-location-actions">
-                    <div class="hub-browser-count">@getCountSummary()</div>
-                    <MudTooltip Text="새로고침">
-                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Size="Size.Small" OnClick="loadCurrentFolderAsync" Disabled="mIsLoadingFiles" aria-label="새로고침" />
-                    </MudTooltip>
-                </div>
-            </div>
+            }
             @if (mIsLoadingFiles)
             {
                 <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
@@ -97,7 +98,17 @@
                         </div>
                     </MudAlert>
                 }
-                <FileTable Files="mFiles" ShowTeam="@ShowTeam" ShowPreview="@ShowPreview" UploadedByLabel="@UploadedByLabel" EmptyMessage="@getFileEmptyMessage()" FolderOpened="openFolderAsync" CanDelete="@mCanDeleteFiles" DeleteRequested="requestDelete" />
+                <FileTable Files="mFiles"
+                           ShouldShowTeam="@ShouldShowTeam"
+                           ShouldShowPreview="@ShouldShowPreview"
+                           ShouldShowUploaderTeamName="@ShouldShowUploaderTeamName"
+                           UploadedByLabel="@UploadedByLabel"
+                           EmptyMessage="@getFileEmptyMessage()"
+                           EmptyDescription="@getFileEmptyDescription()"
+                           ClientTimeZoneInfo="ClientTimeZoneInfo"
+                           FolderOpened="openFolderAsync"
+                           CanDelete="@mCanDeleteFiles"
+                           DeleteRequested="requestDelete" />
             }
         </div>
     }

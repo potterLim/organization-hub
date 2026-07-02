@@ -1,23 +1,31 @@
 @if (Files.Count == 0)
 {
-    <ResourceStateMessage Icon="@Icons.Material.Filled.FolderOff" Title="@EmptyMessage" Class="hub-file-empty-state" />
+    <ResourceStateMessage Icon="@Icons.Material.Filled.FolderOff" Title="@EmptyMessage" Description="@EmptyDescription" Class="hub-file-empty-state" />
 }
-else if (Compact)
+else if (IsCompact)
 {
-    <FileCompactList Files="Files" ShowTeam="@ShowTeam" ShowPreview="@ShowPreview" UploadedByLabel="@UploadedByLabel" FolderOpened="FolderOpened" CanDelete="@CanDelete" DeleteRequested="DeleteRequested" />
+    <FileCompactList Files="Files"
+                     ShouldShowTeam="@ShouldShowTeam"
+                     ShouldShowPreview="@ShouldShowPreview"
+                     ShouldShowUploaderTeamName="@ShouldShowUploaderTeamName"
+                     UploadedByLabel="@UploadedByLabel"
+                     ClientTimeZoneInfo="ClientTimeZoneInfo"
+                     FolderOpened="FolderOpened"
+                     CanDelete="@CanDelete"
+                     DeleteRequested="DeleteRequested" />
 }
 else
 {
     <div class="hub-file-desktop-table">
         <MudTable Items="Files" Dense="true" Hover="true" Elevation="0" Class="hub-file-table">
             <HeaderContent>
-                <MudTh>파일명</MudTh>
-                @if (ShowTeam)
+                <MudTh Class="hub-file-name-heading">파일명</MudTh>
+                @if (ShouldShowTeam)
                 {
-                    <MudTh>분류</MudTh>
+                    <MudTh Class="hub-file-team-heading">분류</MudTh>
                 }
-                <MudTh>수정일</MudTh>
-                <MudTh></MudTh>
+                <MudTh Class="hub-file-date-heading">수정일</MudTh>
+                <MudTh Class="hub-file-action-heading"></MudTh>
             </HeaderContent>
             <RowTemplate Context="file">
                 <MudTd DataLabel="파일명" Class="hub-file-name">
@@ -36,11 +44,11 @@ else
                         </div>
                     }
                 </MudTd>
-                @if (ShowTeam)
+                @if (ShouldShowTeam)
                 {
-                    <MudTd DataLabel="분류">@file.TeamName</MudTd>
+                    <MudTd DataLabel="분류" Class="hub-file-team-cell">@file.TeamName</MudTd>
                 }
-                <MudTd DataLabel="수정일">@formatDate(file.ModifiedTime)</MudTd>
+                <MudTd DataLabel="수정일" Class="hub-file-date-cell hub-file-date-text">@formatDate(file.ModifiedTime)</MudTd>
                 <MudTd DataLabel="작업" Class="hub-action-cell">
                     <div class="hub-table-actions">
                         @if (file.IsFolder)
@@ -49,7 +57,7 @@ else
                                 <MudIconButton Icon="@Icons.Material.Filled.FolderOpen" Color="Color.Primary" Size="Size.Small" Disabled="@(FolderOpened.HasDelegate == false)" OnClick="@(() => openFolderAsync(file))" aria-label="폴더 열기" />
                             </MudTooltip>
                         }
-                        else if (ShowPreview && file.CanPreviewInSite)
+                        else if (ShouldShowPreview && file.CanPreviewInSite)
                         {
                             <MudTooltip Text="PDF 보기">
                                 <MudIconButton Href="@("/files/" + file.Id + "/viewer")" Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" Size="Size.Small" aria-label="PDF 보기" />
@@ -73,7 +81,15 @@ else
         </MudTable>
     </div>
     <div class="hub-file-mobile-list">
-        <FileCompactList Files="Files" ShowTeam="@ShowTeam" ShowPreview="@ShowPreview" UploadedByLabel="@UploadedByLabel" FolderOpened="FolderOpened" CanDelete="@CanDelete" DeleteRequested="DeleteRequested" />
+        <FileCompactList Files="Files"
+                         ShouldShowTeam="@ShouldShowTeam"
+                         ShouldShowPreview="@ShouldShowPreview"
+                         ShouldShowUploaderTeamName="@ShouldShowUploaderTeamName"
+                         UploadedByLabel="@UploadedByLabel"
+                         ClientTimeZoneInfo="ClientTimeZoneInfo"
+                         FolderOpened="FolderOpened"
+                         CanDelete="@CanDelete"
+                         DeleteRequested="DeleteRequested" />
     </div>
 }
 
@@ -83,19 +99,28 @@ else
     public IReadOnlyList<DriveFileItem> Files { get; set; } = new List<DriveFileItem>();
 
     [Parameter]
-    public bool ShowTeam { get; set; } = true;
+    public bool ShouldShowTeam { get; set; } = true;
 
     [Parameter]
-    public bool ShowPreview { get; set; }
+    public bool ShouldShowPreview { get; set; }
 
     [Parameter]
-    public bool Compact { get; set; }
+    public bool IsCompact { get; set; }
 
     [Parameter]
-    public string UploadedByLabel { get; set; } = "올린 사람";
+    public bool ShouldShowUploaderTeamName { get; set; } = true;
+
+    [Parameter]
+    public string UploadedByLabel { get; set; } = "업로드";
+
+    [Parameter]
+    public TimeZoneInfo ClientTimeZoneInfo { get; set; } = TimeZoneInfo.Local;
 
     [Parameter]
     public string EmptyMessage { get; set; } = "표시할 파일이 없습니다.";
+
+    [Parameter]
+    public string EmptyDescription { get; set; } = string.Empty;
 
     [Parameter]
     public EventCallback<DriveFileItem> FolderOpened { get; set; }
@@ -115,11 +140,11 @@ else
             }
             else
             {
-                <MudText Typo="Typo.body2">@file.Name</MudText>
+                <MudText Typo="Typo.body2" Class="hub-list-title hub-file-table-title">@file.Name</MudText>
             }
-            @if (file.IsFolder == false && string.IsNullOrWhiteSpace(file.UploadedByDisplayName) == false)
+            @if (shouldShowUploader(file))
             {
-                <MudText Typo="Typo.caption" Class="hub-muted">@UploadedByLabel: @file.UploadedByDisplayName</MudText>
+                <MudText Typo="Typo.caption" Class="hub-list-meta">@UploadedByLabel: @getUploaderText(file)</MudText>
             }
         </div>;
     }
@@ -146,7 +171,27 @@ else
 
     private bool canPreviewFile(DriveFileItem file)
     {
-        return file.IsFolder == false && ShowPreview && file.CanPreviewInSite;
+        return file.IsFolder == false && ShouldShowPreview && file.CanPreviewInSite;
+    }
+
+    private bool shouldShowUploader(DriveFileItem file)
+    {
+        if (file.IsFolder)
+        {
+            return false;
+        }
+
+        return string.IsNullOrWhiteSpace(getUploaderText(file)) == false;
+    }
+
+    private string getUploaderText(DriveFileItem file)
+    {
+        if (ShouldShowUploaderTeamName)
+        {
+            return file.GetUploaderAffiliationText();
+        }
+
+        return file.GetUploaderPositionText();
     }
 
     private string getViewerHref(DriveFileItem file)
@@ -171,7 +216,7 @@ else
             return "-";
         }
 
-        return dateTimeOrNull.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+        return PresentationDateTimeFormatter.formatClientDateTime(dateTimeOrNull.Value, ClientTimeZoneInfo, PresentationDateTimeFormatter.FULL_DATE_TIME_FORMAT);
     }
 
     private string getFileIcon(DriveFileItem file)
@@ -181,7 +226,7 @@ else
             return Icons.Material.Filled.Folder;
         }
 
-        if (file.MimeType == "application/pdf")
+        if (file.MimeType == GoogleMimeTypes.PDF)
         {
             return Icons.Material.Filled.PictureAsPdf;
         }

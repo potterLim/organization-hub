@@ -1,4 +1,4 @@
-using System.Linq;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -7,30 +7,17 @@ public partial class ApprovalInbox
 {
     private void ensureLocalStateForApprovalRequest(ApprovalRequestItem approvalRequest)
     {
-        if (mCommentsByApprovalId.ContainsKey(approvalRequest.Id) == false)
+        ApprovalRequestId approvalRequestId = ApprovalRequestId.CreateExisting(approvalRequest.Id);
+        if (mCommentsByApprovalId.ContainsKey(approvalRequestId.GetRequiredValue()) == false)
         {
-            mCommentsByApprovalId[approvalRequest.Id] = string.Empty;
-        }
-
-        if (canChangeNextApprover(approvalRequest) && mNextApproverUserIdByApprovalId.ContainsKey(approvalRequest.Id) == false)
-        {
-            ApprovalStepItem? nextStepOrNull = approvalRequest.Steps.FirstOrDefault(step => step.StepNumber == approvalRequest.CurrentStepNumber + 1);
-            if (nextStepOrNull != null)
-            {
-                mNextApproverUserIdByApprovalId[approvalRequest.Id] = nextStepOrNull.ApproverUserId;
-            }
+            setCommentValue(approvalRequestId, string.Empty);
         }
     }
 
-    private bool canChangeNextApprover(ApprovalRequestItem approvalRequest)
-    {
-        return approvalRequest.CurrentStepNumber + 1 < approvalRequest.StepCount;
-    }
-
-    private string getCommentValue(int approvalRequestId)
+    private string getCommentValue(ApprovalRequestId approvalRequestId)
     {
         string? commentOrNull;
-        if (mCommentsByApprovalId.TryGetValue(approvalRequestId, out commentOrNull))
+        if (mCommentsByApprovalId.TryGetValue(approvalRequestId.GetRequiredValue(), out commentOrNull))
         {
             return commentOrNull;
         }
@@ -38,24 +25,8 @@ public partial class ApprovalInbox
         return string.Empty;
     }
 
-    private void setCommentValue(int approvalRequestId, string comment)
+    private void setCommentValue(ApprovalRequestId approvalRequestId, string comment)
     {
-        mCommentsByApprovalId[approvalRequestId] = comment;
-    }
-
-    private int getNextApproverValue(int approvalRequestId)
-    {
-        int nextApproverUserId;
-        if (mNextApproverUserIdByApprovalId.TryGetValue(approvalRequestId, out nextApproverUserId))
-        {
-            return nextApproverUserId;
-        }
-
-        return 0;
-    }
-
-    private void setNextApproverValue(int approvalRequestId, int nextApproverUserId)
-    {
-        mNextApproverUserIdByApprovalId[approvalRequestId] = nextApproverUserId;
+        mCommentsByApprovalId[approvalRequestId.GetRequiredValue()] = comment;
     }
 }

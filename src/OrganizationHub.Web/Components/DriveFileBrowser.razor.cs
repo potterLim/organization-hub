@@ -16,28 +16,31 @@ public partial class DriveFileBrowser
     }
 
     [Parameter]
-    public bool ShowTeam { get; set; } = true;
+    public bool ShouldShowTeam { get; set; } = true;
 
     [Parameter]
-    public bool ShowPreview
+    public bool ShouldShowPreview
     {
         get; set;
     }
 
     [Parameter]
-    public bool EnableSearch
+    public bool ShouldShowUploaderTeamName { get; set; } = true;
+
+    [Parameter]
+    public bool IsSearchEnabled
     {
         get; set;
     }
 
     [Parameter]
-    public bool ManagementTeamOnly
+    public bool IsManagementTeamOnly
     {
         get; set;
     }
 
     [Parameter]
-    public bool ExcludeManagementTeam
+    public bool ShouldExcludeManagementTeam
     {
         get; set;
     }
@@ -46,13 +49,16 @@ public partial class DriveFileBrowser
     public string EmptyMessage { get; set; } = "표시할 파일이 없습니다.";
 
     [Parameter]
-    public string UploadedByLabel { get; set; } = "올린 사람";
+    public string UploadedByLabel { get; set; } = "업로드";
 
     [Parameter]
     public string SearchPlaceholder { get; set; } = "파일명 검색";
 
     [Parameter]
     public string RootFolderLabel { get; set; } = "폴더 선택";
+
+    [Parameter]
+    public string BrowserTitle { get; set; } = string.Empty;
 
     [Parameter]
     public string ErrorMessagePrefix { get; set; } = "자료를 불러오지 못했습니다.";
@@ -76,7 +82,7 @@ public partial class DriveFileBrowser
 
     protected override async Task OnInitializedAsync()
     {
-        bool hasSession = await loadUserSessionAsync();
+        bool hasSession = await tryLoadUserSessionAsync();
         if (hasSession)
         {
             await loadRootFoldersAsync();

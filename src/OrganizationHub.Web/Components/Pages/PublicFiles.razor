@@ -3,10 +3,6 @@
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("외부 공유 자료")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">외부 공유 자료</h1>
-    </div>
-</div>
+<h1 class="hub-sr-only">외부 공유 자료</h1>
 
-<DriveFileBrowser FolderKind="EDriveFolderKind.Public" ShowTeam="false" ShowPreview="true" EnableSearch="true" SearchPlaceholder="외부 공유 자료 검색" EmptyMessage="외부 공유 자료가 없습니다." ErrorMessagePrefix="외부 공유 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." />
+<DriveFileBrowser FolderKind="EDriveFolderKind.Public" ShouldShowTeam="false" ShouldShowPreview="true" IsSearchEnabled="true" SearchPlaceholder="외부 공유 자료 검색" RootFolderLabel="외부 공유 자료" BrowserTitle="외부 공유 자료" EmptyMessage="등록된 외부 공유 자료가 없습니다." ErrorMessagePrefix="외부 공유 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." />

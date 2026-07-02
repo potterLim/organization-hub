@@ -13,6 +13,7 @@ public partial class ApprovalRequest
     {
         mFormModel.SourceFolderId = folderId;
         mFormModel.FileId = string.Empty;
+        mSuggestedRequestTitle = string.Empty;
         if (mHasCustomTitle == false)
         {
             mFormModel.Title = string.Empty;
@@ -76,6 +77,17 @@ public partial class ApprovalRequest
         await loadFilesAsync();
     }
 
+    private async Task handleCompactFileClickAsync(DriveFileItem file)
+    {
+        if (file.IsFolder)
+        {
+            await openSourceFolderAsync(file);
+            return;
+        }
+
+        selectFile(file);
+    }
+
     private async Task navigateSourceToPathAsync(int index)
     {
         if (index < 0 || index >= mSourceFolderPath.Count)
@@ -91,11 +103,7 @@ public partial class ApprovalRequest
     private void selectFile(DriveFileItem file)
     {
         mFormModel.FileId = file.Id;
-        if (mHasCustomTitle == false || string.IsNullOrWhiteSpace(mFormModel.Title))
-        {
-            mFormModel.Title = createDefaultRequestTitle(file);
-            mHasCustomTitle = false;
-        }
+        mSuggestedRequestTitle = createDefaultRequestTitle(file);
     }
 
     private DriveFolderReference? getSelectedSourceFolderOrNull()

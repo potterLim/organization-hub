@@ -15,15 +15,27 @@ public partial class Upload
     {
         mSelectedFileOrNull = inputFileChangeEventArgs.File;
         mMessage = string.Empty;
+        mUploadConflictOrNull = null;
     }
 
     private async Task uploadFileAsync()
+    {
+        await uploadFileAsync(null);
+    }
+
+    private async Task uploadFileWithConflictResolutionAsync(EDriveFileNameConflictResolution conflictResolution)
+    {
+        await uploadFileAsync(conflictResolution);
+    }
+
+    private async Task uploadFileAsync(EDriveFileNameConflictResolution? conflictResolutionOrNull)
     {
         if (CurrentUserSessionOrNull == null)
         {
             return;
         }
 
+        clearFolderMessage();
         if (mSelectedFileOrNull == null)
         {
             showMessage("올릴 파일을 선택해 주세요.", Severity.Warning);
@@ -65,18 +77,43 @@ public partial class Upload
         {
             DriveItemName selectedFileName = DriveItemName.CreateRequired(mSelectedFileOrNull.Name);
             FileContentType contentType = FilePolicyService.GetContentType(selectedFileName);
+            string currentFolderIdValue = getCurrentFolderId();
+            DriveFolderId uploadFolderId = DriveFolderId.CreateOptional(currentFolderIdValue);
+            DriveFileNameConflictCheckResult conflictCheckResult = await DriveFileNameConflictService.CheckFileNameConflictAsync(uploadFolderId, selectedFileName, CancellationToken.None);
+            if (conflictCheckResult.HasConflict && conflictResolutionOrNull.HasValue == false)
+            {
+                mUploadConflictOrNull = conflictCheckResult;
+                mIsUploading = false;
+                return;
+            }
+
             using (Stream fileStream = mSelectedFileOrNull.OpenReadStream(uploadPolicy.MaximumUploadBytes))
             {
-                string currentFolderIdValue = getCurrentFolderId();
-                DriveFolderId uploadFolderId = DriveFolderId.CreateOptional(currentFolderIdValue);
-                DriveFileItem uploadedFile = await DriveService.UploadFileAsync(uploadFolderId, fileStream, selectedFileName, contentType, CancellationToken.None);
+                EDriveFileNameConflictResolution conflictResolution = EDriveFileNameConflictResolution.AddNewFile;
+                if (conflictResolutionOrNull.HasValue)
+                {
+                    conflictResolution = conflictResolutionOrNull.GetValueOrDefault();
+                }
+
+                DriveItemName uploadFileName = getResolvedUploadFileName(selectedFileName, conflictCheckResult, conflictResolution);
+                DriveItemId replacementFileId = getReplacementFileId(conflictCheckResult, conflictResolution);
+                DriveFileUploadRequest request = createDriveFileUploadRequest(
+                    uploadFolderId,
+                    fileStream,
+                    uploadFileName,
+                    contentType,
+                    conflictResolution,
+                    replacementFileId);
+                DriveFileItem uploadedFile = await DriveService.UploadFileAsync(request, CancellationToken.None);
                 DriveFolderOwnerContext ownerContext = new DriveFolderOwnerContext(rootFolderOrNull.TeamIdOrNull, rootFolderOrNull.TeamKey, rootFolderOrNull.TeamName);
                 DriveFolderReferenceCreationRequest referenceRequest = new DriveFolderReferenceCreationRequest(uploadFolderId, getCurrentFolderDisplayName(), rootFolderOrNull.FolderKind, EDriveFolderUploadAccess.UploadAllowed, ownerContext);
                 DriveFolderReference targetFolder = new DriveFolderReference(referenceRequest);
                 await UploadAuditLogService.RecordUploadAsync(CurrentUserSessionOrNull, targetFolder, uploadedFile, CancellationToken.None);
                 DriveBrowserService.InvalidateRecentFiles(uploadFolderId);
+                await loadFoldersAsync();
                 await loadRecentUploadsAsync();
-                showMessage("파일 올리기 완료: " + uploadedFile.Name, Severity.Success);
+                mUploadConflictOrNull = null;
+                showMessage(getUploadSuccessMessage(conflictResolution, uploadedFile.Name), Severity.Success);
             }
         }
         catch
@@ -85,6 +122,66 @@ public partial class Upload
         }
 
         mIsUploading = false;
+    }
+
+    private static DriveItemName getResolvedUploadFileName(
+        DriveItemName selectedFileName,
+        DriveFileNameConflictCheckResult conflictCheckResult,
+        EDriveFileNameConflictResolution conflictResolution)
+    {
+        if (conflictResolution == EDriveFileNameConflictResolution.AddNewFile && conflictCheckResult.HasConflict)
+        {
+            return conflictCheckResult.SuggestedNewFileName;
+        }
+
+        return selectedFileName;
+    }
+
+    private static DriveItemId getReplacementFileId(
+        DriveFileNameConflictCheckResult conflictCheckResult,
+        EDriveFileNameConflictResolution conflictResolution)
+    {
+        if (conflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile && conflictCheckResult.HasConflict)
+        {
+            return conflictCheckResult.GetFirstExistingFileId();
+        }
+
+        return DriveItemId.Empty;
+    }
+
+    private static DriveFileUploadRequest createDriveFileUploadRequest(
+        DriveFolderId uploadFolderId,
+        Stream fileStream,
+        DriveItemName uploadFileName,
+        FileContentType contentType,
+        EDriveFileNameConflictResolution conflictResolution,
+        DriveItemId replacementFileId)
+    {
+        if (conflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile)
+        {
+            return DriveFileUploadRequest.CreateReplacementFile(
+                uploadFolderId,
+                fileStream,
+                uploadFileName,
+                contentType,
+                replacementFileId);
+        }
+
+        return DriveFileUploadRequest.CreateNewFile(
+            uploadFolderId,
+            fileStream,
+            uploadFileName,
+            contentType);
+    }
+
+    private string getUploadSuccessMessage(EDriveFileNameConflictResolution conflictResolution, string fileName)
+    {
+        if (conflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile)
+        {
+            return "기존 파일을 교체했습니다: " + fileName;
+        }
+
+        return "파일 올리기 완료: " + fileName;
     }
 
     private bool isCurrentPathMinutesFolder()

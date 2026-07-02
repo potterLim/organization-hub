@@ -1,15 +1,11 @@
 @page "/approvals/history"
 @attribute [Authorize]
-@inherits OrganizationHubComponentBase
+@inherits TimeZoneAwareOrganizationHubComponentBase
 @inject IApprovalService ApprovalService
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("결재 기록")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">결재 기록</h1>
-    </div>
-</div>
+<h1 class="hub-sr-only">결재 기록</h1>
 
 @if (mIsLoading)
 {
@@ -30,8 +26,8 @@ else
             <MudPaper Class="hub-card hub-approval-card pa-4">
                 <div class="hub-approval-card-head">
                     <div>
-                        <MudText Typo="Typo.h6">@approvalRequest.Title</MudText>
-                        <MudText Typo="Typo.body2" Class="hub-muted">@approvalRequest.RequesterDisplayName · @formatDate(approvalRequest.RequestedAt)</MudText>
+                        <MudText Typo="Typo.h6" Class="hub-list-title hub-approval-title">@approvalRequest.Title</MudText>
+                        <MudText Typo="Typo.body2" Class="hub-list-meta">@approvalRequest.GetRequesterAffiliationText() · @formatDate(approvalRequest.RequestedAt)</MudText>
                     </div>
                     <span class="@getStatusClass(approvalRequest)">@getStatusText(approvalRequest)</span>
                 </div>
@@ -45,21 +41,24 @@ else
                 <div class="hub-approval-steps">
                     @foreach (ApprovalStepItem step in approvalRequest.Steps)
                     {
-                        <span class="@getStepClass(step)">@getStepRoleName(approvalRequest, step) @step.ApproverDisplayName</span>
+                        <span class="@getStepClass(step)">@getStepDisplayText(approvalRequest, step)</span>
                     }
                 </div>
                 <MudExpansionPanels Elevation="0" Class="hub-approval-log-panel">
                     <MudExpansionPanel Text="기록">
-                        @foreach (ApprovalAuditLogItem auditLog in approvalRequest.AuditLogs)
+                        <div class="hub-approval-log-row hub-approval-log-header">
+                            <span class="hub-approval-log-time">일시</span>
+                            <span class="hub-approval-log-actor">처리자</span>
+                            <span class="hub-approval-log-action">처리</span>
+                            <span class="hub-approval-log-comment">내용</span>
+                        </div>
+                        @foreach (ApprovalAuditLogItem auditLog in getDisplayAuditLogs(approvalRequest))
                         {
                             <div class="hub-approval-log-row">
-                                <span>@formatDate(auditLog.CreatedAt)</span>
-                                <span>@auditLog.ActorDisplayName</span>
-                                <span>@getAuditActionText(auditLog)</span>
-                                @if (string.IsNullOrWhiteSpace(auditLog.Comment) == false)
-                                {
-                                    <span>@auditLog.Comment</span>
-                                }
+                                <span class="hub-approval-log-time">@formatDate(auditLog.CreatedAt)</span>
+                                <span class="hub-approval-log-actor">@auditLog.GetActorAffiliationText()</span>
+                                <span class="hub-approval-log-action">@getAuditActionText(approvalRequest, auditLog)</span>
+                                <span class="@getAuditCommentClass(auditLog)">@getAuditCommentText(auditLog)</span>
                             </div>
                         }
                     </MudExpansionPanel>
@@ -67,88 +66,4 @@ else
             </MudPaper>
         }
     </div>
-}
-
-@code
-{
-    private List<ApprovalRequestItem> mApprovalHistory = new List<ApprovalRequestItem>();
-    private bool mIsLoading = true;
-
-    protected override async Task OnInitializedAsync()
-    {
-        bool hasSession = await loadUserSessionAsync();
-        if (hasSession == false || CurrentUserSessionOrNull == null)
-        {
-            return;
-        }
-
-        IReadOnlyList<ApprovalRequestItem> approvalHistory = await ApprovalService.GetRelatedHistoryAsync(CurrentUserSessionOrNull, CancellationToken.None);
-        mApprovalHistory = approvalHistory.ToList();
-        mIsLoading = false;
-    }
-
-    private string getStatusText(ApprovalRequestItem approvalRequest)
-    {
-        if (approvalRequest.Status == EApprovalRequestStatus.Approved)
-        {
-            return "완료";
-        }
-
-        return "반려";
-    }
-
-    private string getStatusClass(ApprovalRequestItem approvalRequest)
-    {
-        if (approvalRequest.Status == EApprovalRequestStatus.Approved)
-        {
-            return "hub-status-pill hub-status-active";
-        }
-
-        return "hub-status-pill hub-status-inactive";
-    }
-
-    private string getStepClass(ApprovalStepItem step)
-    {
-        if (step.Status == EApprovalStepStatus.Approved)
-        {
-            return "hub-status-pill hub-status-active";
-        }
-
-        if (step.Status == EApprovalStepStatus.Rejected)
-        {
-            return "hub-status-pill hub-status-inactive";
-        }
-
-        return "hub-status-pill";
-    }
-
-    private string getStepRoleName(ApprovalRequestItem approvalRequest, ApprovalStepItem step)
-    {
-        ApprovalStepCount stepCount = new ApprovalStepCount(approvalRequest.StepCount);
-        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(step.StepNumber));
-    }
-
-    private string getAuditActionText(ApprovalAuditLogItem auditLog)
-    {
-        switch (auditLog.Action)
-        {
-            case EApprovalAuditAction.Submitted:
-                return "요청";
-            case EApprovalAuditAction.Approved:
-                return "승인";
-            case EApprovalAuditAction.Rejected:
-                return "반려";
-            case EApprovalAuditAction.ApproverChanged:
-                return auditLog.PreviousApproverDisplayName + " → " + auditLog.NewApproverDisplayName;
-            case EApprovalAuditAction.Completed:
-                return "최종 완료";
-            default:
-                return "기록";
-        }
-    }
-
-    private string formatDate(DateTime dateTime)
-    {
-        return dateTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
-    }
 }

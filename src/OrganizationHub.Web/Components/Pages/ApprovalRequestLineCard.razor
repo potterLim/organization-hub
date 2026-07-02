@@ -3,29 +3,17 @@
         <MudText Typo="Typo.h6">결재 정보</MudText>
         <MudText Typo="Typo.body2" Class="hub-muted">요청 제목과 결재 단계를 확인합니다.</MudText>
     </div>
-    <MudTextField T="string" Value="@FormModel.Title" ValueChanged="TitleChanged" Label="요청 제목" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    <MudTextField T="string" Value="@FormModel.Title" ValueChanged="TitleChanged" Label="요청 제목" Placeholder="@SuggestedTitle" Variant="Variant.Outlined" Margin="Margin.Dense" />
     <MudSelect T="int" Label="결재 단계" Value="FormModel.StepCount" ValueChanged="StepCountChanged" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@StepDescription">
         @foreach (ApprovalStepCount stepCount in CreateContext.AvailableStepCounts)
         {
             <MudSelectItem T="int" Value="@stepCount.GetRequiredValue()">@GetApprovalStepLabel(stepCount)</MudSelectItem>
         }
     </MudSelect>
-    <div class="hub-approval-flow-preview" aria-label="선택한 결재 단계">
-        @foreach (ApprovalFlowPreviewItem previewItem in ApprovalFlowPreviewItems)
-        {
-            <div class="@GetApprovalFlowStepClass(previewItem)">
-                <span class="hub-approval-flow-number">@previewItem.StepNumber</span>
-                <div>
-                    <strong>@previewItem.Title</strong>
-                    <span>@previewItem.ApproverLabel</span>
-                </div>
-            </div>
-        }
-    </div>
     <div class="hub-approval-approver-fields">
         @if (FormModel.StepCount >= 2)
         {
-            <MudSelect @key="@("first-" + FormModel.StepCount)" T="int" Label="@getApproverSelectLabel(new ApprovalStepNumber(1))" Value="FormModel.FirstApproverUserId" ValueChanged="FirstApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect @key="@("first-" + FormModel.StepCount)" T="int" Label="@getApproverSelectLabel(ApprovalStepNumber.CreateFirstApproverStep())" Value="FormModel.FirstApproverUserId" ValueChanged="FirstApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (ApprovalUserOption userOption in FirstApproverOptions)
                 {
                     <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
@@ -34,44 +22,26 @@
         }
         @if (FormModel.StepCount == 3)
         {
-            <MudSelect @key="@("second-" + FormModel.StepCount)" T="int" Label="@getApproverSelectLabel(new ApprovalStepNumber(2))" Value="FormModel.SecondApproverUserId" ValueChanged="SecondApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelect @key="@("second-" + FormModel.StepCount)" T="int" Label="@getApproverSelectLabel(ApprovalStepNumber.CreateSecondApproverStep())" Value="FormModel.SecondApproverUserId" ValueChanged="SecondApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
                 @foreach (ApprovalUserOption userOption in SecondApproverOptions)
                 {
                     <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
                 }
             </MudSelect>
         }
-        @if (FinalApproverOptions.Count == 1)
-        {
-            <div class="hub-approval-fixed-approver" role="group" aria-label="@getApproverFieldLabel(new ApprovalStepNumber(FormModel.StepCount))">
-                <span class="hub-approval-fixed-label">@getApproverFieldLabel(new ApprovalStepNumber(FormModel.StepCount))</span>
-                <div class="hub-approval-fixed-body">
-                    <span class="hub-approval-fixed-icon">
-                        <MudIcon Icon="@Icons.Material.Filled.VerifiedUser" Size="Size.Small" />
-                    </span>
-                    <div>
-                        <strong>@FinalApproverOptions[0].GetDisplayLabel()</strong>
-                        <span>설정된 결재 경로에 따라 자동 지정됩니다.</span>
-                    </div>
-                </div>
-            </div>
-        }
-        else
-        {
-            <MudSelect @key="@("final-" + FormModel.StepCount)" T="int" Label="@getApproverSelectLabel(new ApprovalStepNumber(FormModel.StepCount))" Value="FormModel.FinalApproverUserId" ValueChanged="FinalApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
-                @foreach (ApprovalUserOption userOption in FinalApproverOptions)
-                {
-                    <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
-                }
-            </MudSelect>
-        }
+        <MudSelect @key="@("final-" + FormModel.StepCount)" T="int" Label="@getApproverSelectLabel(FormModel.StepCountValue.GetRequiredStepCount().GetFinalStepNumber())" Value="FormModel.FinalApproverUserId" ValueChanged="FinalApproverChanged" Variant="Variant.Outlined" Margin="Margin.Dense">
+            @foreach (ApprovalUserOption userOption in FinalApproverOptions)
+            {
+                <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
+            }
+        </MudSelect>
     </div>
     <div class="hub-submit-row">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Approval" Disabled="@(IsSubmitting || string.IsNullOrWhiteSpace(FormModel.FileId))" OnClick="@(() => SubmitRequested.InvokeAsync())" Class="hub-primary-action-button hub-approval-submit-button">결재 요청 보내기</MudButton>
     </div>
     @if (string.IsNullOrWhiteSpace(FormModel.FileId))
     {
-        <MudText Typo="Typo.caption" Class="hub-muted hub-approval-submit-hint">결재할 파일을 선택해 주세요.</MudText>
+        <MudText Typo="Typo.caption" Class="hub-muted hub-approval-submit-hint">결재할 파일을 먼저 선택해 주세요.</MudText>
     }
 </MudPaper>
 
@@ -107,13 +77,13 @@
     } = new List<ApprovalUserOption>();
 
     [Parameter]
-    public IReadOnlyList<ApprovalFlowPreviewItem> ApprovalFlowPreviewItems
+    public string StepDescription
     {
         get; set;
-    } = new List<ApprovalFlowPreviewItem>();
+    } = string.Empty;
 
     [Parameter]
-    public string StepDescription
+    public string SuggestedTitle
     {
         get; set;
     } = string.Empty;
@@ -126,12 +96,6 @@
 
     [Parameter]
     public Func<ApprovalStepCount, string> GetApprovalStepLabel
-    {
-        get; set;
-    } = _ => string.Empty;
-
-    [Parameter]
-    public Func<ApprovalFlowPreviewItem, string> GetApprovalFlowStepClass
     {
         get; set;
     } = _ => string.Empty;
@@ -175,11 +139,12 @@
     private string getApproverFieldLabel(ApprovalStepNumber stepNumber)
     {
         ApprovalStepCount stepCount = new ApprovalStepCount(FormModel.StepCount);
-        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepNumber);
+        return ApprovalStepLabelUtility.GetStepLabel(stepCount, stepNumber);
     }
 
     private string getApproverSelectLabel(ApprovalStepNumber stepNumber)
     {
         return getApproverFieldLabel(stepNumber) + " 선택";
     }
+
 }

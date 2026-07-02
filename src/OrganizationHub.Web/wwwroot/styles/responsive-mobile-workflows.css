@@ -16,6 +16,16 @@
         grid-template-columns: minmax(0, 1fr);
     }
 
+    .hub-approval-log-header {
+        display: none;
+    }
+
+    .hub-approval-log-actor {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+    }
+
     .hub-file-desktop-table,
     .hub-calendar-desktop-table {
         display: none;

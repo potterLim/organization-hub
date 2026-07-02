@@ -10,23 +10,20 @@ namespace OrganizationHub.Web.Components.Pages;
 public partial class ApprovalInbox
 {
     private List<ApprovalRequestItem> mPendingApprovals = new List<ApprovalRequestItem>();
-    private List<ApprovalUserOption> mApproverOptions = new List<ApprovalUserOption>();
     private readonly Dictionary<int, string> mCommentsByApprovalId = new Dictionary<int, string>();
-    private readonly Dictionary<int, int> mNextApproverUserIdByApprovalId = new Dictionary<int, int>();
+    private readonly Dictionary<int, DriveFileNameConflictCheckResult> mApprovedFileConflictsByApprovalId = new Dictionary<int, DriveFileNameConflictCheckResult>();
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
     private bool mIsLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        bool hasSession = await loadUserSessionAsync();
+        bool hasSession = await tryLoadUserSessionAsync();
         if (hasSession == false || CurrentUserSessionOrNull == null)
         {
             return;
         }
 
-        ApprovalCreateContext createContext = await ApprovalService.GetCreateContextAsync(CurrentUserSessionOrNull, CancellationToken.None);
-        mApproverOptions = createContext.ApproverOptions.ToList();
         await loadDataAsync();
         mIsLoading = false;
     }

@@ -2,6 +2,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using MudBlazor;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -16,8 +17,9 @@ public partial class ApprovalRequest
         }
 
         mFormModel.DestinationFolderId = getCurrentDestinationFolderId();
-        ApprovalRequestCommand command = mFormModel.CreateCommand();
+        ApprovalRequestCommand command = mFormModel.CreateCommand(getRequestTitleValue());
         mIsSubmitting = true;
+        clearDestinationFolderMessage();
         ServiceResult submissionResult = await ApprovalService.SubmitRequestAsync(CurrentUserSessionOrNull, command, CancellationToken.None);
         mIsSubmitting = false;
         if (submissionResult.IsSuccess)
@@ -25,6 +27,7 @@ public partial class ApprovalRequest
             mMessage = "결재 요청이 등록되었습니다.";
             mMessageSeverity = Severity.Success;
             mFormModel = new ApprovalRequestFormModel();
+            mSuggestedRequestTitle = string.Empty;
             mHasCustomTitle = false;
             initializeApprovalRequestDefaults();
             await loadFilesAsync();
@@ -45,5 +48,15 @@ public partial class ApprovalRequest
         }
 
         return fileNameWithoutExtension + " 결재 요청";
+    }
+
+    private ApprovalRequestTitle getRequestTitleValue()
+    {
+        if (mFormModel.TitleValue.HasValue)
+        {
+            return mFormModel.TitleValue;
+        }
+
+        return ApprovalRequestTitle.CreateOptional(mSuggestedRequestTitle);
     }
 }

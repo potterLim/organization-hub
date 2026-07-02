@@ -1,15 +1,31 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using MudBlazor;
+using OrganizationHub.Web.Domain;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Upload
 {
+    private const string FILE_SIZE_DECIMAL_FORMAT = "0.0";
+
     private void showMessage(string message, Severity severity)
     {
         mMessage = message;
         mMessageSeverity = severity;
+    }
+
+    private void showFolderMessage(string message, Severity severity)
+    {
+        mFolderMessage = message;
+        mFolderMessageSeverity = severity;
+    }
+
+    private void clearFolderMessage()
+    {
+        mFolderMessage = string.Empty;
     }
 
     private string getCurrentFolderDisplayName()
@@ -19,32 +35,47 @@ public partial class Upload
             return "선택 위치";
         }
 
-        return mFolderPath[mFolderPath.Count - 1].Name;
+        return string.Join(" / ", mFolderPath.Select(pathItem => pathItem.Name.Trim()).Where(pathName => string.IsNullOrWhiteSpace(pathName) == false));
     }
 
     private string formatDate(DateTime dateTime)
     {
-        return dateTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+        return PresentationDateTimeFormatter.formatClientDateTime(dateTime, ClientTimeZoneInfo, PresentationDateTimeFormatter.FULL_DATE_TIME_FORMAT);
+    }
+
+    private string formatOptionalDate(DateTime? dateTimeOrNull)
+    {
+        if (dateTimeOrNull.HasValue == false)
+        {
+            return "-";
+        }
+
+        return PresentationDateTimeFormatter.formatClientDateTime(dateTimeOrNull.Value, ClientTimeZoneInfo, PresentationDateTimeFormatter.FULL_DATE_TIME_FORMAT);
     }
 
     private string formatFileSize(long size)
     {
-        if (size < 1024)
+        if (size < OrganizationHubFileLimits.BYTES_PER_KILOBYTE)
         {
             return size.ToString(CultureInfo.InvariantCulture) + " B";
         }
 
-        if (size < 1024 * 1024)
+        if (size < OrganizationHubFileLimits.BYTES_PER_MEGABYTE)
         {
-            return (size / 1024.0).ToString("0.0", CultureInfo.InvariantCulture) + " KB";
+            return (size / (double)OrganizationHubFileLimits.BYTES_PER_KILOBYTE).ToString(FILE_SIZE_DECIMAL_FORMAT, CultureInfo.InvariantCulture) + " KB";
         }
 
-        return (size / 1024.0 / 1024.0).ToString("0.0", CultureInfo.InvariantCulture) + " MB";
+        return (size / (double)OrganizationHubFileLimits.BYTES_PER_MEGABYTE).ToString(FILE_SIZE_DECIMAL_FORMAT, CultureInfo.InvariantCulture) + " MB";
     }
 
     private string getFolderCountText()
     {
-        return "하위 폴더 " + mFoldersInCurrentFolder.Count.ToString(CultureInfo.InvariantCulture) + "개";
+        return "폴더 " + mFoldersInCurrentFolder.Count.ToString(CultureInfo.InvariantCulture) + "개 · 파일 " + mFilesInCurrentFolder.Count.ToString(CultureInfo.InvariantCulture) + "개";
+    }
+
+    private bool shouldShowFolderPath()
+    {
+        return mFolderPath.Count > 1;
     }
 
     private string getSelectedFileText()
@@ -55,5 +86,25 @@ public partial class Upload
         }
 
         return mSelectedFileOrNull.Name + " · " + formatFileSize(mSelectedFileOrNull.Size);
+    }
+
+    private string getUploadConflictTitle()
+    {
+        if (mUploadConflictOrNull == null)
+        {
+            return string.Empty;
+        }
+
+        return "같은 이름의 파일이 " + mUploadConflictOrNull.ExistingFiles.Count.ToString(CultureInfo.InvariantCulture) + "개 있습니다.";
+    }
+
+    private string getUploadSuggestedFileName()
+    {
+        if (mUploadConflictOrNull == null)
+        {
+            return string.Empty;
+        }
+
+        return mUploadConflictOrNull.SuggestedNewFileName.GetRequiredValue();
     }
 }

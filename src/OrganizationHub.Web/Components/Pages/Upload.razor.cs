@@ -14,16 +14,24 @@ public partial class Upload
     private List<DriveFolderReference> mUploadRootFolders = new List<DriveFolderReference>();
     private List<DriveFolderPathItem> mFolderPath = new List<DriveFolderPathItem>();
     private List<DriveFileItem> mFoldersInCurrentFolder = new List<DriveFileItem>();
+    private List<DriveFileItem> mFilesInCurrentFolder = new List<DriveFileItem>();
     private List<UploadAuditLogItem> mRecentUploads = new List<UploadAuditLogItem>();
     private string mSelectedRootFolderId = string.Empty;
     private string mNewFolderName = string.Empty;
     private IBrowserFile? mSelectedFileOrNull;
     private string mMessage = string.Empty;
+    private string mFolderMessage = string.Empty;
     private string mFolderLoadErrorMessage = string.Empty;
     private string mRecentUploadsErrorMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
-    private PermissionDecision mCurrentFolderUploadDecision = PermissionDecision.Deny("파일을 올릴 수 있는 위치가 없습니다.", "파일 올리기");
-    private PermissionDecision mCurrentFolderCreateDecision = PermissionDecision.Deny("폴더를 만들 수 있는 위치가 없습니다.", "새 폴더");
+    private Severity mFolderMessageSeverity = Severity.Info;
+    private DriveFileNameConflictCheckResult? mUploadConflictOrNull;
+    private PermissionDecision mCurrentFolderUploadDecision = PermissionDecision.Deny(
+        PermissionDecisionReason.CreateRequired("파일을 올릴 수 있는 위치가 없습니다."),
+        PermissionScopeLabel.CreateRequired("파일 올리기"));
+    private PermissionDecision mCurrentFolderCreateDecision = PermissionDecision.Deny(
+        PermissionDecisionReason.CreateRequired("폴더를 만들 수 있는 위치가 없습니다."),
+        PermissionScopeLabel.CreateRequired("새 폴더"));
     private bool mIsLoadingFolders = true;
     private bool mIsLoadingFiles;
     private bool mIsLoadingRecentUploads;
@@ -33,7 +41,7 @@ public partial class Upload
 
     protected override async Task OnInitializedAsync()
     {
-        bool hasSession = await loadUserSessionAsync();
+        bool hasSession = await tryLoadUserSessionAsync();
         if (hasSession == false || CurrentUserSessionOrNull == null)
         {
             return;

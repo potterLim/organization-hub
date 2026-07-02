@@ -1,15 +1,12 @@
 @page "/approvals/inbox"
 @attribute [Authorize]
-@inherits OrganizationHubComponentBase
+@inherits TimeZoneAwareOrganizationHubComponentBase
 @inject IApprovalService ApprovalService
+@inject IDriveFileNameConflictService DriveFileNameConflictService
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("내 결재함")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">내 결재함</h1>
-    </div>
-</div>
+<h1 class="hub-sr-only">내 결재함</h1>
 
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
@@ -20,25 +17,24 @@
 {
     <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
 }
-else if (mPendingApprovals.Count == 0)
-{
-    <div class="hub-empty hub-empty-state">
-        <MudIcon Icon="@Icons.Material.Filled.FactCheck" Size="Size.Medium" />
-        <span>처리할 결재가 없습니다.</span>
-    </div>
-}
 else
 {
-    <div class="hub-approval-list">
+    @if (mPendingApprovals.Count == 0)
+    {
+        <ResourceStateMessage Icon="@Icons.Material.Filled.FactCheck" Title="현재 처리할 결재가 없습니다." Description="대기 중인 결재가 생기면 이 화면에 바로 표시됩니다." />
+    }
+    else
+    {
+        <div class="hub-approval-list">
         @foreach (ApprovalRequestItem approvalRequest in mPendingApprovals)
         {
             <MudPaper Class="hub-card hub-approval-card pa-4">
                 <div class="hub-approval-card-head">
                     <div>
-                        <MudText Typo="Typo.h6">@approvalRequest.Title</MudText>
-                        <MudText Typo="Typo.body2" Class="hub-muted">@approvalRequest.TeamName · @approvalRequest.RequesterDisplayName · @formatDate(approvalRequest.RequestedAt)</MudText>
+                        <MudText Typo="Typo.h6" Class="hub-list-title hub-approval-title">@approvalRequest.Title</MudText>
+                        <MudText Typo="Typo.body2" Class="hub-list-meta">@approvalRequest.GetRequesterAffiliationText() · @formatDate(approvalRequest.RequestedAt)</MudText>
                     </div>
-                    <span class="hub-status-pill hub-status-active">@getCurrentStepRoleName(approvalRequest)</span>
+                    <span class="hub-status-pill hub-status-active">@getCurrentStepLabel(approvalRequest)</span>
                 </div>
                 <div class="hub-approval-file-row">
                     <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" />
@@ -47,27 +43,53 @@ else
                         <MudIconButton Href="@("/files/" + approvalRequest.FileId + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
                     </MudTooltip>
                 </div>
-                @if (canChangeNextApprover(approvalRequest))
+                @if (shouldShowNextStepSummary(approvalRequest))
                 {
-                    <MudSelect T="int" Label="다음 결재권자" Value="@getNextApproverValue(approvalRequest.Id)" ValueChanged="@((int selectedUserId) => setNextApproverValue(approvalRequest.Id, selectedUserId))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-approval-select">
-                        @foreach (ApprovalUserOption userOption in mApproverOptions)
-                        {
-                            <MudSelectItem T="int" Value="@userOption.UserId">@userOption.GetDisplayLabel()</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <div class="hub-approval-next-step">
+                        <MudIcon Icon="@Icons.Material.Filled.Route" Size="Size.Small" />
+                        <span>@getNextStepSummaryText(approvalRequest)</span>
+                    </div>
                 }
-                <MudTextField Value="@getCommentValue(approvalRequest.Id)" ValueChanged="@((string comment) => setCommentValue(approvalRequest.Id, comment))" Label="코멘트" Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <MudTextField Value="@getCommentValue(ApprovalRequestId.CreateExisting(approvalRequest.Id))"
+                              ValueChanged="@((string comment) => setCommentValue(ApprovalRequestId.CreateExisting(approvalRequest.Id), comment))"
+                              Label="코멘트"
+                              Lines="3"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="hub-approval-comment-field" />
+                @if (hasApprovedFileConflict(approvalRequest))
+                {
+                    <div class="hub-file-conflict-panel hub-approval-conflict-panel">
+                        <div class="hub-file-conflict-copy">
+                            <span class="hub-file-conflict-icon">
+                                <MudIcon Icon="@Icons.Material.Filled.ReportProblem" Size="Size.Small" />
+                            </span>
+                            <div>
+                                <strong>@getApprovedFileConflictTitle(approvalRequest)</strong>
+                                <span>새 파일로 추가할 이름: @getApprovedFileSuggestedFileName(approvalRequest)</span>
+                            </div>
+                        </div>
+                        <div class="hub-file-conflict-actions">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="@(() => approveRequestWithConflictResolutionAsync(approvalRequest, EDriveFileNameConflictResolution.ReplaceExistingFile))">기존 파일 교체</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(() => approveRequestWithConflictResolutionAsync(approvalRequest, EDriveFileNameConflictResolution.AddNewFile))">새 파일로 추가</MudButton>
+                        </div>
+                    </div>
+                }
                 <div class="hub-approval-steps">
                     @foreach (ApprovalStepItem step in approvalRequest.Steps)
                     {
-                        <span class="@getStepClass(step)">@getStepRoleName(approvalRequest, step) @step.ApproverDisplayName</span>
+                        <span class="@getStepClass(step)">@getStepDisplayText(approvalRequest, step)</span>
                     }
                 </div>
                 <MudStack Row="true" Spacing="2" Class="hub-form-actions mt-3">
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="@(() => approveRequestAsync(approvalRequest))">승인</MudButton>
+                    @if (hasApprovedFileConflict(approvalRequest) == false)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="@(() => approveRequestAsync(approvalRequest))">승인</MudButton>
+                    }
                     <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Cancel" OnClick="@(() => rejectRequestAsync(approvalRequest))">반려</MudButton>
                 </MudStack>
             </MudPaper>
         }
-    </div>
+        </div>
+    }
 }
