@@ -1,0 +1,20 @@
+<div class="hub-dashboard-skeleton-list">
+    @for (int rowIndex = 0; rowIndex < RowCount; rowIndex++)
+    {
+        <div class="hub-dashboard-skeleton-row">
+            <span class="hub-dashboard-skeleton-line"></span>
+            <span class="hub-dashboard-skeleton-line hub-dashboard-skeleton-line-short"></span>
+        </div>
+    }
+</div>
+
+@code
+{
+    private const int DEFAULT_ROW_COUNT = 4;
+
+    [Parameter]
+    public int RowCount
+    {
+        get; set;
+    } = DEFAULT_ROW_COUNT;
+}

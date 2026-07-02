@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Models;
@@ -8,26 +9,33 @@ public partial class Dashboard
 {
     private List<DriveFileItem> mRecentMaterials = new List<DriveFileItem>();
     private List<CalendarEventItem> mWeekEvents = new List<CalendarEventItem>();
+    private List<TodoTaskItem> mWeekTodos = new List<TodoTaskItem>();
     private List<ApprovalRequestItem> mPendingApprovals = new List<ApprovalRequestItem>();
+    private TimeZoneInfo mClientTimeZoneInfo = TimeZoneInfo.Local;
     private string mPendingApprovalsErrorMessage = string.Empty;
     private string mWeekEventsErrorMessage = string.Empty;
+    private string mWeekTodosErrorMessage = string.Empty;
     private string mRecentMaterialsErrorMessage = string.Empty;
     private bool mIsLoadingPendingApprovals = true;
     private bool mIsLoadingWeekEvents = true;
+    private bool mIsLoadingWeekTodos = true;
     private bool mIsLoadingRecentMaterials = true;
-    private bool mShowCalendarAuthor;
-    private bool mCanCreateApprovalRequest;
-    private bool mCanUploadFiles;
+    private bool mShouldShowCalendarAuthor;
+    private bool mShouldShowTodoAuthor = true;
+    private Task? mDashboardSectionsObservationTaskOrNull;
+    private Task? mRecentMaterialsObservationTaskOrNull;
 
     protected override async Task OnInitializedAsync()
     {
-        bool hasSession = await loadUserSessionAsync();
+        bool hasSession = await tryLoadUserSessionAsync();
         if (hasSession == false || CurrentUserSessionOrNull == null)
         {
             return;
         }
 
-        await loadQuickActionPermissionsAsync();
-        _ = loadDashboardSectionsAsync();
+        Task dashboardSectionsTask = loadDashboardSectionsAsync();
+        mDashboardSectionsObservationTaskOrNull = observeFaultedTaskAsync(
+            dashboardSectionsTask,
+            "Dashboard section loading failed after the home page was rendered.");
     }
 }

@@ -4,6 +4,10 @@
     align-items: stretch;
 }
 
+.hub-dashboard-grid {
+    --hub-dashboard-list-row-height: 74.8px;
+}
+
 .hub-dashboard-grid .hub-card,
 .hub-calendar-grid .hub-card {
     height: 100%;
@@ -11,6 +15,29 @@
 
 .hub-dashboard-recent-mobile {
     display: none;
+}
+
+.hub-dashboard-grid .hub-dashboard-section-card {
+    display: flex;
+    flex-direction: column;
+    height: 342px;
+    min-height: 342px;
+}
+
+.hub-dashboard-card-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.hub-dashboard-card-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.hub-dashboard-card-body::-webkit-scrollbar-thumb {
+    background: rgba(104, 121, 154, .28);
+    border-radius: 999px;
 }
 
 .hub-dashboard-more-button {
@@ -130,26 +157,39 @@
 
 .hub-dashboard-approval-row {
     align-items: center;
+    align-content: center;
     background: rgba(255, 255, 255, .52);
     border: 1px solid rgba(78, 104, 145, .12);
     border-radius: 16px;
     display: grid;
     gap: 12px;
-    grid-template-columns: minmax(0, 1fr) auto;
-    min-height: 58px;
+    grid-template-columns: minmax(0, 1fr);
+    height: var(--hub-dashboard-list-row-height);
+    min-height: var(--hub-dashboard-list-row-height);
+    overflow: hidden;
     padding: 11px 13px;
 }
 
-.hub-dashboard-approval-row > div {
+.hub-dashboard-approval-content {
+    display: grid;
+    gap: 5px;
     min-width: 0;
 }
 
-.hub-dashboard-approval-title {
-    color: var(--hub-text-strong);
-    font-weight: 900 !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.hub-dashboard-approval-step {
+    justify-self: end;
+}
+
+.hub-dashboard-row-main {
+    align-items: center;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-width: 0;
+}
+
+.hub-dashboard-row-side {
+    justify-self: end;
 }
 
 .hub-dashboard-event-list {
@@ -158,34 +198,99 @@
 }
 
 .hub-dashboard-event-row {
+    align-content: center;
     background: rgba(255, 255, 255, .5);
     border: 1px solid rgba(78, 104, 145, .1);
     border-radius: 16px;
     cursor: default;
     display: grid;
-    gap: 4px;
-    min-height: 58px;
+    gap: 5px;
+    height: var(--hub-dashboard-list-row-height);
+    min-height: var(--hub-dashboard-list-row-height);
+    overflow: hidden;
     padding: 12px 14px;
 }
 
-.hub-dashboard-event-row .mud-typography-body2 {
-    color: var(--hub-text-strong);
-    font-weight: 850;
+.hub-dashboard-event-meta-row {
+    align-items: center;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) minmax(96px, auto);
+    min-width: 0;
+}
+
+.hub-dashboard-event-location {
+    justify-self: end;
+    max-width: 180px;
+    min-width: 0;
+    overflow: hidden;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hub-dashboard-todo-list {
+    display: grid;
+    gap: 10px;
+}
+
+.hub-dashboard-todo-row {
+    align-items: center;
+    background: rgba(255, 255, 255, .52);
+    border: 1px solid rgba(78, 104, 145, .11);
+    border-radius: 16px;
+    display: grid;
+    gap: 11px;
+    grid-template-columns: auto minmax(0, 1fr);
+    height: var(--hub-dashboard-list-row-height);
+    min-height: var(--hub-dashboard-list-row-height);
+    overflow: hidden;
+    padding: 11px 13px;
+}
+
+.hub-dashboard-todo-check {
+    align-items: center;
+    background: rgba(82, 103, 255, .08);
+    border-radius: 12px;
+    color: var(--hub-brand);
+    display: inline-flex;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
+}
+
+.hub-dashboard-todo-content {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.hub-dashboard-todo-meta-row {
+    align-items: center;
+    color: var(--hub-text-muted);
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
 }
 
 .hub-dashboard-material-list {
     display: grid;
-    gap: 11px;
+    gap: 10px;
 }
 
 .hub-dashboard-material-row {
+    align-content: center;
     background: rgba(255, 255, 255, .54);
     border: 1px solid rgba(78, 104, 145, .12);
     border-radius: 16px;
     display: grid;
-    gap: 8px;
+    gap: 5px;
+    height: var(--hub-dashboard-list-row-height);
+    min-height: var(--hub-dashboard-list-row-height);
     min-width: 0;
-    padding: 12px 13px;
+    overflow: hidden;
+    padding: 9px 13px;
 }
 
 .hub-dashboard-material-title-row {
@@ -204,23 +309,24 @@
     min-width: 0;
 }
 
-.hub-dashboard-material-name {
-    color: var(--hub-text-strong);
-    font-weight: 900 !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 .hub-dashboard-material-actions {
     align-self: center;
+}
+
+.hub-dashboard-material-actions .mud-icon-button,
+.hub-dashboard-material-actions .mud-icon-button-root {
+    height: 30px !important;
+    min-height: 30px !important;
+    min-width: 30px !important;
+    padding: 5px !important;
+    width: 30px !important;
 }
 
 .hub-dashboard-material-meta-row {
     align-items: center;
     display: grid;
-    gap: 10px;
-    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) minmax(142px, 178px);
     min-width: 0;
 }
 
@@ -238,41 +344,7 @@
     opacity: .82;
 }
 
-.hub-dashboard-material-path {
-    color: var(--hub-text-muted);
-    font-size: 12px;
-    font-weight: 900;
-    line-height: 1.45;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.hub-dashboard-material-date {
-    color: var(--hub-text-soft);
-    flex: 0 0 auto;
-    font-size: 11.5px;
-    font-weight: 850;
-    line-height: 1.45;
-    white-space: nowrap;
-}
-
-.hub-dashboard-material-date::before {
-    color: rgba(81, 98, 127, .42);
-    content: "·";
-    font-weight: 900;
-    margin-right: 7px;
-}
-
 .hub-dashboard-material-uploader {
-    color: var(--hub-text-muted);
-    font-size: 12px;
-    font-weight: 850;
-    line-height: 1.45;
-    max-width: 190px;
-    overflow: hidden;
-    text-align: right;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 178px;
+    text-align: left;
 }
-

@@ -34,19 +34,33 @@ public partial class Todos
         }
 
         TodoTaskItem sourceTask = pendingTasks[sourceIndex];
+        TodoTaskItem targetTask = pendingTasks[targetIndex];
+        if (sourceTask.TaskListId != targetTask.TaskListId || canWriteTask(sourceTask) == false)
+        {
+            return;
+        }
+
+        List<TodoTaskItem> sameListPendingTasks = pendingTasks.Where(task => task.TaskListId == sourceTask.TaskListId).ToList();
+        sourceIndex = sameListPendingTasks.FindIndex(task => task.Id == requiredSourceTaskId);
+        targetIndex = sameListPendingTasks.FindIndex(task => task.Id == requiredTargetTaskId);
+        if (sourceIndex < 0 || targetIndex < 0)
+        {
+            return;
+        }
+
         if (targetIndex == sourceIndex || targetIndex == sourceIndex + 1)
         {
             return;
         }
 
-        pendingTasks.RemoveAt(sourceIndex);
-        targetIndex = pendingTasks.FindIndex(task => task.Id == requiredTargetTaskId);
+        sameListPendingTasks.RemoveAt(sourceIndex);
+        targetIndex = sameListPendingTasks.FindIndex(task => task.Id == requiredTargetTaskId);
         if (targetIndex < 0)
         {
             return;
         }
 
-        TodoTaskId previousTaskId = targetIndex <= 0 ? TodoTaskId.Empty : TodoTaskId.CreateOptional(pendingTasks[targetIndex - 1].Id);
+        TodoTaskId previousTaskId = targetIndex <= 0 ? TodoTaskId.Empty : TodoTaskId.CreateOptional(sameListPendingTasks[targetIndex - 1].Id);
         await moveTaskAsync(sourceTask, previousTaskId);
     }
 
@@ -72,8 +86,14 @@ public partial class Todos
             return;
         }
 
-        int sourceIndex = pendingTasks.IndexOf(sourceTaskOrNull);
-        int targetIndex = pendingTasks.IndexOf(targetTaskOrNull);
+        if (sourceTaskOrNull.TaskListId != targetTaskOrNull.TaskListId || canWriteTask(sourceTaskOrNull) == false)
+        {
+            return;
+        }
+
+        List<TodoTaskItem> sameListPendingTasks = pendingTasks.Where(task => task.TaskListId == sourceTaskOrNull.TaskListId).ToList();
+        int sourceIndex = sameListPendingTasks.IndexOf(sourceTaskOrNull);
+        int targetIndex = sameListPendingTasks.IndexOf(targetTaskOrNull);
         if (targetIndex == sourceIndex || targetIndex == sourceIndex - 1)
         {
             return;
@@ -113,14 +133,38 @@ public partial class Todos
     [JSInvokable("MoveTaskBeforeFromScript")]
     public async Task MoveTaskBeforeFromScriptAsync(string sourceTaskId, string targetTaskId)
     {
-        await moveTaskBeforeAsync(TodoTaskId.CreateOptional(sourceTaskId), TodoTaskId.CreateOptional(targetTaskId));
+        await moveTaskBeforeAsync(SortableItemMoveRequest.CreateFromScript(sourceTaskId, targetTaskId, ESortableMoveDirection.Before));
         await InvokeAsync(StateHasChanged);
     }
 
     [JSInvokable("MoveTaskAfterFromScript")]
     public async Task MoveTaskAfterFromScriptAsync(string sourceTaskId, string targetTaskId)
     {
-        await moveTaskAfterAsync(TodoTaskId.CreateOptional(sourceTaskId), TodoTaskId.CreateOptional(targetTaskId));
+        await moveTaskAfterAsync(SortableItemMoveRequest.CreateFromScript(sourceTaskId, targetTaskId, ESortableMoveDirection.After));
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task moveTaskBeforeAsync(SortableItemMoveRequest moveRequest)
+    {
+        if (moveRequest.HasRequiredItems == false)
+        {
+            return;
+        }
+
+        await moveTaskBeforeAsync(
+            TodoTaskId.CreateOptional(moveRequest.SourceItemKey.GetOptionalValue()),
+            TodoTaskId.CreateOptional(moveRequest.TargetItemKey.GetOptionalValue()));
+    }
+
+    private async Task moveTaskAfterAsync(SortableItemMoveRequest moveRequest)
+    {
+        if (moveRequest.HasRequiredItems == false)
+        {
+            return;
+        }
+
+        await moveTaskAfterAsync(
+            TodoTaskId.CreateOptional(moveRequest.SourceItemKey.GetOptionalValue()),
+            TodoTaskId.CreateOptional(moveRequest.TargetItemKey.GetOptionalValue()));
     }
 }

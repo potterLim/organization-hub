@@ -6,13 +6,11 @@
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("업무 기준")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">업무 기준</h1>
-        <div class="hub-page-description">조직에서 함께 지킬 자료 관리 기준을 확인합니다.</div>
-    </div>
-    <AuthorizeView Policy="@OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE">
-        <Authorized>
+<h1 class="hub-sr-only">업무 기준</h1>
+
+<AuthorizeView Policy="@OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE">
+    <Authorized>
+        <div class="hub-page-command-row">
             @if (mIsEditMode)
             {
                 <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="cancelEditAsync">편집 취소</MudButton>
@@ -21,9 +19,9 @@
             {
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" OnClick="enterEditMode">업무 기준 편집</MudButton>
             }
-        </Authorized>
-    </AuthorizeView>
-</div>
+        </div>
+    </Authorized>
+</AuthorizeView>
 
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
@@ -88,18 +86,25 @@ else
 }
 
 @code {
-    private RenderFragment renderGuidelineGrid(IReadOnlyList<WorkGuidelineSectionFormModel> sectionFormModels) => @<div class="hub-rule-grid">
-        @foreach (WorkGuidelineSectionFormModel sectionFormModel in sectionFormModels)
+    private RenderFragment renderGuidelineGrid(IReadOnlyList<WorkGuidelineSectionFormModel> sectionFormModels) => @<div class="@getGuidelineGridClass(sectionFormModels)">
+        @if (sectionFormModels.Count == 0)
         {
-            <MudPaper Class="hub-card pa-4">
-                <MudText Typo="Typo.h6">@sectionFormModel.Title</MudText>
-                <ul class="hub-rule-list">
-                    @foreach (string line in getGuidelineLines(sectionFormModel.Body))
-                    {
-                        <li>@line</li>
-                    }
-                </ul>
-            </MudPaper>
+            <ResourceStateMessage Icon="@Icons.Material.Filled.Rule" Title="등록된 업무 기준이 없습니다." Description="관리자가 업무 기준을 추가하면 이곳에 표시됩니다." />
+        }
+        else
+        {
+            @foreach (WorkGuidelineSectionFormModel sectionFormModel in sectionFormModels)
+            {
+                <MudPaper Class="hub-card pa-4">
+                    <MudText Typo="Typo.h6">@sectionFormModel.Title</MudText>
+                    <ul class="hub-rule-list">
+                        @foreach (string line in getGuidelineLines(sectionFormModel.Body))
+                        {
+                            <li>@line</li>
+                        }
+                    </ul>
+                </MudPaper>
+            }
         }
     </div>;
 }

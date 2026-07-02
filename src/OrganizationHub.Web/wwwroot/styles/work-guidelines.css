@@ -1,8 +1,21 @@
 .hub-rule-grid {
     align-items: stretch;
+    --hub-work-guideline-column-count: 3;
     display: grid;
     gap: 20px;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(var(--hub-work-guideline-column-count), minmax(0, 1fr));
+}
+
+.hub-rule-grid-empty {
+    display: block;
+}
+
+.hub-rule-grid-two-columns {
+    --hub-work-guideline-column-count: 2;
+}
+
+.hub-rule-grid-three-columns {
+    --hub-work-guideline-column-count: 3;
 }
 
 .hub-rule-grid .hub-card {
@@ -55,4 +68,16 @@
 
 .hub-work-guideline-editor-row .mud-input-control {
     margin-bottom: 8px;
+}
+
+@media (max-width: 1180px) {
+    .hub-rule-grid-three-columns {
+        --hub-work-guideline-column-count: 2;
+    }
+}
+
+@media (max-width: 760px) {
+    .hub-rule-grid {
+        --hub-work-guideline-column-count: 1;
+    }
 }

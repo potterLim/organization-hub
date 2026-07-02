@@ -1,5 +1,37 @@
-@media (max-width: 720px) {
+@media (max-width: 1180px) {
     .hub-todo-toolbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-todo-toolbar-head {
+        align-items: stretch;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-todo-toolbar-actions {
+        justify-content: flex-end;
+    }
+
+    .hub-todo-toolbar-controls {
+        grid-template-columns: minmax(0, 1fr) minmax(136px, 160px);
+        max-width: none;
+    }
+}
+
+@media (max-width: 720px) {
+    .hub-calendar-date-time-panel {
+        left: 50%;
+        max-width: calc(100vw - 32px);
+        right: auto;
+        transform: translateX(-50%);
+        width: calc(100vw - 32px);
+    }
+
+    .hub-todo-toolbar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-todo-toolbar-controls {
         grid-template-columns: minmax(0, 1fr);
     }
 
@@ -10,6 +42,10 @@
     .hub-todo-create-bar {
         grid-template-columns: 24px minmax(0, 1fr);
         padding: 10px;
+    }
+
+    .hub-todo-create-bar .hub-calendar-date-time-field {
+        grid-column: 1 / -1;
     }
 
     .hub-todo-create-button {
@@ -49,6 +85,27 @@
 
     .hub-todo-delete-confirm {
         width: 100%;
+    }
+
+    .hub-todo-title-row {
+        gap: 4px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-todo-meta-row {
+        gap: 4px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-todo-meta-trailing {
+        grid-column: auto;
+        justify-self: start;
+        text-align: left;
+        white-space: normal;
+    }
+
+    .hub-todo-edit-due-row {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .hub-rule-grid {
@@ -93,6 +150,16 @@
         flex-direction: column;
     }
 
+    .hub-calendar-inline-actions {
+        align-self: stretch;
+        justify-content: flex-end;
+    }
+
+    .hub-calendar-inline-actions .mud-button-root {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
     .hub-calendar-period-control {
         justify-content: space-between;
         width: 100%;
@@ -107,6 +174,42 @@
 
     .hub-calendar-grid .hub-card.pa-4 {
         padding: 18px !important;
+    }
+
+    .hub-calendar-list-item-head {
+        gap: 4px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-calendar-list-item-time {
+        justify-self: start;
+        text-align: left;
+        white-space: normal;
+    }
+
+    .hub-calendar-list-meta-row {
+        gap: 4px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-calendar-list-meta-trailing {
+        grid-column: auto;
+        justify-self: start;
+        text-align: left;
+        white-space: normal;
+    }
+
+    .hub-calendar-day-detail-title-row,
+    .hub-calendar-day-detail-meta-row {
+        gap: 4px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-calendar-day-detail-meta-trailing {
+        justify-self: start !important;
+        max-width: 100%;
+        text-align: left;
+        white-space: normal;
     }
 
     .hub-calendar-month-grid {
@@ -136,7 +239,7 @@
         margin-bottom: 8px;
     }
 
-    .hub-calendar-day-date span:first-child::after {
+    .hub-calendar-day-number::after {
         content: "일";
     }
 

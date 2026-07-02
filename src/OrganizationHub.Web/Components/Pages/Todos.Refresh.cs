@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.JSInterop;
 using OrganizationHub.Web.Domain;
@@ -13,6 +14,7 @@ public partial class Todos
     {
         if (firstRender)
         {
+            await initializeClientTimeZoneAsync();
             await initializeChangeRefreshAsync();
         }
 
@@ -113,6 +115,18 @@ public partial class Todos
 
         mRefreshModuleOrNull = await JavaScriptRuntime.InvokeAsync<IJSObjectReference>("import", "/js/organizationHubChangeRefresh.js");
         await mRefreshModuleOrNull.InvokeVoidAsync("initializeChangeRefresh", mRefreshScopeElement, mDotNetReferenceOrNull);
+    }
+
+    private async Task initializeClientTimeZoneAsync()
+    {
+        TimeZoneInfo clientTimeZoneInfo = await ClientTimeZoneService.GetClientTimeZoneAsync(CancellationToken.None);
+        if (string.Equals(mClientTimeZoneInfo.Id, clientTimeZoneInfo.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        mClientTimeZoneInfo = clientTimeZoneInfo;
+        await InvokeAsync(StateHasChanged);
     }
 
     public async ValueTask DisposeAsync()

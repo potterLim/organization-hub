@@ -19,6 +19,7 @@ public partial class Calendar
         mRefreshModuleOrNull = await JavaScriptRuntime.InvokeAsync<IJSObjectReference>("import", "/js/organizationHubChangeRefresh.js");
         mRefreshDotNetReferenceOrNull = DotNetObjectReference.Create(this);
         await mRefreshModuleOrNull.InvokeVoidAsync("initializeChangeRefresh", mRefreshScopeElement, mRefreshDotNetReferenceOrNull);
+        await initializeClientTimeZoneAsync();
     }
 
     [JSInvokable("CheckForExternalChanges")]

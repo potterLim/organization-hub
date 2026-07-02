@@ -18,6 +18,8 @@ public partial class Todos
 
         mEditingTaskId = task.Id;
         mEditingTitle = task.Title;
+        mEditingDueAt = createEditorDueAtOrNull(task.DueAt);
+        mIsEditingDuePickerOpen = false;
         mDeletingTaskId = string.Empty;
     }
 
@@ -30,6 +32,8 @@ public partial class Todos
     {
         mEditingTaskId = string.Empty;
         mEditingTitle = string.Empty;
+        mEditingDueAt = null;
+        mIsEditingDuePickerOpen = false;
     }
 
     private void requestDelete(TodoTaskItem task)
@@ -42,6 +46,8 @@ public partial class Todos
         mDeletingTaskId = task.Id;
         mEditingTaskId = string.Empty;
         mEditingTitle = string.Empty;
+        mEditingDueAt = null;
+        mIsEditingDuePickerOpen = false;
     }
 
     private void cancelDelete()
@@ -61,9 +67,11 @@ public partial class Todos
         try
         {
             string editedTitle = mEditingTitle.Trim();
+            DateTime? editedDueAtUtcOrNull = createDueAtUtcOrNull(mEditingDueAt);
             TodoTaskItem optimisticTask = cloneTask(task);
             optimisticTask.Title = editedTitle;
-            optimisticTask.UpdatedAt = DateTimeOffset.Now;
+            optimisticTask.DueAt = editedDueAtUtcOrNull;
+            optimisticTask.UpdatedAt = DateTimeOffset.UtcNow;
             replaceTask(optimisticTask);
             cancelEdit();
             mMessage = string.Empty;
@@ -72,6 +80,7 @@ public partial class Todos
             formModel.TaskListId = task.TaskListId;
             formModel.TaskId = task.Id;
             formModel.Title = editedTitle;
+            formModel.DueAtUtc = editedDueAtUtcOrNull;
             TodoTaskItem updatedTask = await TodoService.UpdateTaskAsync(CurrentUserSessionOrNull, formModel, CancellationToken.None);
             updatedTask.TaskListDisplayName = task.TaskListDisplayName;
             replaceTask(updatedTask);
@@ -82,10 +91,23 @@ public partial class Todos
             mTasks = cloneTasks(previousTasks);
             mEditingTaskId = task.Id;
             mEditingTitle = task.Title;
+            mEditingDueAt = createEditorDueAtOrNull(task.DueAt);
             showError(createTodoErrorMessage(exception));
         }
 
         mIsSaving = false;
+    }
+
+    private Task setEditingDueAtAsync(DateTime? dueAtOrNull)
+    {
+        mEditingDueAt = dueAtOrNull;
+        return Task.CompletedTask;
+    }
+
+    private Task setEditingDuePickerOpenAsync(bool isOpen)
+    {
+        mIsEditingDuePickerOpen = isOpen;
+        return Task.CompletedTask;
     }
 
     private async Task deleteTaskAsync(TodoTaskItem task)
@@ -99,7 +121,7 @@ public partial class Todos
         List<TodoTaskItem> previousTasks = cloneTasks(mTasks);
         try
         {
-            removeTaskFromLocalList(task.TaskListId, task.Id);
+            removeTaskFromLocalList(TodoTaskListId.CreateOptional(task.TaskListId), TodoTaskId.CreateOptional(task.Id));
             mDeletingTaskId = string.Empty;
             mMessage = string.Empty;
             await InvokeAsync(StateHasChanged);

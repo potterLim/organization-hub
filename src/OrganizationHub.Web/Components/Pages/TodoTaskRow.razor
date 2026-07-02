@@ -1,4 +1,4 @@
-<div class="@getRowClass()" data-task-id="@Task.Id">
+<div class="@getRowClass()" data-task-id="@Task.Id" data-task-list-id="@Task.TaskListId">
     @if (CanDrag)
     {
         <span class="hub-todo-drag-handle" data-task-id="@Task.Id" role="button" aria-label="순서 변경">
@@ -9,14 +9,34 @@
     <div class="hub-todo-row-main">
         @if (IsEditing)
         {
-            <MudTextField T="string" Value="@EditingTitle" ValueChanged="EditingTitleChanged" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Class="hub-todo-edit-field" />
+            <div class="hub-todo-edit-panel">
+                <MudTextField T="string" Label="할 일 제목" Value="@EditingTitle" ValueChanged="EditingTitleChanged" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Class="hub-todo-edit-field" />
+                <div class="hub-todo-edit-due-row">
+                    <CalendarDateTimeField Label="마감 기한"
+                                           Value="@EditingDueAt"
+                                           ValueChanged="@EditingDueAtChanged"
+                                           CurrentDateOrNull="@CurrentDateOrNull"
+                                           CanClearValue="true"
+                                           ClearValueText="마감 기한 없음"
+                                           IsOpen="@IsDuePickerOpen"
+                                           IsOpenChanged="@IsDuePickerOpenChanged" />
+                </div>
+            </div>
         }
         else
         {
-            <MudText Typo="Typo.body2" Class="hub-todo-title">@Task.Title</MudText>
+            <div class="hub-todo-title-row">
+                <MudText Typo="Typo.body2" Class="hub-list-title hub-todo-title">@Task.Title</MudText>
+                @if (string.IsNullOrWhiteSpace(TaskTrailingMeta) == false)
+                {
+                    <MudText Typo="Typo.caption" Class="@getTaskTrailingMetaClass()">@TaskTrailingMeta</MudText>
+                }
+            </div>
             @if (string.IsNullOrWhiteSpace(TaskMeta) == false)
             {
-                <MudText Typo="Typo.caption" Class="hub-muted hub-todo-meta">@TaskMeta</MudText>
+                <div class="hub-todo-meta-row">
+                    <MudText Typo="Typo.caption" Class="hub-list-meta hub-todo-meta">@TaskMeta</MudText>
+                </div>
             }
         }
     </div>
@@ -76,10 +96,31 @@
     public EventCallback<string> EditingTitleChanged { get; set; }
 
     [Parameter]
+    public DateTime? EditingDueAt { get; set; }
+
+    [Parameter]
+    public EventCallback<DateTime?> EditingDueAtChanged { get; set; }
+
+    [Parameter]
+    public DateTime? CurrentDateOrNull { get; set; }
+
+    [Parameter]
+    public bool IsDuePickerOpen { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsDuePickerOpenChanged { get; set; }
+
+    [Parameter]
     public bool IsDeleting { get; set; }
 
     [Parameter]
     public string TaskMeta { get; set; } = string.Empty;
+
+    [Parameter]
+    public string TaskTrailingMeta { get; set; } = string.Empty;
+
+    [Parameter]
+    public string TaskTrailingMetaClass { get; set; } = string.Empty;
 
     [Parameter]
     public EventCallback<bool> CompletionChanged { get; set; }
@@ -115,5 +156,16 @@
         }
 
         return rowClass;
+    }
+
+    private string getTaskTrailingMetaClass()
+    {
+        string metaClass = "hub-list-side hub-todo-meta hub-todo-meta-trailing";
+        if (string.IsNullOrWhiteSpace(TaskTrailingMetaClass) == false)
+        {
+            metaClass += " " + TaskTrailingMetaClass;
+        }
+
+        return metaClass;
     }
 }

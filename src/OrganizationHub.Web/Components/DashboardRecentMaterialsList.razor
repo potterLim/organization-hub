@@ -1,0 +1,89 @@
+<div class="hub-dashboard-material-list">
+    @if (Files.Count == 0)
+    {
+        <div class="hub-empty hub-empty-state">
+            <MudIcon Icon="@Icons.Material.Filled.FolderOff" Size="Size.Medium" />
+            <span>최근 팀 자료가 없습니다.</span>
+        </div>
+    }
+    else
+    {
+        @foreach (DriveFileItem file in Files)
+        {
+            <div class="hub-dashboard-material-row">
+                <div class="hub-dashboard-material-title-row">
+                    <div class="hub-dashboard-material-title-main">
+                        <MudIcon Icon="@getFileIcon(file)" Size="Size.Small" Class="hub-file-icon" />
+                        <MudText Typo="Typo.body2" Class="hub-list-title hub-dashboard-material-name">@file.Name</MudText>
+                    </div>
+                    <div class="hub-table-actions hub-dashboard-material-actions">
+                        @if (file.CanPreviewInSite)
+                        {
+                            <MudTooltip Text="PDF 보기">
+                                <MudIconButton Href="@("/files/" + file.Id + "/viewer")" Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" Size="Size.Small" aria-label="PDF 보기" />
+                            </MudTooltip>
+                        }
+                        <MudTooltip Text="다운로드">
+                            <MudIconButton Href="@("/files/" + file.Id + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
+                        </MudTooltip>
+                    </div>
+                </div>
+                <div class="hub-dashboard-material-meta-row">
+                    <div class="hub-dashboard-material-location">
+                        <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" Class="hub-dashboard-material-folder-icon" />
+                        <span class="hub-list-meta hub-dashboard-material-path">@getRecentMaterialPath(file)</span>
+                    </div>
+                    @if (string.IsNullOrWhiteSpace(file.GetUploaderAffiliationText()) == false)
+                    {
+                        <div class="hub-list-meta hub-dashboard-material-uploader">@getRecentMaterialUploaderText(file)</div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code
+{
+    [Parameter]
+    public IReadOnlyList<DriveFileItem> Files
+    {
+        get; set;
+    } = new List<DriveFileItem>();
+
+    private static string getRecentMaterialPath(DriveFileItem file)
+    {
+        string folderName = file.FolderDisplayName.Trim();
+        if (string.IsNullOrWhiteSpace(folderName) == false)
+        {
+            return folderName;
+        }
+
+        return getRecentMaterialTeamName(file);
+    }
+
+    private static string getRecentMaterialUploaderText(DriveFileItem file)
+    {
+        return "업로드: " + file.GetUploaderAffiliationText();
+    }
+
+    private static string getRecentMaterialTeamName(DriveFileItem file)
+    {
+        if (string.IsNullOrWhiteSpace(file.TeamName))
+        {
+            return "분류 없음";
+        }
+
+        return file.TeamName.Trim();
+    }
+
+    private static string getFileIcon(DriveFileItem file)
+    {
+        if (file.MimeType == GoogleMimeTypes.PDF)
+        {
+            return Icons.Material.Filled.PictureAsPdf;
+        }
+
+        return Icons.Material.Filled.InsertDriveFile;
+    }
+}

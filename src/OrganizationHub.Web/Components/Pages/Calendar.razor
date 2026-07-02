@@ -5,30 +5,16 @@
 @inject IPermissionService PermissionService
 @inject ICalendarService CalendarService
 @inject ICalendarEventDeletionAuditLogService CalendarEventDeletionAuditLogService
-@inject ITeamManagementService TeamManagementService
+@inject IGlobalSettingService GlobalSettingService
 @inject IChangeVersionService ChangeVersionService
+@inject IClientTimeZoneService ClientTimeZoneService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JavaScriptRuntime
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("일정")</PageTitle>
 
-<div class="hub-page-header" @ref="mRefreshScopeElement">
-    <div>
-        <h1 class="hub-page-title">일정</h1>
-    </div>
-    <div class="hub-page-actions">
-        @if (mHasExternalChanges)
-        {
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Sync" OnClick="loadEventsAsync" Class="hub-freshness-button">새 내용</MudButton>
-        }
-        <MudTooltip Text="새로고침">
-            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" OnClick="loadEventsAsync" Disabled="mIsLoading" aria-label="새로고침" />
-        </MudTooltip>
-        @if (mWritableCalendars.Count > 0)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="openCreateEditor" StartIcon="@Icons.Material.Filled.Add">일정 추가</MudButton>
-        }
-    </div>
+<div @ref="mRefreshScopeElement">
+    <h1 class="hub-sr-only">일정</h1>
 </div>
 
 <MudPaper Class="hub-card hub-calendar-toolbar pa-4 mb-4">
@@ -54,6 +40,19 @@
             <div class="hub-calendar-view-switch" aria-label="일정 보기 방식">
                 <button type="button" class="@getCalendarViewButtonClass(ECalendarDisplayMode.List)" @onclick="@(() => setCalendarDisplayModeAsync(ECalendarDisplayMode.List))">목록</button>
                 <button type="button" class="@getCalendarViewButtonClass(ECalendarDisplayMode.Month)" @onclick="@(() => setCalendarDisplayModeAsync(ECalendarDisplayMode.Month))">달력</button>
+            </div>
+            <div class="hub-calendar-inline-actions">
+                @if (mWritableCalendars.Count > 0)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="openCreateEditor" StartIcon="@Icons.Material.Filled.Add">일정 추가</MudButton>
+                }
+                @if (mHasExternalChanges)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Sync" OnClick="loadEventsAsync" Class="hub-freshness-button">새 내용</MudButton>
+                }
+                <MudTooltip Text="새로고침">
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" OnClick="loadEventsAsync" Disabled="mIsLoading" aria-label="새로고침" />
+                </MudTooltip>
             </div>
         </div>
     </div>
@@ -98,9 +97,26 @@ else
                     <div class="hub-calendar-week-list">
                         @foreach (CalendarEventItem calendarEvent in mWeekEvents)
                         {
+                            string calendarEventMeta = formatCalendarEventMeta(calendarEvent);
+                            string calendarEventLocationMeta = formatCalendarEventLocationMeta(calendarEvent);
                             <button type="button" class="@getCalendarListItemClass(calendarEvent)" data-event-id="@calendarEvent.Id" @onclick="@(() => selectEvent(calendarEvent))">
-                                <MudText Typo="Typo.body2">@calendarEvent.Summary</MudText>
-                                <MudText Typo="Typo.caption" Class="hub-muted">@formatCalendarEventMeta(calendarEvent)</MudText>
+                                <div class="hub-calendar-list-item-head">
+                                    <MudText Typo="Typo.body2" Class="hub-list-title">@calendarEvent.Summary</MudText>
+                                    <span class="hub-list-side hub-calendar-list-item-time">@formatEventTime(calendarEvent)</span>
+                                </div>
+                                @if (string.IsNullOrWhiteSpace(calendarEventMeta) == false || string.IsNullOrWhiteSpace(calendarEventLocationMeta) == false)
+                                {
+                                    <div class="hub-calendar-list-meta-row">
+                                        @if (string.IsNullOrWhiteSpace(calendarEventMeta) == false)
+                                        {
+                                            <MudText Typo="Typo.caption" Class="hub-list-meta">@calendarEventMeta</MudText>
+                                        }
+                                        @if (string.IsNullOrWhiteSpace(calendarEventLocationMeta) == false)
+                                        {
+                                            <MudText Typo="Typo.caption" Class="hub-list-meta hub-calendar-list-meta-trailing">@calendarEventLocationMeta</MudText>
+                                        }
+                                    </div>
+                                }
                             </button>
                         }
                     </div>
@@ -128,18 +144,20 @@ else
                             <CalendarDateTimeField Label="시작"
                                                    Value="mEditorStartLocalOrNull"
                                                    ValueChanged="handleEditorStartChangedAsync"
-                                                   IsTimeSelectionEnabled="@(!mEditorIsAllDay)"
+                                                   CurrentDateOrNull="@getClientToday()"
+                                                   IsTimeSelectionEnabled="@(!mIsEditorAllDay)"
                                                    IsOpen="@(mOpenEditorDateTimeFieldOrNull == ECalendarEditorDateTimeField.Start)"
                                                    IsOpenChanged="@((bool isOpen) => handleEditorDateTimeFieldOpenChangedAsync(ECalendarEditorDateTimeField.Start, isOpen))" />
                             <CalendarDateTimeField Label="종료"
                                                    Value="mEditorEndLocalOrNull"
                                                    ValueChanged="handleEditorEndChangedAsync"
                                                    MinimumValueOrNull="mEditorStartLocalOrNull"
-                                                   IsTimeSelectionEnabled="@(!mEditorIsAllDay)"
+                                                   CurrentDateOrNull="@getClientToday()"
+                                                   IsTimeSelectionEnabled="@(!mIsEditorAllDay)"
                                                    IsOpen="@(mOpenEditorDateTimeFieldOrNull == ECalendarEditorDateTimeField.End)"
                                                    IsOpenChanged="@((bool isOpen) => handleEditorDateTimeFieldOpenChangedAsync(ECalendarEditorDateTimeField.End, isOpen))" />
                         </div>
-                        <MudSwitch T="bool" @bind-Value="mEditorIsAllDay" Label="종일 일정" Color="Color.Primary" />
+                        <MudSwitch T="bool" @bind-Value="mIsEditorAllDay" Label="종일 일정" Color="Color.Primary" />
                         <MudTextField @bind-Value="mEditorLocation" Label="위치" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                         <MudTextField @bind-Value="mEditorDescription" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" Immediate="true" />
                     </div>
@@ -153,7 +171,10 @@ else
                     <div class="hub-calendar-selected-head">
                         <div class="hub-calendar-selected-title-group">
                             <MudText Typo="Typo.h6">@mSelectedEventOrNull.Summary</MudText>
-                            <span class="hub-calendar-selected-calendar">@mSelectedEventOrNull.CalendarName</span>
+                            @if (shouldShowCalendarName(mSelectedEventOrNull))
+                            {
+                                <span class="hub-calendar-selected-calendar">@mSelectedEventOrNull.CalendarName</span>
+                            }
                         </div>
                         <MudTooltip Text="닫기">
                             <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" Size="Size.Small" OnClick="clearSelectedEvent" Class="hub-calendar-detail-close" aria-label="일정 상세 닫기" />
@@ -218,10 +239,26 @@ else
                         <div class="hub-calendar-day-detail-list">
                             @foreach (CalendarEventItem calendarEvent in selectedDayEvents)
                             {
+                                string calendarDayDetailMeta = formatCalendarDayDetailMeta(calendarEvent);
+                                string calendarDayDetailLocationMeta = formatCalendarDayDetailLocationMeta(calendarEvent);
                                 <button type="button" class="@getCalendarDayDetailItemClass(calendarEvent)" data-event-id="@calendarEvent.Id" @onclick="@(() => selectEvent(calendarEvent))">
-                                    <span>@formatCalendarChipTime(calendarEvent)</span>
-                                    <strong>@calendarEvent.Summary</strong>
-                                    <small>@calendarEvent.CalendarName</small>
+                                    <div class="hub-calendar-day-detail-title-row">
+                                        <strong class="hub-list-title">@calendarEvent.Summary</strong>
+                                        <span class="hub-list-side hub-calendar-day-detail-time">@formatCalendarDayDetailTime(calendarEvent)</span>
+                                    </div>
+                                    @if (string.IsNullOrWhiteSpace(calendarDayDetailMeta) == false || string.IsNullOrWhiteSpace(calendarDayDetailLocationMeta) == false)
+                                    {
+                                        <div class="hub-calendar-day-detail-meta-row">
+                                            @if (string.IsNullOrWhiteSpace(calendarDayDetailMeta) == false)
+                                            {
+                                                <small class="hub-list-meta">@calendarDayDetailMeta</small>
+                                            }
+                                            @if (string.IsNullOrWhiteSpace(calendarDayDetailLocationMeta) == false)
+                                            {
+                                                <small class="hub-list-meta hub-calendar-day-detail-meta-trailing">@calendarDayDetailLocationMeta</small>
+                                            }
+                                        </div>
+                                    }
                                 </button>
                             }
                         </div>
@@ -241,7 +278,10 @@ else
                                 DayCells="mCalendarDayCells"
                                 WeekdayLabels="mCalendarWeekdayLabels"
                                 IsMonthView="mIsCalendarMonthView"
-                                ShowCalendarAuthor="mShowCalendarAuthor"
+                                SelectedDayOrNull="mSelectedDayOrNull"
+                                ShouldShowCalendarName="shouldShowCalendarName()"
+                                ShouldShowCalendarAuthor="mShouldShowCalendarAuthor"
+                                ClientTimeZoneInfo="mClientTimeZoneInfo"
                                 SelectedEventOrNull="mSelectedEventOrNull"
                                 DaySelected="selectDay"
                                 EventSelected="selectEvent"

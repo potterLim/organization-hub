@@ -6,6 +6,11 @@
     height: auto;
 }
 
+.hub-calendar-workspace .hub-card:has(.hub-calendar-date-time-panel) {
+    position: relative;
+    z-index: 120;
+}
+
 .hub-calendar-sidebar {
     display: flex;
     flex-direction: column;
@@ -35,6 +40,11 @@
     display: grid;
     gap: 8px;
     min-width: 0;
+    position: relative;
+}
+
+.hub-calendar-date-time-field:has(.hub-calendar-date-time-panel) {
+    z-index: 120;
 }
 
 .hub-calendar-date-time-field-button {
@@ -93,7 +103,12 @@
     box-shadow: var(--hub-shadow-medium);
     display: grid;
     gap: 6px;
+    left: 0;
     padding: 10px;
+    position: absolute;
+    top: calc(100% + 8px);
+    width: min(420px, calc(100vw - 48px));
+    z-index: 130;
 }
 
 .hub-calendar-date-time-panel-header {
@@ -253,19 +268,49 @@
 }
 
 .hub-calendar-date-time-panel-actions {
+    align-items: center;
     display: flex;
+    gap: 12px;
     justify-content: flex-end;
+    padding-top: 2px;
+}
+
+.hub-calendar-date-time-panel-actions-grouped {
+    justify-content: center;
+}
+
+.hub-calendar-date-time-clear-button {
+    background: rgba(255, 255, 255, .72);
+    border: 1px solid rgba(78, 104, 145, .18);
+    border-radius: 999px;
+    color: var(--hub-text-muted);
+    font-size: 12px;
+    font-weight: 900;
+    height: 34px;
+    min-width: 112px;
+    padding: 0 16px;
+}
+
+.hub-calendar-date-time-clear-button:hover {
+    background: rgba(244, 248, 255, .92);
+    border-color: rgba(79, 105, 255, .24);
+    color: var(--hub-text);
 }
 
 .hub-calendar-date-time-close-button {
-    background: rgba(244, 248, 255, .82);
-    border: 1px solid rgba(78, 104, 145, .14);
+    background: linear-gradient(135deg, var(--hub-brand), var(--hub-brand-deep));
+    border: 1px solid transparent;
     border-radius: 999px;
-    color: var(--hub-text);
+    color: #ffffff;
     font-size: 12px;
     font-weight: 900;
-    height: 30px;
-    padding: 0 14px;
+    height: 34px;
+    min-width: 78px;
+    padding: 0 16px;
+}
+
+.hub-calendar-date-time-close-button:hover {
+    box-shadow: 0 10px 22px rgba(33, 107, 255, .18);
 }
 
 .hub-calendar-month-heading {
@@ -279,7 +324,7 @@
     align-items: center;
     display: grid;
     gap: 16px;
-    grid-template-columns: minmax(260px, 380px) minmax(0, 1fr);
+    grid-template-columns: var(--hub-primary-select-width) minmax(0, 1fr);
 }
 
 .hub-calendar-selector-wrap {
@@ -292,6 +337,32 @@
     gap: 14px;
     justify-content: flex-end;
     min-width: 0;
+}
+
+.hub-calendar-inline-actions {
+    align-items: center;
+    display: flex;
+    flex: 0 0 auto;
+    gap: 8px;
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+.hub-calendar-inline-actions .mud-button-root:not(.mud-icon-button) {
+    min-width: 112px;
+}
+
+.hub-calendar-inline-actions .mud-tooltip-root {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+}
+
+.hub-calendar-inline-actions .mud-icon-button {
+    height: 40px;
+    min-height: 40px;
+    min-width: 40px !important;
+    width: 40px;
 }
 
 .hub-calendar-period-control {

@@ -4,17 +4,49 @@
 }
 
 .hub-todo-toolbar {
+    align-items: stretch;
+    display: grid;
+    gap: 14px;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.hub-todo-toolbar-head {
     align-items: center;
     display: grid;
-    gap: 16px;
-    grid-template-columns: minmax(220px, 360px) minmax(0, 1fr);
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-width: 0;
+}
+
+.hub-todo-toolbar-controls {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: var(--hub-primary-select-width) minmax(140px, 156px);
+    max-width: calc(var(--hub-primary-select-width) + 168px);
+    min-width: 0;
+}
+
+.hub-todo-toolbar-actions {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    min-width: 0;
 }
 
 .hub-todo-list-select {
     min-width: 0;
 }
 
+.hub-todo-sort-select {
+    min-width: 0;
+}
+
 .hub-todo-list-select .mud-input-control {
+    margin-top: 0;
+}
+
+.hub-todo-sort-select .mud-input-control {
     margin-top: 0;
 }
 

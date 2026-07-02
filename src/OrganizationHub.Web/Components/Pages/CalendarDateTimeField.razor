@@ -1,23 +1,23 @@
 <div class="@getRootClass()">
-    <button type="button" class="@getButtonClass()" disabled="@Disabled" aria-expanded="@IsOpen" @onclick="togglePickerAsync">
+    <button type="button" class="@getButtonClass()" disabled="@IsDisabled" aria-expanded="@IsOpen" @onclick="togglePickerAsync">
         <span class="hub-calendar-date-time-field-label">@Label</span>
         <span class="hub-calendar-date-time-field-value">@getValueText()</span>
         <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Small" Class="hub-calendar-date-time-field-icon" />
     </button>
-    @if (IsOpen && Disabled == false)
+    @if (IsOpen && IsDisabled == false)
     {
         <div class="hub-calendar-date-time-panel" role="dialog" aria-label="@Label">
             <div class="hub-calendar-date-time-panel-header">
                 <MudTooltip Text="이전 달">
                     <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" Size="Size.Small" Color="Color.Primary" OnClick="movePreviousMonthAsync" aria-label="이전 달" />
                 </MudTooltip>
-                <strong>@mVisibleMonth.ToString("yyyy년 M월", sKoreanCulture)</strong>
+                <strong>@mVisibleMonth.ToString("yyyy년 M월", KOREAN_CULTURE)</strong>
                 <MudTooltip Text="다음 달">
                     <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" Color="Color.Primary" OnClick="moveNextMonthAsync" aria-label="다음 달" />
                 </MudTooltip>
             </div>
             <div class="hub-calendar-date-time-weekdays" aria-hidden="true">
-                @foreach (string weekdayLabel in sWeekdayLabels)
+                @foreach (string weekdayLabel in WEEKDAY_LABELS)
                 {
                     <span>@weekdayLabel</span>
                 }
@@ -41,7 +41,7 @@
                         <div>
                             <span class="hub-calendar-date-time-part-title">시</span>
                             <div class="hub-calendar-date-time-hours">
-                                @foreach (int hour in sHourSlots)
+                                @foreach (int hour in HOUR_SLOTS)
                                 {
                                     <button type="button" class="@getHourButtonClass(hour)" disabled="@isHourDisabled(hour)" @onclick="@(() => selectHourAsync(hour))">
                                         @formatTimePart(hour)
@@ -52,7 +52,7 @@
                         <div>
                             <span class="hub-calendar-date-time-part-title">분</span>
                             <div class="hub-calendar-date-time-minutes">
-                                @foreach (int minute in sMinuteSlots)
+                                @foreach (int minute in MINUTE_SLOTS)
                                 {
                                     <button type="button" class="@getMinuteButtonClass(minute)" disabled="@isMinuteDisabled(minute)" @onclick="@(() => selectMinuteAsync(minute))">
                                         @formatTimePart(minute)
@@ -67,7 +67,11 @@
             {
                 <div class="hub-calendar-date-time-date-only-note">종일 일정은 날짜만 선택합니다.</div>
             }
-            <div class="hub-calendar-date-time-panel-actions">
+            <div class="@getPanelActionsClass()">
+                @if (CanClearValue)
+                {
+                    <button type="button" class="hub-calendar-date-time-clear-button" @onclick="clearValueAsync">@ClearValueText</button>
+                }
                 <button type="button" class="hub-calendar-date-time-close-button" @onclick="closePickerAsync">완료</button>
             </div>
         </div>

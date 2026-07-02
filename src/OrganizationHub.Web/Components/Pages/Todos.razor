@@ -3,28 +3,15 @@
 @inherits OrganizationHubComponentBase
 @implements IAsyncDisposable
 @inject ITodoService TodoService
-@inject ITeamManagementService TeamManagementService
+@inject IGlobalSettingService GlobalSettingService
 @inject IChangeVersionService ChangeVersionService
+@inject IClientTimeZoneService ClientTimeZoneService
 @inject IJSRuntime JavaScriptRuntime
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("할 일")</PageTitle>
 
-<div class="hub-page-header" @ref="mRefreshScopeElement">
-    <div>
-        <h1 class="hub-page-title">할 일</h1>
-    </div>
-    @if (mTaskLists.Count > 0)
-    {
-        <div class="hub-page-actions hub-freshness-actions">
-            @if (mHasExternalChanges)
-            {
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Sync" OnClick="loadTasksAsync" Class="hub-freshness-button">새 내용</MudButton>
-            }
-            <MudTooltip Text="새로고침">
-                <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" OnClick="loadTasksAsync" Disabled="mIsLoadingTasks" aria-label="새로고침" />
-            </MudTooltip>
-        </div>
-    }
+<div @ref="mRefreshScopeElement">
+    <h1 class="hub-sr-only">할 일</h1>
 </div>
 
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
@@ -50,20 +37,50 @@ else
 {
     <MudPaper Class="hub-card hub-todo-shell pa-4">
         <div class="hub-todo-toolbar">
-            <MudSelect T="string" Label="할 일 목록" Value="mSelectedTaskListId" ValueChanged="handleTaskListChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-todo-list-select hub-control-select-width">
-                @foreach (TodoTaskListReference taskList in mTaskLists)
-                {
-                    <MudSelectItem T="string" Value="@taskList.TaskListId.GetRequiredValue()">@taskList.DisplayName</MudSelectItem>
-                }
-            </MudSelect>
-            @if (canCreateTask())
+            <div class="hub-todo-toolbar-head">
+                <div class="hub-todo-toolbar-controls">
+                    <MudSelect T="string" Label="할 일 목록" Value="@mSelectedTaskListId" ValueChanged="handleTaskListChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-todo-list-select">
+                        @foreach (TodoTaskListReference taskList in mTaskLists)
+                        {
+                            <MudSelectItem T="string" Value="@taskList.TaskListId.GetRequiredValue()">@taskList.DisplayName</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudSelect T="ETodoTaskSortMode" Label="정렬" Value="@mTaskSortMode" ValueChanged="setTaskSortModeAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-todo-sort-select">
+                        <MudSelectItem T="ETodoTaskSortMode" Value="@ETodoTaskSortMode.DueDateAscending">@getTaskSortModeLabel(ETodoTaskSortMode.DueDateAscending)</MudSelectItem>
+                        @if (shouldShowManualTaskSortOption())
+                        {
+                            <MudSelectItem T="ETodoTaskSortMode" Value="@ETodoTaskSortMode.ManualOrder">@getTaskSortModeLabel(ETodoTaskSortMode.ManualOrder)</MudSelectItem>
+                        }
+                        <MudSelectItem T="ETodoTaskSortMode" Value="@ETodoTaskSortMode.RecentlyCreated">@getTaskSortModeLabel(ETodoTaskSortMode.RecentlyCreated)</MudSelectItem>
+                    </MudSelect>
+                </div>
+                <div class="hub-todo-toolbar-actions">
+                    @if (mHasExternalChanges)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Sync" OnClick="loadTasksAsync" Class="hub-freshness-button">새 내용</MudButton>
+                    }
+                    <MudTooltip Text="새로고침">
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" OnClick="loadTasksAsync" Disabled="mIsLoadingTasks" aria-label="새로고침" />
+                    </MudTooltip>
+                </div>
+            </div>
+            @if (canShowTaskCreation())
             {
                 <div class="hub-todo-create">
                     <div class="hub-todo-create-bar">
                         <span class="hub-todo-create-glyph" aria-hidden="true">
                             <MudIcon Icon="@Icons.Material.Filled.PlaylistAddCheck" Size="Size.Small" />
                         </span>
-                        <MudTextField @bind-Value="mNewTaskTitle" Placeholder="새 할 일" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" OnKeyDown="handleNewTaskKeyDownAsync" Class="hub-todo-create-input" />
+                        <MudTextField @bind-Value="mNewTaskTitle" Placeholder="@getNewTaskPlaceholder()" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" OnKeyDown="handleNewTaskKeyDownAsync" Class="hub-todo-create-input" Disabled="@(canCreateTask() == false)" />
+                        <CalendarDateTimeField Label="마감 기한"
+                                               Value="@mNewTaskDueAt"
+                                               ValueChanged="setNewTaskDueAtAsync"
+                                               CurrentDateOrNull="@getClientToday()"
+                                               CanClearValue="true"
+                                               ClearValueText="마감 기한 없음"
+                                               IsDisabled="@(canCreateTask() == false)"
+                                               IsOpen="@mIsNewTaskDuePickerOpen"
+                                               IsOpenChanged="setNewTaskDuePickerOpenAsync" />
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AddTask" OnClick="createTaskAsync" Disabled="@(mIsSaving || canSubmitNewTask() == false)" Class="hub-todo-create-button">추가</MudButton>
                     </div>
                 </div>
@@ -96,13 +113,20 @@ else
                                         <TodoTaskRow @key="task.Id"
                                                      Task="task"
                                                      CompletionState="ETodoTaskCompletionState.NeedsAction"
-                                                     CanDrag="canDragTask(ETodoTaskCompletionState.NeedsAction)"
+                                                     CanDrag="canDragTask(task, ETodoTaskCompletionState.NeedsAction)"
                                                      CanWrite="canWriteTask(task)"
                                                      IsEditing="@(mEditingTaskId == task.Id)"
-                                                     EditingTitle="mEditingTitle"
+                                                     EditingTitle="@mEditingTitle"
                                                      EditingTitleChanged="setEditingTitle"
+                                                     EditingDueAt="@mEditingDueAt"
+                                                     EditingDueAtChanged="setEditingDueAtAsync"
+                                                     CurrentDateOrNull="@getClientToday()"
+                                                     IsDuePickerOpen="@mIsEditingDuePickerOpen"
+                                                     IsDuePickerOpenChanged="setEditingDuePickerOpenAsync"
                                                      IsDeleting="@(mDeletingTaskId == task.Id)"
                                                      TaskMeta="@formatTaskMeta(task)"
+                                                     TaskTrailingMeta="@formatTaskTrailingMeta(task)"
+                                                     TaskTrailingMetaClass="@getTaskTrailingMetaClass(task)"
                                                      CompletionChanged="@((bool isCompleted) => setTaskCompletionStateAsync(task, isCompleted ? ETodoTaskCompletionState.Completed : ETodoTaskCompletionState.NeedsAction))"
                                                      EditStarted="@(() => beginEdit(task))"
                                                      EditSaved="@(() => saveEditAsync(task))"
@@ -133,13 +157,20 @@ else
                                         <TodoTaskRow @key="task.Id"
                                                      Task="task"
                                                      CompletionState="ETodoTaskCompletionState.Completed"
-                                                     CanDrag="canDragTask(ETodoTaskCompletionState.Completed)"
+                                                     CanDrag="canDragTask(task, ETodoTaskCompletionState.Completed)"
                                                      CanWrite="canWriteTask(task)"
                                                      IsEditing="@(mEditingTaskId == task.Id)"
-                                                     EditingTitle="mEditingTitle"
+                                                     EditingTitle="@mEditingTitle"
                                                      EditingTitleChanged="setEditingTitle"
+                                                     EditingDueAt="@mEditingDueAt"
+                                                     EditingDueAtChanged="setEditingDueAtAsync"
+                                                     CurrentDateOrNull="@getClientToday()"
+                                                     IsDuePickerOpen="@mIsEditingDuePickerOpen"
+                                                     IsDuePickerOpenChanged="setEditingDuePickerOpenAsync"
                                                      IsDeleting="@(mDeletingTaskId == task.Id)"
                                                      TaskMeta="@formatTaskMeta(task)"
+                                                     TaskTrailingMeta="@formatTaskTrailingMeta(task)"
+                                                     TaskTrailingMetaClass="@getTaskTrailingMetaClass(task)"
                                                      CompletionChanged="@((bool isCompleted) => setTaskCompletionStateAsync(task, isCompleted ? ETodoTaskCompletionState.Completed : ETodoTaskCompletionState.NeedsAction))"
                                                      EditStarted="@(() => beginEdit(task))"
                                                      EditSaved="@(() => saveEditAsync(task))"

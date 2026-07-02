@@ -5,30 +5,26 @@
     }
     @foreach (CalendarDayCell dayCell in DayCells)
     {
-        <div class="@getCalendarDayCellClass(dayCell)">
+        <button type="button" class="@getCalendarDayCellClass(dayCell)" @onclick="@(() => DaySelected.InvokeAsync(dayCell))" aria-label="@getDaySummaryLabel(dayCell)" aria-pressed="@isSelectedDay(dayCell).ToString().ToLowerInvariant()">
             <div class="hub-calendar-day-date">
-                <span>@dayCell.Date.Day</span>
+                <span class="hub-calendar-day-number">@dayCell.Date.Day</span>
                 <span class="hub-calendar-day-badges">
                     @if (dayCell.Events.Count > 0)
                     {
                         <span class="hub-calendar-day-count">@getDayEventCountText(dayCell)</span>
                     }
-                    @if (dayCell.IsToday)
-                    {
-                        <span class="hub-calendar-today-pill">오늘</span>
-                    }
                 </span>
             </div>
             @if (dayCell.Events.Count > 0)
             {
-                <button type="button" class="hub-calendar-day-time-list" @onclick="@(() => DaySelected.InvokeAsync(dayCell))" aria-label="@getDaySummaryLabel(dayCell)">
+                <div class="hub-calendar-day-time-list">
                     @foreach (CalendarEventItem calendarEvent in getDayTimeEvents(dayCell))
                     {
                         <span class="hub-calendar-day-time-line">@formatCalendarChipTime(calendarEvent)</span>
                     }
-                </button>
+                </div>
             }
-        </div>
+        </button>
     }
 </div>
 
@@ -44,6 +40,18 @@
     {
         get; set;
     } = new List<string>();
+
+    [Parameter]
+    public DateTime? SelectedDayOrNull
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public TimeZoneInfo ClientTimeZoneInfo
+    {
+        get; set;
+    } = TimeZoneInfo.Local;
 
     [Parameter]
     public EventCallback<CalendarDayCell> DaySelected
@@ -64,12 +72,22 @@
             className += " hub-calendar-day-today";
         }
 
+        if (isSelectedDay(dayCell))
+        {
+            className += " hub-calendar-day-selected";
+        }
+
         if (dayCell.Events.Count > 0)
         {
             className += " hub-calendar-day-has-events";
         }
 
         return className;
+    }
+
+    private bool isSelectedDay(CalendarDayCell dayCell)
+    {
+        return SelectedDayOrNull.HasValue && SelectedDayOrNull.Value.Date == dayCell.Date.Date;
     }
 
     private IReadOnlyList<CalendarEventItem> getDayTimeEvents(CalendarDayCell dayCell)
@@ -99,6 +117,7 @@
             return "종일";
         }
 
-        return calendarEvent.Start.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+        DateTime localStart = ClientTimeZoneUtility.createClientDateTime(calendarEvent.Start.Value.UtcDateTime, ClientTimeZoneInfo);
+        return localStart.ToString("HH:mm", CultureInfo.InvariantCulture);
     }
 }

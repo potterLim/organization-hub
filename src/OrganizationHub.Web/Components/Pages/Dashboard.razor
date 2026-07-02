@@ -4,194 +4,199 @@
 @inherits OrganizationHubComponentBase
 @inject IDriveBrowserService DriveBrowserService
 @inject ICalendarService CalendarService
+@inject ITodoService TodoService
 @inject IApprovalService ApprovalService
-@inject ITeamManagementService TeamManagementService
-@inject IPermissionService PermissionService
+@inject IGlobalSettingService GlobalSettingService
+@inject IClientTimeZoneService ClientTimeZoneService
+@inject Microsoft.Extensions.Logging.ILogger<Dashboard> Logger
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("홈")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">홈</h1>
-    </div>
-    <MudStack Row="true" Spacing="2" Class="hub-page-actions">
-        @if (mCanCreateApprovalRequest)
-        {
-            <MudButton Href="/approvals/request" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Approval">결재 요청</MudButton>
-        }
-        @if (mCanUploadFiles)
-        {
-            <MudButton Href="/upload" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.UploadFile">파일 올리기</MudButton>
-        }
-    </MudStack>
-</div>
-
-@if (shouldShowPendingApprovalsCard())
-{
-    <MudPaper Class="hub-card hub-dashboard-priority-card pa-4">
-        <div class="hub-dashboard-card-head">
-            <MudText Typo="Typo.h6">내 결재 대기</MudText>
-            <MudButton Href="/approvals/inbox" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
-        </div>
-        @if (mIsLoadingPendingApprovals)
-        {
-            @renderDashboardSkeleton(3)
-        }
-        else if (string.IsNullOrWhiteSpace(mPendingApprovalsErrorMessage) == false)
-        {
-            <div class="hub-dashboard-card-error">
-                <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
-                <span>@mPendingApprovalsErrorMessage</span>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadPendingApprovalsAsync">다시 시도</MudButton>
-            </div>
-        }
-        else
-        {
-            <div class="hub-dashboard-approval-list">
-                @foreach (ApprovalRequestItem approvalRequest in mPendingApprovals)
-                {
-                    <div class="hub-dashboard-approval-row">
-                        <div>
-                            <MudText Typo="Typo.body1" Class="hub-dashboard-approval-title">@approvalRequest.Title</MudText>
-                            <MudText Typo="Typo.caption" Class="hub-muted">@approvalRequest.RequesterDisplayName · @formatDate(approvalRequest.RequestedAt)</MudText>
-                        </div>
-                        <span class="hub-status-pill hub-status-active">@getCurrentApprovalStepRoleName(approvalRequest)</span>
-                    </div>
-                }
-            </div>
-        }
-    </MudPaper>
-}
+<h1 class="hub-sr-only">홈</h1>
 
 <MudGrid Spacing="5" Class="hub-dashboard-grid">
     <MudItem xs="12" lg="6">
-        <MudPaper Class="hub-card pa-4">
+        <MudPaper Class="hub-card hub-dashboard-section-card pa-4">
             <div class="hub-dashboard-card-head">
                 <MudText Typo="Typo.h6">이번 주 일정</MudText>
                 <MudButton Href="/calendar" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
             </div>
-            @if (mIsLoadingWeekEvents)
-            {
-                @renderDashboardSkeleton(4)
-            }
-            else if (string.IsNullOrWhiteSpace(mWeekEventsErrorMessage) == false)
-            {
-                <div class="hub-dashboard-card-error">
-                    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
-                    <span>@mWeekEventsErrorMessage</span>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadWeekEventsAsync">다시 시도</MudButton>
-                </div>
-            }
-            else if (mWeekEvents.Count == 0)
-            {
-                <div class="hub-empty">이번 주 일정이 없습니다.</div>
-            }
-            else
-            {
-                <div class="hub-dashboard-event-list">
-                    @foreach (CalendarEventItem calendarEvent in mWeekEvents)
-                    {
-                        <div class="hub-dashboard-event-row">
-                            <MudText Typo="Typo.body2">@calendarEvent.Summary</MudText>
-                            <MudText Typo="Typo.caption" Class="hub-muted">@formatDashboardEventMeta(calendarEvent)</MudText>
-                        </div>
-                    }
-                </div>
-            }
+            <div class="hub-dashboard-card-body">
+                @if (mIsLoadingWeekEvents)
+                {
+                    <DashboardSkeletonList RowCount="4" />
+                }
+                else if (string.IsNullOrWhiteSpace(mWeekEventsErrorMessage) == false)
+                {
+                    <div class="hub-dashboard-card-error">
+                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
+                        <span>@mWeekEventsErrorMessage</span>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadWeekEventsAsync">다시 시도</MudButton>
+                    </div>
+                }
+                else if (mWeekEvents.Count == 0)
+                {
+                    <div class="hub-empty hub-empty-state">이번 주 일정이 없습니다.</div>
+                }
+                else
+                {
+                    <div class="hub-dashboard-event-list">
+                        @foreach (CalendarEventItem calendarEvent in mWeekEvents)
+                        {
+                            string eventMeta = formatDashboardEventMeta(calendarEvent);
+                            string eventLocation = formatDashboardEventLocation(calendarEvent);
+                            <div class="hub-dashboard-event-row">
+                                <div class="hub-dashboard-row-main">
+                                    <MudText Typo="Typo.body2" Class="hub-list-title hub-dashboard-row-title">@calendarEvent.Summary</MudText>
+                                    <span class="hub-list-side hub-dashboard-row-side hub-dashboard-event-time">@formatEventTime(calendarEvent)</span>
+                                </div>
+                                @if (string.IsNullOrWhiteSpace(eventMeta) == false || string.IsNullOrWhiteSpace(eventLocation) == false)
+                                {
+                                    <div class="hub-dashboard-event-meta-row">
+                                        @if (string.IsNullOrWhiteSpace(eventMeta) == false)
+                                        {
+                                            <span class="hub-list-meta hub-dashboard-row-meta">@eventMeta</span>
+                                        }
+                                        else
+                                        {
+                                            <span></span>
+                                        }
+                                        @if (string.IsNullOrWhiteSpace(eventLocation) == false)
+                                        {
+                                            <span class="hub-list-meta hub-dashboard-event-location">@eventLocation</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
         </MudPaper>
     </MudItem>
     <MudItem xs="12" lg="6">
-        <MudPaper Class="hub-card pa-4">
+        <MudPaper Class="hub-card hub-dashboard-section-card pa-4">
+            <div class="hub-dashboard-card-head">
+                <MudText Typo="Typo.h6">이번 주까지 할 일</MudText>
+                <MudButton Href="/todos" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
+            </div>
+            <div class="hub-dashboard-card-body">
+                @if (mIsLoadingWeekTodos)
+                {
+                    <DashboardSkeletonList RowCount="4" />
+                }
+                else if (string.IsNullOrWhiteSpace(mWeekTodosErrorMessage) == false)
+                {
+                    <div class="hub-dashboard-card-error">
+                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
+                        <span>@mWeekTodosErrorMessage</span>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadWeekTodosAsync">다시 시도</MudButton>
+                    </div>
+                }
+                else if (mWeekTodos.Count == 0)
+                {
+                    <div class="hub-empty hub-empty-state">이번 주까지 마감인 할 일이 없습니다.</div>
+                }
+                else
+                {
+                    <div class="hub-dashboard-todo-list">
+                        @foreach (TodoTaskItem task in mWeekTodos)
+                        {
+                            string todoMeta = formatDashboardTodoMeta(task);
+                            string todoDate = formatDashboardTodoDate(task);
+                            <div class="hub-dashboard-todo-row">
+                                <span class="hub-dashboard-todo-check" aria-hidden="true">
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckBoxOutlineBlank" Size="Size.Small" />
+                                </span>
+                                <div class="hub-dashboard-todo-content">
+                                    <div class="hub-dashboard-row-main">
+                                        <MudText Typo="Typo.body2" Class="hub-list-title hub-dashboard-todo-title hub-dashboard-row-title">@task.Title</MudText>
+                                        @if (string.IsNullOrWhiteSpace(todoDate) == false)
+                                        {
+                                            <span class="@getDashboardTodoDateClass(task)">@todoDate</span>
+                                        }
+                                    </div>
+                                    <div class="hub-dashboard-todo-meta-row">
+                                        @if (string.IsNullOrWhiteSpace(todoMeta) == false)
+                                        {
+                                            <span class="hub-list-meta hub-dashboard-todo-meta">@todoMeta</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" lg="6">
+        <MudPaper Class="hub-card hub-dashboard-section-card pa-4">
+            <div class="hub-dashboard-card-head">
+                <MudText Typo="Typo.h6">내 결재 대기</MudText>
+                <MudButton Href="/approvals/inbox" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
+            </div>
+            <div class="hub-dashboard-card-body">
+                @if (mIsLoadingPendingApprovals)
+                {
+                    <DashboardSkeletonList RowCount="3" />
+                }
+                else if (string.IsNullOrWhiteSpace(mPendingApprovalsErrorMessage) == false)
+                {
+                    <div class="hub-dashboard-card-error">
+                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
+                        <span>@mPendingApprovalsErrorMessage</span>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadPendingApprovalsAsync">다시 시도</MudButton>
+                    </div>
+                }
+                else if (mPendingApprovals.Count == 0)
+                {
+                    <div class="hub-empty hub-empty-state">대기 중인 결재가 없습니다.</div>
+                }
+                else
+                {
+                    <div class="hub-dashboard-approval-list">
+                        @foreach (ApprovalRequestItem approvalRequest in mPendingApprovals)
+                        {
+                            <div class="hub-dashboard-approval-row">
+                                <div class="hub-dashboard-approval-content">
+                                    <div class="hub-dashboard-row-main">
+                                        <MudText Typo="Typo.body2" Class="hub-list-title hub-dashboard-approval-title hub-dashboard-row-title">@approvalRequest.Title</MudText>
+                                        <span class="hub-status-pill hub-status-active hub-dashboard-approval-step">@getCurrentApprovalStepLabel(approvalRequest)</span>
+                                    </div>
+                                    <MudText Typo="Typo.caption" Class="hub-list-meta hub-dashboard-row-meta">@formatDashboardApprovalRequesterMeta(approvalRequest)</MudText>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" lg="6">
+        <MudPaper Class="hub-card hub-dashboard-section-card pa-4">
             <div class="hub-dashboard-card-head">
                 <MudText Typo="Typo.h6">최근 팀 자료</MudText>
                 <MudButton Href="/materials" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
             </div>
-            @if (mIsLoadingRecentMaterials)
-            {
-                @renderDashboardSkeleton(4)
-            }
-            else if (string.IsNullOrWhiteSpace(mRecentMaterialsErrorMessage) == false)
-            {
-                <div class="hub-dashboard-card-error">
-                    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
-                    <span>@mRecentMaterialsErrorMessage</span>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadRecentMaterialsAsync">다시 시도</MudButton>
-                </div>
-            }
-            else
-            {
-                <div class="hub-dashboard-recent-desktop">
-                    @renderRecentMaterials(mRecentMaterials)
-                </div>
-                <div class="hub-dashboard-recent-mobile">
-                    @renderRecentMaterials(getMobileRecentMaterials())
-                </div>
-            }
+            <div class="hub-dashboard-card-body">
+                @if (mIsLoadingRecentMaterials)
+                {
+                    <DashboardSkeletonList RowCount="4" />
+                }
+                else if (string.IsNullOrWhiteSpace(mRecentMaterialsErrorMessage) == false)
+                {
+                    <div class="hub-dashboard-card-error">
+                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
+                        <span>@mRecentMaterialsErrorMessage</span>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadRecentMaterialsAsync">다시 시도</MudButton>
+                    </div>
+                }
+                else
+                {
+                    <DashboardRecentMaterialsList Files="mRecentMaterials" />
+                }
+            </div>
         </MudPaper>
     </MudItem>
 </MudGrid>
-
-@code
-{
-    private RenderFragment renderDashboardSkeleton(int rowCount)
-    {
-        return @<div class="hub-dashboard-skeleton-list">
-            @for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
-            {
-                <div class="hub-dashboard-skeleton-row">
-                    <span class="hub-dashboard-skeleton-line"></span>
-                    <span class="hub-dashboard-skeleton-line hub-dashboard-skeleton-line-short"></span>
-                </div>
-            }
-        </div>;
-    }
-
-    private RenderFragment renderRecentMaterials(IReadOnlyList<DriveFileItem> files)
-    {
-        return @<div class="hub-dashboard-material-list">
-            @if (files.Count == 0)
-            {
-                <div class="hub-empty hub-empty-state">
-                    <MudIcon Icon="@Icons.Material.Filled.FolderOff" Size="Size.Medium" />
-                    <span>최근 팀 자료가 없습니다.</span>
-                </div>
-            }
-            else
-            {
-                @foreach (DriveFileItem file in files)
-                {
-                    <div class="hub-dashboard-material-row">
-                        <div class="hub-dashboard-material-title-row">
-                            <div class="hub-dashboard-material-title-main">
-                                <MudIcon Icon="@getFileIcon(file)" Size="Size.Small" Class="hub-file-icon" />
-                                <MudText Typo="Typo.body2" Class="hub-dashboard-material-name">@file.Name</MudText>
-                            </div>
-                            <div class="hub-table-actions hub-dashboard-material-actions">
-                                @if (file.CanPreviewInSite)
-                                {
-                                    <MudTooltip Text="PDF 보기">
-                                        <MudIconButton Href="@("/files/" + file.Id + "/viewer")" Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" Size="Size.Small" aria-label="PDF 보기" />
-                                    </MudTooltip>
-                                }
-                                <MudTooltip Text="다운로드">
-                                    <MudIconButton Href="@("/files/" + file.Id + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
-                                </MudTooltip>
-                            </div>
-                        </div>
-                        <div class="hub-dashboard-material-meta-row">
-                            <div class="hub-dashboard-material-location">
-                                <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" Class="hub-dashboard-material-folder-icon" />
-                                <span class="hub-dashboard-material-path">@getRecentMaterialPath(file)</span>
-                                <span class="hub-dashboard-material-date">@getRecentMaterialUpdatedText(file)</span>
-                            </div>
-                            @if (string.IsNullOrWhiteSpace(file.UploadedByDisplayName) == false)
-                            {
-                                <div class="hub-dashboard-material-uploader">@getRecentMaterialUploaderText(file)</div>
-                            }
-                        </div>
-                    </div>
-                }
-            }
-        </div>;
-    }
-}

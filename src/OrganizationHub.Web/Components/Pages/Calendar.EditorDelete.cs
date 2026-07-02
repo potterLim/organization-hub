@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Domain;
@@ -31,8 +32,8 @@ public partial class Calendar
         CalendarEventItem deleteCandidate = deleteCandidateOrNull;
         UserSession currentUserSession = currentUserSessionOrNull;
         CalendarId calendarId = CalendarId.CreateOptional(deleteCandidate.CalendarId);
-        bool canWrite = await PermissionService.CanWriteCalendarAsync(currentUserSession, calendarId, CancellationToken.None);
-        if (canWrite == false)
+        bool hasWritableCalendar = mWritableCalendars.Any(calendar => calendar.CalendarId == calendarId);
+        if (hasWritableCalendar == false)
         {
             mErrorMessage = "이 일정을 삭제할 권한이 없습니다.";
             mDeleteCandidateOrNull = null;
@@ -45,12 +46,25 @@ public partial class Calendar
         mDeleteCandidateOrNull = null;
         mSelectedEventOrNull = null;
         mErrorMessage = string.Empty;
-        removeEventFromLocalCollections(deleteCandidate.CalendarId, deleteCandidate.Id);
+        removeEventFromLocalCollections(CalendarId.CreateOptional(deleteCandidate.CalendarId), CalendarEventId.CreateOptional(deleteCandidate.Id));
         await InvokeAsync(StateHasChanged);
         try
         {
             auditLogId = await CalendarEventDeletionAuditLogService.RecordPendingDeletionAsync(currentUserSession, deleteCandidate, CancellationToken.None);
-            await CalendarService.DeleteEventAsync(calendarId, CalendarEventId.CreateOptional(deleteCandidate.Id), CancellationToken.None);
+            await CalendarService.DeleteEventAsync(currentUserSession, calendarId, CalendarEventId.CreateOptional(deleteCandidate.Id), CancellationToken.None);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            if (auditLogId.HasValue)
+            {
+                await markDeletionFailedAsync(auditLogId, CalendarEventDeletionFailureMessage.CreateOptional("일정 삭제 권한이 변경되었습니다."));
+            }
+
+            mErrorMessage = "이 일정을 삭제할 권한이 없습니다.";
+            mMonthEvents = cloneCalendarEvents(previousMonthEvents);
+            refreshDerivedCalendarCollections();
+            mSelectedEventOrNull = previousSelectedEventOrNull;
+            return;
         }
         catch (Exception exception)
         {

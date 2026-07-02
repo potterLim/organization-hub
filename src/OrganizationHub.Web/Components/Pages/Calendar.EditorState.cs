@@ -8,8 +8,9 @@ public partial class Calendar
 {
     private void openCreateEditor()
     {
-        DateTime nextStart = DateTime.Today.AddHours(DateTime.Now.Hour + 1);
-        if (nextStart <= DateTime.Now)
+        DateTime clientNow = getClientNow();
+        DateTime nextStart = clientNow.Date.AddHours(clientNow.Hour + 1);
+        if (nextStart <= clientNow)
         {
             nextStart = nextStart.AddHours(1);
         }
@@ -22,8 +23,8 @@ public partial class Calendar
         mEditorSummary = string.Empty;
         mEditorDescription = string.Empty;
         mEditorLocation = string.Empty;
-        setEditorSchedule(nextStart, nextStart.AddHours(1));
-        mEditorIsAllDay = false;
+        setEditorSchedule(CalendarEditorSchedule.CreateNormalized(nextStart, nextStart.AddHours(1)));
+        mIsEditorAllDay = false;
         mEditorMessage = string.Empty;
         mEditorCalendarId = mWritableCalendars.Count > 0 ? mWritableCalendars[0].CalendarId.GetRequiredValue() : string.Empty;
     }
@@ -39,10 +40,11 @@ public partial class Calendar
         mEditorSummary = calendarEvent.Summary;
         mEditorDescription = calendarEvent.Description;
         mEditorLocation = calendarEvent.Location;
-        mEditorIsAllDay = calendarEvent.IsAllDay;
-        DateTime startLocal = calendarEvent.Start is DateTimeOffset start ? start.ToLocalTime().DateTime : DateTime.Now;
-        DateTime endLocal = calendarEvent.End is DateTimeOffset end ? end.ToLocalTime().DateTime : DateTime.Now.AddHours(1);
-        setEditorSchedule(startLocal, endLocal);
+        mIsEditorAllDay = calendarEvent.IsAllDay;
+        DateTime clientNow = getClientNow();
+        DateTime startLocal = calendarEvent.Start is DateTimeOffset start ? createClientDateTime(start) : clientNow;
+        DateTime endLocal = calendarEvent.End is DateTimeOffset end ? createClientDateTime(end) : clientNow.AddHours(1);
+        setEditorSchedule(CalendarEditorSchedule.CreateNormalized(startLocal, endLocal));
         mEditorMessage = string.Empty;
     }
 
@@ -105,10 +107,10 @@ public partial class Calendar
         return Task.CompletedTask;
     }
 
-    private void setEditorSchedule(DateTime startLocal, DateTime endLocal)
+    private void setEditorSchedule(CalendarEditorSchedule schedule)
     {
-        mEditorStartLocalOrNull = startLocal;
-        mEditorEndLocalOrNull = endLocal < startLocal ? startLocal : endLocal;
+        mEditorStartLocalOrNull = schedule.StartLocal;
+        mEditorEndLocalOrNull = schedule.EndLocal;
         mOpenEditorDateTimeFieldOrNull = null;
     }
 }

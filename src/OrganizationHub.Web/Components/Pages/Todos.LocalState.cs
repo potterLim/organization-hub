@@ -4,6 +4,7 @@ using System.Linq;
 using MudBlazor;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;
 
@@ -11,7 +12,28 @@ public partial class Todos
 {
     private List<TodoTaskItem> getPendingTasks()
     {
-        return mTasks.Where(task => task.IsCompleted == false).ToList();
+        List<TodoTaskItem> pendingTasks = mTasks.Where(task => task.IsCompleted == false).ToList();
+        switch (mTaskSortMode)
+        {
+            case ETodoTaskSortMode.DueDateAscending:
+                return pendingTasks
+                    .OrderBy(task => getDueDateSortGroup(task))
+                    .ThenBy(task => getTaskDueDateSortValue(task))
+                    .ThenBy(task => task.TaskListDisplayName)
+                    .ThenBy(task => task.Position)
+                    .ThenBy(task => task.Title)
+                    .ToList();
+            case ETodoTaskSortMode.RecentlyCreated:
+                return pendingTasks
+                    .OrderByDescending(task => task.CreatedAt)
+                    .ThenBy(task => task.TaskListDisplayName)
+                    .ThenBy(task => task.Title)
+                    .ToList();
+            case ETodoTaskSortMode.ManualOrder:
+                return pendingTasks;
+            default:
+                return pendingTasks;
+        }
     }
 
     private List<TodoTaskItem> getCompletedTasks()
@@ -37,10 +59,11 @@ public partial class Todos
         clonedTask.CreatedAt = task.CreatedAt;
         clonedTask.UpdatedAt = task.UpdatedAt;
         clonedTask.CompletedAt = task.CompletedAt;
+        clonedTask.DueAt = task.DueAt;
         return clonedTask;
     }
 
-    private TodoTaskItem createOptimisticTask(string taskTitle)
+    private TodoTaskItem createOptimisticTask(string taskTitle, DateTime? dueAtOrNull)
     {
         TodoTaskItem optimisticTask = new TodoTaskItem();
         optimisticTask.Id = "optimistic-" + Guid.NewGuid().ToString("N");
@@ -50,15 +73,42 @@ public partial class Todos
         optimisticTask.Position = string.Empty;
         optimisticTask.CreatedByDisplayName = getCurrentUserDisplayName();
         optimisticTask.IsCompleted = false;
-        optimisticTask.CreatedAt = DateTime.Now;
-        optimisticTask.UpdatedAt = DateTimeOffset.Now;
+        optimisticTask.CreatedAt = DateTime.UtcNow;
+        optimisticTask.UpdatedAt = DateTimeOffset.UtcNow;
         optimisticTask.CompletedAt = null;
+        optimisticTask.DueAt = dueAtOrNull;
         return optimisticTask;
+    }
+
+    private ETodoDueDateSortGroup getDueDateSortGroup(TodoTaskItem task)
+    {
+        if (task.DueAt.HasValue == false)
+        {
+            return ETodoDueDateSortGroup.NoDueDate;
+        }
+
+        DateTime dueAtUtc = ClientTimeZoneUtility.normalizeUtcDateTimeValue(task.DueAt.Value);
+        if (dueAtUtc < DateTime.UtcNow)
+        {
+            return ETodoDueDateSortGroup.Overdue;
+        }
+
+        return ETodoDueDateSortGroup.Scheduled;
+    }
+
+    private DateTime getTaskDueDateSortValue(TodoTaskItem task)
+    {
+        if (task.DueAt.HasValue == false)
+        {
+            return DateTime.MaxValue;
+        }
+
+        return ClientTimeZoneUtility.normalizeUtcDateTimeValue(task.DueAt.Value);
     }
 
     private void prependTask(TodoTaskItem task)
     {
-        removeTaskFromLocalList(task.TaskListId, task.Id);
+        removeTaskFromLocalList(TodoTaskListId.CreateOptional(task.TaskListId), TodoTaskId.CreateOptional(task.Id));
         mTasks.Insert(0, task);
     }
 
@@ -74,14 +124,22 @@ public partial class Todos
         mTasks[taskIndex] = task;
     }
 
-    private void removeTaskFromLocalList(string taskListId, string taskId)
+    private void removeTaskFromLocalList(TodoTaskListId taskListId, TodoTaskId taskId)
     {
-        mTasks.RemoveAll(existingTask => existingTask.TaskListId == taskListId && existingTask.Id == taskId);
+        if (taskListId.HasValue == false || taskId.HasValue == false)
+        {
+            return;
+        }
+
+        string requiredTaskListId = taskListId.GetRequiredValue();
+        string requiredTaskId = taskId.GetRequiredValue();
+        mTasks.RemoveAll(existingTask => existingTask.TaskListId == requiredTaskListId && existingTask.Id == requiredTaskId);
     }
 
     private void moveTaskInLocalList(TodoTaskItem movedTask, TodoTaskId previousTaskId)
     {
-        removeTaskFromLocalList(movedTask.TaskListId, movedTask.Id);
+        TodoTaskListId movedTaskListId = TodoTaskListId.CreateOptional(movedTask.TaskListId);
+        removeTaskFromLocalList(movedTaskListId, TodoTaskId.CreateOptional(movedTask.Id));
         if (previousTaskId.HasValue == false)
         {
             int firstPendingTaskIndex = mTasks.FindIndex(existingTask => existingTask.IsCompleted == false);
@@ -95,7 +153,9 @@ public partial class Todos
             return;
         }
 
-        int previousTaskIndex = mTasks.FindIndex(existingTask => existingTask.TaskListId == movedTask.TaskListId && existingTask.Id == previousTaskId.GetRequiredValue());
+        string requiredTaskListId = movedTaskListId.GetRequiredValue();
+        string requiredPreviousTaskId = previousTaskId.GetRequiredValue();
+        int previousTaskIndex = mTasks.FindIndex(existingTask => existingTask.TaskListId == requiredTaskListId && existingTask.Id == requiredPreviousTaskId);
         if (previousTaskIndex < 0)
         {
             mTasks.Insert(0, movedTask);
@@ -103,5 +163,12 @@ public partial class Todos
         }
 
         mTasks.Insert(previousTaskIndex + 1, movedTask);
+    }
+
+    private enum ETodoDueDateSortGroup
+    {
+        Overdue,
+        Scheduled,
+        NoDueDate
     }
 }

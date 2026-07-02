@@ -22,9 +22,10 @@ public partial class Todos
         {
             TodoTaskItem optimisticTask = cloneTask(task);
             bool isCompleted = completionState == ETodoTaskCompletionState.Completed;
+            DateTimeOffset changedAt = DateTimeOffset.UtcNow;
             optimisticTask.IsCompleted = isCompleted;
-            optimisticTask.CompletedAt = isCompleted ? DateTimeOffset.Now : null;
-            optimisticTask.UpdatedAt = DateTimeOffset.Now;
+            optimisticTask.CompletedAt = isCompleted ? changedAt : null;
+            optimisticTask.UpdatedAt = changedAt;
             replaceTask(optimisticTask);
             mMessage = string.Empty;
             await InvokeAsync(StateHasChanged);

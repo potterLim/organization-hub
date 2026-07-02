@@ -12,6 +12,7 @@
 }
 
 .hub-calendar-list-item {
+    align-content: center;
     background: rgba(255, 255, 255, .5);
     border: 1px solid rgba(78, 104, 145, .1);
     border-radius: 16px;
@@ -24,7 +25,7 @@
     justify-content: stretch;
     justify-items: stretch;
     align-items: start;
-    min-height: 58px;
+    min-height: 74px;
     padding: 12px 14px;
     text-align: left;
     width: 100%;
@@ -36,9 +37,32 @@
     border-color: rgba(33, 107, 255, .18);
 }
 
-.hub-calendar-list-item .mud-typography-body2 {
-    color: var(--hub-text-strong);
-    font-weight: 850;
+.hub-calendar-list-item-head {
+    align-items: baseline;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    min-width: 0;
+}
+
+.hub-calendar-list-item-time {
+    justify-self: end;
+    text-align: right;
+}
+
+.hub-calendar-list-meta-row {
+    align-items: baseline;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    min-width: 0;
+}
+
+.hub-calendar-list-meta-trailing {
+    grid-column: 2;
+    justify-self: end;
+    text-align: right;
+    white-space: nowrap;
 }
 
 .hub-calendar-selected-head {
@@ -127,14 +151,20 @@
 }
 
 .hub-calendar-day-detail-item {
+    align-content: center;
+    appearance: none;
     background: rgba(255, 255, 255, .58);
     border: 1px solid rgba(78, 104, 145, .12);
     border-radius: 16px;
+    box-sizing: border-box;
     color: var(--hub-text-strong);
     cursor: pointer;
     display: grid;
     font: inherit;
-    gap: 4px;
+    gap: 5px;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+    min-height: 74px;
     min-width: 0;
     padding: 12px 14px;
     text-align: left;
@@ -147,27 +177,40 @@
 }
 
 .hub-calendar-day-detail-item-editable {
-    box-shadow: inset 3px 0 0 rgba(33, 107, 255, .42);
+    box-shadow: none;
 }
 
-.hub-calendar-day-detail-item span {
-    color: var(--hub-brand-deep);
-    font-size: 11px;
-    font-weight: 900;
-    line-height: 1;
+.hub-calendar-day-detail-time {
+    justify-self: end;
+    text-align: right;
 }
 
-.hub-calendar-day-detail-item strong {
-    color: var(--hub-text-strong);
-    font-size: 14px;
-    font-weight: 900;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
+.hub-calendar-day-detail-title-row {
+    align-items: baseline;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    min-width: 0;
+    width: 100%;
 }
 
 .hub-calendar-day-detail-item small {
-    color: var(--hub-text-muted);
-    font-size: 12px;
-    font-weight: 800;
-    line-height: 1.2;
+    justify-self: start;
+    overflow-wrap: anywhere;
+}
+
+.hub-calendar-day-detail-meta-row {
+    align-items: baseline;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    min-width: 0;
+    width: 100%;
+}
+
+.hub-calendar-day-detail-meta-trailing {
+    grid-column: 2;
+    justify-self: end !important;
+    text-align: right;
+    white-space: nowrap;
 }

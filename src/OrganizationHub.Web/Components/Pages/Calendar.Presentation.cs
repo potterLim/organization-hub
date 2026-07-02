@@ -30,18 +30,41 @@ public partial class Calendar
     private string formatCalendarEventMeta(CalendarEventItem calendarEvent)
     {
         List<string> metadataParts = new List<string>();
-        metadataParts.Add(calendarEvent.CalendarName);
+        if (shouldShowCalendarName(calendarEvent))
+        {
+            metadataParts.Add(calendarEvent.CalendarName);
+        }
+
         if (shouldShowCalendarAuthor(calendarEvent))
         {
             metadataParts.Add("작성자: " + calendarEvent.CreatedByDisplayName);
         }
 
-        metadataParts.Add(formatEventTime(calendarEvent));
         return string.Join(" · ", metadataParts);
+    }
+
+    private string formatCalendarEventLocationMeta(CalendarEventItem calendarEvent)
+    {
+        if (string.IsNullOrWhiteSpace(calendarEvent.Location))
+        {
+            return string.Empty;
+        }
+
+        return "장소: " + calendarEvent.Location.Trim();
     }
 
     private bool shouldShowCalendarAuthor(CalendarEventItem calendarEvent)
     {
-        return mShowCalendarAuthor && string.IsNullOrWhiteSpace(calendarEvent.CreatedByDisplayName) == false;
+        return mShouldShowCalendarAuthor && string.IsNullOrWhiteSpace(calendarEvent.CreatedByDisplayName) == false;
+    }
+
+    private bool shouldShowCalendarName(CalendarEventItem calendarEvent)
+    {
+        return shouldShowCalendarName() && string.IsNullOrWhiteSpace(calendarEvent.CalendarName) == false;
+    }
+
+    private bool shouldShowCalendarName()
+    {
+        return CalendarId.CreateOptional(mSelectedCalendarId).IsAggregate;
     }
 }

@@ -31,13 +31,13 @@ public partial class Calendar
         }
 
         List<CalendarDayCell> dayCells = new List<CalendarDayCell>();
-        for (int dayIndex = 0; dayIndex < 42; dayIndex++)
+        for (int dayIndex = 0; dayIndex < CalendarGridPolicy.VISIBLE_DAY_COUNT; dayIndex++)
         {
             DateTime date = calendarStart.AddDays(dayIndex);
             CalendarDayCell dayCell = new CalendarDayCell();
             dayCell.Date = date;
             dayCell.IsCurrentMonth = date.Month == monthStart.Month;
-            dayCell.IsToday = date.Date == DateTime.Today;
+            dayCell.IsToday = date.Date == getClientToday();
             List<CalendarEventItem>? eventsForDayOrNull;
             if (eventsByDate.TryGetValue(date.Date, out eventsForDayOrNull))
             {
@@ -57,7 +57,7 @@ public partial class Calendar
             return null;
         }
 
-        return calendarEvent.Start.Value.ToLocalTime().Date;
+        return createClientDateTime(calendarEvent.Start.Value).Date;
     }
 
     private IReadOnlyList<CalendarEventItem> getSelectedDayEvents()
@@ -85,6 +85,26 @@ public partial class Calendar
         return "hub-calendar-day-detail-item";
     }
 
+    private void applyInitialDaySelection()
+    {
+        if (mHasAppliedInitialDaySelection)
+        {
+            return;
+        }
+
+        mHasAppliedInitialDaySelection = true;
+        if (mSelectedEventOrNull != null || mSelectedDayOrNull.HasValue)
+        {
+            return;
+        }
+
+        DateTime today = getClientToday();
+        if (today.Month == mCurrentMonth.Month && today.Year == mCurrentMonth.Year)
+        {
+            mSelectedDayOrNull = today;
+        }
+    }
+
     private void selectDay(CalendarDayCell dayCell)
     {
         mSelectedDayOrNull = dayCell.Date.Date;
@@ -110,16 +130,16 @@ public partial class Calendar
 
         if (calendarEvent.IsAllDay)
         {
-            return calendarEvent.Start.Value.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 종일";
+            return createClientDateTime(calendarEvent.Start.Value).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 종일";
         }
 
-        string startText = calendarEvent.Start.Value.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+        string startText = createClientDateTime(calendarEvent.Start.Value).ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
         if (calendarEvent.End.HasValue == false)
         {
             return startText;
         }
 
-        return startText + " - " + calendarEvent.End.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+        return startText + " - " + createClientDateTime(calendarEvent.End.Value).ToString("HH:mm", CultureInfo.InvariantCulture);
     }
 
     private string formatCalendarChipTime(CalendarEventItem calendarEvent)
@@ -134,7 +154,63 @@ public partial class Calendar
             return "종일";
         }
 
-        return calendarEvent.Start.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+        return createClientDateTime(calendarEvent.Start.Value).ToString("HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private string formatCalendarDayDetailTime(CalendarEventItem calendarEvent)
+    {
+        if (calendarEvent.Start.HasValue == false)
+        {
+            return "시간";
+        }
+
+        if (calendarEvent.IsAllDay)
+        {
+            return "종일";
+        }
+
+        DateTime localStart = createClientDateTime(calendarEvent.Start.Value);
+        string startText = localStart.ToString("HH:mm", CultureInfo.InvariantCulture);
+        if (calendarEvent.End.HasValue == false)
+        {
+            return startText;
+        }
+
+        DateTime localEnd = createClientDateTime(calendarEvent.End.Value);
+        if (localStart.Date == localEnd.Date)
+        {
+            return startText + " - " + localEnd.ToString("HH:mm", CultureInfo.InvariantCulture);
+        }
+
+        return localStart.ToString("MM-dd HH:mm", CultureInfo.InvariantCulture)
+            + " - "
+            + localEnd.ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private string formatCalendarDayDetailMeta(CalendarEventItem calendarEvent)
+    {
+        List<string> metadataParts = new List<string>();
+        if (shouldShowCalendarName(calendarEvent))
+        {
+            metadataParts.Add(calendarEvent.CalendarName);
+        }
+
+        if (shouldShowCalendarAuthor(calendarEvent))
+        {
+            metadataParts.Add("작성자: " + calendarEvent.CreatedByDisplayName);
+        }
+
+        return string.Join(" · ", metadataParts);
+    }
+
+    private string formatCalendarDayDetailLocationMeta(CalendarEventItem calendarEvent)
+    {
+        if (string.IsNullOrWhiteSpace(calendarEvent.Location))
+        {
+            return string.Empty;
+        }
+
+        return "장소: " + calendarEvent.Location.Trim();
     }
 
     private string formatSelectedDayTitle()

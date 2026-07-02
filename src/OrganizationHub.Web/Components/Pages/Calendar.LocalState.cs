@@ -50,12 +50,12 @@ public partial class Calendar
         calendarEvent.Summary = formModel.Summary;
         calendarEvent.Description = formModel.Description;
         calendarEvent.Location = formModel.Location;
-        calendarEvent.Start = new DateTimeOffset(formModel.StartLocal);
-        calendarEvent.End = new DateTimeOffset(formModel.EndLocal);
+        calendarEvent.Start = createClientDateTimeOffset(formModel.StartLocal);
+        calendarEvent.End = createClientDateTimeOffset(formModel.EndLocal);
         calendarEvent.IsAllDay = formModel.IsAllDay;
         calendarEvent.CanEdit = true;
         calendarEvent.CreatedByDisplayName = currentUserSession.DisplayName;
-        calendarEvent.CreatedAt = DateTime.Now;
+        calendarEvent.CreatedAt = getClientNow();
         return calendarEvent;
     }
 
@@ -70,7 +70,7 @@ public partial class Calendar
 
     private void applySavedEvent(CalendarEventItem calendarEvent)
     {
-        removeEventFromMonthList(calendarEvent.CalendarId, calendarEvent.Id);
+        removeEventFromMonthList(CalendarId.CreateOptional(calendarEvent.CalendarId), CalendarEventId.CreateOptional(calendarEvent.Id));
         if (isVisibleInCurrentSelection(calendarEvent))
         {
             mMonthEvents.Add(calendarEvent);
@@ -83,24 +83,31 @@ public partial class Calendar
         }
     }
 
-    private void removeEventFromLocalCollections(string calendarId, string eventId)
+    private void removeEventFromLocalCollections(CalendarId calendarId, CalendarEventId eventId)
     {
         removeEventFromMonthList(calendarId, eventId);
         refreshDerivedCalendarCollections();
     }
 
-    private void removeEventFromMonthList(string calendarId, string eventId)
+    private void removeEventFromMonthList(CalendarId calendarId, CalendarEventId eventId)
     {
-        mMonthEvents.RemoveAll(calendarEvent => calendarEvent.CalendarId == calendarId && calendarEvent.Id == eventId);
+        if (calendarId.HasValue == false || eventId.HasValue == false)
+        {
+            return;
+        }
+
+        string requiredCalendarId = calendarId.GetRequiredValue();
+        string requiredEventId = eventId.GetRequiredValue();
+        mMonthEvents.RemoveAll(calendarEvent => calendarEvent.CalendarId == requiredCalendarId && calendarEvent.Id == requiredEventId);
     }
 
     private void refreshDerivedCalendarCollections()
     {
-        DateTime today = DateTime.Today;
+        DateTime today = getClientToday();
         DateTime weekStart = CalendarWeekUtility.GetStartOfWeek(today);
         DateTime weekEnd = CalendarWeekUtility.GetEndOfWeek(today);
         mMonthEvents = mMonthEvents.OrderBy(calendarEvent => calendarEvent.Start).ThenBy(calendarEvent => calendarEvent.Summary).ToList();
-        mWeekEvents = mMonthEvents.Where(calendarEvent => calendarEvent.Start.HasValue && calendarEvent.Start.Value.Date >= weekStart && calendarEvent.Start.Value.Date < weekEnd).ToList();
+        mWeekEvents = mMonthEvents.Where(calendarEvent => isEventInsideClientDateRange(calendarEvent, weekStart, weekEnd)).ToList();
         applyWritableState(mMonthEvents);
         applyWritableState(mWeekEvents);
         mCalendarDayCells = buildCalendarDayCells(mCurrentMonth, mMonthEvents);
@@ -131,14 +138,26 @@ public partial class Calendar
 
         DateTime monthStart = mCurrentMonth.Date;
         DateTime monthEnd = monthStart.AddMonths(1);
-        DateTime eventStart = calendarEvent.Start.Value.ToLocalTime().Date;
+        DateTime eventStart = createClientDateTime(calendarEvent.Start.Value).Date;
         DateTime eventEnd = eventStart;
         if (calendarEvent.End.HasValue)
         {
-            eventEnd = calendarEvent.End.Value.ToLocalTime().Date;
+            eventEnd = createClientDateTime(calendarEvent.End.Value).Date;
         }
 
         return eventStart < monthEnd && eventEnd >= monthStart;
+    }
+
+    private bool isEventInsideClientDateRange(CalendarEventItem calendarEvent, DateTime rangeStart, DateTime rangeEnd)
+    {
+        DateTime? eventDateOrNull = getEventLocalDateOrNull(calendarEvent);
+        if (eventDateOrNull.HasValue == false)
+        {
+            return false;
+        }
+
+        DateTime eventDate = eventDateOrNull.Value.Date;
+        return eventDate >= rangeStart && eventDate < rangeEnd;
     }
 
     private void refreshSelectedEvent()

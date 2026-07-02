@@ -33,13 +33,6 @@ public partial class Calendar
             return;
         }
 
-        bool canWrite = await PermissionService.CanWriteCalendarAsync(currentUserSession, CalendarId.CreateOptional(formModelOrNull.CalendarId), CancellationToken.None);
-        if (canWrite == false)
-        {
-            mEditorMessage = "이 일정 위치를 수정할 권한이 없습니다.";
-            return;
-        }
-
         bool isEditing = mIsEditing;
         List<CalendarEventItem> previousMonthEvents = cloneCalendarEvents(mMonthEvents);
         CalendarEventItem? previousSelectedEventOrNull = cloneCalendarEventOrNull(mSelectedEventOrNull);
@@ -55,7 +48,7 @@ public partial class Calendar
             CalendarEventItem savedEvent;
             if (isEditing)
             {
-                savedEvent = await CalendarService.UpdateEventAsync(formModelOrNull, calendarName, CancellationToken.None);
+                savedEvent = await CalendarService.UpdateEventAsync(currentUserSession, formModelOrNull, calendarName, CancellationToken.None);
             }
             else
             {
@@ -65,11 +58,18 @@ public partial class Calendar
             applyWritableState(savedEvent);
             if (isEditing == false)
             {
-                removeEventFromMonthList(optimisticEvent.CalendarId, optimisticEvent.Id);
+                removeEventFromMonthList(CalendarId.CreateOptional(optimisticEvent.CalendarId), CalendarEventId.CreateOptional(optimisticEvent.Id));
             }
 
             applySavedEvent(savedEvent);
             recordLoadedChangeSnapshot();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            mMonthEvents = cloneCalendarEvents(previousMonthEvents);
+            refreshDerivedCalendarCollections();
+            mSelectedEventOrNull = previousSelectedEventOrNull;
+            mErrorMessage = "이 일정 위치를 수정할 권한이 없습니다.";
         }
         catch
         {
@@ -93,18 +93,6 @@ public partial class Calendar
             return null;
         }
 
-        if (mEditorIsAllDay && schedule.EndLocal.Date < schedule.StartLocal.Date)
-        {
-            mEditorMessage = "종일 일정의 종료일은 시작일보다 빠를 수 없습니다.";
-            return null;
-        }
-
-        if (mEditorIsAllDay == false && schedule.EndLocal < schedule.StartLocal)
-        {
-            mEditorMessage = "종료 일시는 시작 일시보다 빠를 수 없습니다.";
-            return null;
-        }
-
         CalendarEventFormModel formModel = new CalendarEventFormModel();
         formModel.Id = mEditorEventId;
         formModel.CalendarId = mEditorCalendarId;
@@ -113,7 +101,7 @@ public partial class Calendar
         formModel.Location = mEditorLocation;
         formModel.StartLocal = schedule.StartLocal;
         formModel.EndLocal = schedule.EndLocal;
-        formModel.IsAllDay = mEditorIsAllDay;
+        formModel.IsAllDay = mIsEditorAllDay;
         return formModel;
     }
 
@@ -125,11 +113,16 @@ public partial class Calendar
             return null;
         }
 
-        if (mEditorIsAllDay)
+        DateTime scheduleStartLocal = mIsEditorAllDay ? startLocal.Date : startLocal;
+        DateTime scheduleEndLocal = mIsEditorAllDay ? endLocal.Date : endLocal;
+        if (scheduleEndLocal < scheduleStartLocal)
         {
-            return new CalendarEditorSchedule(startLocal.Date, endLocal.Date);
+            mEditorMessage = mIsEditorAllDay ?
+                "종료일은 시작일보다 빠를 수 없습니다." :
+                "종료 일시는 시작 일시보다 빠를 수 없습니다.";
+            return null;
         }
 
-        return new CalendarEditorSchedule(startLocal, endLocal);
+        return new CalendarEditorSchedule(scheduleStartLocal, scheduleEndLocal);
     }
 }

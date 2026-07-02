@@ -9,12 +9,14 @@
     }
     else if (IsMonthView)
     {
-        <CalendarMonthGridPanel DayCells="DayCells" WeekdayLabels="WeekdayLabels" DaySelected="DaySelected" />
+        <CalendarMonthGridPanel DayCells="DayCells" WeekdayLabels="WeekdayLabels" SelectedDayOrNull="SelectedDayOrNull" ClientTimeZoneInfo="ClientTimeZoneInfo" DaySelected="DaySelected" />
     }
     else
     {
         <CalendarEventListPanel MonthEvents="MonthEvents"
-                                ShowCalendarAuthor="ShowCalendarAuthor"
+                                ShouldShowCalendarName="ShouldShowCalendarName"
+                                ShouldShowCalendarAuthor="ShouldShowCalendarAuthor"
+                                ClientTimeZoneInfo="ClientTimeZoneInfo"
                                 SelectedEventOrNull="SelectedEventOrNull"
                                 EventSelected="EventSelected"
                                 EventEditRequested="EventEditRequested"
@@ -48,10 +50,28 @@
     }
 
     [Parameter]
-    public bool ShowCalendarAuthor
+    public DateTime? SelectedDayOrNull
     {
         get; set;
     }
+
+    [Parameter]
+    public bool ShouldShowCalendarName
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public bool ShouldShowCalendarAuthor
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public TimeZoneInfo ClientTimeZoneInfo
+    {
+        get; set;
+    } = TimeZoneInfo.Local;
 
     [Parameter]
     public CalendarEventItem? SelectedEventOrNull

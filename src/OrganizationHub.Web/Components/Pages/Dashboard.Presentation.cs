@@ -1,20 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using MudBlazor;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Dashboard
 {
-    private bool shouldShowPendingApprovalsCard()
-    {
-        return mIsLoadingPendingApprovals || string.IsNullOrWhiteSpace(mPendingApprovalsErrorMessage) == false || mPendingApprovals.Count > 0;
-    }
-
     private string formatEventTime(CalendarEventItem calendarEvent)
     {
         if (calendarEvent.Start.HasValue == false)
@@ -24,22 +18,29 @@ public partial class Dashboard
 
         if (calendarEvent.IsAllDay)
         {
-            return calendarEvent.Start.Value.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 종일";
+            return getClientEventStart(calendarEvent).ToString("MM-dd", CultureInfo.InvariantCulture) + " 종일";
         }
 
-        string startText = calendarEvent.Start.Value.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+        string startText = getClientEventStart(calendarEvent).ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
         if (calendarEvent.End.HasValue == false)
         {
             return startText;
         }
 
-        return startText + " - " + calendarEvent.End.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+        DateTime localEnd = ClientTimeZoneUtility.createClientDateTime(calendarEvent.End.Value.UtcDateTime, mClientTimeZoneInfo);
+        return startText + " - " + localEnd.ToString("HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private DateTime getClientEventStart(CalendarEventItem calendarEvent)
+    {
+        DateTimeOffset eventStart = calendarEvent.Start.GetValueOrDefault();
+        return ClientTimeZoneUtility.createClientDateTime(eventStart.UtcDateTime, mClientTimeZoneInfo);
     }
 
     private string formatDashboardEventMeta(CalendarEventItem calendarEvent)
     {
         List<string> metadataParts = new List<string>();
-        if (shouldShowTeamNames())
+        if (string.IsNullOrWhiteSpace(calendarEvent.CalendarName) == false)
         {
             metadataParts.Add(calendarEvent.CalendarName);
         }
@@ -49,89 +50,111 @@ public partial class Dashboard
             metadataParts.Add("작성자: " + calendarEvent.CreatedByDisplayName);
         }
 
-        metadataParts.Add(formatEventTime(calendarEvent));
         return string.Join(" · ", metadataParts);
     }
 
-    private bool shouldShowTeamNames()
+    private string formatDashboardEventLocation(CalendarEventItem calendarEvent)
     {
-        if (CurrentUserSessionOrNull == null)
+        if (string.IsNullOrWhiteSpace(calendarEvent.Location))
+        {
+            return string.Empty;
+        }
+
+        return "장소: " + calendarEvent.Location.Trim();
+    }
+
+    private string formatDashboardTodoMeta(TodoTaskItem task)
+    {
+        List<string> metadataParts = new List<string>();
+        if (string.IsNullOrWhiteSpace(task.TaskListDisplayName) == false)
+        {
+            metadataParts.Add(task.TaskListDisplayName);
+        }
+
+        if (mShouldShowTodoAuthor && string.IsNullOrWhiteSpace(task.CreatedByDisplayName) == false)
+        {
+            metadataParts.Add("작성자: " + task.CreatedByDisplayName);
+        }
+
+        return string.Join(" · ", metadataParts);
+    }
+
+    private string getDashboardTodoDateClass(TodoTaskItem task)
+    {
+        string className = "hub-list-side hub-dashboard-row-side hub-dashboard-todo-date hub-due-status";
+        if (isDashboardTodoOverdue(task))
+        {
+            return className + " hub-due-status-overdue";
+        }
+
+        if (isDashboardTodoDueToday(task))
+        {
+            return className + " hub-due-status-today";
+        }
+
+        return className;
+    }
+
+    private string formatDashboardTodoDate(TodoTaskItem task)
+    {
+        DateTime? dueAtOrNull = getTaskDueDisplayDateOrNull(task);
+        if (dueAtOrNull.HasValue == false || task.DueAt.HasValue == false)
+        {
+            return string.Empty;
+        }
+
+        string dueText = dueAtOrNull.Value.ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+        DateTime clientNow = ClientTimeZoneUtility.getClientNow(mClientTimeZoneInfo);
+        DateTime dueAtUtc = ClientTimeZoneUtility.normalizeUtcDateTimeValue(task.DueAt.Value);
+        if (dueAtUtc < DateTime.UtcNow)
+        {
+            return "기한 지남: " + dueText;
+        }
+
+        if (dueAtOrNull.Value.Date == clientNow.Date)
+        {
+            return "오늘 마감: " + dueAtOrNull.Value.ToString("HH:mm", CultureInfo.InvariantCulture);
+        }
+
+        return "마감: " + dueText;
+    }
+
+    private bool isDashboardTodoOverdue(TodoTaskItem task)
+    {
+        if (task.DueAt.HasValue == false)
         {
             return false;
         }
 
-        return CurrentUserSessionOrNull.IsManagementRole();
+        return ClientTimeZoneUtility.normalizeUtcDateTimeValue(task.DueAt.Value) < DateTime.UtcNow;
+    }
+
+    private bool isDashboardTodoDueToday(TodoTaskItem task)
+    {
+        DateTime? dueAtOrNull = getTaskDueDisplayDateOrNull(task);
+        DateTime clientNow = ClientTimeZoneUtility.getClientNow(mClientTimeZoneInfo);
+        return dueAtOrNull.HasValue && dueAtOrNull.Value.Date == clientNow.Date;
     }
 
     private bool shouldShowCalendarAuthor(CalendarEventItem calendarEvent)
     {
-        return mShowCalendarAuthor && string.IsNullOrWhiteSpace(calendarEvent.CreatedByDisplayName) == false;
+        return mShouldShowCalendarAuthor && string.IsNullOrWhiteSpace(calendarEvent.CreatedByDisplayName) == false;
     }
 
-    private IReadOnlyList<DriveFileItem> getMobileRecentMaterials()
+    private string formatDashboardApprovalRequesterMeta(ApprovalRequestItem approvalRequest)
     {
-        return mRecentMaterials.Take(3).ToList();
-    }
-
-    private string getRecentMaterialPath(DriveFileItem file)
-    {
-        string folderName = file.FolderDisplayName.Trim();
-        if (string.IsNullOrWhiteSpace(folderName) == false)
+        string requesterText = approvalRequest.GetRequesterAffiliationText();
+        if (string.IsNullOrWhiteSpace(requesterText))
         {
-            return folderName;
+            return "상신자 정보 없음";
         }
 
-        return getRecentMaterialTeamName(file);
+        return "상신자: " + requesterText;
     }
 
-    private string getRecentMaterialUpdatedText(DriveFileItem file)
-    {
-        if (file.UploadedAt.HasValue)
-        {
-            return "업로드: " + file.UploadedAt.Value.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
-        }
-
-        if (file.ModifiedTime.HasValue == false)
-        {
-            return "수정일 없음";
-        }
-
-        return "수정일: " + file.ModifiedTime.Value.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
-    }
-
-    private string getRecentMaterialUploaderText(DriveFileItem file)
-    {
-        return "올린 사람: " + file.UploadedByDisplayName.Trim();
-    }
-
-    private string getRecentMaterialTeamName(DriveFileItem file)
-    {
-        if (string.IsNullOrWhiteSpace(file.TeamName))
-        {
-            return "분류 없음";
-        }
-
-        return file.TeamName.Trim();
-    }
-
-    private string getFileIcon(DriveFileItem file)
-    {
-        if (file.MimeType == "application/pdf")
-        {
-            return Icons.Material.Filled.PictureAsPdf;
-        }
-
-        return Icons.Material.Filled.InsertDriveFile;
-    }
-
-    private string getCurrentApprovalStepRoleName(ApprovalRequestItem approvalRequest)
+    private string getCurrentApprovalStepLabel(ApprovalRequestItem approvalRequest)
     {
         ApprovalStepCount stepCount = new ApprovalStepCount(approvalRequest.StepCount);
-        return ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(approvalRequest.CurrentStepNumber));
-    }
-
-    private string formatDate(DateTime dateTime)
-    {
-        return dateTime.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+        return ApprovalStepLabelUtility.GetStepLabel(stepCount, new ApprovalStepNumber(approvalRequest.CurrentStepNumber));
     }
 }

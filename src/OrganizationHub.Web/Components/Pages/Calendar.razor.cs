@@ -23,7 +23,7 @@ public partial class Calendar
     private List<CalendarEventItem> mWeekEvents = new List<CalendarEventItem>();
     private List<CalendarEventItem> mMonthEvents = new List<CalendarEventItem>();
     private List<CalendarDayCell> mCalendarDayCells = new List<CalendarDayCell>();
-    private readonly string[] mCalendarWeekdayLabels = new[] { "일", "월", "화", "수", "목", "금", "토" };
+    private readonly string[] mCalendarWeekdayLabels = new string[] { "일", "월", "화", "수", "목", "금", "토" };
     private CalendarEventItem? mDeleteCandidateOrNull;
     private CalendarEventItem? mSelectedEventOrNull;
     private DateTime? mSelectedDayOrNull;
@@ -37,7 +37,8 @@ public partial class Calendar
     private DateTime? mEditorStartLocalOrNull;
     private DateTime? mEditorEndLocalOrNull;
     private string mEditorMessage = string.Empty;
-    private DateTime mCurrentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private TimeZoneInfo mClientTimeZoneInfo = TimeZoneInfo.Local;
+    private DateTime mCurrentMonth;
     private ECalendarEditorDateTimeField? mOpenEditorDateTimeFieldOrNull;
     private ElementReference mRefreshScopeElement;
     private ChangeVersionSnapshot mLoadedChangeSnapshot = new ChangeVersionSnapshot();
@@ -45,24 +46,26 @@ public partial class Calendar
     private DotNetObjectReference<Calendar>? mRefreshDotNetReferenceOrNull;
     private bool mIsEditorOpen;
     private bool mIsEditing;
-    private bool mEditorIsAllDay;
+    private bool mIsEditorAllDay;
     private bool mIsLoading;
     private bool mIsCalendarMonthView = true;
-    private bool mShowCalendarAuthor = true;
+    private bool mShouldShowCalendarAuthor = true;
     private bool mHasExternalChanges;
+    private bool mHasAppliedInitialDaySelection;
 
     protected override async Task OnInitializedAsync()
     {
-        bool hasSession = await loadUserSessionAsync();
+        mCurrentMonth = getClientMonthStart();
+        bool hasSession = await tryLoadUserSessionAsync();
         if (hasSession == false || CurrentUserSessionOrNull == null)
         {
             return;
         }
 
-        GlobalSettingFormModel globalSetting = await TeamManagementService.GetGlobalSettingAsync(CancellationToken.None);
+        GlobalSettingFormModel globalSetting = await GlobalSettingService.GetGlobalSettingAsync(CancellationToken.None);
         IReadOnlyList<CalendarReference> calendars = await PermissionService.GetReadableCalendarsAsync(CurrentUserSessionOrNull, CancellationToken.None);
         IReadOnlyList<CalendarReference> writableCalendars = await PermissionService.GetWritableCalendarsAsync(CurrentUserSessionOrNull, CancellationToken.None);
-        mShowCalendarAuthor = globalSetting.ShowCalendarAuthor;
+        mShouldShowCalendarAuthor = globalSetting.ShouldShowCalendarAuthor;
         mCalendars = calendars.ToList();
         mWritableCalendars = writableCalendars.ToList();
         if (string.IsNullOrWhiteSpace(CalendarIdOrNull) == false && mCalendars.Any(calendar => calendar.CalendarId == CalendarId.CreateOptional(CalendarIdOrNull)))
@@ -77,10 +80,8 @@ public partial class Calendar
         await loadEventsAsync();
     }
 
-
     private void applyWritableState(CalendarEventItem calendarEvent)
     {
         calendarEvent.CanEdit = mWritableCalendars.Any(calendar => calendar.CalendarId == CalendarId.CreateOptional(calendarEvent.CalendarId));
     }
-
 }

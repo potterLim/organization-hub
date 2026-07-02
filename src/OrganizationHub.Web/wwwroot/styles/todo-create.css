@@ -10,9 +10,9 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72);
     display: grid;
     gap: 8px;
-    grid-template-columns: 24px minmax(0, 1fr) 132px;
+    grid-template-columns: 24px minmax(260px, 1fr) minmax(170px, 220px) minmax(104px, 116px);
     min-height: 64px;
-    padding: 8px 8px 8px 12px;
+    padding: 8px 10px 8px 12px;
 }
 
 .hub-todo-create-glyph {
@@ -63,13 +63,32 @@
     min-height: 48px;
 }
 
+.hub-todo-create-bar .hub-calendar-date-time-field {
+    min-width: 0;
+}
+
+.hub-todo-create-bar .hub-calendar-date-time-panel {
+    left: auto;
+    right: 0;
+}
+
+.hub-todo-create-bar .hub-calendar-date-time-field-button {
+    min-height: 48px;
+}
+
+.hub-todo-create-bar .hub-calendar-date-time-field-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .hub-todo-create-button {
     align-self: center;
     border-radius: 14px !important;
     font-weight: 900 !important;
     height: 48px;
     min-height: 48px;
-    min-width: 132px !important;
+    min-width: 104px !important;
 }
 
 .hub-todo-create-button:disabled,

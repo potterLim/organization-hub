@@ -15,9 +15,6 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class WorkGuidelines
 {
-    private const int MIN_SECTION_COUNT = 1;
-    private const int MAX_SECTION_COUNT = 6;
-
     private List<WorkGuidelineSectionFormModel> mSectionFormModels = new List<WorkGuidelineSectionFormModel>();
     private ElementReference mSortableRootElement;
     private IJSObjectReference? mSortableModuleOrNull;
@@ -57,14 +54,14 @@ public partial class WorkGuidelines
     [JSInvokable("MoveSortableItemBeforeFromScript")]
     public async Task MoveSortableItemBeforeFromScriptAsync(string sourceItemId, string targetItemId)
     {
-        moveSection(sourceItemId, targetItemId, ESortableMoveDirection.Before);
+        moveSection(SortableItemMoveRequest.CreateFromScript(sourceItemId, targetItemId, ESortableMoveDirection.Before));
         await InvokeAsync(StateHasChanged);
     }
 
     [JSInvokable("MoveSortableItemAfterFromScript")]
     public async Task MoveSortableItemAfterFromScriptAsync(string sourceItemId, string targetItemId)
     {
-        moveSection(sourceItemId, targetItemId, ESortableMoveDirection.After);
+        moveSection(SortableItemMoveRequest.CreateFromScript(sourceItemId, targetItemId, ESortableMoveDirection.After));
         await InvokeAsync(StateHasChanged);
     }
 
@@ -127,7 +124,7 @@ public partial class WorkGuidelines
 
     private void setSectionCount(int sectionCount)
     {
-        if (sectionCount < MIN_SECTION_COUNT || sectionCount > MAX_SECTION_COUNT)
+        if (WorkGuidelinePolicy.IsValidSectionCount(sectionCount) == false)
         {
             return;
         }
@@ -149,12 +146,28 @@ public partial class WorkGuidelines
     private IReadOnlyList<int> getAvailableSectionCounts()
     {
         List<int> sectionCounts = new List<int>();
-        for (int sectionCount = MIN_SECTION_COUNT; sectionCount <= MAX_SECTION_COUNT; sectionCount++)
+        for (int sectionCount = WorkGuidelinePolicy.MIN_SECTION_COUNT; sectionCount <= WorkGuidelinePolicy.MAX_SECTION_COUNT; sectionCount++)
         {
             sectionCounts.Add(sectionCount);
         }
 
         return sectionCounts;
+    }
+
+    private string getGuidelineGridClass(IReadOnlyList<WorkGuidelineSectionFormModel> sectionFormModels)
+    {
+        EWorkGuidelineGridLayout displayLayout = WorkGuidelinePolicy.GetDisplayLayout(sectionFormModels.Count);
+        switch (displayLayout)
+        {
+            case EWorkGuidelineGridLayout.Empty:
+                return "hub-rule-grid hub-rule-grid-empty";
+            case EWorkGuidelineGridLayout.TwoColumns:
+                return "hub-rule-grid hub-rule-grid-two-columns";
+            case EWorkGuidelineGridLayout.ThreeColumns:
+                return "hub-rule-grid hub-rule-grid-three-columns";
+            default:
+                throw new InvalidOperationException("Unsupported work guideline grid layout.");
+        }
     }
 
     private IReadOnlyList<string> getGuidelineLines(string body)
@@ -170,13 +183,18 @@ public partial class WorkGuidelines
             return lines;
         }
 
-        return new[] { "내용을 입력해 주세요." };
+        return new string[] { "내용을 입력해 주세요." };
     }
 
-    private void moveSection(string sourceItemId, string targetItemId, ESortableMoveDirection moveDirection)
+    private void moveSection(SortableItemMoveRequest moveRequest)
     {
-        WorkGuidelineSectionFormModel? sourceSectionOrNull = mSectionFormModels.FirstOrDefault(section => section.ClientKey == sourceItemId);
-        WorkGuidelineSectionFormModel? targetSectionOrNull = mSectionFormModels.FirstOrDefault(section => section.ClientKey == targetItemId);
+        if (moveRequest.HasRequiredItems == false)
+        {
+            return;
+        }
+
+        WorkGuidelineSectionFormModel? sourceSectionOrNull = mSectionFormModels.FirstOrDefault(section => section.ClientKeyValue == moveRequest.SourceItemKey);
+        WorkGuidelineSectionFormModel? targetSectionOrNull = mSectionFormModels.FirstOrDefault(section => section.ClientKeyValue == moveRequest.TargetItemKey);
         if (sourceSectionOrNull == null || targetSectionOrNull == null)
         {
             return;
@@ -189,7 +207,7 @@ public partial class WorkGuidelines
             return;
         }
 
-        if (moveDirection == ESortableMoveDirection.After)
+        if (moveRequest.MoveDirection == ESortableMoveDirection.After)
         {
             targetIndex++;
         }
@@ -201,11 +219,11 @@ public partial class WorkGuidelines
 
     private void setSortOrders()
     {
-        int sortOrder = 10;
+        int sortOrder = WorkGuidelinePolicy.SORT_ORDER_STEP;
         foreach (WorkGuidelineSectionFormModel sectionFormModel in mSectionFormModels)
         {
             sectionFormModel.SortOrder = sortOrder;
-            sortOrder += 10;
+            sortOrder += WorkGuidelinePolicy.SORT_ORDER_STEP;
         }
     }
 
@@ -224,7 +242,7 @@ public partial class WorkGuidelines
         WorkGuidelineSectionFormModel formModel = new WorkGuidelineSectionFormModel();
         formModel.Title = "새 기준 " + sectionNumber.ToString(CultureInfo.InvariantCulture);
         formModel.Body = "내용을 입력해 주세요.";
-        formModel.SortOrder = sectionNumber * 10;
+        formModel.SortOrder = WorkGuidelinePolicy.GetSortOrderForPosition(sectionNumber);
         return formModel;
     }
 

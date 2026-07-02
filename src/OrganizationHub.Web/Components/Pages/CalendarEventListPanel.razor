@@ -2,15 +2,18 @@
     <HeaderContent>
         <MudTh>일시</MudTh>
         <MudTh>일정</MudTh>
-        <MudTh>일정 위치</MudTh>
+        <MudTh>@getMetadataHeaderText()</MudTh>
         <MudTh>위치</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate Context="calendarEvent">
         <MudTd DataLabel="일시" Class="hub-calendar-time-cell">@formatEventTime(calendarEvent)</MudTd>
         <MudTd DataLabel="일정" Class="hub-calendar-summary-cell"><button type="button" class="hub-calendar-row-button" data-event-id="@calendarEvent.Id" @onclick="@(() => EventSelected.InvokeAsync(calendarEvent))">@calendarEvent.Summary</button></MudTd>
-        <MudTd DataLabel="일정 위치" Class="hub-calendar-meta-cell hub-calendar-calendar-cell">
-            <div>@calendarEvent.CalendarName</div>
+        <MudTd DataLabel="@getMetadataHeaderText()" Class="hub-calendar-meta-cell hub-calendar-calendar-cell">
+            @if (ShouldShowCalendarName && string.IsNullOrWhiteSpace(calendarEvent.CalendarName) == false)
+            {
+                <div>@calendarEvent.CalendarName</div>
+            }
             @if (shouldShowCalendarAuthor(calendarEvent))
             {
                 <div class="hub-calendar-author-line">작성자: @calendarEvent.CreatedByDisplayName</div>
@@ -52,7 +55,10 @@
             </div>
             <div class="hub-calendar-mobile-title">@calendarEvent.Summary</div>
             <div class="hub-calendar-mobile-meta">
-                <span>@calendarEvent.CalendarName</span>
+                @if (ShouldShowCalendarName && string.IsNullOrWhiteSpace(calendarEvent.CalendarName) == false)
+                {
+                    <span>@calendarEvent.CalendarName</span>
+                }
                 @if (shouldShowCalendarAuthor(calendarEvent))
                 {
                     <span>작성자: @calendarEvent.CreatedByDisplayName</span>
@@ -74,10 +80,22 @@
     } = new List<CalendarEventItem>();
 
     [Parameter]
-    public bool ShowCalendarAuthor
+    public bool ShouldShowCalendarName
     {
         get; set;
     }
+
+    [Parameter]
+    public bool ShouldShowCalendarAuthor
+    {
+        get; set;
+    }
+
+    [Parameter]
+    public TimeZoneInfo ClientTimeZoneInfo
+    {
+        get; set;
+    } = TimeZoneInfo.Local;
 
     [Parameter]
     public CalendarEventItem? SelectedEventOrNull
@@ -115,7 +133,17 @@
 
     private bool shouldShowCalendarAuthor(CalendarEventItem calendarEvent)
     {
-        return ShowCalendarAuthor && string.IsNullOrWhiteSpace(calendarEvent.CreatedByDisplayName) == false;
+        return ShouldShowCalendarAuthor && string.IsNullOrWhiteSpace(calendarEvent.CreatedByDisplayName) == false;
+    }
+
+    private string getMetadataHeaderText()
+    {
+        if (ShouldShowCalendarName)
+        {
+            return "일정 정보";
+        }
+
+        return "작성자";
     }
 
     private string formatEventTime(CalendarEventItem calendarEvent)
@@ -127,15 +155,22 @@
 
         if (calendarEvent.IsAllDay)
         {
-            return calendarEvent.Start.Value.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 종일";
+            return getClientEventStart(calendarEvent).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 종일";
         }
 
-        string startText = calendarEvent.Start.Value.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+        string startText = getClientEventStart(calendarEvent).ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
         if (calendarEvent.End.HasValue == false)
         {
             return startText;
         }
 
-        return startText + " - " + calendarEvent.End.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+        DateTime localEnd = ClientTimeZoneUtility.createClientDateTime(calendarEvent.End.Value.UtcDateTime, ClientTimeZoneInfo);
+        return startText + " - " + localEnd.ToString("HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    private DateTime getClientEventStart(CalendarEventItem calendarEvent)
+    {
+        DateTimeOffset eventStart = calendarEvent.Start.GetValueOrDefault();
+        return ClientTimeZoneUtility.createClientDateTime(eventStart.UtcDateTime, ClientTimeZoneInfo);
     }
 }

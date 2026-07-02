@@ -41,8 +41,11 @@ public partial class Todos
     private async Task handleTaskListChangedAsync(string taskListId)
     {
         mSelectedTaskListId = taskListId;
+        await ensureAvailableTaskSortModeAsync();
         mEditingTaskId = string.Empty;
         mEditingTitle = string.Empty;
+        mEditingDueAt = null;
+        mIsEditingDuePickerOpen = false;
         mDeletingTaskId = string.Empty;
         await loadTasksAsync();
     }

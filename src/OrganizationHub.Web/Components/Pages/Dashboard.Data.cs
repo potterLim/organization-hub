@@ -3,62 +3,45 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Dashboard
 {
-    private async Task loadQuickActionPermissionsAsync()
-    {
-        if (CurrentUserSessionOrNull == null)
-        {
-            mCanCreateApprovalRequest = false;
-            mCanUploadFiles = false;
-            return;
-        }
+    private const int DASHBOARD_PENDING_APPROVAL_MAXIMUM_COUNT = 3;
+    private const int DASHBOARD_TODO_MAXIMUM_COUNT = 12;
+    private const int DASHBOARD_WEEK_EVENT_MAXIMUM_COUNT = 6;
+    private const int DASHBOARD_RECENT_MATERIAL_MAXIMUM_COUNT = 5;
 
-        try
-        {
-            ApprovalCreateContext approvalCreateContext = await ApprovalService.GetCreateContextAsync(CurrentUserSessionOrNull, CancellationToken.None);
-            mCanCreateApprovalRequest = approvalCreateContext.CanCreateRequest;
-        }
-        catch
-        {
-            mCanCreateApprovalRequest = false;
-        }
-
-        try
-        {
-            IReadOnlyList<DriveFolderReference> uploadableFolders = await PermissionService.GetUploadableDriveFoldersAsync(CurrentUserSessionOrNull, CancellationToken.None);
-            mCanUploadFiles = uploadableFolders.Count > 0;
-        }
-        catch
-        {
-            mCanUploadFiles = false;
-        }
-    }
+    private static readonly TimeSpan RECENT_MATERIALS_LOAD_TIMEOUT = TimeSpan.FromSeconds(8);
 
     private async Task loadDashboardSectionsAsync()
     {
         Task dashboardSettingsTask = loadDashboardSettingsAsync();
         Task pendingApprovalsTask = loadPendingApprovalsAsync();
         Task weekEventsTask = loadWeekEventsAsync();
+        Task weekTodosTask = loadWeekTodosAsync();
         Task recentMaterialsTask = loadRecentMaterialsAsync();
-        await Task.WhenAll(dashboardSettingsTask, pendingApprovalsTask, weekEventsTask, recentMaterialsTask);
+        await Task.WhenAll(dashboardSettingsTask, pendingApprovalsTask, weekEventsTask, weekTodosTask, recentMaterialsTask);
     }
 
     private async Task loadDashboardSettingsAsync()
     {
         try
         {
-            GlobalSettingFormModel globalSetting = await TeamManagementService.GetGlobalSettingAsync(CancellationToken.None);
-            mShowCalendarAuthor = globalSetting.ShowCalendarAuthor;
+            GlobalSettingFormModel globalSetting = await GlobalSettingService.GetGlobalSettingAsync(CancellationToken.None);
+            mShouldShowCalendarAuthor = globalSetting.ShouldShowCalendarAuthor;
+            mShouldShowTodoAuthor = globalSetting.ShouldShowTodoAuthor;
         }
-        catch
+        catch (Exception exception)
         {
-            mShowCalendarAuthor = false;
+            Logger.LogWarning(exception, "Dashboard setting load failed.");
+            mShouldShowCalendarAuthor = false;
+            mShouldShowTodoAuthor = true;
         }
 
         await InvokeAsync(StateHasChanged);
@@ -79,10 +62,11 @@ public partial class Dashboard
         try
         {
             IReadOnlyList<ApprovalRequestItem> pendingApprovals = await ApprovalService.GetPendingApprovalsAsync(CurrentUserSessionOrNull, CancellationToken.None);
-            mPendingApprovals = pendingApprovals.Take(3).ToList();
+            mPendingApprovals = pendingApprovals.Take(DASHBOARD_PENDING_APPROVAL_MAXIMUM_COUNT).ToList();
         }
-        catch
+        catch (Exception exception)
         {
+            Logger.LogWarning(exception, "Dashboard pending approval load failed.");
             mPendingApprovals = new List<ApprovalRequestItem>();
             mPendingApprovalsErrorMessage = "결재 대기 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
         }
@@ -105,15 +89,16 @@ public partial class Dashboard
         await InvokeAsync(StateHasChanged);
         try
         {
-            DateTime today = DateTime.Today;
+            DateTime today = ClientTimeZoneUtility.getClientNow(mClientTimeZoneInfo).Date;
             DateTime weekStart = CalendarWeekUtility.GetStartOfWeek(today);
             DateTime weekEnd = CalendarWeekUtility.GetEndOfWeek(today);
             CalendarEventDateRange dateRange = new CalendarEventDateRange(weekStart, weekEnd);
             IReadOnlyList<CalendarEventItem> events = await CalendarService.GetAggregateEventsAsync(CurrentUserSessionOrNull, dateRange, CancellationToken.None);
-            mWeekEvents = events.Take(6).ToList();
+            mWeekEvents = events.Take(DASHBOARD_WEEK_EVENT_MAXIMUM_COUNT).ToList();
         }
-        catch
+        catch (Exception exception)
         {
+            Logger.LogWarning(exception, "Dashboard weekly event load failed.");
             mWeekEvents = new List<CalendarEventItem>();
             mWeekEventsErrorMessage = "이번 주 일정을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
         }
@@ -122,9 +107,38 @@ public partial class Dashboard
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task loadRecentMaterialsAsync()
+    private async Task loadWeekTodosAsync()
     {
         if (CurrentUserSessionOrNull == null)
+        {
+            mIsLoadingWeekTodos = false;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        mIsLoadingWeekTodos = true;
+        mWeekTodosErrorMessage = string.Empty;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            IReadOnlyList<TodoTaskItem> tasks = await TodoService.GetTasksAsync(CurrentUserSessionOrNull, TodoTaskListId.AllTasks, CancellationToken.None);
+            mWeekTodos = createDashboardTodos(tasks);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "Dashboard weekly todo load failed.");
+            mWeekTodos = new List<TodoTaskItem>();
+            mWeekTodosErrorMessage = "이번 주 할 일을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+        }
+
+        mIsLoadingWeekTodos = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task loadRecentMaterialsAsync()
+    {
+        UserSession? currentUserSessionOrNull = CurrentUserSessionOrNull;
+        if (currentUserSessionOrNull == null)
         {
             mIsLoadingRecentMaterials = false;
             await InvokeAsync(StateHasChanged);
@@ -136,16 +150,130 @@ public partial class Dashboard
         await InvokeAsync(StateHasChanged);
         try
         {
-            IReadOnlyList<DriveFileItem> recentMaterials = await DriveBrowserService.GetRecentUploadedFilesAsync(CurrentUserSessionOrNull, EDriveFolderKind.TeamMaterials, new RecentItemLimit(5), EManagementTeamFilter.ExcludeManagementTeam, CancellationToken.None);
-            mRecentMaterials = recentMaterials.ToList();
+            IReadOnlyList<DriveFileItem>? recentMaterialsOrNull = await tryLoadRecentMaterialsWithTimeoutAsync(currentUserSessionOrNull);
+            if (recentMaterialsOrNull == null)
+            {
+                mRecentMaterials = new List<DriveFileItem>();
+                mRecentMaterialsErrorMessage = "최근 팀 자료 확인이 지연되고 있습니다. 전체 보기에서 다시 확인해 주세요.";
+            }
+            else
+            {
+                mRecentMaterials = recentMaterialsOrNull.ToList();
+            }
         }
-        catch
+        catch (OperationCanceledException)
         {
+            Logger.LogDebug("Dashboard recent material load timed out.");
+            mRecentMaterials = new List<DriveFileItem>();
+            mRecentMaterialsErrorMessage = "최근 팀 자료 확인이 지연되고 있습니다. 전체 보기에서 다시 확인해 주세요.";
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "Dashboard recent material load failed.");
             mRecentMaterials = new List<DriveFileItem>();
             mRecentMaterialsErrorMessage = "최근 팀 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
         }
 
         mIsLoadingRecentMaterials = false;
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task<IReadOnlyList<DriveFileItem>?> tryLoadRecentMaterialsWithTimeoutAsync(UserSession currentUserSession)
+    {
+        CancellationTokenSource timeoutCancellationTokenSource = new CancellationTokenSource();
+        Task<IReadOnlyList<DriveFileItem>> recentMaterialsTask = DriveBrowserService.GetRecentUploadedFilesAsync(
+            currentUserSession,
+            EDriveFolderKind.TeamMaterials,
+            new RecentItemLimit(DASHBOARD_RECENT_MATERIAL_MAXIMUM_COUNT),
+            EManagementTeamFilter.ExcludeManagementTeam,
+            timeoutCancellationTokenSource.Token);
+        Task completedTask = await Task.WhenAny(recentMaterialsTask, Task.Delay(RECENT_MATERIALS_LOAD_TIMEOUT));
+        if (completedTask != recentMaterialsTask)
+        {
+            timeoutCancellationTokenSource.Cancel();
+            mRecentMaterialsObservationTaskOrNull = observeTaskAndDisposeCancellationSourceAsync(
+                recentMaterialsTask,
+                timeoutCancellationTokenSource,
+                "Dashboard recent material load failed after timeout fallback.");
+            return null;
+        }
+
+        try
+        {
+            return await recentMaterialsTask;
+        }
+        finally
+        {
+            timeoutCancellationTokenSource.Dispose();
+        }
+    }
+
+    private async Task observeFaultedTaskAsync(Task task, string warningMessage)
+    {
+        try
+        {
+            await task;
+        }
+        catch (OperationCanceledException)
+        {
+            Logger.LogDebug("{Message}", warningMessage);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "{Message}", warningMessage);
+        }
+    }
+
+    private async Task observeTaskAndDisposeCancellationSourceAsync(
+        Task task,
+        CancellationTokenSource cancellationTokenSource,
+        string warningMessage
+    )
+    {
+        try
+        {
+            await observeFaultedTaskAsync(task, warningMessage);
+        }
+        finally
+        {
+            cancellationTokenSource.Dispose();
+        }
+    }
+
+    private List<TodoTaskItem> createDashboardTodos(IReadOnlyList<TodoTaskItem> tasks)
+    {
+        DateTime today = ClientTimeZoneUtility.getClientNow(mClientTimeZoneInfo).Date;
+        DateTime weekEnd = CalendarWeekUtility.GetEndOfWeek(today);
+        return tasks
+            .Where(task => task.IsCompleted == false)
+            .Where(task => isTaskDueForDashboard(task, weekEnd))
+            .OrderBy(task => getTaskDueDisplayDateOrNull(task))
+            .ThenBy(task => task.TaskListDisplayName)
+            .ThenBy(task => task.Position)
+            .ThenBy(task => task.Title)
+            .Take(DASHBOARD_TODO_MAXIMUM_COUNT)
+            .ToList();
+    }
+
+    private bool isTaskDueForDashboard(TodoTaskItem task, DateTime weekEnd)
+    {
+        DateTime? dueAtOrNull = getTaskDueDisplayDateOrNull(task);
+        if (dueAtOrNull.HasValue == false)
+        {
+            return false;
+        }
+
+        DateTime dueDate = dueAtOrNull.Value.Date;
+        return dueDate <= weekEnd.Date;
+    }
+
+    private DateTime? getTaskDueDisplayDateOrNull(TodoTaskItem task)
+    {
+        if (task.DueAt.HasValue == false)
+        {
+            return null;
+        }
+
+        return ClientTimeZoneUtility.createClientDateTime(task.DueAt.Value, mClientTimeZoneInfo);
     }
 }
