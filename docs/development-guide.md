@@ -14,13 +14,19 @@
 dotnet run --project src\OrganizationHub.Web\OrganizationHub.Web.csproj --urls http://127.0.0.1:5156
 ```
 
-개발 환경 기본 계정은 다음과 같습니다.
+개발 환경의 초기 시스템 관리자 계정은 `OrganizationHub:SeedUsername`과 `OrganizationHub:SeedPassword` 설정을 사용합니다.  
+`appsettings.Development.json`은 사용자 이름만 예시로 제공하며 비밀번호는 커밋하지 않습니다.
 
-```text
-admin / ChangeMe!2026
+로컬에서 새 데이터베이스를 처음 만들 때는 user secrets나 환경 변수로 초기 비밀번호를 지정합니다.
+
+```powershell
+dotnet user-secrets set "OrganizationHub:SeedPassword" "<local-admin-password>" --project src\OrganizationHub.Web\OrganizationHub.Web.csproj
 ```
 
-운영 환경에서는 반드시 초기 시스템 관리자 계정을 환경 변수로 지정합니다.
+운영 환경에서는 반드시 초기 시스템 관리자 계정을 환경 변수나 secret 저장소로 별도 지정합니다.
+
+파일 업로드 최대 크기와 Calendar 생성 시간대는 `appsettings.json`의 `OrganizationHub:MaximumUploadBytes`와 `GoogleApi:CalendarTimeZone` 기본값을 사용합니다.  
+운영 배포에서는 환경 변수로 덮어쓸 수 있습니다.
 
 ## Google OAuth 설정
 
@@ -33,7 +39,7 @@ dotnet user-secrets set "GoogleApi:OAuthClientSecret" "<client-secret>" --projec
 
 로컬 OAuth 리디렉션 URI는 `http://127.0.0.1:5156/admin/google/callback`입니다. Visual Studio 실행 프로필과 명령줄 실행 주소를 이 값과 맞춰야 Google 연결이 완료됩니다.
 
-운영 환경에서는 환경 변수나 배포 플랫폼의 secret 저장소를 사용합니다. OAuth Client Secret, 운영 DB, Data Protection key는 저장소에 커밋하지 않습니다.
+운영 환경에서는 환경 변수나 배포 플랫폼의 secret 저장소를 사용합니다. OAuth Client Secret·운영 DB·Data Protection key는 저장소에 커밋하지 않습니다.
 
 ## 검증
 
@@ -41,14 +47,18 @@ dotnet user-secrets set "GoogleApi:OAuthClientSecret" "<client-secret>" --projec
 dotnet build OrganizationHub.sln
 dotnet test OrganizationHub.sln
 dotnet format OrganizationHub.sln --verify-no-changes --verbosity minimal
+.\tools\maintenance\verify-code-whitespace.ps1
 ```
 
-권한, 메뉴, Google 매핑, 결재 경로를 바꾼 경우에는 관리자 화면에서 최소한 다음 흐름을 확인합니다.
+Markdown 문서는 문장 호흡을 위해 의도적으로 두 칸 공백 줄바꿈을 사용합니다.  
+공백 검사는 코드 파일과 Markdown 파일의 규칙을 분리해서 확인합니다.
 
-1. 시스템 관리자로 팀, 직책, 권한, 사용자를 만든다.
+권한·메뉴·Google 매핑·결재 경로를 바꾼 경우에는 관리자 화면에서 최소한 다음 흐름을 확인합니다.
+
+1. 시스템 관리자로 팀·직책·권한·사용자를 만든다.
 2. 권한이 다른 사용자로 로그인해 보이는 메뉴와 가능한 작업을 비교한다.
 3. 권한을 변경한 뒤 새로고침 없이 메뉴와 접근 가능 여부가 갱신되는지 확인한다.
-4. 파일, 일정, 할 일, 결재 요청처럼 서버 요청이 발생하는 작업을 직접 실행한다.
+4. 파일·일정·할 일·결재 요청처럼 서버 요청이 발생하는 작업을 직접 실행한다.
 
 ## 데이터베이스 마이그레이션
 
@@ -57,8 +67,9 @@ dotnet tool restore
 dotnet tool run dotnet-ef migrations add <MigrationName> --project src\OrganizationHub.Web\OrganizationHub.Web.csproj --startup-project src\OrganizationHub.Web\OrganizationHub.Web.csproj --output-dir Data\Migrations
 ```
 
-운영 데이터베이스에 영향을 주는 변경은 백업, 마이그레이션 검토, 로컬 검증 순서로 진행합니다.
+운영 데이터베이스에 영향을 주는 변경은 백업·마이그레이션 검토·로컬 검증 순서로 진행합니다.
 
 ## 로컬 산출물
 
-브라우저 캡처, 임시 QA 데이터, 로컬 스크립트, 대량 테스트 로그는 `tmp`, `captures`, `tools/local`, `tools/tmp` 같은 무시되는 경로에 둡니다. 배포 코드와 문서에 필요한 파일만 Git에 포함합니다.
+브라우저 캡처·로컬 확인 데이터·로컬 스크립트·대량 확인 로그는 `.artifacts`·`tmp`·`captures`·`tools/local`·`tools/tmp` 같은 무시되는 경로에 둡니다.  
+배포 코드와 문서에 필요한 파일만 Git에 포함합니다.
