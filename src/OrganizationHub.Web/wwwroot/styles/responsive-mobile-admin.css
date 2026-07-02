@@ -143,9 +143,14 @@
         grid-template-columns: minmax(0, 1fr);
     }
 
+    .hub-upload-log-meta-row {
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 2px;
+    }
+
     .hub-uploaded-by {
-        justify-self: start;
         max-width: 100%;
+        text-align: left;
     }
 
 }

@@ -17,7 +17,7 @@ public abstract class OrganizationHubComponentBase : ComponentBase
         get; private set;
     }
 
-    protected async Task<bool> loadUserSessionAsync()
+    protected async Task<bool> tryLoadUserSessionAsync()
     {
         AuthenticationState authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         ClaimsPrincipal principal = authenticationState.User;
@@ -25,4 +25,3 @@ public abstract class OrganizationHubComponentBase : ComponentBase
         return CurrentUserSessionOrNull != null;
     }
 }
-

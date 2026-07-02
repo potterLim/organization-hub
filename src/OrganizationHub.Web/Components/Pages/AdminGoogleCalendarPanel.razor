@@ -1,12 +1,14 @@
 <MudPaper Class="hub-card hub-list-card pa-4">
     <div class="hub-google-panel-heading">
-        <div>
-            <MudText Typo="Typo.h6">Calendar 기본 연결</MudText>
-            <div class="hub-muted">기본 Calendar를 만들거나 각 화면에 연결할 Calendar를 선택합니다.</div>
+        <div class="hub-google-panel-title">
+            <span class="hub-google-panel-icon">
+                <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Size="Size.Small" />
+            </span>
+            <MudText Typo="Typo.h6">Calendar 연결 대상</MudText>
         </div>
         <div class="hub-google-panel-actions">
-            <MudTooltip Text="기본 Calendar가 없으면 만들고 설정에 연결합니다.">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(State.Status.IsConnected == false || State.IsEnsuringStandardCalendars)" OnClick="@(() => Actions.EnsureStandardCalendarsRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.EventAvailable">기본 Calendar 만들기</MudButton>
+            <MudTooltip Text="기본 Calendar 만들기">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(State.Status.IsConnected == false || State.IsEnsuringStandardCalendars)" OnClick="@(() => Actions.EnsureStandardCalendarsRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.EventAvailable">Calendar 만들기</MudButton>
             </MudTooltip>
         </div>
     </div>
@@ -23,7 +25,6 @@
         <div class="hub-resource-picker-header">
             <div>
                 <strong>Calendar 목록</strong>
-                <span>Calendar 선택을 열면 연결 가능한 Calendar가 표시됩니다.</span>
             </div>
             <div class="hub-resource-picker-actions">
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Actions.RefreshRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(State.Status.IsConnected == false)">새로고침</MudButton>

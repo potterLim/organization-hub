@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
 using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -23,7 +24,7 @@ public partial class AdminPositions
     private int mSelectedPermissionTeamId;
     private int? mSelectedPositionIdOrNull;
     private string mSelectedPermissionCategory = string.Empty;
-    private bool mShowOnlyAllowedPermissions;
+    private bool mShouldShowOnlyAllowedPermissions;
     private bool mShouldInitializeSortable = true;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;

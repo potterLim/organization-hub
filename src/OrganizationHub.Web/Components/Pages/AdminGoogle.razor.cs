@@ -31,7 +31,7 @@ public partial class AdminGoogle
     private GoogleWorkspaceAssignmentTargetKey mSelectedTaskListTargetKey;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
-    private bool mShouldShowHealthyHealthItems;
+    private bool mShouldShowHealthyItems;
     private bool mIsEnsuringStandardDriveFolders;
     private bool mIsEnsuringStandardCalendars;
     private bool mIsApplyingStandardDriveFolderNames;

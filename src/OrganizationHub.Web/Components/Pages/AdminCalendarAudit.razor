@@ -1,18 +1,15 @@
 @page "/admin/calendar-audit"
 @attribute [Authorize(Policy = OrganizationHubPolicies.CALENDAR_AUDIT_READ)]
-@inherits OrganizationHubComponentBase
+@inherits TimeZoneAwareOrganizationHubComponentBase
 @inject ICalendarEventDeletionAuditLogService CalendarEventDeletionAuditLogService
 @using OrganizationHub.Web.Domain
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("일정 삭제 기록")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">일정 삭제 기록</h1>
-    </div>
-    <MudStack Row="true" Spacing="2" Class="hub-page-actions">
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="loadAuditLogsAsync" StartIcon="@Icons.Material.Filled.Refresh">새로고침</MudButton>
-    </MudStack>
+<h1 class="hub-sr-only">일정 삭제 기록</h1>
+
+<div class="hub-page-command-row">
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="loadAuditLogsAsync" StartIcon="@Icons.Material.Filled.Refresh">새로고침</MudButton>
 </div>
 
 <MudPaper Class="hub-card pa-4">
@@ -51,7 +48,7 @@
                 <MudTd DataLabel="일시">@formatEventTime(auditLog)</MudTd>
                 <MudTd DataLabel="삭제자">
                     <div class="hub-audit-title">@auditLog.DeletedByDisplayName</div>
-                    <div class="hub-audit-subtitle">@formatRole(auditLog.DeletedByRole)</div>
+                    <div class="hub-audit-subtitle">@getDeletedByPositionText(auditLog)</div>
                 </MudTd>
                 <MudTd DataLabel="상태">
                     <span class="@getStatusClass(auditLog.Status)" title="@auditLog.ErrorMessage">@getStatusText(auditLog.Status)</span>
@@ -63,12 +60,14 @@
 
 @code
 {
+    private const int RECENT_DELETED_EVENT_AUDIT_LOG_LIMIT = 100;
+
     private List<CalendarEventDeletionAuditLogItem> mAuditLogs = new List<CalendarEventDeletionAuditLogItem>();
     private bool mIsLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        bool hasSession = await loadUserSessionAsync();
+        bool hasSession = await tryLoadUserSessionAsync();
         if (hasSession == false || CurrentUserSessionOrNull == null)
         {
             mIsLoading = false;
@@ -76,6 +75,16 @@
         }
 
         await loadAuditLogsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender == false)
+        {
+            return;
+        }
+
+        await initializeClientTimeZoneAsync();
     }
 
     private async Task loadAuditLogsAsync()
@@ -88,14 +97,14 @@
 
         mIsLoading = true;
         UserSession currentUserSession = currentUserSessionOrNull;
-        IReadOnlyList<CalendarEventDeletionAuditLogItem> auditLogs = await CalendarEventDeletionAuditLogService.GetRecentDeletedEventsAsync(currentUserSession, new RecentItemLimit(100), CancellationToken.None);
+        IReadOnlyList<CalendarEventDeletionAuditLogItem> auditLogs = await CalendarEventDeletionAuditLogService.GetRecentDeletedEventsAsync(currentUserSession, new RecentItemLimit(RECENT_DELETED_EVENT_AUDIT_LOG_LIMIT), CancellationToken.None);
         mAuditLogs = auditLogs.ToList();
         mIsLoading = false;
     }
 
     private string formatDeletedAt(DateTime deletedAt)
     {
-        return deletedAt.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+        return PresentationDateTimeFormatter.formatClientDateTime(deletedAt, ClientTimeZoneInfo, PresentationDateTimeFormatter.MONTH_DAY_TIME_FORMAT);
     }
 
     private string formatEventTime(CalendarEventDeletionAuditLogItem auditLog)
@@ -107,21 +116,26 @@
 
         if (auditLog.IsAllDay)
         {
-            return auditLog.EventStart.Value.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 종일";
+            return PresentationDateTimeFormatter.formatClientDateTime(auditLog.EventStart.Value, ClientTimeZoneInfo, PresentationDateTimeFormatter.DATE_FORMAT) + " 종일";
         }
 
-        string startText = auditLog.EventStart.Value.ToLocalTime().ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
+        string startText = PresentationDateTimeFormatter.formatClientDateTime(auditLog.EventStart.Value, ClientTimeZoneInfo, PresentationDateTimeFormatter.MONTH_DAY_TIME_FORMAT);
         if (auditLog.EventEnd.HasValue == false)
         {
             return startText;
         }
 
-        return startText + " - " + auditLog.EventEnd.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+        return startText + " - " + PresentationDateTimeFormatter.formatClientDateTime(auditLog.EventEnd.Value, ClientTimeZoneInfo, PresentationDateTimeFormatter.HOUR_MINUTE_FORMAT);
     }
 
-    private string formatRole(EUserRole role)
+    private string getDeletedByPositionText(CalendarEventDeletionAuditLogItem auditLog)
     {
-        return UserRoleUtility.GetDisplayName(role);
+        if (string.IsNullOrWhiteSpace(auditLog.DeletedByPositionName))
+        {
+            return "직책 없음";
+        }
+
+        return auditLog.DeletedByPositionName;
     }
 
     private string getStatusClass(ECalendarEventDeletionAuditStatus status)

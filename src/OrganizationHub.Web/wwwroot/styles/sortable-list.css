@@ -68,10 +68,10 @@
 
 .hub-sortable-handle {
     align-items: center;
-    background: rgba(78, 104, 145, .08);
-    border: 1px solid rgba(78, 104, 145, .12);
+    background: rgba(78, 104, 145, .055);
+    border: 1px solid rgba(78, 104, 145, .09);
     border-radius: 10px;
-    color: rgba(78, 104, 145, .78);
+    color: rgba(78, 104, 145, .68);
     cursor: grab;
     display: inline-flex;
     height: 34px;
@@ -79,6 +79,12 @@
     touch-action: none;
     user-select: none;
     width: 28px;
+}
+
+.hub-sortable-row:hover .hub-sortable-handle {
+    background: rgba(33, 107, 255, .08);
+    border-color: rgba(33, 107, 255, .14);
+    color: var(--hub-brand-deep);
 }
 
 .hub-sortable-handle:active {

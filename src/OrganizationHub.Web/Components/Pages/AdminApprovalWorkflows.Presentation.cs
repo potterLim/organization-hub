@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using MudBlazor;
 using OrganizationHub.Web.Data.Entities;
@@ -8,14 +9,48 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminApprovalWorkflows
 {
-    private string getWorkflowTeamName(ApprovalWorkflow workflow)
+    private string getWorkflowConditionName(ApprovalWorkflow workflow)
     {
-        if (workflow.AppliesToTeam == null)
+        if (workflow.AppliesToTeam == null && workflow.AppliesToPosition == null)
         {
-            return "전체";
+            return "전체 요청자";
         }
 
-        return workflow.AppliesToTeam.DisplayName;
+        if (workflow.AppliesToTeam == null)
+        {
+            return getWorkflowPositionName(workflow);
+        }
+
+        if (workflow.AppliesToPosition == null)
+        {
+            return workflow.AppliesToTeam.DisplayName + " 전체 직책";
+        }
+
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(
+            workflow.AppliesToTeam.DisplayName,
+            workflow.AppliesToPosition.Name);
+        return affiliationLabel.GetFullText();
+    }
+
+    private string getWorkflowPositionName(ApprovalWorkflow workflow)
+    {
+        if (workflow.AppliesToPosition == null)
+        {
+            return "전체 직책";
+        }
+
+        return getPositionDisplayName(workflow.AppliesToPosition);
+    }
+
+    private List<OrganizationPosition> getRequesterPositionOptions()
+    {
+        List<OrganizationPosition> positions = mPositions;
+        if (mFormModel.AppliesToTeamId.HasValue)
+        {
+            positions = mPositions.Where(position => position.TeamId == mFormModel.AppliesToTeamId.Value).ToList();
+        }
+
+        return positions.OrderBy(position => position.Team?.SortOrder).ThenBy(position => position.SortOrder).ThenBy(position => position.Name).ToList();
     }
 
     private string getPositionDisplayName(OrganizationPosition position)
@@ -25,33 +60,72 @@ public partial class AdminApprovalWorkflows
             return position.Name;
         }
 
-        return position.Team.DisplayName + " / " + position.Name;
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(position.Team.DisplayName, position.Name);
+        return affiliationLabel.GetFullText();
     }
 
     private string getUserDisplayName(UserAccount user)
     {
-        if (user.Team == null)
+        string positionName = user.DisplayName;
+        if (user.Position != null)
         {
-            return user.DisplayName;
+            positionName = user.Position.Name;
         }
 
-        return user.DisplayName + " · " + user.Team.DisplayName;
+        string teamName = string.Empty;
+        if (user.Team != null)
+        {
+            teamName = user.Team.DisplayName;
+        }
+
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(teamName, positionName);
+        return affiliationLabel.GetFullText();
     }
 
     private string getWorkflowTargetPreview()
     {
-        if (mFormModel.AppliesToTeamId.HasValue == false)
+        Team? teamOrNull = null;
+        if (mFormModel.AppliesToTeamId.HasValue)
         {
-            return "모든 팀 요청에 적용됩니다. 목록의 위쪽 경로를 먼저 사용합니다.";
+            teamOrNull = mTeams.FirstOrDefault(team => team.Id == mFormModel.AppliesToTeamId.Value);
         }
 
-        Team? teamOrNull = mTeams.FirstOrDefault(team => team.Id == mFormModel.AppliesToTeamId.Value);
+        OrganizationPosition? positionOrNull = null;
+        if (mFormModel.AppliesToPositionId.HasValue)
+        {
+            positionOrNull = mPositions.FirstOrDefault(position => position.Id == mFormModel.AppliesToPositionId.Value);
+        }
+
+        string targetText = getWorkflowTargetText(teamOrNull, positionOrNull);
+        return targetText + " 요청에 적용됩니다.";
+    }
+
+    private string getWorkflowTargetText(
+        Team? teamOrNull,
+        OrganizationPosition? positionOrNull)
+    {
+        if (teamOrNull == null && positionOrNull == null)
+        {
+            return "전체 요청자";
+        }
+
         if (teamOrNull == null)
         {
-            return "선택한 팀 요청에 적용됩니다.";
+            if (positionOrNull == null)
+            {
+                return "선택한 직책";
+            }
+
+            return getPositionDisplayName(positionOrNull);
         }
 
-        return teamOrNull.DisplayName + " 팀 요청에 적용됩니다.";
+        if (positionOrNull == null)
+        {
+            return teamOrNull.DisplayName + " 전체 직책";
+        }
+
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(teamOrNull.DisplayName, positionOrNull.Name);
+        return affiliationLabel.GetFullText();
     }
 
     private string getWorkflowStepPreview(ApprovalWorkflowStepFormModel step)
@@ -85,7 +159,7 @@ public partial class AdminApprovalWorkflows
 
         if (step.ApproverSelectionType == EApproverSelectionType.PositionInRequesterTeam)
         {
-            return "요청자 팀의 " + getSelectedPositionPreview(step, "선택한 직책");
+            return "요청자 팀의 " + getSelectedPositionName(step, "선택한 직책");
         }
 
         if (step.ApproverSelectionType == EApproverSelectionType.PositionInSelectedTeam)
@@ -97,7 +171,7 @@ public partial class AdminApprovalWorkflows
                 teamText = teamOrNull.DisplayName;
             }
 
-            return teamText + "의 " + getSelectedPositionPreview(step, "선택한 직책");
+            return teamText + "의 " + getSelectedPositionName(step, "선택한 직책");
         }
 
         PermissionDefinition? definitionOrNull = mPermissionDefinitions.FirstOrDefault(definition => definition.Key == step.RequiredPermissionKey);
@@ -118,6 +192,17 @@ public partial class AdminApprovalWorkflows
         }
 
         return getPositionDisplayName(positionOrNull);
+    }
+
+    private string getSelectedPositionName(ApprovalWorkflowStepFormModel step, string fallback)
+    {
+        OrganizationPosition? positionOrNull = mPositions.FirstOrDefault(position => step.ApproverPositionId.HasValue && position.Id == step.ApproverPositionId.Value);
+        if (positionOrNull == null)
+        {
+            return fallback;
+        }
+
+        return positionOrNull.Name;
     }
 
     private void showOperationResult(ServiceResult operationResult, string successMessage)

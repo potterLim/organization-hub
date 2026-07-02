@@ -43,7 +43,7 @@ else
         }
 
         mCanRenderContent = false;
-        bool hasSession = await loadUserSessionAsync();
+        bool hasSession = await tryLoadUserSessionAsync();
         if (hasSession == false || CurrentUserSessionOrNull == null)
         {
             mLastCheckedPath = currentPath;

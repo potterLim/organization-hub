@@ -20,11 +20,10 @@ public partial class AdminUsers
         mFormModel.Id = userAccount.Id;
         mFormModel.Username = userAccount.Username;
         mFormModel.DisplayName = userAccount.DisplayName;
-        mFormModel.Role = userAccount.Role;
         mFormModel.TeamId = userAccount.TeamId;
         mFormModel.PositionId = userAccount.PositionId;
         mFormModel.IsActive = userAccount.IsActive;
-        mapRoleToFormFields(userAccount.Role);
+        mapUserKindToFormFields(userAccount);
         ensureDefaultTeamSelection();
         ensureDefaultPositionSelection();
         mFormTitle = "사용자 수정";
@@ -34,9 +33,9 @@ public partial class AdminUsers
     private void clearForm()
     {
         mFormModel = new UserAccountFormModel();
-        mFormModel.Role = EUserRole.TeamUser;
+        mFormModel.AccountKind = EUserAccountKind.OrganizationMember;
         mFormModel.IsActive = true;
-        mIsSystemAdmin = false;
+        mIsSystemAdministratorSelected = false;
         ensureDefaultTeamSelection();
         ensureDefaultPositionSelection();
         mFormTitle = "새 사용자";
@@ -56,28 +55,30 @@ public partial class AdminUsers
         return Task.CompletedTask;
     }
 
-    private void mapRoleToFormFields(EUserRole role)
+    private void mapUserKindToFormFields(UserAccount userAccount)
     {
-        mIsSystemAdmin = role == EUserRole.Admin;
-        if (mIsSystemAdmin)
+        mIsSystemAdministratorSelected = isSystemAdministratorAccount(userAccount);
+        if (mIsSystemAdministratorSelected)
         {
+            mFormModel.AccountKind = EUserAccountKind.SystemAdministrator;
             mFormModel.TeamId = getAdministrationTeamIdOrNull();
             return;
         }
 
+        mFormModel.AccountKind = EUserAccountKind.OrganizationMember;
         ensureDefaultTeamSelection();
     }
 
-    private void syncFormRoleAndTeam()
+    private void syncFormAccountKindAndTeam()
     {
         if (mCanManageSystemAdmins == false)
         {
-            mIsSystemAdmin = false;
+            mIsSystemAdministratorSelected = false;
         }
 
-        if (mIsSystemAdmin)
+        if (mIsSystemAdministratorSelected)
         {
-            mFormModel.Role = EUserRole.Admin;
+            mFormModel.AccountKind = EUserAccountKind.SystemAdministrator;
             mFormModel.TeamId = getAdministrationTeamIdOrNull();
             mFormModel.PositionId = null;
             return;
@@ -85,18 +86,18 @@ public partial class AdminUsers
 
         ensureDefaultTeamSelection();
         ensureDefaultPositionSelection();
-        mFormModel.Role = getDefaultOrganizationMemberRole();
+        mFormModel.AccountKind = EUserAccountKind.OrganizationMember;
     }
 
     private void ensureDefaultTeamSelection()
     {
-        if (mIsSystemAdmin)
+        if (mIsSystemAdministratorSelected)
         {
             return;
         }
 
-        bool selectedTeamIsAvailable = mFormModel.TeamId.HasValue && mTeams.Any(team => team.Id == mFormModel.TeamId.Value);
-        if (selectedTeamIsAvailable)
+        bool isSelectedTeamAvailable = mFormModel.TeamId.HasValue && mTeams.Any(team => team.Id == mFormModel.TeamId.Value);
+        if (isSelectedTeamAvailable)
         {
             ensureDefaultPositionSelection();
             return;
@@ -109,15 +110,15 @@ public partial class AdminUsers
 
     private void ensureDefaultPositionSelection()
     {
-        if (mIsSystemAdmin)
+        if (mIsSystemAdministratorSelected)
         {
             mFormModel.PositionId = null;
             return;
         }
 
         IReadOnlyList<OrganizationPosition> selectablePositions = getSelectablePositions();
-        bool selectedPositionIsAvailable = mFormModel.PositionId.HasValue && selectablePositions.Any(position => position.Id == mFormModel.PositionId.Value);
-        if (selectedPositionIsAvailable)
+        bool isSelectedPositionAvailable = mFormModel.PositionId.HasValue && selectablePositions.Any(position => position.Id == mFormModel.PositionId.Value);
+        if (isSelectedPositionAvailable)
         {
             return;
         }

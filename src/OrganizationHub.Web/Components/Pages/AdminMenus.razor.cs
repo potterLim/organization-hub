@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
 using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -15,6 +16,7 @@ public partial class AdminMenus
     private List<NavigationMenuSection> mSections = new List<NavigationMenuSection>();
     private List<NavigationMenuItem> mMenuItems = new List<NavigationMenuItem>();
     private List<Team> mTeams = new List<Team>();
+    private IReadOnlyList<PermissionDefinition> mPermissionDefinitions = new List<PermissionDefinition>();
     private NavigationMenuItem? mSelectedMenuItemOrNull;
     private NavigationMenuItemFormModel mFormModel = new NavigationMenuItemFormModel();
     private NavigationMenuSectionFormModel mSectionFormModel = new NavigationMenuSectionFormModel();
@@ -39,6 +41,7 @@ public partial class AdminMenus
         IReadOnlyList<NavigationMenuSection> sections = await NavigationMenuService.GetMenuSectionsAsync(CancellationToken.None);
         IReadOnlyList<NavigationMenuItem> menuItems = await NavigationMenuService.GetManageableMenuItemsAsync(CancellationToken.None);
         IReadOnlyList<Team> teams = await TeamManagementService.GetTeamsAsync(CancellationToken.None);
+        mPermissionDefinitions = PermissionCatalog.GetDefinitions();
         mSections = sections.ToList();
         mMenuItems = menuItems.ToList();
         mTeams = teams.Where(team => team.IsActive).ToList();

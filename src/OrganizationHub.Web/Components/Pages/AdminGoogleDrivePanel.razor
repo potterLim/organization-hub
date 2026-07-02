@@ -1,15 +1,17 @@
 <MudPaper Class="hub-card hub-list-card pa-4">
     <div class="hub-google-panel-heading">
-        <div>
-            <MudText Typo="Typo.h6">Drive 기본 구조</MudText>
-            <div class="hub-muted">업무에 필요한 기본 폴더를 만들고 각 화면에 연결할 폴더를 선택합니다.</div>
+        <div class="hub-google-panel-title">
+            <span class="hub-google-panel-icon">
+                <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" />
+            </span>
+            <MudText Typo="Typo.h6">Drive 연결 대상</MudText>
         </div>
         <div class="hub-google-panel-actions">
-            <MudTooltip Text="기본 Drive 폴더가 없으면 만들고 설정에 연결합니다.">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(State.Status.IsConnected == false || State.IsEnsuringStandardFolders)" OnClick="@(() => Actions.EnsureStandardFoldersRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.CreateNewFolder">기본 폴더 만들기</MudButton>
+            <MudTooltip Text="Drive 기본 구조 만들기">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(State.Status.IsConnected == false || State.IsEnsuringStandardFolders)" OnClick="@(() => Actions.EnsureStandardFoldersRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.CreateNewFolder">Drive 구조 만들기</MudButton>
             </MudTooltip>
-            <MudTooltip Text="저장된 Drive 폴더 이름과 기본 자료 위치를 정리합니다.">
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(State.Status.IsConnected == false || State.IsApplyingStandardFolderNames)" OnClick="@(() => Actions.ApplyStandardFolderNamesRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.DriveFileRenameOutline">폴더 이름 정리</MudButton>
+            <MudTooltip Text="폴더 이름 정리">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@(State.Status.IsConnected == false || State.IsApplyingStandardFolderNames)" OnClick="@(() => Actions.ApplyStandardFolderNamesRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.DriveFileRenameOutline">이름 정리</MudButton>
             </MudTooltip>
         </div>
     </div>
@@ -25,8 +27,7 @@
     <div class="hub-resource-picker-shell">
         <div class="hub-resource-picker-header">
             <div>
-                <strong>Drive 폴더 목록</strong>
-                <span>폴더 선택을 열면 현재 위치의 하위 폴더가 표시됩니다.</span>
+                <strong>Drive 폴더</strong>
             </div>
             <div class="hub-resource-picker-actions">
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Actions.RefreshRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(State.Status.IsConnected == false)">새로고침</MudButton>

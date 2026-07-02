@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,9 @@ public partial class AdminMenus
         mFormModel.AccessLevel = menuItem.AccessLevel;
         mFormModel.IsActive = menuItem.IsActive;
         mFormModel.IsVisibleToAllTeams = menuItem.IsVisibleToAllTeams;
+        mFormModel.RequiredPermissionKeys = NavigationMenuPermissionKeys.ParseStorageValue(menuItem.RequiredPermissionKeys)
+            .Select(permissionKey => permissionKey.GetRequiredValue())
+            .ToList();
         mFormModel.TeamIds = menuItem.TeamPermissions.Select(permission => permission.TeamId).ToList();
     }
 
@@ -110,5 +114,10 @@ public partial class AdminMenus
     private bool isTeamSelected(int teamId)
     {
         return mFormModel.TeamIds.Contains(teamId);
+    }
+
+    private void setRequiredPermissionKeys(IEnumerable<string> permissionKeys)
+    {
+        mFormModel.RequiredPermissionKeys = permissionKeys.ToList();
     }
 }

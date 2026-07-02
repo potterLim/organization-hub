@@ -13,6 +13,9 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminApprovalWorkflows
 {
+    private const int INITIAL_WORKFLOW_PRIORITY = 100;
+    private const int WORKFLOW_PRIORITY_STEP = 10;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (mShouldInitializeSortable == false)
@@ -37,13 +40,13 @@ public partial class AdminApprovalWorkflows
     [JSInvokable("MoveSortableItemBeforeFromScript")]
     public async Task MoveSortableItemBeforeFromScriptAsync(string sourceItemId, string targetItemId)
     {
-        await moveWorkflowAsync(sourceItemId, targetItemId, ESortableMoveDirection.Before);
+        await moveWorkflowAsync(SortableItemMoveRequest.CreateFromScript(sourceItemId, targetItemId, ESortableMoveDirection.Before));
     }
 
     [JSInvokable("MoveSortableItemAfterFromScript")]
     public async Task MoveSortableItemAfterFromScriptAsync(string sourceItemId, string targetItemId)
     {
-        await moveWorkflowAsync(sourceItemId, targetItemId, ESortableMoveDirection.After);
+        await moveWorkflowAsync(SortableItemMoveRequest.CreateFromScript(sourceItemId, targetItemId, ESortableMoveDirection.After));
     }
 
     public async ValueTask DisposeAsync()
@@ -69,16 +72,21 @@ public partial class AdminApprovalWorkflows
         }
     }
 
-    private async Task moveWorkflowAsync(string sourceItemId, string targetItemId, ESortableMoveDirection moveDirection)
+    private async Task moveWorkflowAsync(SortableItemMoveRequest moveRequest)
     {
-        ApprovalWorkflowId sourceWorkflowId = parseApprovalWorkflowId(sourceItemId);
-        ApprovalWorkflowId targetWorkflowId = parseApprovalWorkflowId(targetItemId);
+        if (moveRequest.HasRequiredItems == false)
+        {
+            return;
+        }
+
+        ApprovalWorkflowId sourceWorkflowId = parseApprovalWorkflowId(moveRequest.SourceItemKey);
+        ApprovalWorkflowId targetWorkflowId = parseApprovalWorkflowId(moveRequest.TargetItemKey);
         if (sourceWorkflowId.HasValue == false || targetWorkflowId.HasValue == false)
         {
             return;
         }
 
-        List<ApprovalWorkflow> reorderedWorkflows = moveWorkflowInList(sourceWorkflowId, targetWorkflowId, moveDirection);
+        List<ApprovalWorkflow> reorderedWorkflows = moveWorkflowInList(sourceWorkflowId, targetWorkflowId, moveRequest.MoveDirection);
         if (reorderedWorkflows.Count == 0)
         {
             return;
@@ -122,10 +130,10 @@ public partial class AdminApprovalWorkflows
         return reorderedWorkflows;
     }
 
-    private ApprovalWorkflowId parseApprovalWorkflowId(string itemId)
+    private ApprovalWorkflowId parseApprovalWorkflowId(SortableItemKey itemKey)
     {
         int itemIdValue;
-        bool isParsed = int.TryParse(itemId, NumberStyles.Integer, CultureInfo.InvariantCulture, out itemIdValue);
+        bool isParsed = int.TryParse(itemKey.GetOptionalValue(), NumberStyles.Integer, CultureInfo.InvariantCulture, out itemIdValue);
         if (isParsed == false || itemIdValue <= 0)
         {
             return ApprovalWorkflowId.Empty;
@@ -138,9 +146,9 @@ public partial class AdminApprovalWorkflows
     {
         if (mWorkflows.Count == 0)
         {
-            return 100;
+            return INITIAL_WORKFLOW_PRIORITY;
         }
 
-        return mWorkflows.Max(workflow => workflow.Priority) + 10;
+        return mWorkflows.Max(workflow => workflow.Priority) + WORKFLOW_PRIORITY_STEP;
     }
 }

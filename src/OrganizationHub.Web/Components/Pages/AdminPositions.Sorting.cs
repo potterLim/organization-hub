@@ -37,13 +37,13 @@ public partial class AdminPositions
     [JSInvokable("MoveSortableItemBeforeFromScript")]
     public async Task MoveSortableItemBeforeFromScriptAsync(string sourceItemId, string targetItemId)
     {
-        await movePositionAsync(sourceItemId, targetItemId, ESortableMoveDirection.Before);
+        await movePositionAsync(SortableItemMoveRequest.CreateFromScript(sourceItemId, targetItemId, ESortableMoveDirection.Before));
     }
 
     [JSInvokable("MoveSortableItemAfterFromScript")]
     public async Task MoveSortableItemAfterFromScriptAsync(string sourceItemId, string targetItemId)
     {
-        await movePositionAsync(sourceItemId, targetItemId, ESortableMoveDirection.After);
+        await movePositionAsync(SortableItemMoveRequest.CreateFromScript(sourceItemId, targetItemId, ESortableMoveDirection.After));
     }
 
     public async ValueTask DisposeAsync()
@@ -69,16 +69,21 @@ public partial class AdminPositions
         }
     }
 
-    private async Task movePositionAsync(string sourceItemId, string targetItemId, ESortableMoveDirection moveDirection)
+    private async Task movePositionAsync(SortableItemMoveRequest moveRequest)
     {
-        OrganizationPositionId sourcePositionId = parseOrganizationPositionId(sourceItemId);
-        OrganizationPositionId targetPositionId = parseOrganizationPositionId(targetItemId);
+        if (moveRequest.HasRequiredItems == false)
+        {
+            return;
+        }
+
+        OrganizationPositionId sourcePositionId = parseOrganizationPositionId(moveRequest.SourceItemKey);
+        OrganizationPositionId targetPositionId = parseOrganizationPositionId(moveRequest.TargetItemKey);
         if (sourcePositionId.HasValue == false || targetPositionId.HasValue == false)
         {
             return;
         }
 
-        List<OrganizationPosition> reorderedPositions = movePositionInList(sourcePositionId, targetPositionId, moveDirection);
+        List<OrganizationPosition> reorderedPositions = movePositionInList(sourcePositionId, targetPositionId, moveRequest.MoveDirection);
         if (reorderedPositions.Count == 0)
         {
             return;
@@ -147,10 +152,10 @@ public partial class AdminPositions
             .ToList();
     }
 
-    private OrganizationPositionId parseOrganizationPositionId(string itemId)
+    private OrganizationPositionId parseOrganizationPositionId(SortableItemKey itemKey)
     {
         int itemIdValue;
-        bool isParsed = int.TryParse(itemId, NumberStyles.Integer, CultureInfo.InvariantCulture, out itemIdValue);
+        bool isParsed = int.TryParse(itemKey.GetOptionalValue(), NumberStyles.Integer, CultureInfo.InvariantCulture, out itemIdValue);
         if (isParsed == false || itemIdValue <= 0)
         {
             return OrganizationPositionId.Empty;

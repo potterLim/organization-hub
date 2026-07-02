@@ -25,19 +25,14 @@ public partial class AdminUsers
 
     private string getAffiliationName(UserAccount userAccount)
     {
-        if (userAccount.Role == EUserRole.Admin)
+        if (isSystemAdministratorAccount(userAccount))
         {
             return "시스템";
         }
 
-        if (UserRoleUtility.GetAffiliation(userAccount.Role) == EUserAffiliation.Management)
-        {
-            return OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME;
-        }
-
         if (userAccount.Team == null)
         {
-            return "팀";
+            return "소속 미지정";
         }
 
         return userAccount.Team.DisplayName;
@@ -50,7 +45,7 @@ public partial class AdminUsers
             return userAccount.Position.Name;
         }
 
-        return UserRoleUtility.GetDisplayName(userAccount.Role);
+        return "직책 미지정";
     }
 
     private bool isSystemAdministrationTeam(Team team)
@@ -89,18 +84,18 @@ public partial class AdminUsers
         return administrationTeamOrNull.Id;
     }
 
-    private EUserRole getDefaultOrganizationMemberRole()
-    {
-        return EUserRole.TeamUser;
-    }
-
     private bool canManageUser(UserAccount userAccount)
     {
-        if (userAccount.Role == EUserRole.Admin)
+        if (isSystemAdministratorAccount(userAccount))
         {
             return mCanManageSystemAdmins;
         }
 
         return true;
+    }
+
+    private bool isSystemAdministratorAccount(UserAccount userAccount)
+    {
+        return userAccount.Position != null && userAccount.Position.IsSystemAdministrator;
     }
 }

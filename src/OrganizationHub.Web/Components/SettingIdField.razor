@@ -2,7 +2,7 @@
 @inject ISnackbar Snackbar
 
 <div class="hub-setting-id-field">
-    <MudTextField T="string" Value="@Value" ValueChanged="ValueChanged" Label="@Label" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+    <MudTextField T="string" Value="@Value" ValueChanged="ValueChanged" Label="@Label" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" ReadOnly="@IsReadOnly" />
     <div class="hub-setting-id-tools">
         <code class="@(string.IsNullOrWhiteSpace(Value) ? "hub-setting-id-preview hub-setting-id-preview-empty" : "hub-setting-id-preview")">@getDisplayValue()</code>
         <MudTooltip Text="값 복사">
@@ -13,6 +13,11 @@
 
 @code
 {
+    private const int PREVIEW_FULL_VALUE_MAXIMUM_LENGTH = 24;
+    private const int PREVIEW_PREFIX_LENGTH = 12;
+    private const int PREVIEW_SUFFIX_LENGTH = 8;
+    private const string PREVIEW_OMISSION_MARK = "...";
+
     [Parameter]
     public string Value { get; set; } = string.Empty;
 
@@ -21,6 +26,9 @@
 
     [Parameter]
     public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsReadOnly { get; set; }
 
     private async Task copyValueAsync()
     {
@@ -48,11 +56,11 @@
             return "값 없음";
         }
 
-        if (Value.Length <= 24)
+        if (Value.Length <= PREVIEW_FULL_VALUE_MAXIMUM_LENGTH)
         {
             return Value;
         }
 
-        return Value.Substring(0, 12) + "..." + Value.Substring(Value.Length - 8);
+        return Value.Substring(0, PREVIEW_PREFIX_LENGTH) + PREVIEW_OMISSION_MARK + Value.Substring(Value.Length - PREVIEW_SUFFIX_LENGTH);
     }
 }

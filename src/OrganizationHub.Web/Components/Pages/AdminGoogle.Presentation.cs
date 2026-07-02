@@ -3,6 +3,7 @@ using System.Globalization;
 using MudBlazor;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;
 
@@ -48,7 +49,7 @@ public partial class AdminGoogle
             return "-";
         }
 
-        return dateTimeOrNull.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+        return PresentationDateTimeFormatter.formatClientDateTime(dateTimeOrNull.Value, ClientTimeZoneInfo, PresentationDateTimeFormatter.FULL_DATE_TIME_FORMAT);
     }
 
     private string getCallbackUri()

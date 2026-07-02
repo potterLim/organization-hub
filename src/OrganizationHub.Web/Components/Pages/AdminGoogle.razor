@@ -1,5 +1,6 @@
 @page "/admin/google"
 @attribute [Authorize(Policy = OrganizationHubPolicies.GOOGLE_CONNECTION_MANAGE)]
+@inherits TimeZoneAwareOrganizationHubComponentBase
 @inject IGoogleConnectionService GoogleConnectionService
 @inject IGoogleHealthCheckService GoogleHealthCheckService
 @inject IGoogleWorkspaceBrowserService GoogleWorkspaceBrowserService
@@ -8,12 +9,7 @@
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("Google 연결")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">Google 연결</h1>
-        <div class="hub-page-description">Google 계정을 연결하고 Drive 폴더, Calendar, Google Tasks 목록을 운영 화면에 연결합니다.</div>
-    </div>
-</div>
+<h1 class="hub-sr-only">Google 연결</h1>
 
 @if (string.IsNullOrWhiteSpace(MessageOrNull) == false)
 {
@@ -28,7 +24,7 @@
 <div class="hub-google-layout">
     <div class="hub-google-side">
         <AdminGoogleConnectionCard Status="mStatus" CallbackUri="@getCallbackUri()" FormatDate="formatDate" DisconnectRequested="disconnectGoogleAsync" />
-        <AdminGoogleHealthCard Items="mHealthItems" ShowHealthyItems="mShouldShowHealthyHealthItems" RefreshRequested="loadHealthCheckAsync" ToggleHealthyItemsRequested="toggleHealthyItemsVisibility" />
+        <AdminGoogleHealthCard Items="mHealthItems" ShouldShowHealthyItems="mShouldShowHealthyItems" RefreshRequested="loadHealthCheckAsync" ToggleHealthyItemsRequested="toggleHealthyItemsVisibility" />
     </div>
     <div class="hub-google-panel-stack">
         <AdminGoogleDrivePanel State="@createDrivePanelState()" Actions="@createDrivePanelActions()" />

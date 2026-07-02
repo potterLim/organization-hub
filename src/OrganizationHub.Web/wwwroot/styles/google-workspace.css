@@ -78,6 +78,16 @@
     margin-bottom: 14px;
 }
 
+.hub-google-health-heading > div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.hub-google-health-heading .mud-typography-h6 {
+    margin-bottom: 0;
+}
+
 .hub-google-panel-heading {
     align-items: center;
     display: flex;
@@ -88,6 +98,25 @@
 
 .hub-google-panel-heading .mud-button-root {
     flex: 0 0 auto;
+}
+
+.hub-google-panel-title {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    min-width: 0;
+}
+
+.hub-google-panel-icon {
+    align-items: center;
+    background: rgba(33, 107, 255, .1);
+    border-radius: 12px;
+    color: var(--hub-brand-deep);
+    display: inline-flex;
+    flex: 0 0 34px;
+    height: 34px;
+    justify-content: center;
+    width: 34px;
 }
 
 .hub-google-panel-actions {
@@ -141,7 +170,7 @@
     display: grid;
     gap: 12px;
     grid-template-columns: minmax(0, 1fr) max-content;
-    padding: 12px 14px;
+    padding: 11px 14px;
 }
 
 .hub-health-row-muted {
@@ -238,6 +267,6 @@
 }
 
 .hub-google-layout .hub-empty {
-    min-height: 78px;
+    min-height: 72px;
     padding: 18px;
 }

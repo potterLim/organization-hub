@@ -1,30 +1,38 @@
+@using OrganizationHub.Web.Domain
+
 <MudPaper Class="hub-card hub-form-card pa-4">
     <div class="hub-google-health-heading">
-        <MudText Typo="Typo.h6">연결 진단</MudText>
-        <MudTooltip Text="진단 새로고침">
-            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Size="Size.Small" OnClick="@(() => RefreshRequested.InvokeAsync())" aria-label="진단 새로고침" />
+        <div>
+            <MudText Typo="Typo.h6">연결 점검</MudText>
+        </div>
+        <MudTooltip Text="점검 새로고침">
+            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Primary" Size="Size.Small" OnClick="@(() => RefreshRequested.InvokeAsync())" aria-label="점검 새로고침" />
         </MudTooltip>
     </div>
     @if (Items.Count == 0)
     {
-        <div class="hub-empty">표시할 진단 항목이 없습니다.</div>
+        <div class="hub-empty">표시할 연결 점검 항목이 없습니다.</div>
     }
     else
     {
         IReadOnlyList<GoogleHealthCheckItem> attentionHealthItems = getAttentionHealthItems();
         IReadOnlyList<GoogleHealthCheckItem> healthyHealthItems = getHealthyHealthItems();
+        GoogleHealthSummaryCounts healthSummaryCounts = new GoogleHealthSummaryCounts
+        {
+            AttentionCount = attentionHealthItems.Count,
+            HealthyCount = healthyHealthItems.Count
+        };
         <div class="hub-health-list">
             <div class="hub-health-summary">
                 <span class="@("hub-health-summary-pill " + getHealthSummaryClass())">@getHealthSummaryText()</span>
-                <span>@getHealthSummaryDescription(attentionHealthItems.Count, healthyHealthItems.Count)</span>
+                <span>@getHealthSummaryDescription(healthSummaryCounts)</span>
             </div>
             @if (attentionHealthItems.Count == 0)
             {
                 <div class="hub-health-row hub-health-row-muted">
                     <div class="hub-health-copy">
-                        <div class="hub-health-area">진단</div>
-                        <div class="hub-health-name">조치가 필요한 항목 없음</div>
-                        <div class="hub-muted">정상 항목은 필요할 때만 펼쳐 확인합니다.</div>
+                        <div class="hub-health-area">연결 점검</div>
+                        <div class="hub-health-name">확인 필요 없음</div>
                     </div>
                     <span class="hub-health-pill hub-health-healthy">정상</span>
                 </div>
@@ -43,10 +51,10 @@
             @if (healthyHealthItems.Count > 0)
             {
                 <button type="button" class="hub-health-toggle" @onclick="@(() => ToggleHealthyItemsRequested.InvokeAsync())">
-                    <span>정상 항목 @(healthyHealthItems.Count)개</span>
-                    <MudIcon Icon="@(ShowHealthyItems ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" Size="Size.Small" />
+                    <span>정상 항목 보기 @(healthyHealthItems.Count)개</span>
+                    <MudIcon Icon="@(ShouldShowHealthyItems ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" Size="Size.Small" />
                 </button>
-                @if (ShowHealthyItems)
+                @if (ShouldShowHealthyItems)
                 {
                     @foreach (GoogleHealthCheckItem item in healthyHealthItems)
                     {
@@ -73,7 +81,7 @@
     } = new List<GoogleHealthCheckItem>();
 
     [Parameter]
-    public bool ShowHealthyItems
+    public bool ShouldShowHealthyItems
     {
         get; set;
     }
@@ -100,19 +108,19 @@
         return Items.Where(item => isHealthyHealthStatus(item.Status)).ToList();
     }
 
-    private bool isHealthyHealthStatus(string status)
+    private bool isHealthyHealthStatus(EGoogleHealthStatus status)
     {
-        return status == "Healthy";
+        return status == EGoogleHealthStatus.Healthy;
     }
 
     private string getHealthSummaryClass()
     {
-        if (Items.Any(item => item.Status == "Error"))
+        if (Items.Any(item => item.Status == EGoogleHealthStatus.Error))
         {
             return "hub-health-error";
         }
 
-        if (Items.Any(item => item.Status == "Warning"))
+        if (Items.Any(item => item.Status == EGoogleHealthStatus.Warning))
         {
             return "hub-health-warning";
         }
@@ -122,8 +130,8 @@
 
     private string getHealthSummaryText()
     {
-        int errorCount = Items.Count(item => item.Status == "Error");
-        int warningCount = Items.Count(item => item.Status == "Warning");
+        int errorCount = Items.Count(item => item.Status == EGoogleHealthStatus.Error);
+        int warningCount = Items.Count(item => item.Status == EGoogleHealthStatus.Warning);
         if (errorCount > 0)
         {
             return "오류 " + errorCount.ToString(CultureInfo.InvariantCulture) + "개";
@@ -137,36 +145,36 @@
         return "정상";
     }
 
-    private string getHealthSummaryDescription(int attentionCount, int healthyCount)
+    private string getHealthSummaryDescription(GoogleHealthSummaryCounts healthSummaryCounts)
     {
-        if (attentionCount > 0)
+        if (healthSummaryCounts.AttentionCount > 0)
         {
-            return "먼저 확인할 항목 " + attentionCount.ToString(CultureInfo.InvariantCulture) + "개, 정상 항목 " + healthyCount.ToString(CultureInfo.InvariantCulture) + "개";
+            return "정상 " + healthSummaryCounts.HealthyCount.ToString(CultureInfo.InvariantCulture) + "개";
         }
 
-        return "정상 항목 " + healthyCount.ToString(CultureInfo.InvariantCulture) + "개가 접혀 있습니다.";
+        return healthSummaryCounts.HealthyCount.ToString(CultureInfo.InvariantCulture) + "개 항목";
     }
 
-    private string getHealthClass(string status)
+    private string getHealthClass(EGoogleHealthStatus status)
     {
         switch (status)
         {
-            case "Healthy":
+            case EGoogleHealthStatus.Healthy:
                 return "hub-health-healthy";
-            case "Warning":
+            case EGoogleHealthStatus.Warning:
                 return "hub-health-warning";
             default:
                 return "hub-health-error";
         }
     }
 
-    private string getHealthText(string status)
+    private string getHealthText(EGoogleHealthStatus status)
     {
         switch (status)
         {
-            case "Healthy":
+            case EGoogleHealthStatus.Healthy:
                 return "정상";
-            case "Warning":
+            case EGoogleHealthStatus.Warning:
                 return "주의";
             default:
                 return "오류";

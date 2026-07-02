@@ -1,8 +1,10 @@
 <MudPaper Class="hub-card hub-list-card pa-4">
     <div class="hub-google-panel-heading">
-        <div>
+        <div class="hub-google-panel-title">
+            <span class="hub-google-panel-icon">
+                <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Size="Size.Small" />
+            </span>
             <MudText Typo="Typo.h6">Calendar 선택</MudText>
-            <div class="hub-muted">일정을 표시하거나 작성할 Calendar를 목록에서 연결합니다.</div>
         </div>
     </div>
     @if (State.Status.IsConnected == false)
@@ -28,7 +30,6 @@
             <div class="hub-resource-picker-header">
                 <div>
                     <strong>Calendar 목록</strong>
-                    <span>필요할 때 목록을 열어 연결할 Calendar를 선택합니다.</span>
                 </div>
                 <div class="hub-resource-picker-actions">
                     <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="toggleCalendarPicker" StartIcon="@(mIsCalendarPickerVisible ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)">@(mIsCalendarPickerVisible ? "목록 닫기" : "Calendar 선택")</MudButton>

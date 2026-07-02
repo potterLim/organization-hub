@@ -1,8 +1,10 @@
 <MudPaper Class="hub-card hub-list-card pa-4">
     <div class="hub-google-panel-heading">
-        <div>
+        <div class="hub-google-panel-title">
+            <span class="hub-google-panel-icon">
+                <MudIcon Icon="@Icons.Material.Filled.Folder" Size="Size.Small" />
+            </span>
             <MudText Typo="Typo.h6">Drive 폴더 선택</MudText>
-            <div class="hub-muted">폴더를 열어 위치를 확인하고, 선택한 폴더나 파일을 운영 설정에 연결합니다.</div>
         </div>
     </div>
 
@@ -42,7 +44,6 @@
             <div class="hub-resource-picker-header">
                 <div>
                     <strong>Drive에서 선택</strong>
-                    <span>필요할 때 탐색기를 열어 연결할 폴더나 파일을 선택합니다.</span>
                 </div>
                 <div class="hub-resource-picker-actions">
                     <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="openDriveRootAsync" StartIcon="@Icons.Material.Filled.CloudQueue">내 Drive</MudButton>

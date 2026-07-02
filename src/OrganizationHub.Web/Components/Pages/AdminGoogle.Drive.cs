@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using MudBlazor;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;
 
@@ -22,7 +23,7 @@ public partial class AdminGoogle
         }
         catch (Exception exception)
         {
-            mMessage = "Drive 폴더를 불러오지 못했습니다. " + exception.Message;
+            mMessage = createGoogleDriveErrorMessage(exception);
             mMessageSeverity = Severity.Error;
         }
     }
@@ -63,7 +64,7 @@ public partial class AdminGoogle
             if (driveFolderSetupResult.IsSuccess && driveFolderSetupResult.ValueOrNull != null)
             {
                 GoogleWorkspaceResourceSetupSummary summary = driveFolderSetupResult.ValueOrNull;
-                mMessage = createSetupSummaryMessage("기본 Drive 폴더 준비 완료", summary);
+                mMessage = createSetupSummaryMessage("기본 Drive 리소스 준비 완료", summary);
                 mMessageSeverity = Severity.Success;
                 resetFolderPath();
                 await loadAssignmentOptionsAsync();
@@ -113,5 +114,10 @@ public partial class AdminGoogle
         rootPathItem.Name = "내 Drive";
         mFolderPath = new List<GoogleDriveFolderPathItem>();
         mFolderPath.Add(rootPathItem);
+    }
+
+    private string createGoogleDriveErrorMessage(Exception exception)
+    {
+        return GoogleApiExceptionMessageFormatter.CreateGoogleDriveMessage(exception, "Drive 폴더를 불러오지 못했습니다.");
     }
 }

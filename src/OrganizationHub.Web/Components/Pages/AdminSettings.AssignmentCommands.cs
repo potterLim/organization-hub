@@ -40,7 +40,7 @@ public partial class AdminSettings
             mFormModel.FileResources.WorkGuidelineFileId = file.Id;
         }
 
-        ServiceResult fileAssignmentResult = await TeamManagementService.UpdateGlobalSettingAsync(mFormModel, CancellationToken.None);
+        ServiceResult fileAssignmentResult = await GlobalSettingService.UpdateGlobalSettingAsync(mFormModel, CancellationToken.None);
         showOperationResult(fileAssignmentResult, fileAssignmentResult.IsSuccess ? file.Name + " 파일을 연결했습니다." : string.Empty);
         if (fileAssignmentResult.IsSuccess)
         {

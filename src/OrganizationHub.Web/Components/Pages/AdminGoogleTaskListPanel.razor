@@ -1,12 +1,14 @@
 <MudPaper Class="hub-card hub-list-card pa-4">
     <div class="hub-google-panel-heading">
-        <div>
-            <MudText Typo="Typo.h6">Google Tasks 기본 연결</MudText>
-            <div class="hub-muted">기본 Google Tasks 목록을 만들거나 할 일 화면에 연결할 목록을 선택합니다.</div>
+        <div class="hub-google-panel-title">
+            <span class="hub-google-panel-icon">
+                <MudIcon Icon="@Icons.Material.Filled.Checklist" Size="Size.Small" />
+            </span>
+            <MudText Typo="Typo.h6">Google Tasks 연결 대상</MudText>
         </div>
         <div class="hub-google-panel-actions">
-            <MudTooltip Text="기본 Google Tasks 목록이 없으면 만들고 설정에 연결합니다.">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(State.Status.IsConnected == false || State.IsEnsuringStandardTaskLists)" OnClick="@(() => Actions.EnsureStandardTaskListsRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.AutoAwesomeMotion">기본 목록 만들기</MudButton>
+            <MudTooltip Text="기본 목록 만들기">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(State.Status.IsConnected == false || State.IsEnsuringStandardTaskLists)" OnClick="@(() => Actions.EnsureStandardTaskListsRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.AutoAwesomeMotion">목록 만들기</MudButton>
             </MudTooltip>
         </div>
     </div>
@@ -23,7 +25,6 @@
         <div class="hub-resource-picker-header">
             <div>
                 <strong>Google Tasks 목록</strong>
-                <span>목록 선택을 열면 연결 가능한 Google Tasks 목록이 표시됩니다.</span>
             </div>
             <div class="hub-resource-picker-actions">
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => Actions.RefreshRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(State.Status.IsConnected == false)">새로고침</MudButton>

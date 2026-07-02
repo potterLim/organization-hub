@@ -15,6 +15,9 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminTeams
 {
+    private const int INITIAL_TEAM_SORT_ORDER = 100;
+    private const int TEAM_SORT_ORDER_STEP = 10;
+
     private List<Team> mTeams = new List<Team>();
     private TeamFormModel mFormModel = new TeamFormModel();
     private ElementReference mSortableRootElement;
@@ -55,13 +58,13 @@ public partial class AdminTeams
     [JSInvokable("MoveSortableItemBeforeFromScript")]
     public async Task MoveSortableItemBeforeFromScriptAsync(string sourceItemId, string targetItemId)
     {
-        await moveTeamAsync(sourceItemId, targetItemId, ESortableMoveDirection.Before);
+        await moveTeamAsync(SortableItemMoveRequest.CreateFromScript(sourceItemId, targetItemId, ESortableMoveDirection.Before));
     }
 
     [JSInvokable("MoveSortableItemAfterFromScript")]
     public async Task MoveSortableItemAfterFromScriptAsync(string sourceItemId, string targetItemId)
     {
-        await moveTeamAsync(sourceItemId, targetItemId, ESortableMoveDirection.After);
+        await moveTeamAsync(SortableItemMoveRequest.CreateFromScript(sourceItemId, targetItemId, ESortableMoveDirection.After));
     }
 
     public async ValueTask DisposeAsync()
@@ -136,16 +139,21 @@ public partial class AdminTeams
         mFormTitle = "새 팀";
     }
 
-    private async Task moveTeamAsync(string sourceItemId, string targetItemId, ESortableMoveDirection moveDirection)
+    private async Task moveTeamAsync(SortableItemMoveRequest moveRequest)
     {
-        OrganizationTeamId sourceTeamId = parseOrganizationTeamId(sourceItemId);
-        OrganizationTeamId targetTeamId = parseOrganizationTeamId(targetItemId);
+        if (moveRequest.HasRequiredItems == false)
+        {
+            return;
+        }
+
+        OrganizationTeamId sourceTeamId = parseOrganizationTeamId(moveRequest.SourceItemKey);
+        OrganizationTeamId targetTeamId = parseOrganizationTeamId(moveRequest.TargetItemKey);
         if (sourceTeamId.HasValue == false || targetTeamId.HasValue == false)
         {
             return;
         }
 
-        List<Team> reorderedTeams = moveTeamInList(sourceTeamId, targetTeamId, moveDirection);
+        List<Team> reorderedTeams = moveTeamInList(sourceTeamId, targetTeamId, moveRequest.MoveDirection);
         if (reorderedTeams.Count == 0)
         {
             return;
@@ -189,10 +197,10 @@ public partial class AdminTeams
         return reorderedTeams;
     }
 
-    private OrganizationTeamId parseOrganizationTeamId(string itemId)
+    private OrganizationTeamId parseOrganizationTeamId(SortableItemKey itemKey)
     {
         int itemIdValue;
-        bool isParsed = int.TryParse(itemId, NumberStyles.Integer, CultureInfo.InvariantCulture, out itemIdValue);
+        bool isParsed = int.TryParse(itemKey.GetOptionalValue(), NumberStyles.Integer, CultureInfo.InvariantCulture, out itemIdValue);
         if (isParsed == false || itemIdValue <= 0)
         {
             return OrganizationTeamId.Empty;
@@ -205,10 +213,10 @@ public partial class AdminTeams
     {
         if (mTeams.Count == 0)
         {
-            return 100;
+            return INITIAL_TEAM_SORT_ORDER;
         }
 
-        return mTeams.Max(team => team.SortOrder) + 10;
+        return mTeams.Max(team => team.SortOrder) + TEAM_SORT_ORDER_STEP;
     }
 
     private void showOperationResult(ServiceResult operationResult, string successMessage)

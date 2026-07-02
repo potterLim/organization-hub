@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using OrganizationHub.Web.Data.Entities;
-using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Components.Pages;
 
@@ -62,7 +62,7 @@ public partial class AdminPositions
             definitions = definitions.Where(definition => definition.Category == mSelectedPermissionCategory);
         }
 
-        if (mShowOnlyAllowedPermissions)
+        if (mShouldShowOnlyAllowedPermissions)
         {
             definitions = definitions.Where(definition => getPermissionGrantForm(definition.Key).IsAllowed);
         }

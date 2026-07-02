@@ -14,7 +14,7 @@ public partial class AdminSettings
 {
     private async Task loadConfigurationAsync()
     {
-        mFormModel = await TeamManagementService.GetGlobalSettingAsync(CancellationToken.None);
+        mFormModel = await GlobalSettingService.GetGlobalSettingAsync(CancellationToken.None);
         IReadOnlyList<Team> teams = await TeamManagementService.GetTeamsAsync(CancellationToken.None);
         mTeams = teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName).ToList();
     }
@@ -173,7 +173,7 @@ public partial class AdminSettings
 
     private async Task saveSettingAsync()
     {
-        ServiceResult saveResult = await TeamManagementService.UpdateGlobalSettingAsync(mFormModel, CancellationToken.None);
+        ServiceResult saveResult = await GlobalSettingService.UpdateGlobalSettingAsync(mFormModel, CancellationToken.None);
         showOperationResult(saveResult, "시스템 설정이 저장되었습니다.");
         if (saveResult.IsSuccess)
         {

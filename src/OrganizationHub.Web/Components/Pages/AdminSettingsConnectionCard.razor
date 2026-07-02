@@ -1,25 +1,25 @@
 <MudPaper Class="hub-card hub-form-card pa-4">
     <div class="hub-admin-form-heading">
         <MudText Typo="Typo.h6">연결 상태</MudText>
-        <span>@(Status.IsConnected ? "사용 가능" : "연결 필요")</span>
+        <span>@(Status.IsConnected ? "설정 가능" : "연결 필요")</span>
     </div>
     <div class="hub-google-status">
         <span class="@(Status.IsConnected ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(Status.IsConnected ? "연결됨" : "미연결")</span>
         <div>
-            <div class="hub-google-status-title">@(Status.IsConnected ? Status.ConnectedEmail : "Google 계정 없음")</div>
-            <div class="hub-muted hub-setting-status-note">
-                @if (Status.IsConnected)
-                {
-                    <span>아래 목록에서 Drive 폴더와 파일을</span>
-                    <span>선택할 수 있습니다.</span>
-                }
-                else
-                {
-                    <span>Google 연결 메뉴에서 계정을 먼저 연결해 주세요.</span>
-                }
-            </div>
+            <div class="hub-google-status-title">@getConnectionTitle()</div>
         </div>
     </div>
+    @if (shouldShowConnectedEmail())
+    {
+        <MudExpansionPanels Elevation="0" Class="hub-advanced-settings hub-google-advanced-settings">
+            <MudExpansionPanel Text="자세히">
+                <div class="hub-google-callback">
+                    <div class="hub-google-callback-label">연결 계정</div>
+                    <code>@Status.ConnectedEmail</code>
+                </div>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    }
 </MudPaper>
 
 @code {
@@ -28,4 +28,19 @@
     {
         get; set;
     } = new GoogleConnectionStatus();
+
+    private string getConnectionTitle()
+    {
+        if (Status.IsConnected)
+        {
+            return "Google 계정 연결됨";
+        }
+
+        return "Google 계정 없음";
+    }
+
+    private bool shouldShowConnectedEmail()
+    {
+        return Status.IsConnected && string.IsNullOrWhiteSpace(Status.ConnectedEmail) == false;
+    }
 }

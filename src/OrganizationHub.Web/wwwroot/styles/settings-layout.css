@@ -78,6 +78,30 @@
     display: block;
 }
 
+.hub-settings-option-example {
+    background: rgba(248, 250, 255, .74);
+    border: 1px solid rgba(200, 211, 231, .66);
+    border-radius: 14px;
+    display: grid;
+    gap: 4px;
+    margin-top: 12px;
+    padding: 10px 12px;
+}
+
+.hub-settings-option-example span {
+    color: var(--hub-text-muted);
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.hub-settings-option-example strong {
+    color: var(--hub-text-strong);
+    font-size: 13px;
+    font-weight: 850;
+    line-height: 1.35;
+}
+
 .hub-advanced-settings .mud-expand-panel {
     background: rgba(255, 255, 255, .62) !important;
     border: 1px solid rgba(200, 211, 231, .78) !important;

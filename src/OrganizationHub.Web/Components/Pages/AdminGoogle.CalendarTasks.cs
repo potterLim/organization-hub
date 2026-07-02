@@ -22,7 +22,7 @@ public partial class AdminGoogle
         }
         catch (Exception exception)
         {
-            mMessage = "Calendar 목록을 불러오지 못했습니다. " + exception.Message;
+            mMessage = createGoogleCalendarErrorMessage(exception);
             mMessageSeverity = Severity.Error;
         }
     }
@@ -90,7 +90,7 @@ public partial class AdminGoogle
             if (taskListSetupResult.IsSuccess && taskListSetupResult.ValueOrNull != null)
             {
                 GoogleTaskListSetupSummary summary = taskListSetupResult.ValueOrNull;
-                mMessage = "기본 Google Tasks 목록 준비 완료: 생성 " + summary.CreatedCount.ToString(CultureInfo.InvariantCulture) + "개, 재사용 " + summary.ReusedCount.ToString(CultureInfo.InvariantCulture) + "개, 매핑 " + summary.AssignedCount.ToString(CultureInfo.InvariantCulture) + "개";
+                mMessage = "기본 Google Tasks 목록 준비 완료: 생성 " + summary.CreatedCount.ToString(CultureInfo.InvariantCulture) + "개, 재사용 " + summary.ReusedCount.ToString(CultureInfo.InvariantCulture) + "개, 이름 정리 " + summary.RenamedCount.ToString(CultureInfo.InvariantCulture) + "개, 매핑 " + summary.AssignedCount.ToString(CultureInfo.InvariantCulture) + "개";
                 mMessageSeverity = Severity.Success;
                 await loadTaskListsAsync();
                 await loadHealthCheckAsync();
@@ -109,6 +109,11 @@ public partial class AdminGoogle
     private string createGoogleTasksErrorMessage(Exception exception)
     {
         return GoogleApiExceptionMessageFormatter.CreateGoogleTasksMessage(exception, "Google Tasks 목록을 불러오지 못했습니다.");
+    }
+
+    private string createGoogleCalendarErrorMessage(Exception exception)
+    {
+        return GoogleApiExceptionMessageFormatter.CreateGoogleCalendarMessage(exception, "Calendar 목록을 불러오지 못했습니다.");
     }
 
     private string getCalendarAccessDisplayName(GoogleCalendarListItem calendar)

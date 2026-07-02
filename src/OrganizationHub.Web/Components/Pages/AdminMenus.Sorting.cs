@@ -40,13 +40,13 @@ public partial class AdminMenus
     [JSInvokable("MoveSortableItemBeforeFromScript")]
     public async Task MoveSortableItemBeforeFromScriptAsync(string sourceItemId, string targetItemId)
     {
-        await moveSortableItemAsync(sourceItemId, targetItemId, ESortableMoveDirection.Before);
+        await moveSortableItemAsync(SortableItemMoveRequest.CreateFromScript(sourceItemId, targetItemId, ESortableMoveDirection.Before));
     }
 
     [JSInvokable("MoveSortableItemAfterFromScript")]
     public async Task MoveSortableItemAfterFromScriptAsync(string sourceItemId, string targetItemId)
     {
-        await moveSortableItemAsync(sourceItemId, targetItemId, ESortableMoveDirection.After);
+        await moveSortableItemAsync(SortableItemMoveRequest.CreateFromScript(sourceItemId, targetItemId, ESortableMoveDirection.After));
     }
 
     public async ValueTask DisposeAsync()
@@ -72,30 +72,35 @@ public partial class AdminMenus
         }
     }
 
-    private async Task moveSortableItemAsync(string sourceItemId, string targetItemId, ESortableMoveDirection moveDirection)
+    private async Task moveSortableItemAsync(SortableItemMoveRequest moveRequest)
     {
-        if (isSectionSortableItem(sourceItemId) && isSectionSortableItem(targetItemId))
+        if (moveRequest.HasRequiredItems == false)
         {
-            await moveSectionAsync(sourceItemId, targetItemId, moveDirection);
             return;
         }
 
-        if (isMenuSortableItem(sourceItemId) && isMenuSortableItem(targetItemId))
+        if (isSectionSortableItem(moveRequest.SourceItemKey) && isSectionSortableItem(moveRequest.TargetItemKey))
         {
-            await moveMenuItemAsync(sourceItemId, targetItemId, moveDirection);
+            await moveSectionAsync(moveRequest);
+            return;
+        }
+
+        if (isMenuSortableItem(moveRequest.SourceItemKey) && isMenuSortableItem(moveRequest.TargetItemKey))
+        {
+            await moveMenuItemAsync(moveRequest);
         }
     }
 
-    private async Task moveSectionAsync(string sourceItemId, string targetItemId, ESortableMoveDirection moveDirection)
+    private async Task moveSectionAsync(SortableItemMoveRequest moveRequest)
     {
-        NavigationMenuSectionId sourceSectionId = parseNavigationMenuSectionId(sourceItemId);
-        NavigationMenuSectionId targetSectionId = parseNavigationMenuSectionId(targetItemId);
+        NavigationMenuSectionId sourceSectionId = parseNavigationMenuSectionId(moveRequest.SourceItemKey);
+        NavigationMenuSectionId targetSectionId = parseNavigationMenuSectionId(moveRequest.TargetItemKey);
         if (sourceSectionId.HasValue == false || targetSectionId.HasValue == false)
         {
             return;
         }
 
-        List<NavigationMenuSection> reorderedSections = moveSectionInList(sourceSectionId, targetSectionId, moveDirection);
+        List<NavigationMenuSection> reorderedSections = moveSectionInList(sourceSectionId, targetSectionId, moveRequest.MoveDirection);
         if (reorderedSections.Count == 0)
         {
             return;
@@ -109,16 +114,16 @@ public partial class AdminMenus
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task moveMenuItemAsync(string sourceItemId, string targetItemId, ESortableMoveDirection moveDirection)
+    private async Task moveMenuItemAsync(SortableItemMoveRequest moveRequest)
     {
-        NavigationMenuItemId sourceMenuItemId = parseNavigationMenuItemId(sourceItemId);
-        NavigationMenuItemId targetMenuItemId = parseNavigationMenuItemId(targetItemId);
+        NavigationMenuItemId sourceMenuItemId = parseNavigationMenuItemId(moveRequest.SourceItemKey);
+        NavigationMenuItemId targetMenuItemId = parseNavigationMenuItemId(moveRequest.TargetItemKey);
         if (sourceMenuItemId.HasValue == false || targetMenuItemId.HasValue == false)
         {
             return;
         }
 
-        List<NavigationMenuItem> reorderedMenuItems = moveMenuItemInList(sourceMenuItemId, targetMenuItemId, moveDirection);
+        List<NavigationMenuItem> reorderedMenuItems = moveMenuItemInList(sourceMenuItemId, targetMenuItemId, moveRequest.MoveDirection);
         if (reorderedMenuItems.Count == 0)
         {
             return;
@@ -194,9 +199,9 @@ public partial class AdminMenus
         return reorderedMenuItems;
     }
 
-    private NavigationMenuItemId parseNavigationMenuItemId(string itemId)
+    private NavigationMenuItemId parseNavigationMenuItemId(SortableItemKey itemKey)
     {
-        string rawItemId = removeSortableItemPrefix(itemId, MENU_SORTABLE_ITEM_PREFIX);
+        string rawItemId = itemKey.RemovePrefix(MENU_SORTABLE_ITEM_PREFIX);
         int itemIdValue;
         bool isParsed = int.TryParse(rawItemId, NumberStyles.Integer, CultureInfo.InvariantCulture, out itemIdValue);
         if (isParsed == false || itemIdValue <= 0)
@@ -207,9 +212,9 @@ public partial class AdminMenus
         return NavigationMenuItemId.CreateExisting(itemIdValue);
     }
 
-    private NavigationMenuSectionId parseNavigationMenuSectionId(string itemId)
+    private NavigationMenuSectionId parseNavigationMenuSectionId(SortableItemKey itemKey)
     {
-        string rawItemId = removeSortableItemPrefix(itemId, SECTION_SORTABLE_ITEM_PREFIX);
+        string rawItemId = itemKey.RemovePrefix(SECTION_SORTABLE_ITEM_PREFIX);
         int itemIdValue;
         bool isParsed = int.TryParse(rawItemId, NumberStyles.Integer, CultureInfo.InvariantCulture, out itemIdValue);
         if (isParsed == false || itemIdValue <= 0)
@@ -220,24 +225,14 @@ public partial class AdminMenus
         return NavigationMenuSectionId.CreateExisting(itemIdValue);
     }
 
-    private bool isMenuSortableItem(string itemId)
+    private bool isMenuSortableItem(SortableItemKey itemKey)
     {
-        return itemId.StartsWith(MENU_SORTABLE_ITEM_PREFIX, StringComparison.Ordinal);
+        return itemKey.StartsWith(MENU_SORTABLE_ITEM_PREFIX);
     }
 
-    private bool isSectionSortableItem(string itemId)
+    private bool isSectionSortableItem(SortableItemKey itemKey)
     {
-        return itemId.StartsWith(SECTION_SORTABLE_ITEM_PREFIX, StringComparison.Ordinal);
-    }
-
-    private string removeSortableItemPrefix(string itemId, string prefix)
-    {
-        if (itemId.StartsWith(prefix, StringComparison.Ordinal) == false)
-        {
-            return string.Empty;
-        }
-
-        return itemId[prefix.Length..];
+        return itemKey.StartsWith(SECTION_SORTABLE_ITEM_PREFIX);
     }
 
     private void restoreSelectedMenu()

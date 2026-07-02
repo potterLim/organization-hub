@@ -6,12 +6,7 @@
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("팀 관리")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">팀 관리</h1>
-        <div class="hub-page-description">조직에서 사용할 팀을 만들고, 목록에서 드래그해 표시 순서를 정합니다.</div>
-    </div>
-</div>
+<h1 class="hub-sr-only">팀 관리</h1>
 
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
@@ -36,12 +31,12 @@
                 <MudExpansionPanel Text="고급: 연결된 Google 위치">
                     <div class="hub-form-hint">
                         <span>대부분은 Google 연결 설정에서 선택하면 됩니다.</span>
-                        <span>문제가 있을 때만 정확한 ID를 직접 수정하세요.</span>
+                        <span>문제가 있을 때는 값을 복사해 운영 담당자에게 전달하세요.</span>
                     </div>
-                    <SettingIdField @bind-Value="mFormModel.MaterialsFolderId" Label="팀 자료 Drive 폴더 ID" />
-                    <SettingIdField @bind-Value="mFormModel.ApprovedFolderId" Label="결재 완료 Drive 폴더 ID" />
-                    <SettingIdField @bind-Value="mFormModel.CalendarId" Label="Calendar ID" />
-                    <SettingIdField @bind-Value="mFormModel.TaskListId" Label="Google Tasks 목록 ID" />
+                    <SettingIdField @bind-Value="mFormModel.MaterialsFolderId" Label="팀 자료 Drive 폴더 ID" IsReadOnly="true" />
+                    <SettingIdField @bind-Value="mFormModel.ApprovedFolderId" Label="결재 완료 Drive 폴더 ID" IsReadOnly="true" />
+                    <SettingIdField @bind-Value="mFormModel.CalendarId" Label="Calendar ID" IsReadOnly="true" />
+                    <SettingIdField @bind-Value="mFormModel.TaskListId" Label="Google Tasks 목록 ID" IsReadOnly="true" />
                 </MudExpansionPanel>
             </MudExpansionPanels>
             <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">

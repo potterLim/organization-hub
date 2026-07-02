@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -9,49 +10,113 @@ public partial class AdminSettings
 {
     private IReadOnlyList<SettingResourceSummary> getPrimaryResourceSummaries()
     {
-        List<SettingResourceSummary> summaries = new List<SettingResourceSummary>();
-        summaries.Add(createDriveSummary("Drive", "기본 자료 위치", mFormModel.DriveResources.OfficialRootFolderId));
-        summaries.Add(createDriveSummary("Drive", "공통 자료", mFormModel.DriveResources.CommonFolderId));
-        summaries.Add(createDriveSummary("Drive", "외부 공유 자료", mFormModel.DriveResources.PublicFolderId));
-        summaries.Add(createDriveSummary("Drive", "책임자 자료", mFormModel.DriveResources.ResponsibleResourcesFolderId));
-        summaries.Add(createDriveSummary("Drive", "업무 지원 자료", mFormModel.DriveResources.WorkResourcesFolderId));
-        summaries.Add(createDriveSummary("파일", "공지 파일", mFormModel.FileResources.NoticeFileId));
-        summaries.Add(createDriveSummary("파일", "업무 기준 파일", mFormModel.FileResources.WorkGuidelineFileId));
-        summaries.Add(createCalendarSummary("Calendar", "조직 공용 Calendar", mFormModel.CalendarResources.OrganizationCalendarId));
-        summaries.Add(createCalendarSummary("Calendar", "책임자 Calendar", mFormModel.CalendarResources.ResponsibleCalendarId));
-        summaries.Add(createTaskListSummary("Google Tasks", "조직 공용 Google Tasks", mFormModel.TaskResources.OrganizationTaskListId));
-        summaries.Add(createTaskListSummary("Google Tasks", "책임자 Google Tasks", mFormModel.TaskResources.ResponsibleTaskListId));
-        return summaries;
+        IReadOnlyList<SettingResourceSummaryRequest> requests = new List<SettingResourceSummaryRequest>
+        {
+            new SettingResourceSummaryRequest
+            {
+                ResourceKind = ESettingResourceSummaryKind.Drive,
+                GroupName = "Drive",
+                DisplayName = "기본 자료 위치",
+                ResourceId = mFormModel.DriveResources.OfficialRootFolderId
+            },
+            new SettingResourceSummaryRequest
+            {
+                ResourceKind = ESettingResourceSummaryKind.Drive,
+                GroupName = "Drive",
+                DisplayName = "공통 자료",
+                ResourceId = mFormModel.DriveResources.CommonFolderId
+            },
+            new SettingResourceSummaryRequest
+            {
+                ResourceKind = ESettingResourceSummaryKind.Drive,
+                GroupName = "Drive",
+                DisplayName = "외부 공유 자료",
+                ResourceId = mFormModel.DriveResources.PublicFolderId
+            },
+            new SettingResourceSummaryRequest
+            {
+                ResourceKind = ESettingResourceSummaryKind.Drive,
+                GroupName = "Drive",
+                DisplayName = "책임자 자료",
+                ResourceId = mFormModel.DriveResources.ResponsibleResourcesFolderId
+            },
+            new SettingResourceSummaryRequest
+            {
+                ResourceKind = ESettingResourceSummaryKind.Drive,
+                GroupName = "Drive",
+                DisplayName = "업무 지원 자료",
+                ResourceId = mFormModel.DriveResources.WorkResourcesFolderId
+            },
+            new SettingResourceSummaryRequest
+            {
+                ResourceKind = ESettingResourceSummaryKind.Drive,
+                GroupName = "파일",
+                DisplayName = "공지 파일",
+                ResourceId = mFormModel.FileResources.NoticeFileId
+            },
+            new SettingResourceSummaryRequest
+            {
+                ResourceKind = ESettingResourceSummaryKind.Drive,
+                GroupName = "파일",
+                DisplayName = "업무 기준 파일",
+                ResourceId = mFormModel.FileResources.WorkGuidelineFileId
+            },
+            new SettingResourceSummaryRequest
+            {
+                ResourceKind = ESettingResourceSummaryKind.Calendar,
+                GroupName = "Calendar",
+                DisplayName = "조직 공용 Calendar",
+                ResourceId = mFormModel.CalendarResources.OrganizationCalendarId
+            },
+            new SettingResourceSummaryRequest
+            {
+                ResourceKind = ESettingResourceSummaryKind.Calendar,
+                GroupName = "Calendar",
+                DisplayName = "책임자 Calendar",
+                ResourceId = mFormModel.CalendarResources.ResponsibleCalendarId
+            },
+            new SettingResourceSummaryRequest
+            {
+                ResourceKind = ESettingResourceSummaryKind.TaskList,
+                GroupName = "Google Tasks",
+                DisplayName = "조직 공용 Google Tasks",
+                ResourceId = mFormModel.TaskResources.OrganizationTaskListId
+            },
+            new SettingResourceSummaryRequest
+            {
+                ResourceKind = ESettingResourceSummaryKind.TaskList,
+                GroupName = "Google Tasks",
+                DisplayName = "책임자 Google Tasks",
+                ResourceId = mFormModel.TaskResources.ResponsibleTaskListId
+            }
+        };
+
+        return requests.Select(createResourceSummary).ToList();
     }
 
-    private SettingResourceSummary createDriveSummary(string groupName, string displayName, string resourceId)
+    private SettingResourceSummary createResourceSummary(SettingResourceSummaryRequest request)
     {
         SettingResourceSummary summary = new SettingResourceSummary();
-        summary.GroupName = groupName;
-        summary.DisplayName = displayName;
-        summary.IsConfigured = string.IsNullOrWhiteSpace(resourceId) == false;
-        summary.Detail = getDriveResourceName(resourceId);
+        summary.GroupName = request.GroupName;
+        summary.DisplayName = request.DisplayName;
+        summary.IsConfigured = string.IsNullOrWhiteSpace(request.ResourceId) == false;
+        summary.Detail = getResourceSummaryDetail(request);
         return summary;
     }
 
-    private SettingResourceSummary createCalendarSummary(string groupName, string displayName, string calendarId)
+    private string getResourceSummaryDetail(SettingResourceSummaryRequest request)
     {
-        SettingResourceSummary summary = new SettingResourceSummary();
-        summary.GroupName = groupName;
-        summary.DisplayName = displayName;
-        summary.IsConfigured = string.IsNullOrWhiteSpace(calendarId) == false;
-        summary.Detail = getCalendarName(calendarId);
-        return summary;
-    }
-
-    private SettingResourceSummary createTaskListSummary(string groupName, string displayName, string taskListId)
-    {
-        SettingResourceSummary summary = new SettingResourceSummary();
-        summary.GroupName = groupName;
-        summary.DisplayName = displayName;
-        summary.IsConfigured = string.IsNullOrWhiteSpace(taskListId) == false;
-        summary.Detail = getTaskListName(taskListId);
-        return summary;
+        switch (request.ResourceKind)
+        {
+            case ESettingResourceSummaryKind.Drive:
+                return getDriveResourceName(request.ResourceId);
+            case ESettingResourceSummaryKind.Calendar:
+                return getCalendarName(request.ResourceId);
+            case ESettingResourceSummaryKind.TaskList:
+                return getTaskListName(request.ResourceId);
+            default:
+                return "연결됨";
+        }
     }
 
     private IEnumerable<string> getConfiguredDriveResourceIds()

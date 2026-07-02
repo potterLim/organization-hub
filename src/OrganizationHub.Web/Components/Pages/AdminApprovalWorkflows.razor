@@ -8,12 +8,7 @@
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("결재 경로 설정")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">결재 경로 설정</h1>
-        <div class="hub-page-description">요청 팀과 조건에 따라 결재자를 어떤 순서로 배정할지 정합니다.</div>
-    </div>
-</div>
+<h1 class="hub-sr-only">결재 경로 설정</h1>
 
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
@@ -37,9 +32,15 @@
                         <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
+                <MudSelect T="int?" Label="요청 직책" Value="mFormModel.AppliesToPositionId" ValueChanged="setAppliesToPositionId" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                    @foreach (OrganizationPosition position in getRequesterPositionOptions())
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)position.Id)">@getPositionDisplayName(position)</MudSelectItem>
+                    }
+                </MudSelect>
                 <div class="hub-form-hint">
-                    <span>조건이 같은 경로가 여러 개면 목록의 위쪽 경로를 먼저 사용합니다.</span>
-                    <span>저장한 뒤 드래그해 적용 순서를 조정하세요.</span>
+                    <span>팀과 직책이 더 정확히 맞는 경로가 먼저 적용됩니다.</span>
+                    <span>저장한 뒤 오른쪽 목록에서 적용 순서를 조정할 수 있습니다.</span>
                 </div>
                 <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="저장 후 바로 사용" Color="Color.Primary" />
             </section>
@@ -56,7 +57,7 @@
                         <div class="hub-workflow-step-heading">
                             <MudText Typo="Typo.subtitle1">@(step.StepOrder)단계</MudText>
                             <MudTooltip Text="단계 삭제">
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => removeStep(step))" aria-label="단계 삭제" />
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Default" Size="Size.Small" OnClick="@(() => removeStep(step))" Class="hub-workflow-step-delete-button" aria-label="단계 삭제" />
                             </MudTooltip>
                         </div>
                         <div class="hub-workflow-step-fields">
@@ -140,6 +141,11 @@
                 </div>
             </div>
 
+            <div class="hub-workflow-apply-summary">
+                <span>저장 후 적용</span>
+                <strong>@getWorkflowTargetPreview()</strong>
+            </div>
+
             <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveWorkflowAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
                 @if (mFormModel.Id != 0)
@@ -167,9 +173,8 @@
                         <div class="hub-sortable-main">
                             <div class="hub-sortable-title">@workflow.Name</div>
                             <div class="hub-sortable-meta">
-                                <span>@getWorkflowTeamName(workflow)</span>
-                                <span>·</span>
-                                <span>@(workflow.Steps.Count)단계</span>
+                                <span>@getWorkflowConditionName(workflow)</span>
+                                <span class="hub-workflow-step-count-badge">@(workflow.Steps.Count)단계</span>
                             </div>
                         </div>
                         <div class="hub-sortable-actions">

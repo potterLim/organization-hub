@@ -6,6 +6,10 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminPositions
 {
+    private const int INITIAL_POSITION_SORT_ORDER = 100;
+    private const int NO_SELECTED_TEAM_ID = 0;
+    private const int POSITION_SORT_ORDER_STEP = 10;
+
     private void setNewPositionTeamId(int teamId)
     {
         mNewPositionFormModel.TeamId = teamId;
@@ -36,7 +40,7 @@ public partial class AdminPositions
     {
         if (mActiveTeams.Count == 0)
         {
-            mSelectedPermissionTeamId = 0;
+            mSelectedPermissionTeamId = NO_SELECTED_TEAM_ID;
             return;
         }
 
@@ -80,7 +84,7 @@ public partial class AdminPositions
     {
         if (mActiveTeams.Count == 0)
         {
-            return 0;
+            return NO_SELECTED_TEAM_ID;
         }
 
         return mActiveTeams[0].Id;
@@ -105,10 +109,10 @@ public partial class AdminPositions
         List<OrganizationPosition> positions = getPositionsForTeam(teamId);
         if (positions.Count == 0)
         {
-            return 100;
+            return INITIAL_POSITION_SORT_ORDER;
         }
 
-        return positions.Max(position => position.SortOrder) + 10;
+        return positions.Max(position => position.SortOrder) + POSITION_SORT_ORDER_STEP;
     }
 
     private OrganizationPosition? getSelectedPositionOrNull()

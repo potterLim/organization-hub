@@ -7,12 +7,7 @@
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("메뉴 보이기 설정")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">메뉴 보이기 설정</h1>
-        <div class="hub-page-description">왼쪽 메뉴의 섹션, 이름, 표시 대상을 정합니다. 일반 사용자는 직책 권한도 함께 확인합니다.</div>
-    </div>
-</div>
+<h1 class="hub-sr-only">메뉴 보이기 설정</h1>
 
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
@@ -20,8 +15,8 @@
 }
 
 <MudGrid Spacing="6" Class="hub-management-grid hub-admin-page-grid">
-    <MudItem xs="12" lg="5" xl="4">
-        <MudPaper Class="hub-card hub-form-card pa-4">
+    <MudItem xs="12" lg="5" xl="4" Class="hub-admin-sticky-column">
+        <MudPaper Class="hub-card hub-form-card hub-menu-editor-card pa-4">
             @if (mSelectedMenuItemOrNull == null)
             {
                 <div class="hub-empty">수정할 메뉴를 선택해 주세요.</div>
@@ -29,17 +24,22 @@
             else
             {
                 <div class="hub-admin-form-heading">
-                    <MudText Typo="Typo.h6">@mSelectedMenuItemOrNull.DisplayName</MudText>
-                    <span>@MenuAccessLevelUtility.GetShortDisplayName(mFormModel.AccessLevel)</span>
+                    <MudText Typo="Typo.h6">메뉴 설정</MudText>
+                    <span>표시 대상: @MenuAccessLevelUtility.GetShortDisplayName(mFormModel.AccessLevel)</span>
+                </div>
+                <div class="hub-selected-editor-summary">
+                    <span>현재 편집 중</span>
+                    <strong>@mSelectedMenuItemOrNull.DisplayName</strong>
+                    <small>@getTeamPermissionText(mSelectedMenuItemOrNull)</small>
                 </div>
                 <div class="hub-form-hint">
-                    <span>일반 사용자는 표시 대상과 직책 권한을 모두 만족해야 메뉴가 보입니다.</span>
-                    <span>시스템 관리자는 관리 목적상 모든 활성 메뉴를 확인할 수 있습니다.</span>
+                    <span>일반 사용자는 표시 대상과 필요 권한을 모두 만족해야 메뉴가 보입니다.</span>
+                    <span>시스템 관리자는 관리 목적상 모든 활성 메뉴를 확인합니다.</span>
                 </div>
                 <div class="hub-menu-access-summary">
                     <span>필요 권한</span>
-                    <strong>@getRequiredPermissionText(mSelectedMenuItemOrNull)</strong>
-                    <small>일반 사용자는 직책 권한 관리에서 허용되어야 직접 접근할 수 있습니다.</small>
+                    <strong>@getRequiredPermissionText()</strong>
+                    <small>이 권한이 없으면 표시 대상에 포함되어도 메뉴가 숨겨집니다.</small>
                 </div>
                 <MudSelect T="int" Label="메뉴 섹션" @bind-Value="mFormModel.SectionId" Variant="Variant.Outlined" Margin="Margin.Dense">
                     @foreach (NavigationMenuSection section in mSections)
@@ -49,12 +49,18 @@
                 </MudSelect>
                 <MudTextField @bind-Value="mFormModel.DisplayName" Label="메뉴 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                 <MudSelect T="EMenuAccessLevel" Label="표시 대상" Value="mFormModel.AccessLevel" ValueChanged="setAccessLevel" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@mSelectedMenuItemOrNull.IsLocked">
-                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Authenticated">전체</MudSelectItem>
-                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.TeamMember">팀 구성원</MudSelectItem>
-                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.TeamLeader">팀 책임자 이상</MudSelectItem>
-                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.ManagementManager">관리팀 책임자 이상</MudSelectItem>
+                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Authenticated">전체 사용자</MudSelectItem>
+                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.TeamMember">선택한 팀</MudSelectItem>
+                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.TeamLeader">선택한 팀 + 필요 권한</MudSelectItem>
+                    <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.ManagementManager">관리 권한 보유자</MudSelectItem>
                     <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Management">관리팀</MudSelectItem>
                     <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Admin">시스템 관리자</MudSelectItem>
+                </MudSelect>
+                <MudSelect T="string" Label="필요 권한" MultiSelection="true" MultiSelectionTextFunc="getRequiredPermissionSelectionText" SelectedValues="mFormModel.RequiredPermissionKeys" SelectedValuesChanged="setRequiredPermissionKeys" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@mSelectedMenuItemOrNull.IsLocked">
+                    @foreach (PermissionDefinition permissionDefinition in mPermissionDefinitions)
+                    {
+                        <MudSelectItem T="string" Value="@permissionDefinition.Key">@permissionDefinition.Category · @permissionDefinition.DisplayName</MudSelectItem>
+                    }
                 </MudSelect>
                 <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="메뉴 사용" Color="Color.Primary" Disabled="@mSelectedMenuItemOrNull.IsLocked" />
                 @if (mSelectedMenuItemOrNull.IsLocked)
@@ -68,7 +74,12 @@
                     <MudSwitch T="bool" Value="mFormModel.IsVisibleToAllTeams" ValueChanged="@(value => setVisibleToAllTeams(value ? EMenuTeamVisibility.AllTeams : EMenuTeamVisibility.SelectedTeams))" Label="모든 팀에 표시" Color="Color.Primary" />
                     @if (mFormModel.IsVisibleToAllTeams)
                     {
-                        <MudAlert Severity="Severity.Info" Class="mt-3">모든 팀에 표시됩니다. 시스템 관리자는 모든 활성 메뉴를 관리할 수 있습니다.</MudAlert>
+                        <MudAlert Severity="Severity.Info" Class="mt-3">
+                            <div class="hub-alert-line-stack">
+                                <span>모든 팀에 표시됩니다.</span>
+                                <span>시스템 관리자는 모든 활성 메뉴를 관리할 수 있습니다.</span>
+                            </div>
+                        </MudAlert>
                     }
                     else
                     {
@@ -94,10 +105,10 @@
                 <MudText Typo="Typo.h6">섹션 관리</MudText>
                 <span>@(mSectionFormModel.Id == 0 ? "새 섹션" : "수정 중")</span>
             </div>
-            <div class="hub-form-hint">
-                <span>섹션은 왼쪽 메뉴의 묶음 제목입니다.</span>
-                <span>오른쪽에서 드래그해 섹션 순서를 바꿀 수 있습니다.</span>
-            </div>
+                <div class="hub-form-hint">
+                    <span>섹션은 왼쪽 메뉴의 묶음 제목입니다.</span>
+                    <span>오른쪽 섹션 순서에서 드래그해 위치를 바꿀 수 있습니다.</span>
+                </div>
             <MudTextField @bind-Value="mSectionFormModel.DisplayName" Label="섹션 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveSectionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
@@ -153,7 +164,7 @@
                         <div class="hub-sortable-list hub-menu-sortable-list" data-sortable-list>
                             @foreach (NavigationMenuItem menuItem in sectionMenuItems)
                             {
-                                <div class="hub-sortable-row hub-menu-sortable-row" data-sortable-item-id="@getMenuSortableItemId(menuItem)" draggable="true">
+                                <div class="@getMenuSortableRowClass(menuItem)" data-sortable-item-id="@getMenuSortableItemId(menuItem)" draggable="true">
                                     <span class="hub-sortable-handle" role="button" aria-label="메뉴 순서 변경">
                                         <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
                                     </span>

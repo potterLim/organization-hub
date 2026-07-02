@@ -125,3 +125,44 @@
     line-height: 1.4;
     margin-top: 2px;
 }
+
+.hub-workflow-apply-summary {
+    align-items: center;
+    background: rgba(33, 107, 255, .07);
+    border: 1px solid rgba(33, 107, 255, .13);
+    border-radius: 14px;
+    display: grid;
+    gap: 4px;
+    padding: 11px 13px;
+}
+
+.hub-workflow-apply-summary span {
+    color: var(--hub-brand-deep);
+    font-size: 12px;
+    font-weight: 950;
+    line-height: 1.2;
+}
+
+.hub-workflow-apply-summary strong {
+    color: var(--hub-text-strong);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.35;
+    word-break: keep-all;
+}
+
+.hub-workflow-step-count-badge {
+    background: rgba(78, 104, 145, .1);
+    border-radius: 999px;
+    color: var(--hub-text);
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1;
+    padding: 6px 8px;
+    white-space: nowrap;
+}
+
+.hub-workflow-step-delete-button:hover {
+    background: rgba(180, 35, 24, .1) !important;
+    color: var(--hub-danger) !important;
+}

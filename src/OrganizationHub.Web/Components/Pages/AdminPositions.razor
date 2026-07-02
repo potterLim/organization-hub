@@ -7,12 +7,7 @@
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("직책과 권한 설정")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">직책과 권한 설정</h1>
-        <div class="hub-page-description">팀별 직책을 만들고 자료, 일정, 할 일, 결재, 관리 권한을 정합니다.</div>
-    </div>
-</div>
+<h1 class="hub-sr-only">직책과 권한 설정</h1>
 
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
@@ -112,7 +107,7 @@ else
                                 <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
                             }
                         </MudSelect>
-                        <MudCheckBox T="bool" @bind-Value="mShowOnlyAllowedPermissions" Label="허용만 보기" Color="Color.Primary" />
+                        <MudCheckBox T="bool" @bind-Value="mShouldShowOnlyAllowedPermissions" Label="허용만 보기" Color="Color.Primary" />
                     </div>
                     <div class="hub-permission-editor">
                         @foreach (string category in getVisiblePermissionCategories())

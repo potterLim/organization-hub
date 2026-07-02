@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Data.Entities;
-using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Components.Pages;
 

@@ -14,6 +14,7 @@ public partial class AdminApprovalWorkflows
         mFormModel.Name = workflow.Name;
         mFormModel.Description = workflow.Description;
         mFormModel.AppliesToTeamId = workflow.AppliesToTeamId;
+        mFormModel.AppliesToPositionId = workflow.AppliesToPositionId;
         mFormModel.Priority = workflow.Priority;
         mFormModel.IsActive = workflow.IsActive;
         foreach (ApprovalWorkflowStep step in workflow.Steps.OrderBy(step => step.StepOrder))
@@ -67,12 +68,12 @@ public partial class AdminApprovalWorkflows
 
     private void renumberSteps()
     {
-        int stepOrder = 1;
+        int stepOrder = ApprovalStepNumber.MINIMUM_VALUE;
         ApprovalStepCount stepCount = new ApprovalStepCount(mFormModel.Steps.Count);
         foreach (ApprovalWorkflowStepFormModel step in mFormModel.Steps.OrderBy(step => step.StepOrder))
         {
             step.StepOrder = stepOrder;
-            step.StepName = ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(stepOrder));
+            step.StepName = ApprovalStepLabelUtility.GetStepLabel(stepCount, new ApprovalStepNumber(stepOrder));
             stepOrder++;
         }
     }
@@ -80,6 +81,23 @@ public partial class AdminApprovalWorkflows
     private void setAppliesToTeamId(int? teamIdOrNull)
     {
         mFormModel.AppliesToTeamId = teamIdOrNull;
+        if (teamIdOrNull.HasValue == false)
+        {
+            return;
+        }
+
+        OrganizationPosition? selectedPositionOrNull = mPositions.FirstOrDefault(position =>
+            mFormModel.AppliesToPositionId.HasValue &&
+            position.Id == mFormModel.AppliesToPositionId.Value);
+        if (selectedPositionOrNull == null || selectedPositionOrNull.TeamId != teamIdOrNull.Value)
+        {
+            mFormModel.AppliesToPositionId = null;
+        }
+    }
+
+    private void setAppliesToPositionId(int? positionIdOrNull)
+    {
+        mFormModel.AppliesToPositionId = positionIdOrNull;
     }
 
     private void setApproverSelectionType(ApprovalWorkflowStepFormModel step, EApproverSelectionType selectionType)

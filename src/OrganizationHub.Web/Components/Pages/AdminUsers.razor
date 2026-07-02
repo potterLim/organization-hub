@@ -7,12 +7,7 @@
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("사용자 관리")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">사용자 관리</h1>
-        <div class="hub-page-description">사용자의 소속, 권한, 로그인 가능 상태를 관리합니다.</div>
-    </div>
-</div>
+<h1 class="hub-sr-only">사용자 관리</h1>
 
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
@@ -34,9 +29,9 @@
             }
             @if (mCanManageSystemAdmins)
             {
-                <MudSwitch T="bool" @bind-Value="mIsSystemAdmin" Label="시스템 관리자" Color="Color.Warning" />
+                <MudSwitch T="bool" @bind-Value="mIsSystemAdministratorSelected" Label="시스템 관리자" Color="Color.Warning" />
             }
-            @if (mIsSystemAdmin == false)
+            @if (mIsSystemAdministratorSelected == false)
             {
                 <MudSelect T="int?" Label="팀" Value="mFormModel.TeamId" ValueChanged="handleTeamChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
                     @foreach (Team team in getSelectableTeams())

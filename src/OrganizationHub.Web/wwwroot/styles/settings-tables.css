@@ -31,7 +31,7 @@
 .hub-admin-table td {
     max-width: 220px;
     overflow: hidden;
-    padding: 18px 18px !important;
+    padding: 14px 18px !important;
     text-overflow: ellipsis;
     white-space: nowrap;
 }

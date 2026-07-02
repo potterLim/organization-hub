@@ -1,5 +1,5 @@
 <MudPaper Class="hub-card hub-form-card pa-4">
-    <MudText Typo="Typo.h6">연결 상태</MudText>
+    <MudText Typo="Typo.h6">현재 연결</MudText>
     @if (Status.HasOAuthConfiguration == false)
     {
         <MudAlert Severity="Severity.Warning" Class="mb-4">Google 연결 정보가 아직 준비되지 않았습니다. 배포 담당자에게 설정을 요청해 주세요.</MudAlert>
@@ -7,7 +7,7 @@
     <div class="hub-google-status">
         <span class="@(Status.IsConnected ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(Status.IsConnected ? "연결됨" : "미연결")</span>
         <div>
-            <div class="hub-google-status-title">@(Status.IsConnected ? Status.ConnectedEmail : "Google 계정 없음")</div>
+            <div class="hub-google-status-title">@getConnectionTitle()</div>
             <div class="hub-muted">@Status.Message</div>
         </div>
     </div>
@@ -16,7 +16,14 @@
         <div class="hub-google-meta">연결일 @FormatDate(Status.ConnectedAt)</div>
     }
     <MudExpansionPanels Elevation="0" Class="hub-advanced-settings hub-google-advanced-settings">
-        <MudExpansionPanel Text="고급: 승인 주소 확인">
+        <MudExpansionPanel Text="자세히">
+            @if (shouldShowConnectedEmail())
+            {
+                <div class="hub-google-callback mb-3">
+                    <div class="hub-google-callback-label">연결 계정</div>
+                    <code>@Status.ConnectedEmail</code>
+                </div>
+            }
             <div class="hub-google-callback">
                 <div class="hub-google-callback-label">승인 후 돌아올 주소</div>
                 <code>@CallbackUri</code>
@@ -26,6 +33,10 @@
     <div class="hub-google-connect-actions">
         @if (Status.IsConnected)
         {
+            @if (Status.HasOAuthConfiguration)
+            {
+                <MudButton Href="/admin/google/connect" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Sync" Class="hub-primary-action-button">다시 연결</MudButton>
+            }
             <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => DisconnectRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.LinkOff" Class="hub-primary-action-button">연결 해제</MudButton>
         }
         else if (Status.HasOAuthConfiguration)
@@ -62,5 +73,20 @@
     public EventCallback DisconnectRequested
     {
         get; set;
+    }
+
+    private string getConnectionTitle()
+    {
+        if (Status.IsConnected)
+        {
+            return "Google 계정 연결됨";
+        }
+
+        return "Google 계정 없음";
+    }
+
+    private bool shouldShowConnectedEmail()
+    {
+        return Status.IsConnected && string.IsNullOrWhiteSpace(Status.ConnectedEmail) == false;
     }
 }

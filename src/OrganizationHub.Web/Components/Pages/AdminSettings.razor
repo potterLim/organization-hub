@@ -1,6 +1,8 @@
 @page "/admin/settings"
 @attribute [Authorize(Policy = OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE)]
+@inherits TimeZoneAwareOrganizationHubComponentBase
 @inject ITeamManagementService TeamManagementService
+@inject IGlobalSettingService GlobalSettingService
 @inject IGoogleConnectionService GoogleConnectionService
 @inject IGoogleWorkspaceBrowserService GoogleWorkspaceBrowserService
 @inject IGoogleWorkspaceSetupService GoogleWorkspaceSetupService
@@ -8,12 +10,7 @@
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("시스템 설정")</PageTitle>
 
-<div class="hub-page-header">
-    <div>
-        <h1 class="hub-page-title">시스템 설정</h1>
-        <div class="hub-page-description">Drive, Calendar, Google Tasks와 공지 파일을 각 화면에 연결합니다.</div>
-    </div>
-</div>
+<h1 class="hub-sr-only">시스템 설정</h1>
 
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
@@ -41,7 +38,7 @@
                 <AdminSettingsTaskListPanel State="@createTaskListPanelState()" Actions="@createTaskListPanelActions()" />
             </MudTabPanel>
             <MudTabPanel Text="고급">
-                <AdminSettingsAdvancedPanel FormModel="mFormModel" SaveRequested="saveSettingAsync" />
+                <AdminSettingsAdvancedPanel FormModel="mFormModel" />
             </MudTabPanel>
         </MudTabs>
     </div>

@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using MudBlazor;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;
 
@@ -78,7 +79,17 @@ public partial class AdminSettings
 
     private List<DriveFileItem> getOrderedDriveItems()
     {
-        return mDriveItems.OrderBy(item => item.IsFolder ? 0 : 1).ThenBy(item => item.IsFolder ? item.Name : string.Empty).ThenByDescending(item => item.ModifiedTime).ThenBy(item => item.Name).ToList();
+        return mDriveItems.OrderBy(item => getDriveItemSortGroup(item)).ThenBy(item => item.IsFolder ? item.Name : string.Empty).ThenByDescending(item => item.ModifiedTime).ThenBy(item => item.Name).ToList();
+    }
+
+    private EDriveItemSortGroup getDriveItemSortGroup(DriveFileItem item)
+    {
+        if (item.IsFolder)
+        {
+            return EDriveItemSortGroup.Folder;
+        }
+
+        return EDriveItemSortGroup.File;
     }
 
     private string getCurrentFolderId()
@@ -98,7 +109,7 @@ public partial class AdminSettings
             return "파일";
         }
 
-        if (file.MimeType == "application/pdf")
+        if (file.MimeType == GoogleMimeTypes.PDF)
         {
             return "PDF";
         }
@@ -118,6 +129,12 @@ public partial class AdminSettings
             return "-";
         }
 
-        return dateOrNull.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.CurrentCulture);
+        return PresentationDateTimeFormatter.formatClientDateTime(dateOrNull.Value, ClientTimeZoneInfo, PresentationDateTimeFormatter.FULL_DATE_TIME_FORMAT);
+    }
+
+    private enum EDriveItemSortGroup
+    {
+        Folder,
+        File
     }
 }

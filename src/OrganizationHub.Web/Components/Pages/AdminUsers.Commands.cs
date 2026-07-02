@@ -15,7 +15,7 @@ public partial class AdminUsers
             return;
         }
 
-        syncFormRoleAndTeam();
+        syncFormAccountKindAndTeam();
         ServiceResult saveResult;
         if (mFormModel.Id == 0)
         {
