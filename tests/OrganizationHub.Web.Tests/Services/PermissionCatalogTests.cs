@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using OrganizationHub.Web.Domain;
-using OrganizationHub.Web.Models;
 using Xunit;
 
 namespace OrganizationHub.Web.Tests.Services;

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +24,8 @@ public sealed class ApprovalWorkflowManagementServiceTests
 
             ApprovalWorkflowFormModel formModel = new ApprovalWorkflowFormModel();
             formModel.Name = "기본 결재 경로";
+            formModel.AppliesToTeamId = 1;
+            formModel.AppliesToPositionId = 1;
             formModel.Priority = 10;
             formModel.IsActive = true;
             ApprovalWorkflowStepFormModel stepFormModel = new ApprovalWorkflowStepFormModel();
@@ -41,9 +44,38 @@ public sealed class ApprovalWorkflowManagementServiceTests
                 ApprovalWorkflow workflow = dbContext.ApprovalWorkflows.Single();
                 ApprovalWorkflowStep step = dbContext.ApprovalWorkflowSteps.Single();
                 Assert.Equal("기본 결재 경로", workflow.Name);
+                Assert.Equal(1, workflow.AppliesToTeamId);
+                Assert.Equal(1, workflow.AppliesToPositionId);
                 Assert.Equal("팀 검토", step.StepName);
                 Assert.Equal(EApproverSelectionType.PositionInRequesterTeam, step.ApproverSelectionType);
             }
+        }
+    }
+
+    [Fact]
+    public async Task CreateWorkflowRejectsRequesterPositionFromDifferentTeamAsync()
+    {
+        using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
+        {
+            await seedApprovalDataAsync(dbContextFactory);
+            ApprovalWorkflowManagementService workflowManagementService = new ApprovalWorkflowManagementService(dbContextFactory);
+
+            ApprovalWorkflowFormModel formModel = new ApprovalWorkflowFormModel();
+            formModel.Name = "팀과 직책이 맞지 않는 경로";
+            formModel.AppliesToTeamId = 2;
+            formModel.AppliesToPositionId = 1;
+            ApprovalWorkflowStepFormModel stepFormModel = new ApprovalWorkflowStepFormModel();
+            stepFormModel.StepOrder = 1;
+            stepFormModel.StepName = "팀 검토";
+            stepFormModel.ApproverSelectionType = EApproverSelectionType.PositionInRequesterTeam;
+            stepFormModel.ApproverPositionId = 1;
+            stepFormModel.IsRequired = true;
+            formModel.Steps.Add(stepFormModel);
+
+            ServiceResult result = await workflowManagementService.CreateWorkflowAsync(formModel, CancellationToken.None);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal("요청 직책은 선택한 요청 팀에 속해야 합니다.", result.ErrorMessage);
         }
     }
 
@@ -70,6 +102,27 @@ public sealed class ApprovalWorkflowManagementServiceTests
         }
     }
 
+    [Fact]
+    public async Task UpdateWorkflowOrderRejectsDuplicateWorkflowIdsAsync()
+    {
+        using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
+        {
+            await seedApprovalDataAsync(dbContextFactory);
+            await seedWorkflowsAsync(dbContextFactory);
+            ApprovalWorkflowManagementService workflowManagementService = new ApprovalWorkflowManagementService(dbContextFactory);
+            List<ApprovalWorkflowId> orderedWorkflowIds = new List<ApprovalWorkflowId>
+            {
+                ApprovalWorkflowId.CreateExisting(1),
+                ApprovalWorkflowId.CreateExisting(1)
+            };
+
+            ServiceResult result = await workflowManagementService.UpdateWorkflowOrderAsync(new ApprovalWorkflowOrderUpdateRequest(orderedWorkflowIds), CancellationToken.None);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal("정렬할 결재 경로가 중복되어 있습니다.", result.ErrorMessage);
+        }
+    }
+
     private static async Task seedApprovalDataAsync(TestDbContextFactory dbContextFactory)
     {
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
@@ -80,6 +133,13 @@ public sealed class ApprovalWorkflowManagementServiceTests
             team.DisplayName = "문서팀";
             team.IsActive = true;
             dbContext.Teams.Add(team);
+
+            Team managementTeam = new Team();
+            managementTeam.Id = 2;
+            managementTeam.TeamKey = "Management";
+            managementTeam.DisplayName = "관리팀";
+            managementTeam.IsActive = true;
+            dbContext.Teams.Add(managementTeam);
 
             OrganizationPosition position = new OrganizationPosition();
             position.Id = 1;
@@ -93,11 +153,33 @@ public sealed class ApprovalWorkflowManagementServiceTests
             userAccount.Username = "lead";
             userAccount.DisplayName = "문서 리드";
             userAccount.PasswordHash = "hash";
-            userAccount.Role = EUserRole.TeamLeader;
+            userAccount.StoredCompatibilityRole = EStoredCompatibilityRole.TeamLeader;
             userAccount.Team = team;
             userAccount.Position = position;
             userAccount.IsActive = true;
             dbContext.UserAccounts.Add(userAccount);
+
+            await dbContext.SaveChangesAsync(CancellationToken.None);
+        }
+    }
+
+    private static async Task seedWorkflowsAsync(TestDbContextFactory dbContextFactory)
+    {
+        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+        {
+            ApprovalWorkflow firstWorkflow = new ApprovalWorkflow();
+            firstWorkflow.Id = 1;
+            firstWorkflow.Name = "기본 경로";
+            firstWorkflow.Priority = 10;
+            firstWorkflow.IsActive = true;
+            dbContext.ApprovalWorkflows.Add(firstWorkflow);
+
+            ApprovalWorkflow secondWorkflow = new ApprovalWorkflow();
+            secondWorkflow.Id = 2;
+            secondWorkflow.Name = "관리 경로";
+            secondWorkflow.Priority = 20;
+            secondWorkflow.IsActive = true;
+            dbContext.ApprovalWorkflows.Add(secondWorkflow);
 
             await dbContext.SaveChangesAsync(CancellationToken.None);
         }

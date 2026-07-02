@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,10 +11,10 @@ using Xunit;
 
 namespace OrganizationHub.Web.Tests.Services;
 
-public sealed class NavigationMenuServiceTests
+public sealed partial class NavigationMenuServiceTests
 {
     [Fact]
-    public async Task ManagementFilesMenuIsOnlyVisibleToManagementRolesAsync()
+    public async Task ManagementFilesMenuIsOnlyVisibleToManagementTeamAsync()
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
@@ -23,22 +22,43 @@ public sealed class NavigationMenuServiceTests
             {
                 dbContext.NavigationMenuItems.Add(createMenuItem("Materials", "팀 자료", "/materials", EMenuAccessLevel.TeamMember, 20));
                 dbContext.NavigationMenuItems.Add(createMenuItem("ManagementFiles", "관리팀 자료", "/management-files", EMenuAccessLevel.Management, 30));
+                seedMenuUsers(dbContext);
                 dbContext.SaveChanges();
             }
 
-            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory);
-            UserSession teamUserSession = new UserSession(UserAccountId.CreateExisting(1), "planning.member", "기획팀원", EUserRole.TeamUser, OrganizationTeamId.CreateExisting(1), new OrganizationTeamKey("Planning"), "기획팀");
-            UserSession managementSession = new UserSession(UserAccountId.CreateExisting(2), "management.staff", "관리팀 담당자", EUserRole.ManagementStaff, null, OrganizationTeamKey.Empty, string.Empty);
+            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory, new OrganizationPermissionService(dbContextFactory));
+            UserSession teamUserSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(1),
+                    Username = Username.CreateOptional("planning.member"),
+                    DisplayName = DisplayName.CreateOptional("기획팀원"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.TeamUser,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(1),
+                    TeamKey = new OrganizationTeamKey("Planning"),
+                    TeamDisplayName = DisplayName.CreateOptional("기획팀")
+                });
+            UserSession managementSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(2),
+                    Username = Username.CreateOptional("management.staff"),
+                    DisplayName = DisplayName.CreateOptional("관리팀 담당자"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.ManagementStaff,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(2),
+                    TeamKey = new OrganizationTeamKey("Management"),
+                    TeamDisplayName = DisplayName.CreateOptional("관리팀")
+                });
 
             IReadOnlyList<NavigationMenuItem> teamMenus = await navigationMenuService.GetVisibleMenuItemsAsync(teamUserSession, CancellationToken.None);
             IReadOnlyList<NavigationMenuItem> managementMenus = await navigationMenuService.GetVisibleMenuItemsAsync(managementSession, CancellationToken.None);
-            bool teamCanAccessManagementFiles = await navigationMenuService.CanAccessPathAsync(teamUserSession, NavigationPath.CreateOptional("/management-files"), CancellationToken.None);
-            bool managementCanAccessManagementFiles = await navigationMenuService.CanAccessPathAsync(managementSession, NavigationPath.CreateOptional("/management-files"), CancellationToken.None);
+            bool canTeamAccessManagementFiles = await navigationMenuService.CanAccessPathAsync(teamUserSession, NavigationPath.CreateOptional("/management-files"), CancellationToken.None);
+            bool canManagementAccessManagementFiles = await navigationMenuService.CanAccessPathAsync(managementSession, NavigationPath.CreateOptional("/management-files"), CancellationToken.None);
 
             Assert.DoesNotContain(teamMenus, menuItem => menuItem.MenuKey == "ManagementFiles");
             Assert.Contains(managementMenus, menuItem => menuItem.MenuKey == "ManagementFiles");
-            Assert.False(teamCanAccessManagementFiles);
-            Assert.True(managementCanAccessManagementFiles);
+            Assert.False(canTeamAccessManagementFiles);
+            Assert.True(canManagementAccessManagementFiles);
         }
     }
 
@@ -54,14 +74,55 @@ public sealed class NavigationMenuServiceTests
                 dbContext.NavigationMenuItems.Add(createMenuItem("AdminTeams", "팀 관리", "/admin/teams", EMenuAccessLevel.Admin, 310));
                 dbContext.NavigationMenuItems.Add(createMenuItem("AdminSettings", "시스템 설정", "/admin/settings", EMenuAccessLevel.Admin, 320));
                 dbContext.NavigationMenuItems.Add(createMenuItem("AdminMenus", "메뉴 관리", "/admin/menus", EMenuAccessLevel.Admin, 330));
+                seedMenuUsers(dbContext);
                 dbContext.SaveChanges();
             }
 
-            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory);
-            UserSession generalManagementSession = new UserSession(UserAccountId.CreateExisting(2), "management.staff", "관리팀 담당자", EUserRole.ManagementStaff, null, OrganizationTeamKey.Empty, string.Empty);
-            UserSession directorSession = new UserSession(UserAccountId.CreateExisting(3), "director", "디렉터", EUserRole.ManagementDirector, null, OrganizationTeamKey.Empty, string.Empty);
-            UserSession managerSession = new UserSession(UserAccountId.CreateExisting(4), "manager", "매니저", EUserRole.ManagementManager, null, OrganizationTeamKey.Empty, string.Empty);
-            UserSession adminSession = new UserSession(UserAccountId.CreateExisting(5), "admin", "관리자", EUserRole.Admin, null, OrganizationTeamKey.Empty, string.Empty);
+            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory, new OrganizationPermissionService(dbContextFactory));
+            UserSession generalManagementSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(2),
+                    Username = Username.CreateOptional("management.staff"),
+                    DisplayName = DisplayName.CreateOptional("관리팀 담당자"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.ManagementStaff,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(2),
+                    TeamKey = new OrganizationTeamKey("Management"),
+                    TeamDisplayName = DisplayName.CreateOptional("관리팀")
+                });
+            UserSession directorSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(3),
+                    Username = Username.CreateOptional("director"),
+                    DisplayName = DisplayName.CreateOptional("디렉터"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.ManagementDirector,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(2),
+                    TeamKey = new OrganizationTeamKey("Management"),
+                    TeamDisplayName = DisplayName.CreateOptional("관리팀")
+                });
+            UserSession managerSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(4),
+                    Username = Username.CreateOptional("manager"),
+                    DisplayName = DisplayName.CreateOptional("매니저"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.ManagementManager,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(2),
+                    TeamKey = new OrganizationTeamKey("Management"),
+                    TeamDisplayName = DisplayName.CreateOptional("관리팀")
+                });
+            UserSession adminSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(5),
+                    Username = Username.CreateOptional("admin"),
+                    DisplayName = DisplayName.CreateOptional("관리자"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.Admin,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(2),
+                    TeamKey = new OrganizationTeamKey("Management"),
+                    TeamDisplayName = DisplayName.CreateOptional("관리팀")
+                });
 
             IReadOnlyList<NavigationMenuItem> generalManagementMenus = await navigationMenuService.GetVisibleMenuItemsAsync(generalManagementSession, CancellationToken.None);
             IReadOnlyList<NavigationMenuItem> directorMenus = await navigationMenuService.GetVisibleMenuItemsAsync(directorSession, CancellationToken.None);
@@ -96,17 +157,28 @@ public sealed class NavigationMenuServiceTests
             {
                 dbContext.NavigationMenuItems.Add(createMenuItem("ResponsibleResources", "책임자 자료", "/responsible-resources", EMenuAccessLevel.TeamLeader, 110));
                 dbContext.NavigationMenuItems.Add(createMenuItem("Materials", "팀 자료", "/materials", EMenuAccessLevel.TeamMember, 20));
+                seedMenuUsers(dbContext);
                 dbContext.SaveChanges();
             }
 
-            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory);
-            UserSession deputyLeaderSession = new UserSession(UserAccountId.CreateExisting(6), "planning.deputy", "기획 부책임자", EUserRole.TeamDeputyLeader, OrganizationTeamId.CreateExisting(1), new OrganizationTeamKey("Planning"), "기획팀");
+            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory, new OrganizationPermissionService(dbContextFactory));
+            UserSession deputyLeaderSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(6),
+                    Username = Username.CreateOptional("planning.deputy"),
+                    DisplayName = DisplayName.CreateOptional("기획 부책임자"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.TeamDeputyLeader,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(1),
+                    TeamKey = new OrganizationTeamKey("Planning"),
+                    TeamDisplayName = DisplayName.CreateOptional("기획팀")
+                });
 
             IReadOnlyList<NavigationMenuItem> menus = await navigationMenuService.GetVisibleMenuItemsAsync(deputyLeaderSession, CancellationToken.None);
 
             Assert.Contains(menus, menuItem => menuItem.MenuKey == "Materials");
-            Assert.DoesNotContain(menus, menuItem => menuItem.MenuKey == "ResponsibleResources");
-            Assert.False(await navigationMenuService.CanAccessPathAsync(deputyLeaderSession, NavigationPath.CreateOptional("/responsible-resources"), CancellationToken.None));
+            Assert.Contains(menus, menuItem => menuItem.MenuKey == "ResponsibleResources");
+            Assert.True(await navigationMenuService.CanAccessPathAsync(deputyLeaderSession, NavigationPath.CreateOptional("/responsible-resources"), CancellationToken.None));
         }
     }
 
@@ -121,11 +193,22 @@ public sealed class NavigationMenuServiceTests
                 dbContext.NavigationMenuItems.Add(createMenuItem("ApprovalRequest", "결재 요청", "/approvals/request", EMenuAccessLevel.TeamMember, 20));
                 dbContext.NavigationMenuItems.Add(createMenuItem("ManagementFiles", "관리팀 자료", "/management-files", EMenuAccessLevel.Management, 30));
                 dbContext.NavigationMenuItems.Add(createMenuItem("AdminMenus", "메뉴 관리", "/admin/menus", EMenuAccessLevel.Admin, 40));
+                seedMenuUsers(dbContext);
                 dbContext.SaveChanges();
             }
 
-            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory);
-            UserSession adminSession = new UserSession(UserAccountId.CreateExisting(5), "admin", "관리자", EUserRole.Admin, null, OrganizationTeamKey.Empty, string.Empty);
+            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory, new OrganizationPermissionService(dbContextFactory));
+            UserSession adminSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(5),
+                    Username = Username.CreateOptional("admin"),
+                    DisplayName = DisplayName.CreateOptional("관리자"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.Admin,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(2),
+                    TeamKey = new OrganizationTeamKey("Management"),
+                    TeamDisplayName = DisplayName.CreateOptional("관리팀")
+                });
 
             IReadOnlyList<NavigationMenuItem> menus = await navigationMenuService.GetVisibleMenuItemsAsync(adminSession, CancellationToken.None);
 
@@ -153,7 +236,7 @@ public sealed class NavigationMenuServiceTests
                 dbContext.SaveChanges();
             }
 
-            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory);
+            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory, new OrganizationPermissionService(dbContextFactory));
 
             IReadOnlyList<NavigationMenuItem> menuItems = await navigationMenuService.GetManageableMenuItemsAsync(CancellationToken.None);
 
@@ -178,8 +261,18 @@ public sealed class NavigationMenuServiceTests
                 dbContext.SaveChanges();
             }
 
-            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory);
-            UserSession userSession = new UserSession(UserAccountId.CreateExisting(21), "configured", "설정형 사용자", EUserRole.TeamUser, OrganizationTeamId.CreateExisting(1), new OrganizationTeamKey("Planning"), "기획팀");
+            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory, new OrganizationPermissionService(dbContextFactory));
+            UserSession userSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(21),
+                    Username = Username.CreateOptional("configured"),
+                    DisplayName = DisplayName.CreateOptional("설정형 사용자"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.TeamUser,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(1),
+                    TeamKey = new OrganizationTeamKey("Planning"),
+                    TeamDisplayName = DisplayName.CreateOptional("기획팀")
+                });
 
             IReadOnlyList<NavigationMenuItem> menus = await navigationMenuService.GetVisibleMenuItemsAsync(userSession, CancellationToken.None);
 
@@ -206,8 +299,18 @@ public sealed class NavigationMenuServiceTests
                 dbContext.SaveChanges();
             }
 
-            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory);
-            UserSession userSession = new UserSession(UserAccountId.CreateExisting(31), "team.context", "팀 맥락 사용자", EUserRole.TeamUser, OrganizationTeamId.CreateExisting(2), new OrganizationTeamKey("Support"), "고객지원팀");
+            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory, new OrganizationPermissionService(dbContextFactory));
+            UserSession userSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(31),
+                    Username = Username.CreateOptional("team.context"),
+                    DisplayName = DisplayName.CreateOptional("팀 맥락 사용자"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.TeamUser,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(2),
+                    TeamKey = new OrganizationTeamKey("Support"),
+                    TeamDisplayName = DisplayName.CreateOptional("고객지원팀")
+                });
 
             IReadOnlyList<NavigationMenuItem> menus = await navigationMenuService.GetVisibleMenuItemsAsync(userSession, CancellationToken.None);
 
@@ -222,106 +325,37 @@ public sealed class NavigationMenuServiceTests
         }
     }
 
-    private static async Task seedConfiguredPermissionUserAsync(TestDbContextFactory dbContextFactory)
+    [Fact]
+    public async Task UnregisteredProtectedPathIsDeniedAsync()
     {
-        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+        using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
-            Team team = new Team();
-            team.Id = 1;
-            team.TeamKey = "Planning";
-            team.DisplayName = "기획팀";
-            team.IsActive = true;
-            OrganizationPosition position = new OrganizationPosition();
-            position.Team = team;
-            position.Name = "사용자 관리자";
-            position.Description = string.Empty;
-            position.SortOrder = 10;
-            position.IsActive = true;
-            addPermissionGrant(position, PermissionKeys.FILES_READ, EPermissionScopeType.OwnTeam);
-            addPermissionGrant(position, PermissionKeys.USERS_MANAGE, EPermissionScopeType.Global);
-            UserAccount userAccount = new UserAccount();
-            userAccount.Id = 21;
-            userAccount.Username = "configured";
-            userAccount.DisplayName = "설정형 사용자";
-            userAccount.PasswordHash = "test";
-            userAccount.Role = EUserRole.TeamUser;
-            userAccount.Team = team;
-            userAccount.Position = position;
-            userAccount.IsActive = true;
-            userAccount.CreatedAt = DateTime.UtcNow;
-            dbContext.Teams.Add(team);
-            dbContext.Positions.Add(position);
-            dbContext.UserAccounts.Add(userAccount);
-            await dbContext.SaveChangesAsync(CancellationToken.None);
+            using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+            {
+                dbContext.NavigationMenuItems.Add(createMenuItem("Dashboard", "홈", "/dashboard", EMenuAccessLevel.Authenticated, 10));
+                seedMenuUsers(dbContext);
+                dbContext.SaveChanges();
+            }
+
+            NavigationMenuService navigationMenuService = new NavigationMenuService(dbContextFactory, new OrganizationPermissionService(dbContextFactory));
+            UserSession userSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(1),
+                    Username = Username.CreateOptional("planning.member"),
+                    DisplayName = DisplayName.CreateOptional("기획팀원"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.TeamUser,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(1),
+                    TeamKey = new OrganizationTeamKey("Planning"),
+                    TeamDisplayName = DisplayName.CreateOptional("기획팀")
+                });
+
+            bool canAccessRoot = await navigationMenuService.CanAccessPathAsync(userSession, NavigationPath.CreateOptional("/"), CancellationToken.None);
+            bool canAccessUnknownPath = await navigationMenuService.CanAccessPathAsync(userSession, NavigationPath.CreateOptional("/admin/unregistered"), CancellationToken.None);
+
+            Assert.True(canAccessRoot);
+            Assert.False(canAccessUnknownPath);
         }
     }
 
-    private static async Task seedConfiguredTeamContextUserAsync(TestDbContextFactory dbContextFactory)
-    {
-        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
-        {
-            Team team = new Team();
-            team.Id = 2;
-            team.TeamKey = "Support";
-            team.DisplayName = "고객지원팀";
-            team.IsActive = true;
-            OrganizationPosition position = new OrganizationPosition();
-            position.Team = team;
-            position.Name = "일정 담당자";
-            position.Description = string.Empty;
-            position.SortOrder = 10;
-            position.IsActive = true;
-            addPermissionGrant(position, PermissionKeys.CALENDAR_READ, EPermissionScopeType.OwnTeam);
-            addPermissionGrant(position, PermissionKeys.TODOS_READ, EPermissionScopeType.OwnTeam);
-            UserAccount userAccount = new UserAccount();
-            userAccount.Id = 31;
-            userAccount.Username = "team.context";
-            userAccount.DisplayName = "팀 맥락 사용자";
-            userAccount.PasswordHash = "test";
-            userAccount.Role = EUserRole.TeamUser;
-            userAccount.Team = team;
-            userAccount.Position = position;
-            userAccount.IsActive = true;
-            userAccount.CreatedAt = DateTime.UtcNow;
-            dbContext.Teams.Add(team);
-            dbContext.Positions.Add(position);
-            dbContext.UserAccounts.Add(userAccount);
-            await dbContext.SaveChangesAsync(CancellationToken.None);
-        }
-    }
-
-    private static void addPermissionGrant(OrganizationPosition position, string permissionKey, EPermissionScopeType scopeType)
-    {
-        PositionPermissionGrant permissionGrant = new PositionPermissionGrant();
-        permissionGrant.Position = position;
-        permissionGrant.PermissionKey = permissionKey;
-        permissionGrant.ScopeType = scopeType;
-        permissionGrant.IsAllowed = true;
-        position.PermissionGrants.Add(permissionGrant);
-    }
-
-    private static NavigationMenuItem createMenuItem(string menuKey, string displayName, string href, EMenuAccessLevel accessLevel, int sortOrder)
-    {
-        NavigationMenuItem menuItem = new NavigationMenuItem();
-        menuItem.MenuKey = menuKey;
-        menuItem.DisplayName = displayName;
-        menuItem.Href = href;
-        menuItem.IconKey = "Folder";
-        menuItem.Section = createMenuSection(menuKey);
-        menuItem.AccessLevel = accessLevel;
-        menuItem.SortOrder = sortOrder;
-        menuItem.IsActive = true;
-        menuItem.IsVisibleToAllTeams = true;
-        menuItem.IsLocked = false;
-        return menuItem;
-    }
-
-    private static NavigationMenuSection createMenuSection(string menuKey)
-    {
-        NavigationMenuSection section = new NavigationMenuSection();
-        section.SectionKey = "Test-" + menuKey;
-        section.DisplayName = "테스트";
-        section.SortOrder = 10;
-        return section;
-    }
 }

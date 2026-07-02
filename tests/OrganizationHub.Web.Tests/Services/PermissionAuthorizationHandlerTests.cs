@@ -23,8 +23,8 @@ public sealed class PermissionAuthorizationHandlerTests
             await seedConfiguredUserAsync(dbContextFactory, PermissionKeys.USERS_MANAGE);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
             PermissionAuthorizationHandler handler = new PermissionAuthorizationHandler(permissionService);
-            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(new[] { new PermissionKey(PermissionKeys.USERS_MANAGE) }, new List<string>());
-            AuthorizationHandlerContext context = new AuthorizationHandlerContext(new[] { requirement }, createPrincipal(1, EUserRole.TeamUser, 1), null);
+            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(new PermissionKey[] { new PermissionKey(PermissionKeys.USERS_MANAGE) });
+            AuthorizationHandlerContext context = new AuthorizationHandlerContext(new PermissionAuthorizationRequirement[] { requirement }, createPrincipal(1, EStoredCompatibilityRole.TeamUser, 1), null);
 
             await handler.HandleAsync(context);
 
@@ -33,32 +33,32 @@ public sealed class PermissionAuthorizationHandlerTests
     }
 
     [Fact]
-    public async Task FallbackRoleSatisfiesRequirementWhenUserHasNoConfiguredPositionAsync()
+    public async Task UserWithoutPositionDoesNotSatisfyRequirementAsync()
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
             await seedUserWithoutPositionAsync(dbContextFactory);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
             PermissionAuthorizationHandler handler = new PermissionAuthorizationHandler(permissionService);
-            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(new[] { new PermissionKey(PermissionKeys.USERS_MANAGE) }, new[] { OrganizationHubRoles.ADMIN });
-            AuthorizationHandlerContext context = new AuthorizationHandlerContext(new[] { requirement }, createPrincipal(2, EUserRole.Admin, null), null);
+            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(new PermissionKey[] { new PermissionKey(PermissionKeys.USERS_MANAGE) });
+            AuthorizationHandlerContext context = new AuthorizationHandlerContext(new PermissionAuthorizationRequirement[] { requirement }, createPrincipal(2, EStoredCompatibilityRole.Admin, null), null);
 
             await handler.HandleAsync(context);
 
-            Assert.True(context.HasSucceeded);
+            Assert.False(context.HasSucceeded);
         }
     }
 
     [Fact]
-    public async Task AdministratorRoleSatisfiesRequirementWithConfiguredPositionAsync()
+    public async Task SystemAdministratorPositionSatisfiesRequirementAsync()
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
             await seedConfiguredAdministratorAsync(dbContextFactory);
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
             PermissionAuthorizationHandler handler = new PermissionAuthorizationHandler(permissionService);
-            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(new[] { new PermissionKey(PermissionKeys.GOOGLE_CONNECTION_MANAGE) }, new List<string>());
-            AuthorizationHandlerContext context = new AuthorizationHandlerContext(new[] { requirement }, createPrincipal(3, EUserRole.Admin, null), null);
+            PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(new PermissionKey[] { new PermissionKey(PermissionKeys.GOOGLE_CONNECTION_MANAGE) });
+            AuthorizationHandlerContext context = new AuthorizationHandlerContext(new PermissionAuthorizationRequirement[] { requirement }, createPrincipal(3, EStoredCompatibilityRole.Admin, null), null);
 
             await handler.HandleAsync(context);
 
@@ -75,11 +75,10 @@ public sealed class PermissionAuthorizationHandlerTests
             OrganizationPermissionService permissionService = new OrganizationPermissionService(dbContextFactory);
             PermissionAuthorizationHandler handler = new PermissionAuthorizationHandler(permissionService);
             PermissionAuthorizationRequirement requirement = new PermissionAuthorizationRequirement(
-                new[] { new PermissionKey(PermissionKeys.FILES_READ) },
-                new List<string>(),
+                new PermissionKey[] { new PermissionKey(PermissionKeys.FILES_READ) },
                 EPermissionAuthorizationTarget.UserTeam
             );
-            AuthorizationHandlerContext context = new AuthorizationHandlerContext(new[] { requirement }, createPrincipal(1, EUserRole.TeamLeader, 1), null);
+            AuthorizationHandlerContext context = new AuthorizationHandlerContext(new PermissionAuthorizationRequirement[] { requirement }, createPrincipal(1, EStoredCompatibilityRole.TeamLeader, 1), null);
 
             await handler.HandleAsync(context);
 
@@ -116,7 +115,7 @@ public sealed class PermissionAuthorizationHandlerTests
             userAccount.Username = "configured";
             userAccount.DisplayName = "설정형 사용자";
             userAccount.PasswordHash = "test";
-            userAccount.Role = EUserRole.TeamUser;
+            userAccount.StoredCompatibilityRole = EStoredCompatibilityRole.TeamUser;
             userAccount.Team = team;
             userAccount.Position = position;
             userAccount.IsActive = true;
@@ -138,7 +137,7 @@ public sealed class PermissionAuthorizationHandlerTests
             userAccount.Username = "admin";
             userAccount.DisplayName = "관리자";
             userAccount.PasswordHash = "test";
-            userAccount.Role = EUserRole.Admin;
+            userAccount.StoredCompatibilityRole = EStoredCompatibilityRole.Admin;
             userAccount.IsActive = true;
             userAccount.CreatedAt = DateTime.UtcNow;
             dbContext.UserAccounts.Add(userAccount);
@@ -161,12 +160,13 @@ public sealed class PermissionAuthorizationHandlerTests
             position.Description = string.Empty;
             position.SortOrder = 10;
             position.IsActive = true;
+            position.IsSystemAdministrator = true;
             UserAccount userAccount = new UserAccount();
             userAccount.Id = 3;
             userAccount.Username = "configured.admin";
             userAccount.DisplayName = "설정형 관리자";
             userAccount.PasswordHash = "test";
-            userAccount.Role = EUserRole.Admin;
+            userAccount.StoredCompatibilityRole = EStoredCompatibilityRole.Admin;
             userAccount.Position = position;
             userAccount.IsActive = true;
             userAccount.CreatedAt = DateTime.UtcNow;
@@ -177,14 +177,13 @@ public sealed class PermissionAuthorizationHandlerTests
         }
     }
 
-    private static ClaimsPrincipal createPrincipal(int userId, EUserRole role, int? teamIdOrNull)
+    private static ClaimsPrincipal createPrincipal(int userId, EStoredCompatibilityRole role, int? teamIdOrNull)
     {
         List<Claim> claims = new List<Claim>();
         claims.Add(new Claim(OrganizationHubClaimTypes.USER_ID, userId.ToString()));
         claims.Add(new Claim(OrganizationHubClaimTypes.USERNAME, "user" + userId.ToString()));
         claims.Add(new Claim(OrganizationHubClaimTypes.DISPLAY_NAME, "User " + userId.ToString()));
         claims.Add(new Claim(OrganizationHubClaimTypes.ROLE, role.ToString()));
-        claims.Add(new Claim(ClaimTypes.Role, UserRoleUtility.GetRoleName(role)));
         if (teamIdOrNull.HasValue)
         {
             claims.Add(new Claim(OrganizationHubClaimTypes.TEAM_ID, teamIdOrNull.Value.ToString()));

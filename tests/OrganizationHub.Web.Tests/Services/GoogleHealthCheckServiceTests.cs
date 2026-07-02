@@ -34,7 +34,7 @@ public sealed class GoogleHealthCheckServiceTests
             Assert.Contains(items, item => item.Name == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " 자료");
             Assert.Contains(items, item => item.Name == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " " + OrganizationHubWorkspaceDefaults.APPROVED_FOLDER_NAME);
             Assert.Contains(items, item => item.Name == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " Calendar");
-            Assert.Contains(items, item => item.Name == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " Google Tasks 목록");
+            Assert.Contains(items, item => item.Name == OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME + " 할 일");
         }
     }
 

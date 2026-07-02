@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -71,6 +72,34 @@ public sealed class PositionManagementServiceTests
         }
     }
 
+    [Fact]
+    public async Task UpdatePositionOrderRejectsDuplicatePositionIdsAsync()
+    {
+        using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
+        {
+            await seedTeamsAsync(dbContextFactory);
+            await seedPositionsAsync(dbContextFactory);
+            PositionManagementService positionManagementService = new PositionManagementService(dbContextFactory);
+            List<OrganizationPositionId> orderedPositionIds = new List<OrganizationPositionId>
+            {
+                OrganizationPositionId.CreateExisting(1),
+                OrganizationPositionId.CreateExisting(1)
+            };
+
+            ServiceResult result = await positionManagementService.UpdatePositionOrderAsync(
+                new OrganizationPositionOrderUpdateRequest(OrganizationTeamId.CreateExisting(1), orderedPositionIds),
+                CancellationToken.None);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal("정렬할 직책이 중복되어 있습니다.", result.ErrorMessage);
+            using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+            {
+                Assert.Equal(10, dbContext.Positions.Single(position => position.Id == 1).SortOrder);
+                Assert.Equal(20, dbContext.Positions.Single(position => position.Id == 2).SortOrder);
+            }
+        }
+    }
+
     private static async Task seedTeamsAsync(TestDbContextFactory dbContextFactory)
     {
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
@@ -90,6 +119,30 @@ public sealed class PositionManagementServiceTests
             targetTeam.IsActive = true;
             targetTeam.SortOrder = 20;
             dbContext.Teams.Add(targetTeam);
+
+            await dbContext.SaveChangesAsync(CancellationToken.None);
+        }
+    }
+
+    private static async Task seedPositionsAsync(TestDbContextFactory dbContextFactory)
+    {
+        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+        {
+            OrganizationPosition firstPosition = new OrganizationPosition();
+            firstPosition.Id = 1;
+            firstPosition.TeamId = 1;
+            firstPosition.Name = "문서 담당";
+            firstPosition.IsActive = true;
+            firstPosition.SortOrder = 10;
+            dbContext.Positions.Add(firstPosition);
+
+            OrganizationPosition secondPosition = new OrganizationPosition();
+            secondPosition.Id = 2;
+            secondPosition.TeamId = 1;
+            secondPosition.Name = "문서 책임자";
+            secondPosition.IsActive = true;
+            secondPosition.SortOrder = 20;
+            dbContext.Positions.Add(secondPosition);
 
             await dbContext.SaveChangesAsync(CancellationToken.None);
         }

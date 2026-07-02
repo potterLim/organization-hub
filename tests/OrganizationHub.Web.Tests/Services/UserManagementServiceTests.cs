@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +12,7 @@ using Xunit;
 
 namespace OrganizationHub.Web.Tests.Services;
 
-public sealed class UserManagementServiceTests
+public sealed partial class UserManagementServiceTests
 {
     [Fact]
     public async Task CreateNonAdministratorUserRequiresTeamAsync()
@@ -25,7 +24,7 @@ public sealed class UserManagementServiceTests
             formModel.Username = "management.user";
             formModel.DisplayName = "운영 담당";
             formModel.Password = "ChangeMe!2026";
-            formModel.Role = EUserRole.ManagementStaff;
+            formModel.AccountKind = EUserAccountKind.OrganizationMember;
             formModel.TeamId = null;
             formModel.IsActive = true;
 
@@ -47,7 +46,7 @@ public sealed class UserManagementServiceTests
             formModel.Id = userId;
             formModel.Username = "planning.member";
             formModel.DisplayName = "기획 운영";
-            formModel.Role = EUserRole.ManagementRecorder;
+            formModel.AccountKind = EUserAccountKind.OrganizationMember;
             formModel.IsActive = true;
 
             ServiceResult result = await userManagementService.UpdateUserAsync(createDirectorSession(), formModel, CancellationToken.None);
@@ -68,7 +67,7 @@ public sealed class UserManagementServiceTests
             formModel.Username = "management.office";
             formModel.DisplayName = "관리팀 지원";
             formModel.Password = "ChangeMe!2026";
-            formModel.Role = EUserRole.TeamUser;
+            formModel.AccountKind = EUserAccountKind.OrganizationMember;
             formModel.TeamId = managementTeamId;
             formModel.IsActive = true;
 
@@ -79,7 +78,7 @@ public sealed class UserManagementServiceTests
             {
                 UserAccount? userAccountOrNull = await dbContext.UserAccounts.Include(user => user.Team).FirstOrDefaultAsync(user => user.Username == "management.office", CancellationToken.None);
                 Assert.NotNull(userAccountOrNull);
-                Assert.Equal(EUserRole.TeamUser, userAccountOrNull.Role);
+                Assert.Equal(EStoredCompatibilityRole.TeamUser, userAccountOrNull.StoredCompatibilityRole);
                 Assert.NotNull(userAccountOrNull.Team);
                 if (userAccountOrNull.Team != null)
                 {
@@ -90,7 +89,7 @@ public sealed class UserManagementServiceTests
     }
 
     [Fact]
-    public async Task NonAdminUserManagerCreatesManagementUserWithDefaultRoleAsync()
+    public async Task NonAdminUserManagerCreatesOrganizationMemberWithDefaultStoredCompatibilityRoleAsync()
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
@@ -100,7 +99,7 @@ public sealed class UserManagementServiceTests
             formModel.Username = "new.director";
             formModel.DisplayName = "신규 디렉터";
             formModel.Password = "ChangeMe!2026";
-            formModel.Role = EUserRole.ManagementDirector;
+            formModel.AccountKind = EUserAccountKind.OrganizationMember;
             formModel.TeamId = managementTeamId;
             formModel.IsActive = true;
 
@@ -111,13 +110,13 @@ public sealed class UserManagementServiceTests
             {
                 UserAccount? userAccountOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Username == "new.director", CancellationToken.None);
                 Assert.NotNull(userAccountOrNull);
-                Assert.Equal(EUserRole.TeamUser, userAccountOrNull.Role);
+                Assert.Equal(EStoredCompatibilityRole.TeamUser, userAccountOrNull.StoredCompatibilityRole);
             }
         }
     }
 
     [Fact]
-    public async Task SystemAdministratorUsesConfiguredPositionsInsteadOfManagementRoleAsync()
+    public async Task SystemAdministratorUsesConfiguredPositionsForOrganizationMembersAsync()
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
@@ -127,7 +126,7 @@ public sealed class UserManagementServiceTests
             formModel.Username = "new.director";
             formModel.DisplayName = "신규 디렉터";
             formModel.Password = "ChangeMe!2026";
-            formModel.Role = EUserRole.ManagementDirector;
+            formModel.AccountKind = EUserAccountKind.OrganizationMember;
             formModel.TeamId = managementTeamId;
             formModel.IsActive = true;
 
@@ -138,13 +137,13 @@ public sealed class UserManagementServiceTests
             {
                 UserAccount? userAccountOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Username == "new.director", CancellationToken.None);
                 Assert.NotNull(userAccountOrNull);
-                Assert.Equal(EUserRole.TeamUser, userAccountOrNull.Role);
+                Assert.Equal(EStoredCompatibilityRole.TeamUser, userAccountOrNull.StoredCompatibilityRole);
             }
         }
     }
 
     [Fact]
-    public async Task CreateTeamDeputyLeaderKeepsTeamAffiliationAsync()
+    public async Task CreateOrganizationMemberStoresStandardCompatibilityRoleAsync()
     {
         using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
@@ -154,7 +153,7 @@ public sealed class UserManagementServiceTests
             formModel.Username = "planning.deputy";
             formModel.DisplayName = "기획 부책임자";
             formModel.Password = "ChangeMe!2026";
-            formModel.Role = EUserRole.TeamDeputyLeader;
+            formModel.AccountKind = EUserAccountKind.OrganizationMember;
             formModel.TeamId = planningTeamId;
             formModel.IsActive = true;
 
@@ -165,7 +164,7 @@ public sealed class UserManagementServiceTests
             {
                 UserAccount? userAccountOrNull = await dbContext.UserAccounts.Include(user => user.Team).FirstOrDefaultAsync(user => user.Username == "planning.deputy", CancellationToken.None);
                 Assert.NotNull(userAccountOrNull);
-                Assert.Equal(EUserRole.TeamDeputyLeader, userAccountOrNull.Role);
+                Assert.Equal(EStoredCompatibilityRole.TeamUser, userAccountOrNull.StoredCompatibilityRole);
                 Assert.NotNull(userAccountOrNull.Team);
                 if (userAccountOrNull.Team != null)
                 {
@@ -187,7 +186,7 @@ public sealed class UserManagementServiceTests
             formModel.Username = "planning.docs";
             formModel.DisplayName = "문서 담당";
             formModel.Password = "ChangeMe!2026";
-            formModel.Role = EUserRole.TeamUser;
+            formModel.AccountKind = EUserAccountKind.OrganizationMember;
             formModel.TeamId = planningTeamId;
             formModel.PositionId = managerPositionId;
             formModel.IsActive = true;
@@ -222,7 +221,7 @@ public sealed class UserManagementServiceTests
             formModel.Username = "planning.invalid";
             formModel.DisplayName = "잘못된 직책";
             formModel.Password = "ChangeMe!2026";
-            formModel.Role = EUserRole.TeamUser;
+            formModel.AccountKind = EUserAccountKind.OrganizationMember;
             formModel.TeamId = planningTeamId;
             formModel.PositionId = operationPositionId;
             formModel.IsActive = true;
@@ -241,12 +240,22 @@ public sealed class UserManagementServiceTests
             await createAdminUserAsync(dbContextFactory);
             UserManagementService userManagementService = new UserManagementService(dbContextFactory, new Pbkdf2PasswordHashService());
             UserSession adminSession = createAdminSession();
-            UserSession managerSession = new UserSession(UserAccountId.CreateExisting(11), "manager", "매니저", EUserRole.ManagementManager, null, OrganizationTeamKey.Empty, string.Empty);
+            UserSession managerSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(11),
+                    Username = Username.CreateOptional("manager"),
+                    DisplayName = DisplayName.CreateOptional("매니저"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.ManagementManager,
+                    OrganizationTeamIdOrNull = null,
+                    TeamKey = OrganizationTeamKey.Empty,
+                    TeamDisplayName = DisplayName.CreateOptional(string.Empty)
+                });
             UserAccountFormModel adminFormModel = new UserAccountFormModel();
             adminFormModel.Username = "site.admin2";
             adminFormModel.DisplayName = "사이트 관리자2";
             adminFormModel.Password = "ChangeMe!2026";
-            adminFormModel.Role = EUserRole.Admin;
+            adminFormModel.AccountKind = EUserAccountKind.SystemAdministrator;
             adminFormModel.IsActive = true;
 
             IReadOnlyList<UserAccount> adminUsers = await userManagementService.GetUsersAsync(adminSession, CancellationToken.None);
@@ -254,111 +263,28 @@ public sealed class UserManagementServiceTests
             ServiceResult managerCreateResult = await userManagementService.CreateUserAsync(managerSession, adminFormModel, CancellationToken.None);
             ServiceResult adminCreateResult = await userManagementService.CreateUserAsync(adminSession, adminFormModel, CancellationToken.None);
 
-            Assert.Contains(adminUsers, user => user.Role == EUserRole.Admin);
-            Assert.DoesNotContain(managerUsers, user => user.Role == EUserRole.Admin);
+            Assert.Contains(adminUsers, user => user.StoredCompatibilityRole == EStoredCompatibilityRole.Admin);
+            Assert.DoesNotContain(managerUsers, user => user.StoredCompatibilityRole == EStoredCompatibilityRole.Admin);
             Assert.False(managerCreateResult.IsSuccess);
             Assert.True(adminCreateResult.IsSuccess);
         }
     }
 
-    private async Task<int> createPlanningUserAsync(TestDbContextFactory dbContextFactory)
+    [Fact]
+    public async Task SystemAdministratorPositionProtectsCompatibilityRoleUserAsync()
     {
-        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
+        using (TestDbContextFactory dbContextFactory = new TestDbContextFactory())
         {
-            Team planningTeam = new Team();
-            planningTeam.TeamKey = "Planning";
-            planningTeam.DisplayName = "기획팀";
-            planningTeam.SortOrder = 10;
-            planningTeam.IsActive = true;
-            UserAccount userAccount = new UserAccount();
-            userAccount.Username = "planning.member";
-            userAccount.DisplayName = "기획 운영";
-            userAccount.PasswordHash = "test";
-            userAccount.Role = EUserRole.TeamUser;
-            userAccount.Team = planningTeam;
-            userAccount.IsActive = true;
-            userAccount.CreatedAt = DateTime.UtcNow;
-            dbContext.Teams.Add(planningTeam);
-            dbContext.UserAccounts.Add(userAccount);
-            await dbContext.SaveChangesAsync(CancellationToken.None);
-            return userAccount.Id;
+            await createAdminUserAsync(dbContextFactory);
+            int protectedUserId = await createSystemAdministratorPositionUserAsync(dbContextFactory);
+            UserManagementService userManagementService = new UserManagementService(dbContextFactory, new Pbkdf2PasswordHashService());
+
+            ServiceResult managerResult = await userManagementService.DeactivateUserAsync(createDirectorSession(), UserAccountId.CreateExisting(protectedUserId), CancellationToken.None);
+            ServiceResult adminResult = await userManagementService.DeactivateUserAsync(createAdminSession(), UserAccountId.CreateExisting(protectedUserId), CancellationToken.None);
+
+            Assert.False(managerResult.IsSuccess);
+            Assert.True(adminResult.IsSuccess);
         }
     }
 
-    private async Task<int> createManagementTeamAsync(TestDbContextFactory dbContextFactory)
-    {
-        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
-        {
-            Team managementTeam = new Team();
-            managementTeam.TeamKey = "Management";
-            managementTeam.DisplayName = "관리팀";
-            managementTeam.SortOrder = 0;
-            managementTeam.IsActive = true;
-            dbContext.Teams.Add(managementTeam);
-            await dbContext.SaveChangesAsync(CancellationToken.None);
-            return managementTeam.Id;
-        }
-    }
-
-    private async Task<int> createPlanningTeamAsync(TestDbContextFactory dbContextFactory)
-    {
-        return await createTeamAsync(dbContextFactory, "Planning", "기획팀", 10);
-    }
-
-    private async Task<int> createTeamAsync(TestDbContextFactory dbContextFactory, string teamKey, string displayName, int sortOrder)
-    {
-        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
-        {
-            Team team = new Team();
-            team.TeamKey = teamKey;
-            team.DisplayName = displayName;
-            team.SortOrder = sortOrder;
-            team.IsActive = true;
-            dbContext.Teams.Add(team);
-            await dbContext.SaveChangesAsync(CancellationToken.None);
-            return team.Id;
-        }
-    }
-
-    private async Task<int> createPositionAsync(TestDbContextFactory dbContextFactory, int teamId, string name)
-    {
-        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
-        {
-            OrganizationPosition position = new OrganizationPosition();
-            position.TeamId = teamId;
-            position.Name = name;
-            position.Description = string.Empty;
-            position.SortOrder = 10;
-            position.IsActive = true;
-            dbContext.Positions.Add(position);
-            await dbContext.SaveChangesAsync(CancellationToken.None);
-            return position.Id;
-        }
-    }
-
-    private async Task createAdminUserAsync(TestDbContextFactory dbContextFactory)
-    {
-        using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
-        {
-            UserAccount userAccount = new UserAccount();
-            userAccount.Username = "site.admin";
-            userAccount.DisplayName = "사이트 관리자";
-            userAccount.PasswordHash = "test";
-            userAccount.Role = EUserRole.Admin;
-            userAccount.IsActive = true;
-            userAccount.CreatedAt = DateTime.UtcNow;
-            dbContext.UserAccounts.Add(userAccount);
-            await dbContext.SaveChangesAsync(CancellationToken.None);
-        }
-    }
-
-    private static UserSession createDirectorSession()
-    {
-        return new UserSession(UserAccountId.CreateExisting(10), "director", "디렉터", EUserRole.ManagementDirector, null, OrganizationTeamKey.Empty, string.Empty);
-    }
-
-    private static UserSession createAdminSession()
-    {
-        return new UserSession(UserAccountId.CreateExisting(9), "admin", "관리자", EUserRole.Admin, null, OrganizationTeamKey.Empty, string.Empty);
-    }
 }

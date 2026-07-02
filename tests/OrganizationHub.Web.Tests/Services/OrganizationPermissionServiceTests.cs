@@ -96,7 +96,7 @@ public sealed class OrganizationPermissionServiceTests
             userAccount.Username = "planning.member";
             userAccount.DisplayName = "기획 담당";
             userAccount.PasswordHash = "test";
-            userAccount.Role = EUserRole.TeamUser;
+            userAccount.StoredCompatibilityRole = EStoredCompatibilityRole.TeamUser;
             userAccount.TeamId = teamId;
             userAccount.Position = position;
             userAccount.IsActive = true;
@@ -106,7 +106,17 @@ public sealed class OrganizationPermissionServiceTests
             dbContext.UserAccounts.Add(userAccount);
             await dbContext.SaveChangesAsync(CancellationToken.None);
 
-            UserSession session = new UserSession(UserAccountId.CreateExisting(userAccount.Id), userAccount.Username, userAccount.DisplayName, userAccount.Role, OrganizationTeamId.CreateExisting(teamId), new OrganizationTeamKey("Planning"), "기획팀");
+            UserSession session = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(userAccount.Id),
+                    Username = Username.CreateOptional(userAccount.Username),
+                    DisplayName = DisplayName.CreateOptional(userAccount.DisplayName),
+                    StoredCompatibilityRole = userAccount.StoredCompatibilityRole,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(teamId),
+                    TeamKey = new OrganizationTeamKey("Planning"),
+                    TeamDisplayName = DisplayName.CreateOptional("기획팀")
+                });
             return new SeededUser(session, teamId);
         }
     }
@@ -119,13 +129,23 @@ public sealed class OrganizationPermissionServiceTests
             userAccount.Username = "planning.unassigned";
             userAccount.DisplayName = "미배정";
             userAccount.PasswordHash = "test";
-            userAccount.Role = EUserRole.TeamUser;
+            userAccount.StoredCompatibilityRole = EStoredCompatibilityRole.TeamUser;
             userAccount.TeamId = teamId;
             userAccount.IsActive = true;
             userAccount.CreatedAt = DateTime.UtcNow;
             dbContext.UserAccounts.Add(userAccount);
             await dbContext.SaveChangesAsync(CancellationToken.None);
-            return new UserSession(UserAccountId.CreateExisting(userAccount.Id), userAccount.Username, userAccount.DisplayName, userAccount.Role, OrganizationTeamId.CreateExisting(teamId), new OrganizationTeamKey("Planning"), "기획팀");
+            return new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(userAccount.Id),
+                    Username = Username.CreateOptional(userAccount.Username),
+                    DisplayName = DisplayName.CreateOptional(userAccount.DisplayName),
+                    StoredCompatibilityRole = userAccount.StoredCompatibilityRole,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(teamId),
+                    TeamKey = new OrganizationTeamKey("Planning"),
+                    TeamDisplayName = DisplayName.CreateOptional("기획팀")
+                });
         }
     }
 

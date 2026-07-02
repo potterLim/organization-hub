@@ -3,9 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using OrganizationHub.Web.Configuration;
 using OrganizationHub.Web.Data;
@@ -31,7 +29,7 @@ public sealed class OrganizationHubDataSeederTests
             options.SeedUsername = "admin";
             options.SeedPassword = "ChangeMe!2026";
             options.SeedDisplayName = "관리자";
-            OrganizationHubDataSeeder seeder = new OrganizationHubDataSeeder(dbContextFactory, new FakePasswordHashService(), Options.Create(options), new FakeWebHostEnvironment());
+            OrganizationHubDataSeeder seeder = new OrganizationHubDataSeeder(dbContextFactory, new FakePasswordHashService(), Options.Create(options));
 
             await seeder.SeedAsync(CancellationToken.None);
 
@@ -39,11 +37,11 @@ public sealed class OrganizationHubDataSeederTests
             {
                 List<string> teamNames = await dbContext.Teams.OrderBy(team => team.SortOrder).Select(team => team.DisplayName).ToListAsync();
                 Assert.Equal(
-                    new[] { OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_DISPLAY_NAME, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME },
+                    new string[] { OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_DISPLAY_NAME, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME },
                     teamNames);
 
                 UserAccount admin = await dbContext.UserAccounts.Include(user => user.Position).SingleAsync(user => user.Username == "admin");
-                Assert.Equal(EUserRole.Admin, admin.Role);
+                Assert.Equal(EStoredCompatibilityRole.Admin, admin.StoredCompatibilityRole);
                 Assert.NotNull(admin.Position);
                 if (admin.Position != null)
                 {
@@ -76,7 +74,7 @@ public sealed class OrganizationHubDataSeederTests
             options.SeedUsername = "admin";
             options.SeedPassword = "ChangeMe!2026";
             options.SeedDisplayName = "Organization Hub 관리자";
-            OrganizationHubDataSeeder seeder = new OrganizationHubDataSeeder(dbContextFactory, new FakePasswordHashService(), Options.Create(options), new FakeWebHostEnvironment());
+            OrganizationHubDataSeeder seeder = new OrganizationHubDataSeeder(dbContextFactory, new FakePasswordHashService(), Options.Create(options));
 
             await seeder.SeedAsync(CancellationToken.None);
             await using (OrganizationHubDbContext dbContext = await dbContextFactory.CreateDbContextAsync(CancellationToken.None))
@@ -166,19 +164,9 @@ public sealed class OrganizationHubDataSeederTests
             return PasswordHash.CreateRequired("hashed:" + password.GetRequiredValue());
         }
 
-        public bool VerifyPassword(PlainPassword password, PasswordHash passwordHash)
+        public bool IsPasswordValid(PlainPassword password, PasswordHash passwordHash)
         {
             return passwordHash.GetRequiredValue() == "hashed:" + password.GetRequiredValue();
         }
-    }
-
-    private sealed class FakeWebHostEnvironment : IWebHostEnvironment
-    {
-        public string ApplicationName { get; set; } = "OrganizationHub.Tests";
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-        public string ContentRootPath { get; set; } = Path.GetTempPath();
-        public string EnvironmentName { get; set; } = "Production";
-        public string WebRootPath { get; set; } = Path.GetTempPath();
-        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
     }
 }

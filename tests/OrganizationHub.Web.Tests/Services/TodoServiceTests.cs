@@ -25,10 +25,30 @@ public sealed class TodoServiceTests
         using (TestDbContextFactory dbContextFactory = createConfiguredDbContextFactory())
         {
             GoogleTasksTodoService todoService = createTodoService(dbContextFactory);
-            UserSession teamUserSession = createPlanningUserSession(EUserRole.TeamUser);
-            UserSession responsibleSession = createPlanningUserSession(EUserRole.TeamLeader);
-            UserSession managementSession = new UserSession(UserAccountId.CreateExisting(2), "management.staff", "관리팀 담당자", EUserRole.ManagementStaff, OrganizationTeamId.CreateExisting(3), new OrganizationTeamKey("Management"), "관리팀");
-            UserSession directorSession = new UserSession(UserAccountId.CreateExisting(3), "director", "Director", EUserRole.ManagementDirector, OrganizationTeamId.CreateExisting(3), new OrganizationTeamKey("Management"), "관리팀");
+            UserSession teamUserSession = createPlanningUserSession(EStoredCompatibilityRole.TeamUser);
+            UserSession responsibleSession = createPlanningUserSession(EStoredCompatibilityRole.TeamLeader);
+            UserSession managementSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(2),
+                    Username = Username.CreateOptional("management.staff"),
+                    DisplayName = DisplayName.CreateOptional("관리팀 담당자"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.ManagementStaff,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(3),
+                    TeamKey = new OrganizationTeamKey("Management"),
+                    TeamDisplayName = DisplayName.CreateOptional("관리팀")
+                });
+            UserSession directorSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(3),
+                    Username = Username.CreateOptional("director"),
+                    DisplayName = DisplayName.CreateOptional("Director"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.ManagementDirector,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(3),
+                    TeamKey = new OrganizationTeamKey("Management"),
+                    TeamDisplayName = DisplayName.CreateOptional("관리팀")
+                });
 
             IReadOnlyList<TodoTaskListReference> teamUserTaskLists = await todoService.GetReadableTaskListsAsync(teamUserSession, CancellationToken.None);
             IReadOnlyList<TodoTaskListReference> leaderTaskLists = await todoService.GetReadableTaskListsAsync(responsibleSession, CancellationToken.None);
@@ -44,17 +64,21 @@ public sealed class TodoServiceTests
             Assert.True(hasTaskList(leaderTaskLists, TodoTaskListReference.AGGREGATE_TASK_LIST_ID));
             Assert.True(hasTaskList(leaderTaskLists, "responsible-tasks"));
             Assert.True(hasTaskList(leaderTaskLists, "planning-tasks"));
-            Assert.False(hasTaskList(leaderTaskLists, "management-tasks"));
-            Assert.False(hasTaskList(leaderTaskLists, "operation-tasks"));
+            Assert.True(hasTaskList(leaderTaskLists, "management-tasks"));
+            Assert.True(hasTaskList(leaderTaskLists, "operation-tasks"));
             Assert.False(hasTaskList(leaderWritableTaskLists, TodoTaskListReference.AGGREGATE_TASK_LIST_ID));
+            Assert.True(hasTaskList(leaderWritableTaskLists, "management-tasks"));
+            Assert.True(hasTaskList(leaderWritableTaskLists, "responsible-tasks"));
+            Assert.True(hasTaskList(leaderWritableTaskLists, "planning-tasks"));
+            Assert.True(hasTaskList(leaderWritableTaskLists, "operation-tasks"));
             Assert.True(hasTaskList(managementTaskLists, TodoTaskListReference.AGGREGATE_TASK_LIST_ID));
             Assert.True(hasTaskList(managementTaskLists, "management-tasks"));
             Assert.True(hasTaskList(managementTaskLists, "responsible-tasks"));
             Assert.True(hasTaskList(managementTaskLists, "planning-tasks"));
             Assert.True(hasTaskList(managementTaskLists, "operation-tasks"));
             Assert.True(hasTaskList(managementWritableTaskLists, "management-tasks"));
-            Assert.False(hasTaskList(managementWritableTaskLists, "responsible-tasks"));
-            Assert.False(hasTaskList(managementWritableTaskLists, "planning-tasks"));
+            Assert.True(hasTaskList(managementWritableTaskLists, "responsible-tasks"));
+            Assert.True(hasTaskList(managementWritableTaskLists, "planning-tasks"));
             Assert.True(hasTaskList(directorWritableTaskLists, "responsible-tasks"));
             Assert.True(hasTaskList(directorWritableTaskLists, "planning-tasks"));
             Assert.True(hasTaskList(directorWritableTaskLists, "operation-tasks"));
@@ -67,28 +91,33 @@ public sealed class TodoServiceTests
         using (TestDbContextFactory dbContextFactory = createConfiguredDbContextFactory())
         {
             GoogleTasksTodoService todoService = createTodoService(dbContextFactory);
-            UserSession teamUserSession = createPlanningUserSession(EUserRole.TeamUser);
+            UserSession teamUserSession = createPlanningUserSession(EStoredCompatibilityRole.TeamUser);
 
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => todoService.GetTasksAsync(teamUserSession, TodoTaskListId.CreateOptional("operation-tasks"), CancellationToken.None));
         }
     }
 
     [Fact]
-    public async Task GeneralManagementCannotWriteTeamOrResponsibleTaskListsAsync()
+    public async Task GlobalTodoWritePermissionAllowsTeamAndResponsibleTaskListsAsync()
     {
         using (TestDbContextFactory dbContextFactory = createConfiguredDbContextFactory())
         {
             GoogleTasksTodoService todoService = createTodoService(dbContextFactory);
-            UserSession managementSession = new UserSession(UserAccountId.CreateExisting(2), "management.staff", "관리팀 담당자", EUserRole.ManagementStaff, OrganizationTeamId.CreateExisting(3), new OrganizationTeamKey("Management"), "관리팀");
-            TodoTaskFormModel teamTaskForm = new TodoTaskFormModel();
-            teamTaskForm.TaskListId = "planning-tasks";
-            teamTaskForm.Title = "팀 업무";
-            TodoTaskFormModel leaderTaskForm = new TodoTaskFormModel();
-            leaderTaskForm.TaskListId = "responsible-tasks";
-            leaderTaskForm.Title = "책임자 업무";
+            UserSession managementSession = new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(2),
+                    Username = Username.CreateOptional("management.staff"),
+                    DisplayName = DisplayName.CreateOptional("관리팀 담당자"),
+                    StoredCompatibilityRole = EStoredCompatibilityRole.ManagementStaff,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(3),
+                    TeamKey = new OrganizationTeamKey("Management"),
+                    TeamDisplayName = DisplayName.CreateOptional("관리팀")
+                });
+            IReadOnlyList<TodoTaskListReference> writableTaskLists = await todoService.GetWritableTaskListsAsync(managementSession, CancellationToken.None);
 
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => todoService.CreateTaskAsync(managementSession, teamTaskForm, CancellationToken.None));
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => todoService.CreateTaskAsync(managementSession, leaderTaskForm, CancellationToken.None));
+            Assert.True(hasTaskList(writableTaskLists, "planning-tasks"));
+            Assert.True(hasTaskList(writableTaskLists, "responsible-tasks"));
         }
     }
 
@@ -128,10 +157,74 @@ public sealed class TodoServiceTests
             dbContext.Teams.Add(managementTeam);
             dbContext.Teams.Add(planningTeam);
             dbContext.Teams.Add(operationTeam);
+            seedPermissionUsers(dbContext);
             dbContext.SaveChanges();
         }
 
         return dbContextFactory;
+    }
+
+    private static void seedPermissionUsers(OrganizationHubDbContext dbContext)
+    {
+        OrganizationPosition planningMemberPosition = createPosition(1, "기획팀 구성원", 10);
+        addPermissionGrant(planningMemberPosition, PermissionKeys.TODOS_READ, EPermissionScopeType.OwnTeam);
+
+        OrganizationPosition planningLeaderPosition = createPosition(1, "기획팀 책임자", 20);
+        addPermissionGrant(planningLeaderPosition, PermissionKeys.TODOS_READ, EPermissionScopeType.Global);
+        addPermissionGrant(planningLeaderPosition, PermissionKeys.TODOS_CREATE, EPermissionScopeType.Global);
+
+        OrganizationPosition managementStaffPosition = createPosition(3, "관리팀 담당자", 10);
+        addPermissionGrant(managementStaffPosition, PermissionKeys.TODOS_READ, EPermissionScopeType.Global);
+        addPermissionGrant(managementStaffPosition, PermissionKeys.TODOS_CREATE, EPermissionScopeType.Global);
+
+        OrganizationPosition directorPosition = createPosition(3, "관리 책임자", 20);
+        addPermissionGrant(directorPosition, PermissionKeys.TODOS_READ, EPermissionScopeType.Global);
+        addPermissionGrant(directorPosition, PermissionKeys.TODOS_CREATE, EPermissionScopeType.Global);
+
+        dbContext.Positions.Add(planningMemberPosition);
+        dbContext.Positions.Add(planningLeaderPosition);
+        dbContext.Positions.Add(managementStaffPosition);
+        dbContext.Positions.Add(directorPosition);
+        dbContext.UserAccounts.Add(createUser(1, "planning.member", "기획팀원", EStoredCompatibilityRole.TeamUser, 1, planningMemberPosition));
+        dbContext.UserAccounts.Add(createUser(11, "planning.leader", "기획 책임자", EStoredCompatibilityRole.TeamLeader, 1, planningLeaderPosition));
+        dbContext.UserAccounts.Add(createUser(2, "management.staff", "관리팀 담당자", EStoredCompatibilityRole.ManagementStaff, 3, managementStaffPosition));
+        dbContext.UserAccounts.Add(createUser(3, "director", "Director", EStoredCompatibilityRole.ManagementDirector, 3, directorPosition));
+    }
+
+    private static OrganizationPosition createPosition(int teamId, string name, int sortOrder)
+    {
+        OrganizationPosition position = new OrganizationPosition();
+        position.TeamId = teamId;
+        position.Name = name;
+        position.Description = string.Empty;
+        position.SortOrder = sortOrder;
+        position.IsActive = true;
+        return position;
+    }
+
+    private static void addPermissionGrant(OrganizationPosition position, string permissionKey, EPermissionScopeType scopeType)
+    {
+        PositionPermissionGrant permissionGrant = new PositionPermissionGrant();
+        permissionGrant.Position = position;
+        permissionGrant.PermissionKey = permissionKey;
+        permissionGrant.ScopeType = scopeType;
+        permissionGrant.IsAllowed = true;
+        position.PermissionGrants.Add(permissionGrant);
+    }
+
+    private static UserAccount createUser(int id, string username, string displayName, EStoredCompatibilityRole role, int teamId, OrganizationPosition position)
+    {
+        UserAccount userAccount = new UserAccount();
+        userAccount.Id = id;
+        userAccount.Username = username;
+        userAccount.DisplayName = displayName;
+        userAccount.PasswordHash = "test";
+        userAccount.StoredCompatibilityRole = role;
+        userAccount.TeamId = teamId;
+        userAccount.Position = position;
+        userAccount.IsActive = true;
+        userAccount.CreatedAt = DateTime.UtcNow;
+        return userAccount;
     }
 
     private static Team createTeam(int id, string teamKey, string displayName, string taskListId, int sortOrder)
@@ -151,7 +244,7 @@ public sealed class TodoServiceTests
         FakeGoogleApiCredentialFactory credentialFactory = new FakeGoogleApiCredentialFactory();
         GoogleApiOptions options = new GoogleApiOptions();
         options.ApplicationName = "Organization Hub Tests";
-        return new GoogleTasksTodoService(dbContextFactory, credentialFactory, NullLogger<GoogleTasksTodoService>.Instance, Options.Create(options), new ChangeVersionService());
+        return new GoogleTasksTodoService(dbContextFactory, credentialFactory, NullLogger<GoogleTasksTodoService>.Instance, Options.Create(options), new ChangeVersionService(), new OrganizationPermissionService(dbContextFactory));
     }
 
     private static async Task<UserSession> seedConfiguredPermissionUserAsync(TestDbContextFactory dbContextFactory, int userId, int teamId, EPermissionScopeType scopeType, IReadOnlyList<string> permissionKeys)
@@ -181,20 +274,55 @@ public sealed class TodoServiceTests
             userAccount.Username = "configured.todo";
             userAccount.DisplayName = "할 일 권한 사용자";
             userAccount.PasswordHash = "test";
-            userAccount.Role = EUserRole.TeamUser;
+            userAccount.StoredCompatibilityRole = EStoredCompatibilityRole.TeamUser;
             userAccount.TeamId = teamId;
             userAccount.Position = position;
             userAccount.IsActive = true;
             userAccount.CreatedAt = DateTime.UtcNow;
             dbContext.UserAccounts.Add(userAccount);
             await dbContext.SaveChangesAsync(CancellationToken.None);
-            return new UserSession(UserAccountId.CreateExisting(userAccount.Id), userAccount.Username, userAccount.DisplayName, userAccount.Role, OrganizationTeamId.CreateExisting(teamId), new OrganizationTeamKey("Planning"), "기획팀");
+            return new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(userAccount.Id),
+                    Username = Username.CreateOptional(userAccount.Username),
+                    DisplayName = DisplayName.CreateOptional(userAccount.DisplayName),
+                    StoredCompatibilityRole = userAccount.StoredCompatibilityRole,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(teamId),
+                    TeamKey = new OrganizationTeamKey("Planning"),
+                    TeamDisplayName = DisplayName.CreateOptional("기획팀")
+                });
         }
     }
 
-    private static UserSession createPlanningUserSession(EUserRole role)
+    private static UserSession createPlanningUserSession(EStoredCompatibilityRole role)
     {
-        return new UserSession(UserAccountId.CreateExisting(1), "planning", "Planning User", role, OrganizationTeamId.CreateExisting(1), new OrganizationTeamKey("Planning"), "기획팀");
+        if (role == EStoredCompatibilityRole.TeamLeader)
+        {
+            return new UserSession(
+                new UserSessionCreateRequest
+                {
+                    UserAccountId = UserAccountId.CreateExisting(11),
+                    Username = Username.CreateOptional("planning.leader"),
+                    DisplayName = DisplayName.CreateOptional("기획 책임자"),
+                    StoredCompatibilityRole = role,
+                    OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(1),
+                    TeamKey = new OrganizationTeamKey("Planning"),
+                    TeamDisplayName = DisplayName.CreateOptional("기획팀")
+                });
+        }
+
+        return new UserSession(
+            new UserSessionCreateRequest
+            {
+                UserAccountId = UserAccountId.CreateExisting(1),
+                Username = Username.CreateOptional("planning.member"),
+                DisplayName = DisplayName.CreateOptional("기획팀원"),
+                StoredCompatibilityRole = role,
+                OrganizationTeamIdOrNull = OrganizationTeamId.CreateExisting(1),
+                TeamKey = new OrganizationTeamKey("Planning"),
+                TeamDisplayName = DisplayName.CreateOptional("기획팀")
+            });
     }
 
     private static bool hasTaskList(IReadOnlyList<TodoTaskListReference> taskLists, string taskListId)

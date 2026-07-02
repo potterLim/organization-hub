@@ -52,6 +52,17 @@ public sealed class FakeDriveService : IDriveService
         return Task.FromResult(files);
     }
 
+    public async Task<DriveFileNameConflictCheckResult> CheckFileNameConflictAsync(DriveFolderId folderId, DriveItemName fileName, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<DriveFileItem> existingItems = await ListFilesAsync(folderId, cancellationToken);
+        List<DriveFileItem> conflictingFiles = existingItems
+            .Where(item => item.IsFolder == false && string.Equals(item.Name, fileName.GetRequiredValue(), StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        DriveItemName suggestedFileName = DriveFileNamePolicy.CreateAvailableFileName(fileName, existingItems);
+        DriveFileNameConflictCheckResult result = new DriveFileNameConflictCheckResult(fileName, suggestedFileName, conflictingFiles);
+        return result;
+    }
+
     public Task<DriveFileMetadata?> GetFileOrNullAsync(DriveItemId fileId, CancellationToken cancellationToken)
     {
         DriveFileMetadata? metadataOrNull;
@@ -107,13 +118,42 @@ public sealed class FakeDriveService : IDriveService
         return Task.FromResult(metadataOrNull);
     }
 
-    public Task<DriveFileItem> UploadFileAsync(DriveFolderId targetFolderId, Stream fileStream, DriveItemName fileName, FileContentType contentType, CancellationToken cancellationToken)
+    public async Task<DriveFileItem> UploadFileAsync(DriveFileUploadRequest request, CancellationToken cancellationToken)
     {
+        if (request.ConflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile)
+        {
+            string replacementFileId = request.ReplacementFileId.GetRequiredValue();
+            DriveFileMetadata metadata = mMetadataByFileId[replacementFileId];
+            metadata.Name = request.FileName.GetRequiredValue();
+            DriveFileItem replacedFile = createDriveFileItem(metadata);
+            return replacedFile;
+        }
+
+        DriveFileNameConflictCheckResult conflictCheckResult = await CheckFileNameConflictAsync(request.TargetFolderId, request.FileName, cancellationToken);
+        DriveItemName uploadFileName = request.FileName;
+        if (request.ConflictResolution == EDriveFileNameConflictResolution.AddNewFile && conflictCheckResult.HasConflict)
+        {
+            uploadFileName = conflictCheckResult.SuggestedNewFileName;
+        }
+
+        string requiredTargetFolderId = request.TargetFolderId.GetRequiredValue();
+        string requiredFileName = uploadFileName.GetRequiredValue();
+        string requiredContentType = request.ContentType.GetRequiredValue();
+        string fileId = createFileId(requiredTargetFolderId, requiredFileName);
+        List<string> ancestorFolderIds = new List<string>();
+        ancestorFolderIds.Add(requiredTargetFolderId);
+        IReadOnlySet<string>? parentAncestorFolderIdsOrNull;
+        if (mAncestorFolderIdsByItemId.TryGetValue(requiredTargetFolderId, out parentAncestorFolderIdsOrNull))
+        {
+            ancestorFolderIds.AddRange(parentAncestorFolderIdsOrNull);
+        }
+
+        AddFile(fileId, requiredFileName, requiredContentType, ancestorFolderIds.ToArray());
         DriveFileItem driveFileItem = new DriveFileItem();
-        driveFileItem.Id = "uploaded-file";
-        driveFileItem.Name = fileName.GetRequiredValue();
-        driveFileItem.MimeType = contentType.GetRequiredValue();
-        return Task.FromResult(driveFileItem);
+        driveFileItem.Id = fileId;
+        driveFileItem.Name = requiredFileName;
+        driveFileItem.MimeType = requiredContentType;
+        return driveFileItem;
     }
 
     public Task<DriveFileItem> CreateFolderAsync(DriveFolderId parentFolderId, DriveItemName folderName, CancellationToken cancellationToken)
@@ -138,11 +178,27 @@ public sealed class FakeDriveService : IDriveService
         return Task.FromResult(driveFileItem);
     }
 
-    public Task<DriveFileItem> CopyFileToFolderAsync(DriveItemId fileId, DriveFolderId targetFolderId, DriveItemName fileName, CancellationToken cancellationToken)
+    public async Task<DriveFileItem> CopyFileToFolderAsync(DriveFileCopyRequest request, CancellationToken cancellationToken)
     {
-        string requiredFileId = fileId.GetRequiredValue();
-        string requiredTargetFolderId = targetFolderId.GetRequiredValue();
-        string requiredFileName = fileName.GetRequiredValue();
+        if (request.ConflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile)
+        {
+            string replacementFileId = request.ReplacementFileId.GetRequiredValue();
+            DriveFileMetadata metadata = mMetadataByFileId[replacementFileId];
+            metadata.Name = request.FileName.GetRequiredValue();
+            DriveFileItem replacedFile = createDriveFileItem(metadata);
+            return replacedFile;
+        }
+
+        DriveFileNameConflictCheckResult conflictCheckResult = await CheckFileNameConflictAsync(request.TargetFolderId, request.FileName, cancellationToken);
+        DriveItemName copyFileName = request.FileName;
+        if (request.ConflictResolution == EDriveFileNameConflictResolution.AddNewFile && conflictCheckResult.HasConflict)
+        {
+            copyFileName = conflictCheckResult.SuggestedNewFileName;
+        }
+
+        string requiredFileId = request.SourceFileId.GetRequiredValue();
+        string requiredTargetFolderId = request.TargetFolderId.GetRequiredValue();
+        string requiredFileName = copyFileName.GetRequiredValue();
         string copiedFileId = "copied-" + requiredFileId;
         List<string> ancestorFolderIds = new List<string>();
         ancestorFolderIds.Add(requiredTargetFolderId);
@@ -157,7 +213,7 @@ public sealed class FakeDriveService : IDriveService
         driveFileItem.Id = copiedFileId;
         driveFileItem.Name = requiredFileName;
         driveFileItem.MimeType = "application/pdf";
-        return Task.FromResult(driveFileItem);
+        return driveFileItem;
     }
 
     public Task DeleteDriveItemAsync(DriveItemId itemId, CancellationToken cancellationToken)
@@ -202,5 +258,25 @@ public sealed class FakeDriveService : IDriveService
         }
 
         return folderId;
+    }
+
+    private string createFileId(string parentFolderId, string fileName)
+    {
+        string safeFileName = fileName.Replace(" ", "-", StringComparison.Ordinal);
+        string fileId = "file-" + safeFileName;
+        if (mMetadataByFileId.ContainsKey(fileId) == false)
+        {
+            return fileId;
+        }
+
+        fileId = "file-" + parentFolderId + "-" + safeFileName;
+        int suffix = 2;
+        while (mMetadataByFileId.ContainsKey(fileId))
+        {
+            fileId = "file-" + parentFolderId + "-" + safeFileName + "-" + suffix.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            suffix = suffix + 1;
+        }
+
+        return fileId;
     }
 }
