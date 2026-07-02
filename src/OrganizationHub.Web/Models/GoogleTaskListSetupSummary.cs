@@ -14,6 +14,10 @@ public sealed class GoogleTaskListSetupSummary
     {
         get; set;
     }
+    public int RenamedCount
+    {
+        get; set;
+    }
     public int AssignedCount
     {
         get; set;

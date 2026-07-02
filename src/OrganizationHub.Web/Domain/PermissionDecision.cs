@@ -9,24 +9,22 @@ public sealed class PermissionDecision
     public string Reason { get; private init; } = string.Empty;
     public string ScopeLabel { get; private init; } = string.Empty;
 
-    private PermissionDecision(EPermissionDecisionState decisionState, string reason, string scopeLabel)
+    private PermissionDecision(
+        EPermissionDecisionState decisionState,
+        PermissionDecisionReason reason,
+        PermissionScopeLabel scopeLabel)
     {
         IsAllowed = decisionState == EPermissionDecisionState.Allowed;
-        Reason = reason;
-        ScopeLabel = scopeLabel;
+        Reason = reason.GetOptionalValue();
+        ScopeLabel = scopeLabel.GetRequiredValue();
     }
 
-    public static PermissionDecision Allow(string scopeLabel)
+    public static PermissionDecision Allow(PermissionScopeLabel scopeLabel)
     {
-        return new PermissionDecision(EPermissionDecisionState.Allowed, string.Empty, scopeLabel);
+        return new PermissionDecision(EPermissionDecisionState.Allowed, PermissionDecisionReason.Empty, scopeLabel);
     }
 
-    public static PermissionDecision Allow(string scopeLabel, string reason)
-    {
-        return new PermissionDecision(EPermissionDecisionState.Allowed, reason, scopeLabel);
-    }
-
-    public static PermissionDecision Deny(string reason, string scopeLabel)
+    public static PermissionDecision Deny(PermissionDecisionReason reason, PermissionScopeLabel scopeLabel)
     {
         return new PermissionDecision(EPermissionDecisionState.Denied, reason, scopeLabel);
     }

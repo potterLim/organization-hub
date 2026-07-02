@@ -28,8 +28,14 @@ public sealed partial class UploadAuditLogService
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             string requiredFolderId = folderId.GetRequiredValue();
-            List<UploadAuditLog> auditLogs = await dbContext.UploadAuditLogs.AsNoTracking().Where(auditLog => auditLog.FolderId == requiredFolderId && auditLog.UploadedAt >= cutoff).OrderByDescending(auditLog => auditLog.UploadedAt).Take(100).ToListAsync(cancellationToken);
-            return createItems(auditLogs);
+            List<UploadAuditLog> auditLogs = await dbContext.UploadAuditLogs
+                .AsNoTracking()
+                .Where(auditLog => auditLog.FolderId == requiredFolderId && auditLog.UploadedAt >= cutoff)
+                .OrderByDescending(auditLog => auditLog.UploadedAt)
+                .Take(RECENT_FOLDER_UPLOAD_CANDIDATE_COUNT)
+                .ToListAsync(cancellationToken);
+            Dictionary<int, UserAccount> uploaderUsersById = await loadUploaderUsersByIdAsync(dbContext, auditLogs, cancellationToken);
+            return createItems(auditLogs, uploaderUsersById);
         }
     }
 }

@@ -19,4 +19,8 @@ public class TodoTaskMetadata
     {
         get; set;
     }
+    public DateTime? DueAt
+    {
+        get; set;
+    }
 }

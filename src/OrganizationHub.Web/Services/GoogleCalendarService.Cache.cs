@@ -44,7 +44,7 @@ public sealed partial class GoogleCalendarService
     private void expireCalendarEventCache(CalendarId calendarId)
     {
         mMemoryCache.Remove(createCalendarVersionCacheKey(calendarId));
-        mMemoryCache.Set(createCalendarVersionCacheKey(calendarId), Guid.NewGuid().ToString("N"), TimeSpan.FromHours(1));
+        mMemoryCache.Set(createCalendarVersionCacheKey(calendarId), Guid.NewGuid().ToString("N"), CALENDAR_VERSION_CACHE_DURATION);
     }
 
     private string getCalendarEventCacheVersion(CalendarId calendarId)
@@ -57,7 +57,7 @@ public sealed partial class GoogleCalendarService
         }
 
         string version = Guid.NewGuid().ToString("N");
-        mMemoryCache.Set(versionCacheKey, version, TimeSpan.FromHours(1));
+        mMemoryCache.Set(versionCacheKey, version, CALENDAR_VERSION_CACHE_DURATION);
         return version;
     }
 

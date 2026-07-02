@@ -6,20 +6,28 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    private bool userHasApprovalPermission(
+    private bool hasUserApprovalPermission(
         UserAccount user,
         UserSession requesterSession,
-        string permissionKey)
+        PermissionKey permissionKey)
+    {
+        return hasUserApprovalPermission(user, createUserTeamIdOrNull(requesterSession), permissionKey);
+    }
+
+    private bool hasUserApprovalPermission(
+        UserAccount user,
+        OrganizationTeamId? requesterTeamIdOrNull,
+        PermissionKey permissionKey)
     {
         if (user.Position == null || user.Position.IsActive == false)
         {
             return false;
         }
 
-        OrganizationTeamId? requesterTeamIdOrNull = createUserTeamIdOrNull(requesterSession);
+        string requiredPermissionKey = permissionKey.GetRequiredValue();
         foreach (PositionPermissionGrant permissionGrant in user.Position.PermissionGrants)
         {
-            if (permissionGrant.IsAllowed == false || permissionGrant.PermissionKey != permissionKey)
+            if (permissionGrant.IsAllowed == false || permissionGrant.PermissionKey != requiredPermissionKey)
             {
                 continue;
             }

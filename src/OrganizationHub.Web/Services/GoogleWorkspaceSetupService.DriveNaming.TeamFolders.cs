@@ -10,6 +10,9 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleWorkspaceSetupService
 {
+    private const int FIRST_PARENT_FOLDER_USAGE_COUNT = 1;
+    private const int PARENT_FOLDER_USAGE_COUNT_INCREMENT = 1;
+
     private async Task applyTeamFolderNamesAsync(
         GlobalSetting setting,
         IReadOnlyList<Team> teams,
@@ -44,17 +47,17 @@ public sealed partial class GoogleWorkspaceSetupService
             teamFolderNameContexts.Add(new GoogleWorkspaceTeamFolderNameContext(team, teamParentFolderId, materialsMetadataOrNull, approvedMetadataOrNull));
             if (parentFolderUsageCounts.ContainsKey(teamParentFolderId))
             {
-                parentFolderUsageCounts[teamParentFolderId] = parentFolderUsageCounts[teamParentFolderId] + 1;
+                parentFolderUsageCounts[teamParentFolderId] = parentFolderUsageCounts[teamParentFolderId] + PARENT_FOLDER_USAGE_COUNT_INCREMENT;
             }
             else
             {
-                parentFolderUsageCounts[teamParentFolderId] = 1;
+                parentFolderUsageCounts[teamParentFolderId] = FIRST_PARENT_FOLDER_USAGE_COUNT;
             }
         }
 
         foreach (GoogleWorkspaceTeamFolderNameContext teamFolderNameContext in teamFolderNameContexts)
         {
-            if (parentFolderUsageCounts[teamFolderNameContext.TeamParentFolderId] > 1)
+            if (parentFolderUsageCounts[teamFolderNameContext.TeamParentFolderId] > FIRST_PARENT_FOLDER_USAGE_COUNT)
             {
                 await applyNestedTeamFolderNamesAsync(teamFolderNameContext, teamRootCandidateFolderIds, syncContext, cancellationToken);
                 continue;

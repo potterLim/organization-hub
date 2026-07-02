@@ -20,8 +20,7 @@ public sealed partial class PermissionService
     )
     {
         List<DriveFolderReference> folders = new List<DriveFolderReference>();
-        EPermissionConfigurationMode configurationMode = await getPermissionConfigurationModeAsync(userSession, cancellationToken);
-        DriveFolderCollectionContext collectionContext = new DriveFolderCollectionContext(userSession, accessMode, folderKindOrNull, configurationMode);
+        DriveFolderCollectionContext collectionContext = new DriveFolderCollectionContext(userSession, accessMode, folderKindOrNull);
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
@@ -31,19 +30,6 @@ public sealed partial class PermissionService
             }
 
             IQueryable<Team> teamQuery = dbContext.Teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder);
-            if (configurationMode == EPermissionConfigurationMode.FallbackPolicy && userSession.IsManagementRole() == false)
-            {
-                if (userSession.HasTeam == false)
-                {
-                    IReadOnlyList<DriveFolderReference> filteredTeamlessFolders = filterFolders(folders, accessMode);
-                    IReadOnlyList<DriveFolderReference> allowedTeamlessFolders = await filterFoldersInsideOfficialRootAsync(filteredTeamlessFolders, cancellationToken);
-                    return deduplicateFolderReferences(allowedTeamlessFolders);
-                }
-
-                int teamId = userSession.GetRequiredTeamIdValue();
-                teamQuery = teamQuery.Where(team => team.Id == teamId);
-            }
-
             List<Team> teams = await teamQuery.ToListAsync(cancellationToken);
             foreach (Team team in teams)
             {

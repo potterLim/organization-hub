@@ -16,7 +16,7 @@ namespace OrganizationHub.Web.Services;
 public sealed partial class GoogleWorkspaceSetupService
 {
     private const string CALENDAR_LIST_CACHE_KEY = "OrganizationHub:GoogleWorkspace:Calendars";
-    private static readonly string[] CALENDAR_SCOPES = new[] { GoogleCalendarApi.Scope.Calendar };
+    private static readonly string[] CALENDAR_SCOPES = new string[] { GoogleCalendarApi.Scope.Calendar };
 
     public async Task<IReadOnlyList<GoogleCalendarAssignmentOption>> GetCalendarAssignmentOptionsAsync(CancellationToken cancellationToken)
     {

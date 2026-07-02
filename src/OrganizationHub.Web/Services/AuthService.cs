@@ -50,13 +50,13 @@ public sealed class AuthService : IAuthService
             }
 
             PasswordHash storedPasswordHash = PasswordHash.CreateFromStoredValue(userAccountOrNull.PasswordHash);
-            bool isPasswordValid = mPasswordHashService.VerifyPassword(password, storedPasswordHash);
+            bool isPasswordValid = mPasswordHashService.IsPasswordValid(password, storedPasswordHash);
             if (isPasswordValid == false)
             {
                 return LoginResult.Fail("아이디와 비밀번호를 확인해 주세요.");
             }
 
-            if (UserRoleUtility.IsTeamRole(userAccountOrNull.Role))
+            if (userAccountOrNull.TeamId.HasValue)
             {
                 if (userAccountOrNull.Team == null || userAccountOrNull.Team.IsActive == false)
                 {
@@ -76,11 +76,10 @@ public sealed class AuthService : IAuthService
         List<Claim> claims = new List<Claim>();
         claims.Add(new Claim(ClaimTypes.NameIdentifier, userAccount.Id.ToString()));
         claims.Add(new Claim(ClaimTypes.Name, userAccount.Username));
-        claims.Add(new Claim(ClaimTypes.Role, UserRoleUtility.GetRoleName(userAccount.Role)));
         claims.Add(new Claim(OrganizationHubClaimTypes.USER_ID, userAccount.Id.ToString()));
         claims.Add(new Claim(OrganizationHubClaimTypes.USERNAME, userAccount.Username));
         claims.Add(new Claim(OrganizationHubClaimTypes.DISPLAY_NAME, userAccount.DisplayName));
-        claims.Add(new Claim(OrganizationHubClaimTypes.ROLE, UserRoleUtility.GetRoleName(userAccount.Role)));
+        claims.Add(new Claim(OrganizationHubClaimTypes.ROLE, StoredCompatibilityRoleUtility.GetClaimRoleName(userAccount.StoredCompatibilityRole)));
 
         if (userAccount.TeamId.HasValue)
         {

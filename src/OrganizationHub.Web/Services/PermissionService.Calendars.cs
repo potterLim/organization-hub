@@ -16,31 +16,24 @@ public sealed partial class PermissionService
     {
         List<CalendarReference> calendars = new List<CalendarReference>();
         calendars.Add(new CalendarReference(CalendarId.AllCalendars, "전체", ECalendarViewKind.Aggregate, null));
-        EPermissionConfigurationMode configurationMode = await getPermissionConfigurationModeAsync(userSession, cancellationToken);
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
-            EPermissionFallback globalReadFallback = PermissionFallbackUtility.FromDecision(userSession.IsManagementRole());
-            bool canReadGlobalCalendars = await canUseConfiguredOrFallbackPermissionAsync(
+            bool canReadGlobalCalendars = await canUsePermissionAsync(
                 userSession,
                 new PermissionKey(PermissionKeys.CALENDAR_READ),
                 null,
-                configurationMode,
-                globalReadFallback,
                 cancellationToken);
             if (canReadGlobalCalendars && settingOrNull != null && string.IsNullOrWhiteSpace(settingOrNull.OrganizationCalendarId) == false)
             {
                 calendars.Add(new CalendarReference(CalendarId.CreateOptional(settingOrNull.OrganizationCalendarId), OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME, ECalendarViewKind.Organization, null));
             }
 
-            EPermissionFallback responsibleReadFallback = PermissionFallbackUtility.FromDecision(userSession.IsTeamLeaderOrHigherRole());
-            bool canReadResponsibleCalendar = await canUseConfiguredOrFallbackPermissionAsync(
+            bool canReadResponsibleCalendar = await canUsePermissionAsync(
                 userSession,
                 new PermissionKey(PermissionKeys.CALENDAR_READ),
                 null,
-                configurationMode,
-                responsibleReadFallback,
                 cancellationToken);
             if (canReadResponsibleCalendar && settingOrNull != null && string.IsNullOrWhiteSpace(settingOrNull.ResponsibleCalendarId) == false)
             {
@@ -48,17 +41,6 @@ public sealed partial class PermissionService
             }
 
             IQueryable<Team> teamQuery = dbContext.Teams.Where(team => team.IsActive && team.CalendarId != null && team.CalendarId != string.Empty).OrderBy(team => team.SortOrder);
-            if (configurationMode == EPermissionConfigurationMode.FallbackPolicy && userSession.IsManagementRole() == false)
-            {
-                if (userSession.HasTeam == false)
-                {
-                    return calendars;
-                }
-
-                int teamId = userSession.GetRequiredTeamIdValue();
-                teamQuery = teamQuery.Where(team => team.Id == teamId);
-            }
-
             List<Team> teams = await teamQuery.ToListAsync(cancellationToken);
             foreach (Team team in teams)
             {
@@ -67,13 +49,10 @@ public sealed partial class PermissionService
                     continue;
                 }
 
-                EPermissionFallback teamReadFallback = PermissionFallbackUtility.FromDecision(canReadMaterialsForTeam(userSession, team));
-                bool canReadTeamCalendar = await canUseConfiguredOrFallbackPermissionAsync(
+                bool canReadTeamCalendar = await canUsePermissionAsync(
                     userSession,
                     new PermissionKey(PermissionKeys.CALENDAR_READ),
                     OrganizationTeamId.CreateExisting(team.Id),
-                    configurationMode,
-                    teamReadFallback,
                     cancellationToken);
                 if (canReadTeamCalendar)
                 {
@@ -88,28 +67,21 @@ public sealed partial class PermissionService
     public async Task<IReadOnlyList<CalendarReference>> GetWritableCalendarsAsync(UserSession userSession, CancellationToken cancellationToken)
     {
         List<CalendarReference> calendars = new List<CalendarReference>();
-        EPermissionConfigurationMode configurationMode = await getPermissionConfigurationModeAsync(userSession, cancellationToken);
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
-            EPermissionFallback managementWriteFallback = PermissionFallbackUtility.FromDecision(userSession.IsManagementRole());
-            bool canWriteManagementCalendar = await canUseAnyConfiguredOrFallbackCalendarWritePermissionAsync(
+            bool canWriteManagementCalendar = await canUseAnyCalendarWritePermissionAsync(
                 userSession,
                 null,
-                configurationMode,
-                managementWriteFallback,
                 cancellationToken);
             if (canWriteManagementCalendar && settingOrNull != null && string.IsNullOrWhiteSpace(settingOrNull.OrganizationCalendarId) == false)
             {
                 calendars.Add(new CalendarReference(CalendarId.CreateOptional(settingOrNull.OrganizationCalendarId), OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME, ECalendarViewKind.Organization, null));
             }
 
-            EPermissionFallback responsibleWriteFallback = PermissionFallbackUtility.FromDecision(UserPermissionPolicy.CanWriteResponsibleWork(userSession.Role));
-            bool canWriteResponsibleCalendar = await canUseAnyConfiguredOrFallbackCalendarWritePermissionAsync(
+            bool canWriteResponsibleCalendar = await canUseAnyCalendarWritePermissionAsync(
                 userSession,
                 null,
-                configurationMode,
-                responsibleWriteFallback,
                 cancellationToken);
             if (canWriteResponsibleCalendar && settingOrNull != null && string.IsNullOrWhiteSpace(settingOrNull.ResponsibleCalendarId) == false)
             {
@@ -117,22 +89,6 @@ public sealed partial class PermissionService
             }
 
             IQueryable<Team> teamQuery = dbContext.Teams.Where(team => team.IsActive && team.CalendarId != null && team.CalendarId != string.Empty).OrderBy(team => team.SortOrder);
-            if (configurationMode == EPermissionConfigurationMode.FallbackPolicy && UserPermissionPolicy.CanWriteAnyTeamWork(userSession.Role) == false)
-            {
-                if (UserPermissionPolicy.CanWriteOwnTeamWork(userSession.Role) == false)
-                {
-                    return calendars;
-                }
-
-                if (userSession.HasTeam == false)
-                {
-                    return calendars;
-                }
-
-                int teamId = userSession.GetRequiredTeamIdValue();
-                teamQuery = teamQuery.Where(team => team.Id == teamId);
-            }
-
             List<Team> teams = await teamQuery.ToListAsync(cancellationToken);
             foreach (Team team in teams)
             {
@@ -141,12 +97,9 @@ public sealed partial class PermissionService
                     continue;
                 }
 
-                EPermissionFallback teamWriteFallback = PermissionFallbackUtility.FromDecision(canWriteTeamWorkFallback(userSession, team));
-                bool canWriteTeamCalendar = await canUseAnyConfiguredOrFallbackCalendarWritePermissionAsync(
+                bool canWriteTeamCalendar = await canUseAnyCalendarWritePermissionAsync(
                     userSession,
                     OrganizationTeamId.CreateExisting(team.Id),
-                    configurationMode,
-                    teamWriteFallback,
                     cancellationToken);
                 if (canWriteTeamCalendar)
                 {
@@ -175,7 +128,7 @@ public sealed partial class PermissionService
         {
             if (calendar.CalendarId == calendarId)
             {
-                return PermissionDecision.Allow(calendar.DisplayName);
+                return allowPermission(createPermissionScopeLabel(calendar.DisplayName));
             }
         }
 
@@ -183,10 +136,14 @@ public sealed partial class PermissionService
         CalendarReference? readableCalendarOrNull = readableCalendars.FirstOrDefault(calendar => calendar.CalendarId == calendarId);
         if (readableCalendarOrNull != null)
         {
-            return PermissionDecision.Deny("조회만 가능한 일정입니다.", readableCalendarOrNull.DisplayName);
+            return denyPermission(
+                createPermissionDecisionReason("조회만 가능한 일정입니다."),
+                createPermissionScopeLabel(readableCalendarOrNull.DisplayName));
         }
 
-        return PermissionDecision.Deny("접근할 수 없는 일정입니다.", "일정");
+        return denyPermission(
+            createPermissionDecisionReason("접근할 수 없는 일정입니다."),
+            createPermissionScopeLabel("일정"));
     }
 
     public async Task<bool> CanReadCalendarAsync(UserSession userSession, CalendarId calendarId, CancellationToken cancellationToken)
@@ -199,7 +156,7 @@ public sealed partial class PermissionService
     {
         if (calendarId.IsAggregate)
         {
-            return PermissionDecision.Allow("전체 일정");
+            return allowPermission(createPermissionScopeLabel("전체 일정"));
         }
 
         IReadOnlyList<CalendarReference> calendars = await GetReadableCalendarsAsync(userSession, cancellationToken);
@@ -207,10 +164,12 @@ public sealed partial class PermissionService
         {
             if (calendar.CalendarId == calendarId)
             {
-                return PermissionDecision.Allow(calendar.DisplayName);
+                return allowPermission(createPermissionScopeLabel(calendar.DisplayName));
             }
         }
 
-        return PermissionDecision.Deny("접근할 수 없는 일정입니다.", "일정");
+        return denyPermission(
+            createPermissionDecisionReason("접근할 수 없는 일정입니다."),
+            createPermissionScopeLabel("일정"));
     }
 }

@@ -1,5 +1,3 @@
-using OrganizationHub.Web.Domain;
-
 namespace OrganizationHub.Web.Models;
 
 public sealed class ApprovalUserOption
@@ -9,11 +7,11 @@ public sealed class ApprovalUserOption
         get; set;
     }
     public string DisplayName { get; set; } = string.Empty;
-    public string RoleName { get; set; } = string.Empty;
-    public EUserRole Role
+    public int? PositionId
     {
         get; set;
     }
+    public string PositionName { get; set; } = string.Empty;
     public int? TeamId
     {
         get; set;
@@ -22,16 +20,18 @@ public sealed class ApprovalUserOption
 
     public string GetDisplayLabel()
     {
-        return DisplayName;
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(TeamName, PositionName);
+        string affiliationText = affiliationLabel.GetFullText();
+        if (string.IsNullOrWhiteSpace(affiliationText))
+        {
+            return DisplayName;
+        }
+
+        return affiliationText;
     }
 
     public string GetLabel()
     {
-        if (string.IsNullOrWhiteSpace(TeamName))
-        {
-            return DisplayName + " · " + RoleName;
-        }
-
-        return DisplayName + " · " + RoleName + " · " + TeamName;
+        return GetDisplayLabel();
     }
 }

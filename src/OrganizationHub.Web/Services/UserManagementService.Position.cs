@@ -12,13 +12,15 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class UserManagementService
 {
+    private const int SYSTEM_ADMINISTRATION_SORT_ORDER = 0;
+
     private async Task<OrganizationTeamId?> getAllowedTeamIdOrNullAsync(
         OrganizationHubDbContext dbContext,
         UserAccountFormModel formModel,
-        EUserRole role,
+        EUserAccountKind accountKind,
         CancellationToken cancellationToken)
     {
-        if (role == EUserRole.Admin)
+        if (accountKind == EUserAccountKind.SystemAdministrator)
         {
             return await getSystemAdministrationTeamIdAsync(dbContext, cancellationToken);
         }
@@ -35,7 +37,7 @@ public sealed partial class UserManagementService
     private async Task<OrganizationPosition?> getAllowedPositionOrNullAsync(
         OrganizationHubDbContext dbContext,
         UserAccountFormModel formModel,
-        EUserRole role,
+        EUserAccountKind accountKind,
         OrganizationTeamId? teamIdOrNull,
         CancellationToken cancellationToken)
     {
@@ -46,7 +48,7 @@ public sealed partial class UserManagementService
         }
 
         int requiredTeamId = teamId.GetRequiredValue();
-        if (role == EUserRole.Admin)
+        if (accountKind == EUserAccountKind.SystemAdministrator)
         {
             return await getSystemAdministratorPositionOrNullAsync(dbContext, teamId, cancellationToken);
         }
@@ -90,7 +92,7 @@ public sealed partial class UserManagementService
             positionOrNull.TeamId = requiredTeamId;
             positionOrNull.Name = "시스템 관리자";
             positionOrNull.Description = "조직 전체 설정과 운영 데이터를 관리하는 기본 관리자 직책입니다.";
-            positionOrNull.SortOrder = 0;
+            positionOrNull.SortOrder = SYSTEM_ADMINISTRATION_SORT_ORDER;
             positionOrNull.IsActive = true;
             positionOrNull.IsSystemAdministrator = true;
             dbContext.Positions.Add(positionOrNull);
@@ -148,7 +150,7 @@ public sealed partial class UserManagementService
         if (systemAdministrationTeamOrNull != null)
         {
             systemAdministrationTeamOrNull.DisplayName = OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_DISPLAY_NAME;
-            systemAdministrationTeamOrNull.SortOrder = 0;
+            systemAdministrationTeamOrNull.SortOrder = SYSTEM_ADMINISTRATION_SORT_ORDER;
             systemAdministrationTeamOrNull.IsActive = true;
             return OrganizationTeamId.CreateExisting(systemAdministrationTeamOrNull.Id);
         }
@@ -156,7 +158,7 @@ public sealed partial class UserManagementService
         Team systemAdministrationTeam = new Team();
         systemAdministrationTeam.TeamKey = OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_KEY;
         systemAdministrationTeam.DisplayName = OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_DISPLAY_NAME;
-        systemAdministrationTeam.SortOrder = 0;
+        systemAdministrationTeam.SortOrder = SYSTEM_ADMINISTRATION_SORT_ORDER;
         systemAdministrationTeam.IsActive = true;
         dbContext.Teams.Add(systemAdministrationTeam);
         await dbContext.SaveChangesAsync(cancellationToken);

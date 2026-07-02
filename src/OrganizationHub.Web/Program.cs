@@ -24,6 +24,12 @@ namespace OrganizationHub.Web;
 
 public class Program
 {
+    private const int FORWARDED_HEADER_FORWARD_LIMIT = 1;
+    private const string LOOPBACK_IPV4_ADDRESS = "127.0.0.1";
+    private const string PRIVATE_CLASS_A_NETWORK_CIDR = "10.0.0.0/8";
+    private const string PRIVATE_CLASS_B_NETWORK_CIDR = "172.16.0.0/12";
+    private const string PRIVATE_CLASS_C_NETWORK_CIDR = "192.168.0.0/16";
+
     public static void Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -44,12 +50,12 @@ public class Program
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
-            options.ForwardLimit = 1;
-            options.KnownProxies.Add(IPAddress.Parse("127.0.0.1"));
+            options.ForwardLimit = FORWARDED_HEADER_FORWARD_LIMIT;
+            options.KnownProxies.Add(IPAddress.Parse(LOOPBACK_IPV4_ADDRESS));
             options.KnownProxies.Add(IPAddress.IPv6Loopback);
-            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("10.0.0.0/8"));
-            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("172.16.0.0/12"));
-            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("192.168.0.0/16"));
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(PRIVATE_CLASS_A_NETWORK_CIDR));
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(PRIVATE_CLASS_B_NETWORK_CIDR));
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(PRIVATE_CLASS_C_NETWORK_CIDR));
         });
 
         string? connectionStringOrNull = builder.Configuration.GetConnectionString("OrganizationHub");
@@ -69,6 +75,10 @@ public class Program
         builder.Services.AddMudServices();
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<IChangeVersionService, ChangeVersionService>();
+        builder.Services.AddSingleton<RecentUploadedFileCacheRefreshQueue>();
+        builder.Services.AddSingleton<IRecentUploadedFileCacheRefreshQueue>(serviceProvider => serviceProvider.GetRequiredService<RecentUploadedFileCacheRefreshQueue>());
+        builder.Services.AddSingleton<IRecentUploadedFileCacheRefreshWorkQueue>(serviceProvider => serviceProvider.GetRequiredService<RecentUploadedFileCacheRefreshQueue>());
+        builder.Services.AddHostedService<RecentUploadedFileCacheRefreshWorker>();
         builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
         {
             options.Cookie.Name = "OrganizationHub.Auth";
@@ -92,28 +102,30 @@ public class Program
         });
         builder.Services.AddAuthorization(options =>
         {
-            addPermissionPolicy(options, OrganizationHubPolicies.MANAGEMENT_ACCESS, createPermissionKeys(PermissionKeys.FILES_READ), getManagementFallbackRoles());
-            addPermissionPolicy(options, OrganizationHubPolicies.LEADER_ACCESS, createPermissionKeys(PermissionKeys.FILES_READ), getLeaderFallbackRoles(), EPermissionAuthorizationTarget.UserTeam);
-            addPermissionPolicy(options, OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE, createPermissionKeys(PermissionKeys.SYSTEM_SETTINGS_MANAGE), getAdministratorFallbackRoles());
-            addPermissionPolicy(options, OrganizationHubPolicies.ORGANIZATION_MANAGE, createPermissionKeys(PermissionKeys.ORGANIZATION_MANAGE), getAdministratorFallbackRoles());
-            addPermissionPolicy(options, OrganizationHubPolicies.POSITIONS_MANAGE, createPermissionKeys(PermissionKeys.POSITIONS_MANAGE, PermissionKeys.PERMISSIONS_MANAGE), getAdministratorFallbackRoles());
-            addPermissionPolicy(options, OrganizationHubPolicies.USERS_MANAGE, createPermissionKeys(PermissionKeys.USERS_MANAGE), getManagementManagerFallbackRoles());
-            addPermissionPolicy(options, OrganizationHubPolicies.GOOGLE_CONNECTION_MANAGE, createPermissionKeys(PermissionKeys.GOOGLE_CONNECTION_MANAGE), getAdministratorFallbackRoles());
-            addPermissionPolicy(options, OrganizationHubPolicies.MENUS_MANAGE, createPermissionKeys(PermissionKeys.MENUS_MANAGE), getAdministratorFallbackRoles());
-            addPermissionPolicy(options, OrganizationHubPolicies.CALENDAR_AUDIT_READ, createPermissionKeys(PermissionKeys.CALENDAR_AUDIT_READ), getManagementManagerFallbackRoles());
-            addPermissionPolicy(options, OrganizationHubPolicies.APPROVAL_WORKFLOWS_MANAGE, createPermissionKeys(PermissionKeys.APPROVAL_WORKFLOWS_MANAGE), getAdministratorFallbackRoles());
+            addPermissionPolicy(options, OrganizationHubPolicies.MANAGEMENT_ACCESS, createPermissionKeys(PermissionKeys.FILES_READ));
+            addPermissionPolicy(options, OrganizationHubPolicies.LEADER_ACCESS, createPermissionKeys(PermissionKeys.FILES_READ), EPermissionAuthorizationTarget.UserTeam);
+            addPermissionPolicy(options, OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE, createPermissionKeys(PermissionKeys.SYSTEM_SETTINGS_MANAGE));
+            addPermissionPolicy(options, OrganizationHubPolicies.ORGANIZATION_MANAGE, createPermissionKeys(PermissionKeys.ORGANIZATION_MANAGE));
+            addPermissionPolicy(options, OrganizationHubPolicies.POSITIONS_MANAGE, createPermissionKeys(PermissionKeys.POSITIONS_MANAGE, PermissionKeys.PERMISSIONS_MANAGE));
+            addPermissionPolicy(options, OrganizationHubPolicies.USERS_MANAGE, createPermissionKeys(PermissionKeys.USERS_MANAGE));
+            addPermissionPolicy(options, OrganizationHubPolicies.GOOGLE_CONNECTION_MANAGE, createPermissionKeys(PermissionKeys.GOOGLE_CONNECTION_MANAGE));
+            addPermissionPolicy(options, OrganizationHubPolicies.MENUS_MANAGE, createPermissionKeys(PermissionKeys.MENUS_MANAGE));
+            addPermissionPolicy(options, OrganizationHubPolicies.CALENDAR_AUDIT_READ, createPermissionKeys(PermissionKeys.CALENDAR_AUDIT_READ));
+            addPermissionPolicy(options, OrganizationHubPolicies.APPROVAL_WORKFLOWS_MANAGE, createPermissionKeys(PermissionKeys.APPROVAL_WORKFLOWS_MANAGE));
         });
 
         builder.Services.AddScoped<IPasswordHashService, Pbkdf2PasswordHashService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IUserManagementService, UserManagementService>();
         builder.Services.AddScoped<ITeamManagementService, TeamManagementService>();
+        builder.Services.AddScoped<IGlobalSettingService, GlobalSettingService>();
         builder.Services.AddScoped<IPositionManagementService, PositionManagementService>();
         builder.Services.AddScoped<IOrganizationPermissionService, OrganizationPermissionService>();
         builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
         builder.Services.AddScoped<IGoogleApiCredentialFactory, GoogleApiCredentialFactory>();
         builder.Services.AddScoped<IGoogleConnectionService, GoogleConnectionService>();
         builder.Services.AddScoped<IGoogleHealthCheckService, GoogleHealthCheckService>();
+        builder.Services.AddScoped<IClientTimeZoneService, BrowserClientTimeZoneService>();
         builder.Services.AddScoped<IGoogleWorkspaceBrowserService, GoogleWorkspaceBrowserService>();
         builder.Services.AddScoped<IGoogleWorkspaceSetupService, GoogleWorkspaceSetupService>();
         builder.Services.AddScoped<IDriveService, GoogleDriveService>();
@@ -122,6 +134,7 @@ public class Program
         builder.Services.AddScoped<IPermissionService, PermissionService>();
         builder.Services.AddScoped<IFilePolicyService, FilePolicyService>();
         builder.Services.AddScoped<IDriveBrowserService, DriveBrowserService>();
+        builder.Services.AddScoped<IDriveFileNameConflictService, DriveFileNameConflictService>();
         builder.Services.AddScoped<INavigationMenuService, NavigationMenuService>();
         builder.Services.AddScoped<IUploadAuditLogService, UploadAuditLogService>();
         builder.Services.AddScoped<ICalendarEventDeletionAuditLogService, CalendarEventDeletionAuditLogService>();
@@ -135,11 +148,10 @@ public class Program
         AuthorizationOptions options,
         string policyName,
         IReadOnlyList<PermissionKey> permissionKeys,
-        IReadOnlyList<string> fallbackRoleNames,
         EPermissionAuthorizationTarget target = EPermissionAuthorizationTarget.Global
     )
     {
-        options.AddPolicy(policyName, policy => policy.Requirements.Add(new PermissionAuthorizationRequirement(permissionKeys, fallbackRoleNames, target)));
+        options.AddPolicy(policyName, policy => policy.Requirements.Add(new PermissionAuthorizationRequirement(permissionKeys, target)));
     }
 
     private static IReadOnlyList<PermissionKey> createPermissionKeys(params string[] permissionKeyValues)
@@ -151,49 +163,6 @@ public class Program
         }
 
         return permissionKeys;
-    }
-
-    private static IReadOnlyList<string> getAdministratorFallbackRoles()
-    {
-        return new[] { OrganizationHubRoles.ADMIN };
-    }
-
-    private static IReadOnlyList<string> getManagementManagerFallbackRoles()
-    {
-        return new[]
-        {
-            OrganizationHubRoles.ADMIN,
-            OrganizationHubRoles.MANAGEMENT_DIRECTOR,
-            OrganizationHubRoles.MANAGEMENT_DEPUTY_DIRECTOR,
-            OrganizationHubRoles.MANAGEMENT_MANAGER
-        };
-    }
-
-    private static IReadOnlyList<string> getManagementFallbackRoles()
-    {
-        return new[]
-        {
-            OrganizationHubRoles.ADMIN,
-            OrganizationHubRoles.MANAGEMENT_DIRECTOR,
-            OrganizationHubRoles.MANAGEMENT_DEPUTY_DIRECTOR,
-            OrganizationHubRoles.MANAGEMENT_MANAGER,
-            OrganizationHubRoles.MANAGEMENT_STAFF,
-            OrganizationHubRoles.MANAGEMENT_RECORDER
-        };
-    }
-
-    private static IReadOnlyList<string> getLeaderFallbackRoles()
-    {
-        return new[]
-        {
-            OrganizationHubRoles.ADMIN,
-            OrganizationHubRoles.MANAGEMENT_DIRECTOR,
-            OrganizationHubRoles.MANAGEMENT_DEPUTY_DIRECTOR,
-            OrganizationHubRoles.MANAGEMENT_MANAGER,
-            OrganizationHubRoles.MANAGEMENT_STAFF,
-            OrganizationHubRoles.MANAGEMENT_RECORDER,
-            OrganizationHubRoles.TEAM_LEADER
-        };
     }
 
     private static void configurePipeline(WebApplication app)

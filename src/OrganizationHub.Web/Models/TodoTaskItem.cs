@@ -26,4 +26,8 @@ public sealed class TodoTaskItem
     {
         get; set;
     }
+    public DateTime? DueAt
+    {
+        get; set;
+    }
 }

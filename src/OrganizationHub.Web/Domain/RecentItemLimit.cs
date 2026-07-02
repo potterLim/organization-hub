@@ -17,12 +17,12 @@ public readonly record struct RecentItemLimit
     {
         if (limitValue < MINIMUM_VALUE)
         {
-            throw new ArgumentOutOfRangeException(nameof(limitValue), "Recent item limit must be at least 1.");
+            throw new ArgumentOutOfRangeException(nameof(limitValue), "Recent item limit must be at least " + MINIMUM_VALUE.ToString(CultureInfo.InvariantCulture) + ".");
         }
 
         if (limitValue > MAXIMUM_VALUE)
         {
-            throw new ArgumentOutOfRangeException(nameof(limitValue), "Recent item limit cannot exceed 200.");
+            throw new ArgumentOutOfRangeException(nameof(limitValue), "Recent item limit cannot exceed " + MAXIMUM_VALUE.ToString(CultureInfo.InvariantCulture) + ".");
         }
 
         Value = limitValue;

@@ -22,10 +22,20 @@ public class UploadAuditLog
         get; set;
     }
     public string UploaderDisplayName { get; set; } = string.Empty;
-    public EUserRole UploaderRole
+    public EStoredCompatibilityRole UploaderStoredCompatibilityRole
     {
         get; set;
     }
+    public int? UploaderTeamId
+    {
+        get; set;
+    }
+    public string UploaderTeamName { get; set; } = string.Empty;
+    public int? UploaderPositionId
+    {
+        get; set;
+    }
+    public string UploaderPositionName { get; set; } = string.Empty;
     public int? TeamId
     {
         get; set;

@@ -72,6 +72,26 @@ public sealed partial class GoogleDriveService
     }
 
     public async Task<DriveFileItem> UploadFileAsync(
+        DriveFileUploadRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        if (request.ConflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile)
+        {
+            return await replaceFileContentAsync(request.ReplacementFileId, request.ContentStream, request.FileName, request.ContentType, cancellationToken);
+        }
+
+        DriveFileNameConflictCheckResult conflictCheckResult = await CheckFileNameConflictAsync(request.TargetFolderId, request.FileName, cancellationToken);
+        DriveItemName uploadFileName = request.FileName;
+        if (request.ConflictResolution == EDriveFileNameConflictResolution.AddNewFile && conflictCheckResult.HasConflict)
+        {
+            uploadFileName = conflictCheckResult.SuggestedNewFileName;
+        }
+
+        return await createFileAsync(request.TargetFolderId, request.ContentStream, uploadFileName, request.ContentType, cancellationToken);
+    }
+
+    private async Task<DriveFileItem> createFileAsync(
         DriveFolderId targetFolderId,
         Stream fileStream,
         DriveItemName fileName,
@@ -112,7 +132,7 @@ public sealed partial class GoogleDriveService
             DriveService driveService = await createDriveServiceAsync(cancellationToken);
             DriveDataFile metadata = new DriveDataFile();
             metadata.Name = requiredFolderName;
-            metadata.MimeType = "application/vnd.google-apps.folder";
+            metadata.MimeType = GoogleMimeTypes.DRIVE_FOLDER;
             metadata.Parents = new List<string> { requiredParentFolderId };
             FilesResource.CreateRequest request = driveService.Files.Create(metadata);
             request.Fields = "id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size";
@@ -124,6 +144,35 @@ public sealed partial class GoogleDriveService
     }
 
     public async Task<DriveFileItem> CopyFileToFolderAsync(
+        DriveFileCopyRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        if (request.ConflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile)
+        {
+            FileDownloadResult downloadResult = await DownloadFileAsync(request.SourceFileId, cancellationToken);
+            using (Stream contentStream = downloadResult.ContentStream)
+            {
+                return await replaceFileContentAsync(
+                    request.ReplacementFileId,
+                    contentStream,
+                    request.FileName,
+                    FileContentType.CreateOptional(downloadResult.ContentType),
+                    cancellationToken);
+            }
+        }
+
+        DriveFileNameConflictCheckResult conflictCheckResult = await CheckFileNameConflictAsync(request.TargetFolderId, request.FileName, cancellationToken);
+        DriveItemName copiedFileName = request.FileName;
+        if (request.ConflictResolution == EDriveFileNameConflictResolution.AddNewFile && conflictCheckResult.HasConflict)
+        {
+            copiedFileName = conflictCheckResult.SuggestedNewFileName;
+        }
+
+        return await copyFileToFolderAsync(request.SourceFileId, request.TargetFolderId, copiedFileName, cancellationToken);
+    }
+
+    private async Task<DriveFileItem> copyFileToFolderAsync(
         DriveItemId fileId,
         DriveFolderId targetFolderId,
         DriveItemName fileName,
@@ -145,6 +194,39 @@ public sealed partial class GoogleDriveService
             DriveDataFile copiedFile = await request.ExecuteAsync(cancellationToken);
             mMemoryCache.Remove(createFolderListCacheKey(targetFolderId));
             return createDriveFileItem(copiedFile, string.Empty);
+        }
+    }
+
+    private async Task<DriveFileItem> replaceFileContentAsync(
+        DriveItemId fileId,
+        Stream contentStream,
+        DriveItemName fileName,
+        FileContentType contentType,
+        CancellationToken cancellationToken
+    )
+    {
+        string requiredItemId = fileId.GetRequiredValue();
+        string requiredFileName = fileName.GetRequiredValue();
+        string requiredContentType = contentType.GetRequiredValue();
+        DriveFileMetadata? previousMetadataOrNull = await GetFileOrNullAsync(fileId, cancellationToken);
+        using (mChangeVersionService.BeginChange(createDriveChangeKeys(previousMetadataOrNull)))
+        {
+            DriveService driveService = await createDriveServiceAsync(cancellationToken);
+            DriveDataFile updateMetadata = new DriveDataFile();
+            updateMetadata.Name = requiredFileName;
+            FilesResource.UpdateMediaUpload upload = driveService.Files.Update(updateMetadata, requiredItemId, contentStream, requiredContentType);
+            upload.Fields = "id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size,parents";
+            upload.SupportsAllDrives = true;
+            IUploadProgress uploadProgress = await upload.UploadAsync(cancellationToken);
+            if (uploadProgress.Status == UploadStatus.Failed)
+            {
+                throw new InvalidOperationException("Google Drive file replacement failed.", uploadProgress.Exception);
+            }
+
+            DriveDataFile replacedFile = upload.ResponseBody;
+            DriveFileMetadata updatedMetadata = createDriveFileMetadata(replacedFile);
+            clearDriveItemCaches(fileId, previousMetadataOrNull, updatedMetadata);
+            return createDriveFileItem(replacedFile, string.Empty);
         }
     }
 

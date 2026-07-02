@@ -16,37 +16,25 @@ public sealed partial class PermissionService
         CancellationToken cancellationToken)
     {
         UserSession userSession = collectionContext.UserSession;
-        EPermissionFallback publicUploadFallback = PermissionFallbackUtility.FromDecision(UserPermissionPolicy.CanUploadPublicMaterials(userSession.Role));
-        EPermissionFallback commonUploadFallback = PermissionFallbackUtility.FromDecision(UserPermissionPolicy.CanUploadCommonMaterials(userSession.Role));
-        EPermissionFallback workResourcesUploadFallback = PermissionFallbackUtility.FromDecision(UserPermissionPolicy.CanUploadWorkResources(userSession.Role));
-
-        bool canReadGlobalFiles = await canUseConfiguredOrFallbackPermissionAsync(
+        bool canReadGlobalFiles = await canUsePermissionAsync(
             userSession,
             new PermissionKey(PermissionKeys.FILES_READ),
             null,
-            collectionContext.ConfigurationMode,
-            EPermissionFallback.Allow,
             cancellationToken);
-        bool canUploadPublic = await canUseConfiguredOrFallbackPermissionAsync(
+        bool canUploadPublic = await canUsePermissionAsync(
             userSession,
             new PermissionKey(PermissionKeys.FILES_UPLOAD),
             null,
-            collectionContext.ConfigurationMode,
-            publicUploadFallback,
             cancellationToken);
-        bool canUploadCommon = await canUseConfiguredOrFallbackPermissionAsync(
+        bool canUploadCommon = await canUsePermissionAsync(
             userSession,
             new PermissionKey(PermissionKeys.FILES_UPLOAD),
             null,
-            collectionContext.ConfigurationMode,
-            commonUploadFallback,
             cancellationToken);
-        bool canUploadWorkResources = await canUseConfiguredOrFallbackPermissionAsync(
+        bool canUploadWorkResources = await canUsePermissionAsync(
             userSession,
             new PermissionKey(PermissionKeys.FILES_UPLOAD),
             null,
-            collectionContext.ConfigurationMode,
-            workResourcesUploadFallback,
             cancellationToken);
         EDriveFolderReadAccess globalReadAccess = canReadGlobalFiles ? EDriveFolderReadAccess.ReadAllowed : EDriveFolderReadAccess.ReadDenied;
         EDriveFolderUploadAccess publicUploadAccess = canUploadPublic ? EDriveFolderUploadAccess.UploadAllowed : EDriveFolderUploadAccess.UploadDenied;
@@ -74,23 +62,17 @@ public sealed partial class PermissionService
             createDriveFolderAccess(globalReadAccess, workResourcesUploadAccess));
         addFolderIfPermitted(folders, workResourcesFolder, collectionContext);
 
-        EPermissionFallback responsibleReadFallback = PermissionFallbackUtility.FromDecision(userSession.IsTeamLeaderOrHigherRole());
-        bool canReadResponsibleFolder = await canUseConfiguredOrFallbackPermissionAsync(
+        bool canReadResponsibleFolder = await canUsePermissionAsync(
             userSession,
             new PermissionKey(PermissionKeys.FILES_READ),
             null,
-            collectionContext.ConfigurationMode,
-            responsibleReadFallback,
             cancellationToken);
         if (canReadResponsibleFolder)
         {
-            EPermissionFallback responsibleUploadFallback = PermissionFallbackUtility.FromDecision(UserPermissionPolicy.CanUploadResponsibleResources(userSession.Role));
-            bool canUploadResponsibleFolder = await canUseConfiguredOrFallbackPermissionAsync(
+            bool canUploadResponsibleFolder = await canUsePermissionAsync(
                 userSession,
                 new PermissionKey(PermissionKeys.FILES_UPLOAD),
                 null,
-                collectionContext.ConfigurationMode,
-                responsibleUploadFallback,
                 cancellationToken);
             EDriveFolderReadAccess responsibleReadAccess = canReadResponsibleFolder ? EDriveFolderReadAccess.ReadAllowed : EDriveFolderReadAccess.ReadDenied;
             EDriveFolderUploadAccess responsibleUploadAccess = canUploadResponsibleFolder ? EDriveFolderUploadAccess.UploadAllowed : EDriveFolderUploadAccess.UploadDenied;
@@ -111,21 +93,15 @@ public sealed partial class PermissionService
     {
         UserSession userSession = collectionContext.UserSession;
         OrganizationTeamId teamId = OrganizationTeamId.CreateExisting(team.Id);
-        EPermissionFallback teamReadFallback = PermissionFallbackUtility.FromDecision(canReadMaterialsForTeam(userSession, team));
-        EPermissionFallback teamUploadFallback = PermissionFallbackUtility.FromDecision(canUploadMaterialsForTeam(userSession, team));
-        bool canReadTeamFiles = await canUseConfiguredOrFallbackPermissionAsync(
+        bool canReadTeamFiles = await canUsePermissionAsync(
             userSession,
             new PermissionKey(PermissionKeys.FILES_READ),
             teamId,
-            collectionContext.ConfigurationMode,
-            teamReadFallback,
             cancellationToken);
-        bool canUploadTeamFiles = await canUseConfiguredOrFallbackPermissionAsync(
+        bool canUploadTeamFiles = await canUsePermissionAsync(
             userSession,
             new PermissionKey(PermissionKeys.FILES_UPLOAD),
             teamId,
-            collectionContext.ConfigurationMode,
-            teamUploadFallback,
             cancellationToken);
         EDriveFolderReadAccess teamReadAccess = canReadTeamFiles ? EDriveFolderReadAccess.ReadAllowed : EDriveFolderReadAccess.ReadDenied;
         EDriveFolderUploadAccess teamUploadAccess = canUploadTeamFiles ? EDriveFolderUploadAccess.UploadAllowed : EDriveFolderUploadAccess.UploadDenied;

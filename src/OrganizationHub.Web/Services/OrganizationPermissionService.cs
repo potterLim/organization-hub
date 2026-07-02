@@ -19,22 +19,6 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         mDbContextFactory = dbContextFactory;
     }
 
-    public async Task<bool> UsesConfiguredPermissionsAsync(UserSession userSession, CancellationToken cancellationToken)
-    {
-        await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
-        {
-            bool hasConfiguredPosition = await dbContext.UserAccounts
-                .Include(userAccount => userAccount.Position)
-                .AnyAsync(userAccount =>
-                    userAccount.Id == userSession.UserId &&
-                    userAccount.IsActive &&
-                    userAccount.Position != null &&
-                    userAccount.Position.IsActive,
-                    cancellationToken);
-            return hasConfiguredPosition;
-        }
-    }
-
     public async Task<bool> HasPermissionAsync(
         UserSession userSession,
         PermissionKey permissionKey,
@@ -67,7 +51,9 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         string requiredPermissionKey = permissionKey.GetRequiredValue();
         if (PermissionCatalog.GetDefinitions().Any(definition => definition.Key == requiredPermissionKey) == false)
         {
-            return PermissionDecision.Deny("알 수 없는 권한입니다.", "권한");
+            return denyPermission(
+                createPermissionDecisionReason("알 수 없는 권한입니다."),
+                createPermissionScopeLabel("권한"));
         }
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
@@ -75,12 +61,9 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
             UserAccount? userAccountOrNull = await loadActiveUserAccountOrNullAsync(dbContext, userSession, cancellationToken);
             if (userAccountOrNull == null)
             {
-                return PermissionDecision.Deny("활성 사용자를 찾을 수 없습니다.", "권한");
-            }
-
-            if (userAccountOrNull.Role == EUserRole.Admin)
-            {
-                return PermissionDecision.Allow("시스템 관리자");
+                return denyPermission(
+                    createPermissionDecisionReason("활성 사용자를 찾을 수 없습니다."),
+                    createPermissionScopeLabel("권한"));
             }
 
             if (userAccountOrNull.Position == null)
@@ -90,12 +73,14 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
 
             if (userAccountOrNull.Position.IsActive == false)
             {
-                return PermissionDecision.Deny("비활성 직책입니다.", userAccountOrNull.Position.Name);
+                return denyPermission(
+                    createPermissionDecisionReason("비활성 직책입니다."),
+                    createPermissionScopeLabel(userAccountOrNull.Position.Name));
             }
 
             if (userAccountOrNull.Position.IsSystemAdministrator)
             {
-                return PermissionDecision.Allow(userAccountOrNull.Position.Name);
+                return allowPermission(createPermissionScopeLabel(userAccountOrNull.Position.Name));
             }
 
             List<PositionPermissionGrant> permissionGrants = userAccountOrNull.Position.PermissionGrants
@@ -106,11 +91,13 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
                 bool isAllowed = isGrantAllowed(permissionGrant, userAccountOrNull, targetTeamIdOrNull, ownerUserIdOrNull);
                 if (isAllowed)
                 {
-                    return PermissionDecision.Allow(getScopeLabel(permissionGrant, userAccountOrNull));
+                    return allowPermission(createPermissionScopeLabel(getScopeLabel(permissionGrant, userAccountOrNull)));
                 }
             }
 
-            return PermissionDecision.Deny("직책에 허용된 권한이 없습니다.", userAccountOrNull.Position.Name);
+            return denyPermission(
+                createPermissionDecisionReason("직책에 허용된 권한이 없습니다."),
+                createPermissionScopeLabel(userAccountOrNull.Position.Name));
         }
     }
 
@@ -120,9 +107,10 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         CancellationToken cancellationToken
     )
     {
+        int currentUserId = userSession.UserAccountId.GetRequiredValue();
         UserAccount? userAccountOrNull = await dbContext.UserAccounts
             .Include(userAccount => userAccount.Position)
-            .FirstOrDefaultAsync(userAccount => userAccount.Id == userSession.UserId && userAccount.IsActive, cancellationToken);
+            .FirstOrDefaultAsync(userAccount => userAccount.Id == currentUserId && userAccount.IsActive, cancellationToken);
         if (userAccountOrNull == null || userAccountOrNull.PositionId.HasValue == false)
         {
             return userAccountOrNull;
@@ -135,12 +123,14 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         return userAccountOrNull;
     }
 
-    private PermissionDecision decideUnpositionedUserPermission(PermissionKey permissionKey)
+    private static PermissionDecision decideUnpositionedUserPermission(PermissionKey permissionKey)
     {
-        return PermissionDecision.Deny("사용자에게 직책이 배정되지 않았습니다.", permissionKey.GetRequiredValue());
+        return denyPermission(
+            createPermissionDecisionReason("사용자에게 직책이 배정되지 않았습니다."),
+            createPermissionScopeLabel(permissionKey.GetRequiredValue()));
     }
 
-    private bool isGrantAllowed(
+    private static bool isGrantAllowed(
         PositionPermissionGrant permissionGrant,
         UserAccount userAccount,
         OrganizationTeamId? targetTeamIdOrNull,
@@ -164,7 +154,7 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         }
     }
 
-    private bool isOwnTeamTarget(UserAccount userAccount, OrganizationTeamId? targetTeamIdOrNull)
+    private static bool isOwnTeamTarget(UserAccount userAccount, OrganizationTeamId? targetTeamIdOrNull)
     {
         int? targetTeamIdValueOrNull = OrganizationTeamId.GetValueOrNull(targetTeamIdOrNull);
         if (userAccount.TeamId.HasValue == false || targetTeamIdValueOrNull.HasValue == false)
@@ -175,7 +165,7 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         return targetTeamIdValueOrNull == userAccount.TeamId;
     }
 
-    private bool isSelectedTeamTarget(PositionPermissionGrant permissionGrant, OrganizationTeamId? targetTeamIdOrNull)
+    private static bool isSelectedTeamTarget(PositionPermissionGrant permissionGrant, OrganizationTeamId? targetTeamIdOrNull)
     {
         int? targetTeamIdValueOrNull = OrganizationTeamId.GetValueOrNull(targetTeamIdOrNull);
         if (permissionGrant.TargetTeamId.HasValue == false || targetTeamIdValueOrNull.HasValue == false)
@@ -186,7 +176,7 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         return permissionGrant.TargetTeamId == targetTeamIdValueOrNull;
     }
 
-    private string getScopeLabel(PositionPermissionGrant permissionGrant, UserAccount userAccount)
+    private static string getScopeLabel(PositionPermissionGrant permissionGrant, UserAccount userAccount)
     {
         if (userAccount.Position != null)
         {
@@ -194,5 +184,25 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
         }
 
         return permissionGrant.PermissionKey;
+    }
+
+    private static PermissionDecision allowPermission(PermissionScopeLabel scopeLabel)
+    {
+        return PermissionDecision.Allow(scopeLabel);
+    }
+
+    private static PermissionDecision denyPermission(PermissionDecisionReason reason, PermissionScopeLabel scopeLabel)
+    {
+        return PermissionDecision.Deny(reason, scopeLabel);
+    }
+
+    private static PermissionDecisionReason createPermissionDecisionReason(string reason)
+    {
+        return PermissionDecisionReason.CreateRequired(reason);
+    }
+
+    private static PermissionScopeLabel createPermissionScopeLabel(string scopeLabel)
+    {
+        return PermissionScopeLabel.CreateRequired(scopeLabel);
     }
 }

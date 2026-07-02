@@ -21,11 +21,27 @@ public sealed partial class ApprovalService
         ApprovalRequest? requestOrNull = await dbContext.ApprovalRequests
             .Include(request => request.Team)
             .Include(request => request.RequesterUser)
+            .ThenInclude(requesterUser => requesterUser!.Team)
+            .Include(request => request.RequesterUser)
+            .Include(request => request.RequesterUser!.Position)
             .Include(request => request.Steps)
             .Include(request => request.AuditLogs)
             .AsSplitQuery()
             .FirstOrDefaultAsync(request => request.Id == requiredApprovalRequestId, cancellationToken);
         return requestOrNull;
+    }
+
+    private static async Task<UserAccount?> loadUserAccountWithAffiliationOrNullAsync(
+        OrganizationHubDbContext dbContext,
+        UserAccountId userAccountId,
+        CancellationToken cancellationToken)
+    {
+        int requiredUserAccountId = userAccountId.GetRequiredValue();
+        return await dbContext.UserAccounts
+            .AsNoTracking()
+            .Include(userAccount => userAccount.Team)
+            .Include(userAccount => userAccount.Position)
+            .FirstOrDefaultAsync(userAccount => userAccount.Id == requiredUserAccountId, cancellationToken);
     }
 
     private ApprovalStep? getCurrentStepOrNull(ApprovalRequest request, UserSession userSession)
@@ -35,6 +51,7 @@ public sealed partial class ApprovalService
             return null;
         }
 
-        return request.Steps.FirstOrDefault(step => step.StepNumber == request.CurrentStepNumber && step.ApproverUserId == userSession.UserId && step.Status == EApprovalStepStatus.Pending);
+        int currentUserId = userSession.UserAccountId.GetRequiredValue();
+        return request.Steps.FirstOrDefault(step => step.StepNumber == request.CurrentStepNumber && step.ApproverUserId == currentUserId && step.Status == EApprovalStepStatus.Pending);
     }
 }

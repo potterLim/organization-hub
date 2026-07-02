@@ -18,9 +18,16 @@ public sealed class UserAccountFormModel
     public string Username { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
-    public EUserRole Role
+    public EUserAccountKind AccountKind
     {
         get; set;
+    } = EUserAccountKind.OrganizationMember;
+    public bool IsSystemAdministrator
+    {
+        get
+        {
+            return AccountKind == EUserAccountKind.SystemAdministrator;
+        }
     }
     public int? TeamId
     {

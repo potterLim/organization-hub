@@ -10,13 +10,13 @@ public sealed partial class ApprovalService
 {
     private List<ApprovalUserOption> createApproverOptions(
         IReadOnlyList<UserAccount> users,
-        UserSession userSession,
-        bool usesConfiguredPermissions)
+        UserSession userSession)
     {
+        int currentUserId = userSession.UserAccountId.GetRequiredValue();
         List<ApprovalUserOption> options = new List<ApprovalUserOption>();
         List<UserAccount> approverUsers = users
-            .Where(user => user.Id != userSession.UserId)
-            .Where(user => canUseAsIntermediateApprover(user, userSession, usesConfiguredPermissions))
+            .Where(user => user.Id != currentUserId)
+            .Where(user => canUseAsIntermediateApprover(user, userSession))
             .OrderBy(user => getApproverSortOrder(user, userSession))
             .ThenBy(user => user.DisplayName)
             .ToList();
@@ -30,18 +30,18 @@ public sealed partial class ApprovalService
 
     private List<ApprovalUserOption> createFinalApproverOptions(
         IReadOnlyList<UserAccount> users,
-        UserSession userSession,
-        bool usesConfiguredPermissions)
+        UserSession userSession)
     {
+        int currentUserId = userSession.UserAccountId.GetRequiredValue();
         List<UserAccount> finalApproverUsers = new List<UserAccount>();
         foreach (UserAccount user in users)
         {
-            if (user.Id == userSession.UserId)
+            if (user.Id == currentUserId)
             {
                 continue;
             }
 
-            bool isAllowedFinalApprover = canUseAsFinalApprover(user, userSession, usesConfiguredPermissions);
+            bool isAllowedFinalApprover = canUseAsFinalApprover(user, userSession);
             if (isAllowedFinalApprover == false)
             {
                 continue;
@@ -62,28 +62,16 @@ public sealed partial class ApprovalService
 
     private bool canUseAsIntermediateApprover(
         UserAccount user,
-        UserSession userSession,
-        bool usesConfiguredPermissions)
+        UserSession userSession)
     {
-        if (usesConfiguredPermissions)
-        {
-            return userHasApprovalPermission(user, userSession, PermissionKeys.APPROVAL_APPROVE);
-        }
-
-        return UserPermissionPolicy.CanUseAsIntermediateApprovalApprover(userSession.Role, user.Role);
+        return hasUserApprovalPermission(user, userSession, new PermissionKey(PermissionKeys.APPROVAL_APPROVE));
     }
 
     private bool canUseAsFinalApprover(
         UserAccount user,
-        UserSession userSession,
-        bool usesConfiguredPermissions)
+        UserSession userSession)
     {
-        if (usesConfiguredPermissions)
-        {
-            return userHasApprovalPermission(user, userSession, PermissionKeys.APPROVAL_FINAL_APPROVE);
-        }
-
-        return UserPermissionPolicy.CanUseAsFinalApprovalApprover(userSession.Role, user.Role);
+        return hasUserApprovalPermission(user, userSession, new PermissionKey(PermissionKeys.APPROVAL_FINAL_APPROVE));
     }
 
     private ApprovalUserOption createApprovalUserOption(UserAccount user)
@@ -91,16 +79,16 @@ public sealed partial class ApprovalService
         ApprovalUserOption option = new ApprovalUserOption();
         option.UserId = user.Id;
         option.DisplayName = user.DisplayName;
+        option.PositionId = user.PositionId;
         if (user.Position != null)
         {
-            option.RoleName = user.Position.Name;
+            option.PositionName = user.Position.Name;
         }
         else
         {
-            option.RoleName = UserRoleUtility.GetDisplayName(user.Role);
+            option.PositionName = "직책 미지정";
         }
 
-        option.Role = user.Role;
         option.TeamId = user.TeamId;
         if (user.Team == null)
         {

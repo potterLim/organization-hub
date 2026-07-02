@@ -8,7 +8,6 @@ namespace OrganizationHub.Web.Services;
 public sealed partial class ApprovalService
 {
     private IReadOnlyList<ApprovalStepCount> createAvailableStepCounts(
-        UserSession userSession,
         IReadOnlyList<ApprovalUserOption> approverOptions,
         IReadOnlyList<ApprovalUserOption> finalApproverOptions
     )
@@ -19,21 +18,11 @@ public sealed partial class ApprovalService
             return stepCounts;
         }
 
-        if (UserPermissionPolicy.CanCreateApprovalRequests(userSession.Role) == false)
+        foreach (ApprovalStepCount stepCount in ApprovalStepCount.GetSupportedStepCounts())
         {
-            return stepCounts;
+            addStepCountIfAvailable(stepCounts, approverOptions, finalApproverOptions, stepCount);
         }
 
-        if (userSession.Role == EUserRole.TeamLeader || userSession.IsManagementRole())
-        {
-            addStepCountIfAvailable(stepCounts, approverOptions, finalApproverOptions, new ApprovalStepCount(1));
-            addStepCountIfAvailable(stepCounts, approverOptions, finalApproverOptions, new ApprovalStepCount(2));
-            addStepCountIfAvailable(stepCounts, approverOptions, finalApproverOptions, new ApprovalStepCount(3));
-            return stepCounts;
-        }
-
-        addStepCountIfAvailable(stepCounts, approverOptions, finalApproverOptions, new ApprovalStepCount(2));
-        addStepCountIfAvailable(stepCounts, approverOptions, finalApproverOptions, new ApprovalStepCount(3));
         return stepCounts;
     }
 

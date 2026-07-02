@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
 using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Models;
 
-public sealed class OrganizationTeamOrderUpdateRequest
+internal sealed class OrganizationTeamOrderUpdateRequest
 {
     public IReadOnlyList<OrganizationTeamId> OrderedTeamIds
     {
@@ -12,6 +13,8 @@ public sealed class OrganizationTeamOrderUpdateRequest
 
     public OrganizationTeamOrderUpdateRequest(IReadOnlyList<OrganizationTeamId> orderedTeamIds)
     {
+        ArgumentNullException.ThrowIfNull(orderedTeamIds);
+
         OrderedTeamIds = orderedTeamIds;
     }
 }

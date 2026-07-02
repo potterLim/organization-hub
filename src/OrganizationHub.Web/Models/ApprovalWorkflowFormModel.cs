@@ -29,6 +29,17 @@ public sealed class ApprovalWorkflowFormModel
             return OrganizationTeamId.CreateExistingOrNull(AppliesToTeamId);
         }
     }
+    public int? AppliesToPositionId
+    {
+        get; set;
+    }
+    public OrganizationPositionId? AppliesToPositionIdOrNull
+    {
+        get
+        {
+            return OrganizationPositionId.CreateExistingOrNull(AppliesToPositionId);
+        }
+    }
     public int Priority
     {
         get; set;

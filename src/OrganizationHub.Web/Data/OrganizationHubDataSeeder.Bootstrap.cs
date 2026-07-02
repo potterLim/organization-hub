@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
-using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Data;
 
 public sealed partial class OrganizationHubDataSeeder
 {
+    private const int SYSTEM_ADMINISTRATION_SORT_ORDER = 0;
+    private const int MANAGEMENT_SORT_ORDER = 10;
+
     private UserAccount createSeedUser(Team systemAdministrationTeam, OrganizationPosition administratorPosition)
     {
         string seedUsername = getConfiguredSeedUsername();
@@ -20,7 +22,7 @@ public sealed partial class OrganizationHubDataSeeder
         userAccount.Username = seedUsername;
         userAccount.DisplayName = getConfiguredSeedDisplayName();
         userAccount.PasswordHash = mPasswordHashService.HashPassword(PlainPassword.CreateFromInput(seedPassword)).GetRequiredValue();
-        userAccount.Role = EUserRole.Admin;
+        userAccount.StoredCompatibilityRole = EStoredCompatibilityRole.Admin;
         userAccount.Team = systemAdministrationTeam;
         userAccount.Position = administratorPosition;
         userAccount.IsActive = true;
@@ -35,13 +37,18 @@ public sealed partial class OrganizationHubDataSeeder
             cancellationToken);
         if (systemAdministrationTeamOrNull == null)
         {
-            Team systemAdministrationTeam = createTeam(OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_KEY, OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_DISPLAY_NAME, 0);
+            Team systemAdministrationTeam = createTeam(new TeamSeedDefinition
+            {
+                TeamKey = OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_KEY,
+                DisplayName = OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_DISPLAY_NAME,
+                SortOrder = SYSTEM_ADMINISTRATION_SORT_ORDER
+            });
             dbContext.Teams.Add(systemAdministrationTeam);
             return systemAdministrationTeam;
         }
 
         systemAdministrationTeamOrNull.DisplayName = OrganizationHubWorkspaceDefaults.SYSTEM_ADMINISTRATION_TEAM_DISPLAY_NAME;
-        systemAdministrationTeamOrNull.SortOrder = 0;
+        systemAdministrationTeamOrNull.SortOrder = SYSTEM_ADMINISTRATION_SORT_ORDER;
         systemAdministrationTeamOrNull.IsActive = true;
         return systemAdministrationTeamOrNull;
     }
@@ -53,13 +60,18 @@ public sealed partial class OrganizationHubDataSeeder
             cancellationToken);
         if (managementTeamOrNull == null)
         {
-            Team managementTeam = createTeam(OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY, OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME, 10);
+            Team managementTeam = createTeam(new TeamSeedDefinition
+            {
+                TeamKey = OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_KEY,
+                DisplayName = OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME,
+                SortOrder = MANAGEMENT_SORT_ORDER
+            });
             dbContext.Teams.Add(managementTeam);
             return managementTeam;
         }
 
         managementTeamOrNull.DisplayName = OrganizationHubWorkspaceDefaults.MANAGEMENT_TEAM_DISPLAY_NAME;
-        managementTeamOrNull.SortOrder = 10;
+        managementTeamOrNull.SortOrder = MANAGEMENT_SORT_ORDER;
         managementTeamOrNull.IsActive = true;
         return managementTeamOrNull;
     }
@@ -80,7 +92,7 @@ public sealed partial class OrganizationHubDataSeeder
         position.Team = managementTeam;
         position.Name = "관리팀 구성원";
         position.Description = "시스템 관리자가 권한을 부여해 사용하는 관리팀 기본 직책입니다.";
-        position.SortOrder = 10;
+        position.SortOrder = MANAGEMENT_SORT_ORDER;
         position.IsActive = true;
         position.IsSystemAdministrator = false;
         dbContext.Positions.Add(position);
@@ -99,7 +111,7 @@ public sealed partial class OrganizationHubDataSeeder
             position.Team = team;
             position.Name = "시스템 관리자";
             position.Description = "Organization Hub 전체 설정과 권한을 관리하는 기본 직책입니다.";
-            position.SortOrder = 0;
+            position.SortOrder = SYSTEM_ADMINISTRATION_SORT_ORDER;
             position.IsActive = true;
             position.IsSystemAdministrator = true;
             dbContext.Positions.Add(position);
@@ -109,7 +121,7 @@ public sealed partial class OrganizationHubDataSeeder
         }
 
         positionOrNull.Name = "시스템 관리자";
-        positionOrNull.SortOrder = 0;
+        positionOrNull.SortOrder = SYSTEM_ADMINISTRATION_SORT_ORDER;
         positionOrNull.IsActive = true;
         positionOrNull.IsSystemAdministrator = true;
         await ensureSystemAdministratorPermissionGrantsAsync(dbContext, positionOrNull, cancellationToken);
@@ -148,27 +160,23 @@ public sealed partial class OrganizationHubDataSeeder
     {
         List<UserAccount> organizationAdministratorUsers = await dbContext.UserAccounts.Where(user =>
             user.TeamId.HasValue == false &&
-            user.Role == EUserRole.Admin).ToListAsync(cancellationToken);
+            user.StoredCompatibilityRole == EStoredCompatibilityRole.Admin).ToListAsync(cancellationToken);
         foreach (UserAccount userAccount in organizationAdministratorUsers)
         {
             userAccount.Team = systemAdministrationTeam;
         }
     }
 
-    private async Task attachManagementUsersToManagementTeamAsync(
+    private async Task attachUnassignedOrganizationMembersToManagementTeamAsync(
         OrganizationHubDbContext dbContext,
         Team managementTeam,
         CancellationToken cancellationToken
     )
     {
-        List<UserAccount> managementUsers = await dbContext.UserAccounts.Where(user =>
+        List<UserAccount> organizationMembers = await dbContext.UserAccounts.Where(user =>
             user.TeamId.HasValue == false &&
-            (user.Role == EUserRole.ManagementDirector ||
-             user.Role == EUserRole.ManagementDeputyDirector ||
-             user.Role == EUserRole.ManagementManager ||
-             user.Role == EUserRole.ManagementStaff ||
-             user.Role == EUserRole.ManagementRecorder)).ToListAsync(cancellationToken);
-        foreach (UserAccount userAccount in managementUsers)
+            user.StoredCompatibilityRole != EStoredCompatibilityRole.Admin).ToListAsync(cancellationToken);
+        foreach (UserAccount userAccount in organizationMembers)
         {
             userAccount.Team = managementTeam;
         }
@@ -180,7 +188,7 @@ public sealed partial class OrganizationHubDataSeeder
         CancellationToken cancellationToken
     )
     {
-        List<UserAccount> administratorUsers = await dbContext.UserAccounts.Where(user => user.Role == EUserRole.Admin && user.PositionId.HasValue == false).ToListAsync(cancellationToken);
+        List<UserAccount> administratorUsers = await dbContext.UserAccounts.Where(user => user.StoredCompatibilityRole == EStoredCompatibilityRole.Admin && user.PositionId.HasValue == false).ToListAsync(cancellationToken);
         foreach (UserAccount userAccount in administratorUsers)
         {
             userAccount.Position = administratorPosition;
@@ -196,7 +204,7 @@ public sealed partial class OrganizationHubDataSeeder
         }
 
         List<UserAccount> administratorUsers = await dbContext.UserAccounts.Where(user =>
-            user.Role == EUserRole.Admin &&
+            user.StoredCompatibilityRole == EStoredCompatibilityRole.Admin &&
             user.DisplayName == PREVIOUS_SEED_ADMINISTRATOR_DISPLAY_NAME).ToListAsync(cancellationToken);
         foreach (UserAccount userAccount in administratorUsers)
         {
@@ -204,12 +212,12 @@ public sealed partial class OrganizationHubDataSeeder
         }
     }
 
-    private Team createTeam(string teamKey, string displayName, int sortOrder)
+    private Team createTeam(TeamSeedDefinition definition)
     {
         Team team = new Team();
-        team.TeamKey = teamKey;
-        team.DisplayName = displayName;
-        team.SortOrder = sortOrder;
+        team.TeamKey = definition.TeamKey;
+        team.DisplayName = definition.DisplayName;
+        team.SortOrder = definition.SortOrder;
         team.IsActive = true;
         return team;
     }

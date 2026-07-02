@@ -14,6 +14,10 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupService
 {
+    private const int GOOGLE_CALENDAR_LIST_PAGE_SIZE = 250;
+    private const int GOOGLE_TASK_LIST_PAGE_SIZE = 100;
+    private const int VISIBLE_FAILURE_MESSAGE_COUNT = 3;
+
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;
     private readonly IDriveService mDriveService;
     private readonly IGoogleApiCredentialFactory? mCredentialFactoryOrNull;
@@ -62,7 +66,7 @@ public sealed partial class GoogleWorkspaceSetupService : IGoogleWorkspaceSetupS
 
     private string createResourceSetupFailureMessage(string resourceName, IReadOnlyList<string> failureMessages)
     {
-        List<string> visibleMessages = failureMessages.Take(3).ToList();
+        List<string> visibleMessages = failureMessages.Take(VISIBLE_FAILURE_MESSAGE_COUNT).ToList();
         string message = "일부 " + resourceName + " 리소스를 준비하지 못했습니다. " + string.Join(" / ", visibleMessages);
         if (failureMessages.Count > visibleMessages.Count)
         {

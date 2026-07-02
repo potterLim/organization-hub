@@ -20,7 +20,7 @@ public sealed partial class PermissionService
             List<ApprovalRequest> approvalRequests = await dbContext.ApprovalRequests.Include(request => request.Steps).Where(request => request.FileId == requiredFileId || request.ApprovedFileId == requiredFileId).ToListAsync(cancellationToken);
             foreach (ApprovalRequest approvalRequest in approvalRequests)
             {
-                if (canReadApprovalRequestFile(userSession, approvalRequest))
+                if (await canReadApprovalRequestFileAsync(userSession, approvalRequest, cancellationToken))
                 {
                     return true;
                 }
@@ -30,21 +30,36 @@ public sealed partial class PermissionService
         return false;
     }
 
-    private bool canReadApprovalRequestFile(UserSession userSession, ApprovalRequest approvalRequest)
+    private async Task<bool> canReadApprovalRequestFileAsync(
+        UserSession userSession,
+        ApprovalRequest approvalRequest,
+        CancellationToken cancellationToken)
     {
-        if (userSession.Role == EUserRole.Admin)
+        int currentUserId = userSession.UserAccountId.GetRequiredValue();
+        if (approvalRequest.RequesterUserId == currentUserId)
         {
             return true;
         }
 
-        if (approvalRequest.RequesterUserId == userSession.UserId)
+        if (canReadApprovalFileAsApprover(userSession, approvalRequest))
         {
             return true;
         }
 
+        OrganizationTeamId? targetTeamIdOrNull = OrganizationTeamId.CreateExistingOrNull(approvalRequest.TeamId);
+        return await mOrganizationPermissionService.HasPermissionAsync(
+            userSession,
+            new PermissionKey(PermissionKeys.APPROVAL_HISTORY_READ),
+            targetTeamIdOrNull,
+            cancellationToken);
+    }
+
+    private bool canReadApprovalFileAsApprover(UserSession userSession, ApprovalRequest approvalRequest)
+    {
+        int currentUserId = userSession.UserAccountId.GetRequiredValue();
         foreach (ApprovalStep step in approvalRequest.Steps)
         {
-            if (step.ApproverUserId != userSession.UserId)
+            if (step.ApproverUserId != currentUserId)
             {
                 continue;
             }

@@ -49,6 +49,7 @@ public sealed partial class GoogleTasksTodoService
         UserSession userSession,
         TodoTaskListId taskListId,
         TodoTaskId taskId,
+        DateTime? dueAtOrNull,
         CancellationToken cancellationToken
     )
     {
@@ -57,9 +58,10 @@ public sealed partial class GoogleTasksTodoService
         TodoTaskMetadata metadata = new TodoTaskMetadata();
         metadata.TaskListId = requiredTaskListId;
         metadata.TaskId = requiredTaskId;
-        metadata.CreatedByUserId = userSession.UserId;
+        metadata.CreatedByUserId = userSession.UserAccountId.GetRequiredValue();
         metadata.CreatedByDisplayName = userSession.DisplayName;
         metadata.CreatedAt = DateTime.UtcNow;
+        metadata.DueAt = dueAtOrNull;
 
         try
         {
@@ -75,6 +77,7 @@ public sealed partial class GoogleTasksTodoService
                     existingMetadataOrNull.CreatedByUserId = metadata.CreatedByUserId;
                     existingMetadataOrNull.CreatedByDisplayName = metadata.CreatedByDisplayName;
                     existingMetadataOrNull.CreatedAt = metadata.CreatedAt;
+                    existingMetadataOrNull.DueAt = metadata.DueAt;
                 }
 
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -86,6 +89,35 @@ public sealed partial class GoogleTasksTodoService
         }
 
         return metadata;
+    }
+
+    private async Task updateMetadataDueAtAsync(
+        TodoTaskListId taskListId,
+        TodoTaskId taskId,
+        DateTime? dueAtOrNull,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+            {
+                string requiredTaskListId = taskListId.GetRequiredValue();
+                string requiredTaskId = taskId.GetRequiredValue();
+                TodoTaskMetadata? metadataOrNull = await dbContext.TodoTaskMetadata.FirstOrDefaultAsync(metadata => metadata.TaskListId == requiredTaskListId && metadata.TaskId == requiredTaskId, cancellationToken);
+                if (metadataOrNull == null)
+                {
+                    return;
+                }
+
+                metadataOrNull.DueAt = dueAtOrNull;
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
+        catch (Exception exception)
+        {
+            mLogger.LogWarning(exception, "Failed to update Google Tasks due metadata for task {TaskId}.", taskId.GetRequiredValue());
+        }
     }
 
     private async Task deleteMetadataAsync(TodoTaskListId taskListId, TodoTaskId taskId, CancellationToken cancellationToken)
@@ -134,5 +166,16 @@ public sealed partial class GoogleTasksTodoService
     {
         task.CreatedByDisplayName = metadata.CreatedByDisplayName;
         task.CreatedAt = metadata.CreatedAt;
+        task.DueAt = normalizeStoredDueAtOrNull(metadata.DueAt);
+    }
+
+    private DateTime? normalizeStoredDueAtOrNull(DateTime? dueAtOrNull)
+    {
+        if (dueAtOrNull.HasValue == false)
+        {
+            return null;
+        }
+
+        return TodoDueAtUtc.CreateRequiredFromStoredValue(dueAtOrNull.Value).GetRequiredValue();
     }
 }

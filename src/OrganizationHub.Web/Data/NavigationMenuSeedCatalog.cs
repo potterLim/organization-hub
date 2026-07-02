@@ -6,16 +6,36 @@ namespace OrganizationHub.Web.Data;
 
 internal static partial class NavigationMenuSeedCatalog
 {
+    private const int PRIMARY_SECTION_SORT_ORDER = 10;
+    private const int OPERATIONS_SECTION_SORT_ORDER = 20;
+    private const int RESOURCES_SECTION_SORT_ORDER = 30;
+    private const int APPROVALS_SECTION_SORT_ORDER = 40;
+    private const int ADMINISTRATION_SECTION_SORT_ORDER = 50;
+
+    private const string PRIMARY_SECTION_KEY = "Primary";
+    private const string OPERATIONS_SECTION_KEY = "Operations";
+    private const string RESOURCES_SECTION_KEY = "Resources";
+    private const string APPROVALS_SECTION_KEY = "Approvals";
+    private const string ADMINISTRATION_SECTION_KEY = "Administration";
+
     internal static List<NavigationMenuSection> createDefaultMenuSections()
     {
-        return new List<NavigationMenuSection>
+        List<NavigationMenuSectionSeedDefinition> sectionDefinitions = new List<NavigationMenuSectionSeedDefinition>
         {
-            createMenuSection("Primary", "기본", 10),
-            createMenuSection("Operations", "운영", 20),
-            createMenuSection("Resources", "자료실", 30),
-            createMenuSection("Approvals", "결재", 40),
-            createMenuSection("Administration", "관리", 50)
+            new NavigationMenuSectionSeedDefinition { SectionKey = PRIMARY_SECTION_KEY, DisplayName = "기본", SortOrder = PRIMARY_SECTION_SORT_ORDER },
+            new NavigationMenuSectionSeedDefinition { SectionKey = OPERATIONS_SECTION_KEY, DisplayName = "운영", SortOrder = OPERATIONS_SECTION_SORT_ORDER },
+            new NavigationMenuSectionSeedDefinition { SectionKey = RESOURCES_SECTION_KEY, DisplayName = "자료실", SortOrder = RESOURCES_SECTION_SORT_ORDER },
+            new NavigationMenuSectionSeedDefinition { SectionKey = APPROVALS_SECTION_KEY, DisplayName = "결재", SortOrder = APPROVALS_SECTION_SORT_ORDER },
+            new NavigationMenuSectionSeedDefinition { SectionKey = ADMINISTRATION_SECTION_KEY, DisplayName = "관리", SortOrder = ADMINISTRATION_SECTION_SORT_ORDER }
         };
+
+        List<NavigationMenuSection> sections = new List<NavigationMenuSection>();
+        foreach (NavigationMenuSectionSeedDefinition sectionDefinition in sectionDefinitions)
+        {
+            sections.Add(createMenuSection(sectionDefinition));
+        }
+
+        return sections;
     }
 
     internal static List<NavigationMenuItem> createDefaultMenuItems(IReadOnlyDictionary<string, NavigationMenuSection> sectionsByKey)
@@ -40,12 +60,12 @@ internal static partial class NavigationMenuSeedCatalog
         return menuDefinitions;
     }
 
-    private static NavigationMenuSection createMenuSection(string sectionKey, string displayName, int sortOrder)
+    private static NavigationMenuSection createMenuSection(NavigationMenuSectionSeedDefinition definition)
     {
         NavigationMenuSection section = new NavigationMenuSection();
-        section.SectionKey = sectionKey;
-        section.DisplayName = displayName;
-        section.SortOrder = sortOrder;
+        section.SectionKey = definition.SectionKey;
+        section.DisplayName = definition.DisplayName;
+        section.SortOrder = definition.SortOrder;
         return section;
     }
 
@@ -56,6 +76,8 @@ internal static partial class NavigationMenuSeedCatalog
         menuItem.DisplayName = definition.DisplayName;
         menuItem.Href = definition.Href;
         menuItem.IconKey = definition.IconKey;
+        menuItem.RequiredPermissionKeys = NavigationMenuPermissionKeys.CreateStorageValue(
+            NavigationMenuPermissionCatalog.GetRequiredPermissionKeys(NavigationMenuKey.CreateRequired(definition.MenuKey)));
         menuItem.Section = sectionsByKey[definition.SectionKey];
         menuItem.SortOrder = definition.SortOrder;
         menuItem.AccessLevel = definition.AccessLevel;
@@ -113,6 +135,24 @@ internal static partial class NavigationMenuSeedCatalog
         }
 
         public required ENavigationMenuLockState LockState
+        {
+            get; init;
+        }
+    }
+
+    private sealed class NavigationMenuSectionSeedDefinition
+    {
+        public required string SectionKey
+        {
+            get; init;
+        }
+
+        public required string DisplayName
+        {
+            get; init;
+        }
+
+        public required int SortOrder
         {
             get; init;
         }

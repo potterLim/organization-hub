@@ -31,6 +31,7 @@ internal static partial class OrganizationHubModelConfiguration
         menuBuilder.Property(menuItem => menuItem.DisplayName).HasMaxLength(80).IsRequired();
         menuBuilder.Property(menuItem => menuItem.Href).HasMaxLength(256).IsRequired();
         menuBuilder.Property(menuItem => menuItem.IconKey).HasMaxLength(64).IsRequired();
+        menuBuilder.Property(menuItem => menuItem.RequiredPermissionKeys).HasMaxLength(512).IsRequired();
         menuBuilder.Property(menuItem => menuItem.AccessLevel).HasConversion<string>().HasMaxLength(32).IsRequired();
         menuBuilder
             .HasOne(menuItem => menuItem.Section)

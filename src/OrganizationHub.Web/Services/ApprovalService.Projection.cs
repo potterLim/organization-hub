@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -44,90 +43,22 @@ public sealed partial class ApprovalService
         return await mPermissionService.CanStoreApprovedFileToFolderAsync(userSession, DriveFolderId.CreateOptional(request.ApprovedFolderId), cancellationToken);
     }
 
-    private ApprovalAuditLog createAuditLog(ApprovalAuditLogCreationRequest request)
-    {
-        ApprovalAuditLog auditLog = new ApprovalAuditLog();
-        auditLog.ActorUserId = request.UserSession.UserId;
-        auditLog.ActorDisplayName = request.UserSession.DisplayName;
-        auditLog.Action = request.Action;
-        auditLog.StepNumber = ApprovalStepNumber.GetValueOrNull(request.StepNumberOrNull);
-        auditLog.Comment = getTrimmedComment(request.Comment);
-        auditLog.PreviousApproverDisplayName = request.PreviousApproverDisplayName;
-        auditLog.NewApproverDisplayName = request.NewApproverDisplayName;
-        auditLog.CreatedAt = DateTime.UtcNow;
-        return auditLog;
-    }
-
-    private ApprovalAuditLogCreationRequest createAuditLogRequest(
-        UserSession userSession,
-        EApprovalAuditAction action,
-        ApprovalStepNumber? stepNumberOrNull,
-        string comment)
-    {
-        return new ApprovalAuditLogCreationRequest(userSession, action, stepNumberOrNull, comment);
-    }
-
-    private ApprovalAuditLogCreationRequest createApproverChangedAuditLogRequest(
-        UserSession userSession,
-        ApprovalStepNumber stepNumber,
-        string previousApproverDisplayName,
-        string newApproverDisplayName)
-    {
-        ApprovalAuditLogCreationRequest request = createAuditLogRequest(userSession, EApprovalAuditAction.ApproverChanged, stepNumber, "결재선 변경");
-        request.PreviousApproverDisplayName = previousApproverDisplayName;
-        request.NewApproverDisplayName = newApproverDisplayName;
-        return request;
-    }
-
-    private string getTrimmedComment(string comment)
-    {
-        if (string.IsNullOrWhiteSpace(comment))
-        {
-            return string.Empty;
-        }
-
-        return comment.Trim();
-    }
-
-    private sealed class ApprovalAuditLogCreationRequest
-    {
-        public UserSession UserSession
-        {
-            get; private init;
-        }
-        public EApprovalAuditAction Action
-        {
-            get; private init;
-        }
-        public ApprovalStepNumber? StepNumberOrNull
-        {
-            get; private init;
-        }
-        public string Comment { get; private init; } = string.Empty;
-        public string PreviousApproverDisplayName { get; set; } = string.Empty;
-        public string NewApproverDisplayName { get; set; } = string.Empty;
-
-        public ApprovalAuditLogCreationRequest(UserSession userSession, EApprovalAuditAction action, ApprovalStepNumber? stepNumberOrNull, string comment)
-        {
-            UserSession = userSession;
-            Action = action;
-            StepNumberOrNull = stepNumberOrNull;
-            Comment = comment;
-        }
-    }
-
-    private IReadOnlyList<ApprovalRequestItem> createApprovalRequestItems(IReadOnlyList<ApprovalRequest> requests)
+    private IReadOnlyList<ApprovalRequestItem> createApprovalRequestItems(
+        IReadOnlyList<ApprovalRequest> requests,
+        IReadOnlyDictionary<int, UserAccount> actorUsersById)
     {
         List<ApprovalRequestItem> items = new List<ApprovalRequestItem>();
         foreach (ApprovalRequest request in requests)
         {
-            items.Add(createApprovalRequestItem(request));
+            items.Add(createApprovalRequestItem(request, actorUsersById));
         }
 
         return items;
     }
 
-    private ApprovalRequestItem createApprovalRequestItem(ApprovalRequest request)
+    private ApprovalRequestItem createApprovalRequestItem(
+        ApprovalRequest request,
+        IReadOnlyDictionary<int, UserAccount> actorUsersById)
     {
         ApprovalRequestItem item = new ApprovalRequestItem();
         item.Id = request.Id;
@@ -135,8 +66,11 @@ public sealed partial class ApprovalService
         item.FileId = request.FileId;
         item.FileName = request.FileName;
         item.ApprovedFileId = request.ApprovedFileId;
+        item.ApprovedFolderId = request.ApprovedFolderId;
         item.ApprovedFolderDisplayName = request.ApprovedFolderDisplayName;
         item.TeamName = request.TeamName;
+        item.RequesterTeamName = getSnapshotText(request.RequesterTeamName, getUserTeamName(request.RequesterUser));
+        item.RequesterPositionName = getSnapshotText(request.RequesterPositionName, getUserPositionName(request.RequesterUser, request.RequesterDisplayName));
         item.RequesterDisplayName = request.RequesterDisplayName;
         item.RequestedAt = request.RequestedAt;
         item.Status = request.Status;
@@ -145,7 +79,10 @@ public sealed partial class ApprovalService
         item.CompletedAt = request.CompletedAt;
         item.RejectedAt = request.RejectedAt;
         item.Steps = request.Steps.OrderBy(step => step.StepNumber).Select(createApprovalStepItem).ToList();
-        item.AuditLogs = request.AuditLogs.OrderByDescending(auditLog => auditLog.CreatedAt).Select(createApprovalAuditLogItem).ToList();
+        item.AuditLogs = request.AuditLogs
+            .OrderByDescending(auditLog => auditLog.CreatedAt)
+            .Select(auditLog => createApprovalAuditLogItem(auditLog, actorUsersById))
+            .ToList();
         return item;
     }
 
@@ -154,6 +91,8 @@ public sealed partial class ApprovalService
         ApprovalStepItem item = new ApprovalStepItem();
         item.StepNumber = step.StepNumber;
         item.ApproverUserId = step.ApproverUserId;
+        item.ApproverTeamName = getSnapshotText(step.ApproverTeamName, getUserTeamName(step.ApproverUser));
+        item.ApproverPositionName = getSnapshotText(step.ApproverPositionName, getUserPositionName(step.ApproverUser, step.ApproverDisplayName));
         item.ApproverDisplayName = step.ApproverDisplayName;
         item.Status = step.Status;
         item.ActionedAt = step.ActionedAt;
@@ -161,16 +100,116 @@ public sealed partial class ApprovalService
         return item;
     }
 
-    private ApprovalAuditLogItem createApprovalAuditLogItem(ApprovalAuditLog auditLog)
+    private ApprovalAuditLogItem createApprovalAuditLogItem(
+        ApprovalAuditLog auditLog,
+        IReadOnlyDictionary<int, UserAccount> actorUsersById)
     {
+        UserAccount? actorUserOrNull = findActorUserOrNull(auditLog, actorUsersById);
         ApprovalAuditLogItem item = new ApprovalAuditLogItem();
         item.Action = auditLog.Action;
         item.ActorDisplayName = auditLog.ActorDisplayName;
+        item.ActorTeamName = getSnapshotText(auditLog.ActorTeamName, getUserTeamName(actorUserOrNull));
+        item.ActorPositionName = getSnapshotText(auditLog.ActorPositionName, getUserPositionName(actorUserOrNull, auditLog.ActorDisplayName));
         item.StepNumber = auditLog.StepNumber;
         item.Comment = auditLog.Comment;
         item.PreviousApproverDisplayName = auditLog.PreviousApproverDisplayName;
         item.NewApproverDisplayName = auditLog.NewApproverDisplayName;
         item.CreatedAt = auditLog.CreatedAt;
         return item;
+    }
+
+    private static UserAccount? findActorUserOrNull(
+        ApprovalAuditLog auditLog,
+        IReadOnlyDictionary<int, UserAccount> actorUsersById)
+    {
+        UserAccount? actorUserOrNull;
+        if (actorUsersById.TryGetValue(auditLog.ActorUserId, out actorUserOrNull))
+        {
+            return actorUserOrNull;
+        }
+
+        return null;
+    }
+
+    private static string getUserTeamName(UserAccount? userOrNull)
+    {
+        if (userOrNull == null || userOrNull.Team == null)
+        {
+            return string.Empty;
+        }
+
+        return userOrNull.Team.DisplayName;
+    }
+
+    private static int? getUserTeamIdOrNull(
+        UserAccount? userOrNull,
+        UserSession userSession)
+    {
+        if (userOrNull != null)
+        {
+            return userOrNull.TeamId;
+        }
+
+        return OrganizationTeamId.GetValueOrNull(userSession.OrganizationTeamIdOrNull);
+    }
+
+    private static string getUserTeamName(
+        UserAccount? userOrNull,
+        string fallbackTeamName)
+    {
+        string teamName = getUserTeamName(userOrNull);
+        if (string.IsNullOrWhiteSpace(teamName) == false)
+        {
+            return teamName;
+        }
+
+        if (string.IsNullOrWhiteSpace(fallbackTeamName))
+        {
+            return string.Empty;
+        }
+
+        return fallbackTeamName.Trim();
+    }
+
+    private static int? getUserPositionIdOrNull(UserAccount? userOrNull)
+    {
+        if (userOrNull == null)
+        {
+            return null;
+        }
+
+        return userOrNull.PositionId;
+    }
+
+    private static string getUserPositionName(
+        UserAccount? userOrNull,
+        string fallbackDisplayName)
+    {
+        if (userOrNull != null && userOrNull.Position != null)
+        {
+            return userOrNull.Position.Name;
+        }
+
+        if (string.IsNullOrWhiteSpace(fallbackDisplayName))
+        {
+            return string.Empty;
+        }
+
+        return fallbackDisplayName.Trim();
+    }
+
+    private static string getSnapshotText(string snapshotText, string fallbackText)
+    {
+        if (string.IsNullOrWhiteSpace(snapshotText) == false)
+        {
+            return snapshotText.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(fallbackText))
+        {
+            return string.Empty;
+        }
+
+        return fallbackText.Trim();
     }
 }

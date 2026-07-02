@@ -147,7 +147,7 @@ public sealed partial class GoogleDriveService
 
     private bool shouldCacheDownload(FileContentType contentType, long contentLength)
     {
-        return contentType.GetRequiredValue() == "application/pdf" && contentLength <= MAX_CACHED_DOWNLOAD_BYTES;
+        return contentType.GetRequiredValue() == GoogleMimeTypes.PDF && contentLength <= MAX_CACHED_DOWNLOAD_BYTES;
     }
 
     private string createFolderListCacheKey(DriveFolderId folderId)

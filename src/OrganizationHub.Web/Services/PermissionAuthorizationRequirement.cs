@@ -10,10 +10,6 @@ public sealed class PermissionAuthorizationRequirement : IAuthorizationRequireme
     {
         get; private init;
     }
-    public IReadOnlyList<string> FallbackRoleNames
-    {
-        get; private init;
-    }
     public EPermissionAuthorizationTarget Target
     {
         get; private init;
@@ -21,12 +17,10 @@ public sealed class PermissionAuthorizationRequirement : IAuthorizationRequireme
 
     public PermissionAuthorizationRequirement(
         IReadOnlyList<PermissionKey> permissionKeys,
-        IReadOnlyList<string> fallbackRoleNames,
         EPermissionAuthorizationTarget target = EPermissionAuthorizationTarget.Global
     )
     {
         PermissionKeys = permissionKeys;
-        FallbackRoleNames = fallbackRoleNames;
         Target = target;
     }
 }

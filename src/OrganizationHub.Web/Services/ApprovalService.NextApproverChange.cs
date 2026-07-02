@@ -11,14 +11,10 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    private async Task<ServiceResult> changeNextApproverIfRequestedAsync(
-        OrganizationHubDbContext dbContext,
-        ApprovalRequest request,
-        UserSession userSession,
-        ApprovalUserId nextApproverUserId,
-        CancellationToken cancellationToken
-    )
+    private async Task<ServiceResult> changeNextApproverIfRequestedAsync(ApprovalNextApproverChangeRequest changeRequest)
     {
+        ApprovalRequest request = changeRequest.ApprovalRequest;
+        ApprovalUserId nextApproverUserId = changeRequest.NextApproverUserId;
         if (nextApproverUserId.HasValue == false)
         {
             return ServiceResult.Succeed();
@@ -44,13 +40,17 @@ public sealed partial class ApprovalService
         }
 
         int requiredNextApproverUserId = nextApproverUserId.GetRequiredValue();
-        UserAccount? nextApproverOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Id == requiredNextApproverUserId && user.IsActive, cancellationToken);
+        UserAccount? nextApproverOrNull = await changeRequest.DbContext.UserAccounts
+            .Include(user => user.Team)
+            .Include(user => user.Position)
+            .ThenInclude(position => position!.PermissionGrants)
+            .FirstOrDefaultAsync(user => user.Id == requiredNextApproverUserId && user.IsActive, changeRequest.CancellationToken);
         if (nextApproverOrNull == null || canUseAsChangedIntermediateApprover(request, nextApproverOrNull) == false)
         {
             return ServiceResult.Fail("변경할 결재권자를 찾을 수 없습니다.");
         }
 
-        if (nextApproverOrNull.Id == userSession.UserId)
+        if (nextApproverOrNull.Id == changeRequest.UserSession.UserAccountId.GetRequiredValue())
         {
             return ServiceResult.Fail("다음 결재권자를 자기 자신으로 지정할 수 없습니다.");
         }
@@ -71,7 +71,16 @@ public sealed partial class ApprovalService
         string previousApproverDisplayName = nextStepOrNull.ApproverDisplayName;
         nextStepOrNull.ApproverUserId = nextApproverOrNull.Id;
         nextStepOrNull.ApproverDisplayName = nextApproverOrNull.DisplayName;
-        request.AuditLogs.Add(createAuditLog(createApproverChangedAuditLogRequest(userSession, nextStepNumber, previousApproverDisplayName, nextApproverOrNull.DisplayName)));
+        nextStepOrNull.ApproverTeamId = nextApproverOrNull.TeamId;
+        nextStepOrNull.ApproverTeamName = getUserTeamName(nextApproverOrNull);
+        nextStepOrNull.ApproverPositionId = nextApproverOrNull.PositionId;
+        nextStepOrNull.ApproverPositionName = getUserPositionName(nextApproverOrNull, nextApproverOrNull.DisplayName);
+        request.AuditLogs.Add(createAuditLog(createApproverChangedAuditLogRequest(
+            changeRequest.UserSession,
+            changeRequest.ActorUserOrNull,
+            nextStepNumber,
+            previousApproverDisplayName,
+            nextApproverOrNull.DisplayName)));
         return ServiceResult.Succeed();
     }
 
@@ -82,7 +91,40 @@ public sealed partial class ApprovalService
             return false;
         }
 
-        EUserRole requesterRole = getRequesterRole(request);
-        return UserPermissionPolicy.CanUseAsIntermediateApprovalApprover(requesterRole, nextApprover.Role);
+        OrganizationTeamId? requesterTeamIdOrNull = OrganizationTeamId.CreateExistingOrNull(request.TeamId);
+        return hasUserApprovalPermission(nextApprover, requesterTeamIdOrNull, new PermissionKey(PermissionKeys.APPROVAL_APPROVE));
+    }
+
+    private sealed class ApprovalNextApproverChangeRequest
+    {
+        public required OrganizationHubDbContext DbContext
+        {
+            get; init;
+        }
+
+        public required ApprovalRequest ApprovalRequest
+        {
+            get; init;
+        }
+
+        public required UserSession UserSession
+        {
+            get; init;
+        }
+
+        public required UserAccount? ActorUserOrNull
+        {
+            get; init;
+        }
+
+        public required ApprovalUserId NextApproverUserId
+        {
+            get; init;
+        }
+
+        public required CancellationToken CancellationToken
+        {
+            get; init;
+        }
     }
 }

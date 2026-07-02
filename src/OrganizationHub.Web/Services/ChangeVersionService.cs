@@ -13,6 +13,12 @@ public sealed class ChangeVersionService : IChangeVersionService
 {
     private static readonly TimeSpan STABLE_READ_RETRY_DELAY = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan MAX_ACTIVE_CHANGE_WAIT = TimeSpan.FromSeconds(30);
+    private const long INITIAL_VERSION = 0;
+    private const long FIRST_VERSION = 1;
+    private const long VERSION_INCREMENT = 1;
+    private const int NO_ACTIVE_CHANGE_COUNT = 0;
+    private const int FIRST_ACTIVE_CHANGE_COUNT = 1;
+    private const int ACTIVE_CHANGE_COUNT_INCREMENT = 1;
     private const int MAX_STABLE_READ_ATTEMPTS = 8;
 
     private readonly ConcurrentDictionary<string, long> mVersions = new ConcurrentDictionary<string, long>();
@@ -22,7 +28,7 @@ public sealed class ChangeVersionService : IChangeVersionService
     {
         if (key.HasValue == false)
         {
-            return 0;
+            return INITIAL_VERSION;
         }
 
         long version;
@@ -32,7 +38,7 @@ public sealed class ChangeVersionService : IChangeVersionService
             return version;
         }
 
-        return 0;
+        return INITIAL_VERSION;
     }
 
     public ChangeVersionSnapshot GetSnapshot(IReadOnlyList<ChangeVersionKey> changeVersionKeys)
@@ -79,7 +85,7 @@ public sealed class ChangeVersionService : IChangeVersionService
         List<ChangeVersionKey> normalizedKeys = normalizeKeys(changeVersionKeys);
         foreach (ChangeVersionKey key in normalizedKeys)
         {
-            mActiveChangeCounts.AddOrUpdate(key.GetRequiredValue(), 1, (_, currentCount) => currentCount + 1);
+            mActiveChangeCounts.AddOrUpdate(key.GetRequiredValue(), FIRST_ACTIVE_CHANGE_COUNT, (_, currentCount) => currentCount + ACTIVE_CHANGE_COUNT_INCREMENT);
         }
 
         BumpMany(normalizedKeys);
@@ -142,7 +148,7 @@ public sealed class ChangeVersionService : IChangeVersionService
             return;
         }
 
-        mVersions.AddOrUpdate(key.GetRequiredValue(), 1, (_, currentVersion) => currentVersion + 1);
+        mVersions.AddOrUpdate(key.GetRequiredValue(), FIRST_VERSION, (_, currentVersion) => currentVersion + VERSION_INCREMENT);
     }
 
     public void BumpMany(IReadOnlyList<ChangeVersionKey> changeVersionKeys)
@@ -163,7 +169,7 @@ public sealed class ChangeVersionService : IChangeVersionService
         BumpMany(changeVersionKeys);
         foreach (ChangeVersionKey key in normalizeKeys(changeVersionKeys))
         {
-            mActiveChangeCounts.AddOrUpdate(key.GetRequiredValue(), 0, (_, currentCount) => Math.Max(0, currentCount - 1));
+            mActiveChangeCounts.AddOrUpdate(key.GetRequiredValue(), NO_ACTIVE_CHANGE_COUNT, (_, currentCount) => Math.Max(NO_ACTIVE_CHANGE_COUNT, currentCount - ACTIVE_CHANGE_COUNT_INCREMENT));
         }
     }
 

@@ -22,21 +22,14 @@ public sealed partial class PermissionService
             get; private init;
         }
 
-        public EPermissionConfigurationMode ConfigurationMode
-        {
-            get; private init;
-        }
-
         public DriveFolderCollectionContext(
             UserSession userSession,
             EDriveFolderAccessMode accessMode,
-            EDriveFolderKind? folderKindOrNull,
-            EPermissionConfigurationMode configurationMode)
+            EDriveFolderKind? folderKindOrNull)
         {
             UserSession = userSession;
             AccessMode = accessMode;
             FolderKindOrNull = folderKindOrNull;
-            ConfigurationMode = configurationMode;
         }
     }
 

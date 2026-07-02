@@ -17,12 +17,20 @@ public interface IApprovalService
         UserSession userSession,
         ApprovalRequestId approvalRequestId,
         ApprovalUserId nextApproverUserId,
-        string comment,
+        ApprovalComment comment,
+        CancellationToken cancellationToken);
+
+    Task<ServiceResult> ApproveRequestAsync(
+        UserSession userSession,
+        ApprovalRequestId approvalRequestId,
+        ApprovalUserId nextApproverUserId,
+        ApprovalComment comment,
+        EDriveFileNameConflictResolution approvedFileConflictResolution,
         CancellationToken cancellationToken);
 
     Task<ServiceResult> RejectRequestAsync(
         UserSession userSession,
         ApprovalRequestId approvalRequestId,
-        string comment,
+        ApprovalComment comment,
         CancellationToken cancellationToken);
 }

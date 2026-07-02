@@ -4,6 +4,8 @@ namespace OrganizationHub.Web.Domain;
 
 public readonly record struct PlainPassword
 {
+    public const int MINIMUM_LENGTH = 8;
+
     private readonly string? mValueOrNull;
 
     private string Value
@@ -42,9 +44,14 @@ public readonly record struct PlainPassword
         return new PlainPassword(passwordOrNull);
     }
 
-    public bool HasMinimumLength(int minimumLength)
+    private bool hasMinimumLength(int minimumLength)
     {
         return Value.Length >= minimumLength;
+    }
+
+    public bool HasRequiredMinimumLength()
+    {
+        return hasMinimumLength(MINIMUM_LENGTH);
     }
 
     public string GetRequiredValue()

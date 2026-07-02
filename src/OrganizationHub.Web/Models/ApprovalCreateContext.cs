@@ -12,10 +12,6 @@ public sealed class ApprovalCreateContext
     public IReadOnlyList<ApprovalUserOption> FinalApproverOptions { get; set; } = new List<ApprovalUserOption>();
     public IReadOnlyList<ApprovalStepCount> AvailableStepCounts { get; set; } = new List<ApprovalStepCount>();
     public IReadOnlyList<ApprovalDefaultLineOption> DefaultLineOptions { get; set; } = new List<ApprovalDefaultLineOption>();
-    public bool UsesDefaultFinalApprover
-    {
-        get; set;
-    }
     public bool CanCreateRequest
     {
         get; set;

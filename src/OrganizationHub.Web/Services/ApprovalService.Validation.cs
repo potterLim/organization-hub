@@ -37,26 +37,26 @@ public sealed partial class ApprovalService
         ApprovalUserId secondApproverUserId = command.SecondApproverUserId;
         ApprovalUserId requestedFinalApproverUserId = command.FinalApproverUserId;
         ApprovalUserId finalApproverUserId = resolveFinalApproverUserId(context.FinalApproverOptions, requestedFinalApproverUserId);
-        string firstApproverLabel = ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(1));
-        string secondApproverLabel = command.StepCount.RequiresSecondApprover ? ApprovalStepLabelUtility.GetStepRoleName(stepCount, new ApprovalStepNumber(2)) : string.Empty;
-        string finalApproverLabel = ApprovalStepLabelUtility.GetStepRoleName(stepCount, stepCount.GetFinalStepNumber());
+        string firstApproverLabel = ApprovalStepLabelUtility.GetStepLabel(stepCount, ApprovalStepNumber.CreateFirstApproverStep());
+        string secondApproverLabel = command.StepCount.RequiresSecondApprover() ? ApprovalStepLabelUtility.GetStepLabel(stepCount, ApprovalStepNumber.CreateSecondApproverStep()) : string.Empty;
+        string finalApproverLabel = ApprovalStepLabelUtility.GetStepLabel(stepCount, stepCount.GetFinalStepNumber());
 
-        if (command.StepCount.RequiresFirstApprover && firstApproverUserId.HasValue == false)
+        if (command.StepCount.RequiresFirstApprover() && firstApproverUserId.HasValue == false)
         {
             return ServiceResult.Fail(firstApproverLabel + "를 선택해 주세요.");
         }
 
-        if (command.StepCount.RequiresFirstApprover && hasUserOption(context.ApproverOptions, firstApproverUserId) == false)
+        if (command.StepCount.RequiresFirstApprover() && hasUserOption(context.ApproverOptions, firstApproverUserId) == false)
         {
             return ServiceResult.Fail(firstApproverLabel + "를 찾을 수 없습니다.");
         }
 
-        if (command.StepCount.RequiresSecondApprover && secondApproverUserId.HasValue == false)
+        if (command.StepCount.RequiresSecondApprover() && secondApproverUserId.HasValue == false)
         {
             return ServiceResult.Fail(secondApproverLabel + "를 선택해 주세요.");
         }
 
-        if (command.StepCount.RequiresSecondApprover && hasUserOption(context.ApproverOptions, secondApproverUserId) == false)
+        if (command.StepCount.RequiresSecondApprover() && hasUserOption(context.ApproverOptions, secondApproverUserId) == false)
         {
             return ServiceResult.Fail(secondApproverLabel + "를 찾을 수 없습니다.");
         }
@@ -72,12 +72,12 @@ public sealed partial class ApprovalService
         }
 
         HashSet<ApprovalUserId> approverUserIds = new HashSet<ApprovalUserId>();
-        if (command.StepCount.RequiresFirstApprover && approverUserIds.Add(firstApproverUserId) == false)
+        if (command.StepCount.RequiresFirstApprover() && approverUserIds.Add(firstApproverUserId) == false)
         {
             return ServiceResult.Fail("결재권자는 중복될 수 없습니다.");
         }
 
-        if (command.StepCount.RequiresSecondApprover && approverUserIds.Add(secondApproverUserId) == false)
+        if (command.StepCount.RequiresSecondApprover() && approverUserIds.Add(secondApproverUserId) == false)
         {
             return ServiceResult.Fail("결재권자는 중복될 수 없습니다.");
         }
@@ -126,7 +126,7 @@ public sealed partial class ApprovalService
 
     private ApprovalUserOption? getFirstApproverOrNull(IReadOnlyList<ApprovalUserOption> options, ApprovalRequestCommand command)
     {
-        if (command.StepCount.RequiresFirstApprover == false)
+        if (command.StepCount.RequiresFirstApprover() == false)
         {
             return null;
         }
@@ -136,7 +136,7 @@ public sealed partial class ApprovalService
 
     private ApprovalUserOption? getSecondApproverOrNull(IReadOnlyList<ApprovalUserOption> options, ApprovalRequestCommand command)
     {
-        if (command.StepCount.RequiresSecondApprover == false)
+        if (command.StepCount.RequiresSecondApprover() == false)
         {
             return null;
         }

@@ -32,5 +32,6 @@ public class OrganizationPosition
     }
     public List<UserAccount> UserAccounts { get; set; } = new List<UserAccount>();
     public List<PositionPermissionGrant> PermissionGrants { get; set; } = new List<PositionPermissionGrant>();
+    public List<ApprovalWorkflow> RequesterApprovalWorkflows { get; set; } = new List<ApprovalWorkflow>();
     public List<ApprovalWorkflowStep> ApprovalWorkflowSteps { get; set; } = new List<ApprovalWorkflowStep>();
 }

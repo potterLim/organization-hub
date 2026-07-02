@@ -3,9 +3,8 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed partial class DriveBrowserService : IDriveBrowserService
+internal sealed partial class DriveBrowserService : IDriveBrowserService
 {
-    private const string GOOGLE_DRIVE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
     private const string RECENT_FILES_CACHE_VERSION_KEY = "OrganizationHub:DriveBrowser:RecentFiles:Version";
     private const string RECENT_UPLOAD_SUPPRESSION_PREFIX = "OrganizationHub:DriveBrowser:RecentUploadSuppressed:";
     private static readonly TimeSpan RECENT_FILES_CACHE_DURATION = TimeSpan.FromSeconds(60);
@@ -17,13 +16,15 @@ public sealed partial class DriveBrowserService : IDriveBrowserService
     private readonly IUploadAuditLogService mUploadAuditLogService;
     private readonly IMemoryCache mMemoryCache;
     private readonly IChangeVersionService mChangeVersionService;
+    private readonly IRecentUploadedFileCacheRefreshQueue mRecentUploadedFileCacheRefreshQueue;
 
     public DriveBrowserService(
         IPermissionService permissionService,
         IDriveService driveService,
         IUploadAuditLogService uploadAuditLogService,
         IMemoryCache memoryCache,
-        IChangeVersionService changeVersionService
+        IChangeVersionService changeVersionService,
+        IRecentUploadedFileCacheRefreshQueue recentUploadedFileCacheRefreshQueue
     )
     {
         mPermissionService = permissionService;
@@ -31,5 +32,6 @@ public sealed partial class DriveBrowserService : IDriveBrowserService
         mUploadAuditLogService = uploadAuditLogService;
         mMemoryCache = memoryCache;
         mChangeVersionService = changeVersionService;
+        mRecentUploadedFileCacheRefreshQueue = recentUploadedFileCacheRefreshQueue;
     }
 }

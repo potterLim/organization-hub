@@ -1,3 +1,4 @@
+using System;
 using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Models;
@@ -21,4 +22,16 @@ public sealed class TodoTaskFormModel
         }
     }
     public string Title { get; set; } = string.Empty;
+    public DateTime? DueAtUtc
+    {
+        get; set;
+    }
+
+    public TodoDueAtUtc DueAtUtcValue
+    {
+        get
+        {
+            return TodoDueAtUtc.CreateOptionalUtc(DueAtUtc);
+        }
+    }
 }

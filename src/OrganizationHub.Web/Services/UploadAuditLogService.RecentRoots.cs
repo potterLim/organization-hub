@@ -28,12 +28,21 @@ public sealed partial class UploadAuditLogService
         }
 
         int maximumItemCount = maximumCount.GetRequiredValue();
-        int candidateCount = Math.Max(maximumItemCount * 10, RECENT_READABLE_ROOT_CANDIDATE_COUNT);
+        int candidateCount = Math.Max(maximumItemCount * RECENT_READABLE_ROOT_CANDIDATE_MULTIPLIER, RECENT_READABLE_ROOT_MINIMUM_CANDIDATE_COUNT);
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             IQueryable<UploadAuditLog> query = createReadableRootQuery(dbContext, folderKind, readableRoots);
             List<UploadAuditLog> candidateAuditLogs = await query.OrderByDescending(auditLog => auditLog.UploadedAt).Take(candidateCount).ToListAsync(cancellationToken);
-            return await filterRecentRootCandidatesAsync(candidateAuditLogs, readableRoots, maximumCount, cancellationToken);
+            Dictionary<int, UserAccount> uploaderUsersById = await loadUploaderUsersByIdAsync(dbContext, candidateAuditLogs, cancellationToken);
+            RecentReadableRootUploadFilterContext filterContext = new RecentReadableRootUploadFilterContext
+            {
+                CandidateAuditLogs = candidateAuditLogs,
+                ReadableRoots = readableRoots,
+                MaximumCount = maximumCount,
+                UploaderUsersById = uploaderUsersById,
+                CancellationToken = cancellationToken
+            };
+            return await filterRecentRootCandidatesAsync(filterContext);
         }
     }
 
@@ -56,12 +65,44 @@ public sealed partial class UploadAuditLogService
         }
 
         int maximumItemCount = maximumCount.GetRequiredValue();
-        int candidateCount = Math.Max(maximumItemCount * 5, maximumItemCount);
+        int candidateCount = Math.Max(maximumItemCount * RECENT_ROOT_CANDIDATE_MULTIPLIER, maximumItemCount);
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             IQueryable<UploadAuditLog> query = createRootQuery(dbContext, readableRootOrNull);
             List<UploadAuditLog> candidateAuditLogs = await query.OrderByDescending(auditLog => auditLog.UploadedAt).Take(candidateCount).ToListAsync(cancellationToken);
-            return await filterRootCandidatesAsync(candidateAuditLogs, readableRootOrNull, maximumCount, cancellationToken);
+            Dictionary<int, UserAccount> uploaderUsersById = await loadUploaderUsersByIdAsync(dbContext, candidateAuditLogs, cancellationToken);
+            RecentRootUploadFilterContext filterContext = new RecentRootUploadFilterContext
+            {
+                CandidateAuditLogs = candidateAuditLogs,
+                ReadableRoot = readableRootOrNull,
+                MaximumCount = maximumCount,
+                UploaderUsersById = uploaderUsersById,
+                CancellationToken = cancellationToken
+            };
+            return await filterRootCandidatesAsync(filterContext);
+        }
+    }
+
+    public async Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadSnapshotsForReadableRootsAsync(
+        UserSession userSession,
+        EDriveFolderKind folderKind,
+        RecentItemLimit maximumCount,
+        EManagementTeamFilter managementTeamFilter,
+        CancellationToken cancellationToken
+    )
+    {
+        IReadOnlyList<DriveFolderReference> readableRoots = await getReadableRootsAsync(userSession, folderKind, managementTeamFilter, cancellationToken);
+        if (readableRoots.Count == 0)
+        {
+            return new List<UploadAuditLogItem>();
+        }
+
+        await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            IQueryable<UploadAuditLog> query = createReadableRootQuery(dbContext, folderKind, readableRoots);
+            List<UploadAuditLog> auditLogs = await query.OrderByDescending(auditLog => auditLog.UploadedAt).Take(maximumCount.GetRequiredValue()).ToListAsync(cancellationToken);
+            Dictionary<int, UserAccount> uploaderUsersById = await loadUploaderUsersByIdAsync(dbContext, auditLogs, cancellationToken);
+            return createItems(auditLogs, uploaderUsersById);
         }
     }
 
@@ -126,36 +167,25 @@ public sealed partial class UploadAuditLogService
         return query.Where(auditLog => auditLog.FolderKind == readableRoot.FolderKind && auditLog.TeamId == null);
     }
 
-    private async Task<IReadOnlyList<UploadAuditLogItem>> filterRecentRootCandidatesAsync(
-        IReadOnlyList<UploadAuditLog> candidateAuditLogs,
-        IReadOnlyList<DriveFolderReference> readableRoots,
-        RecentItemLimit maximumCount,
-        CancellationToken cancellationToken
-    )
+    private async Task<IReadOnlyList<UploadAuditLogItem>> filterRecentRootCandidatesAsync(RecentReadableRootUploadFilterContext filterContext)
     {
         List<UploadAuditLogItem> items = new List<UploadAuditLogItem>();
-        foreach (UploadAuditLog auditLog in candidateAuditLogs)
+        HashSet<string> addedFileIds = new HashSet<string>();
+        foreach (UploadAuditLog auditLog in filterContext.CandidateAuditLogs)
         {
-            DriveFolderReference? matchingRootOrNull = await getMatchingReadableRootOrNullAsync(auditLog, readableRoots, cancellationToken);
-            if (matchingRootOrNull == null)
+            if (shouldSkipDuplicateRecentFile(auditLog, addedFileIds))
             {
                 continue;
             }
 
-            DriveFileMetadata? fileMetadataOrNull = await mDriveService.GetFileOrNullAsync(DriveItemId.CreateOptional(auditLog.FileId), cancellationToken);
-            if (fileMetadataOrNull == null || fileMetadataOrNull.MimeType == GOOGLE_DRIVE_FOLDER_MIME_TYPE)
+            UploadAuditLogItem? itemOrNull = await tryCreateRecentReadableRootItemOrNullAsync(filterContext, auditLog);
+            if (itemOrNull == null)
             {
                 continue;
             }
 
-            bool isFileStillInsideRoot = await isUploadInsideRootAsync(DriveItemId.CreateOptional(auditLog.FileId), matchingRootOrNull.FolderId, cancellationToken);
-            if (isFileStillInsideRoot == false)
-            {
-                continue;
-            }
-
-            items.Add(createItem(auditLog, fileMetadataOrNull));
-            if (items.Count >= maximumCount.GetRequiredValue())
+            items.Add(itemOrNull);
+            if (items.Count >= filterContext.MaximumCount.GetRequiredValue())
             {
                 break;
             }
@@ -164,29 +194,86 @@ public sealed partial class UploadAuditLogService
         return items;
     }
 
-    private async Task<IReadOnlyList<UploadAuditLogItem>> filterRootCandidatesAsync(
-        IReadOnlyList<UploadAuditLog> candidateAuditLogs,
-        DriveFolderReference readableRoot,
-        RecentItemLimit maximumCount,
-        CancellationToken cancellationToken
-    )
+    private async Task<IReadOnlyList<UploadAuditLogItem>> filterRootCandidatesAsync(RecentRootUploadFilterContext filterContext)
     {
         List<UploadAuditLogItem> items = new List<UploadAuditLogItem>();
-        foreach (UploadAuditLog auditLog in candidateAuditLogs)
+        HashSet<string> addedFileIds = new HashSet<string>();
+        foreach (UploadAuditLog auditLog in filterContext.CandidateAuditLogs)
         {
-            bool isInsideRoot = await isUploadInsideRootAsync(DriveItemId.CreateOptional(auditLog.FolderId), readableRoot.FolderId, cancellationToken);
-            if (isInsideRoot == false)
+            if (shouldSkipDuplicateRecentFile(auditLog, addedFileIds))
             {
                 continue;
             }
 
-            items.Add(createItem(auditLog));
-            if (items.Count >= maximumCount.GetRequiredValue())
+            UploadAuditLogItem? itemOrNull = await tryCreateRecentRootItemOrNullAsync(filterContext, auditLog);
+            if (itemOrNull == null)
+            {
+                continue;
+            }
+
+            items.Add(itemOrNull);
+            if (items.Count >= filterContext.MaximumCount.GetRequiredValue())
             {
                 break;
             }
         }
 
         return items;
+    }
+
+    private sealed class RecentReadableRootUploadFilterContext
+    {
+        public required IReadOnlyList<UploadAuditLog> CandidateAuditLogs
+        {
+            get; init;
+        }
+
+        public required IReadOnlyList<DriveFolderReference> ReadableRoots
+        {
+            get; init;
+        }
+
+        public required RecentItemLimit MaximumCount
+        {
+            get; init;
+        }
+
+        public required IReadOnlyDictionary<int, UserAccount> UploaderUsersById
+        {
+            get; init;
+        }
+
+        public required CancellationToken CancellationToken
+        {
+            get; init;
+        }
+    }
+
+    private sealed class RecentRootUploadFilterContext
+    {
+        public required IReadOnlyList<UploadAuditLog> CandidateAuditLogs
+        {
+            get; init;
+        }
+
+        public required DriveFolderReference ReadableRoot
+        {
+            get; init;
+        }
+
+        public required RecentItemLimit MaximumCount
+        {
+            get; init;
+        }
+
+        public required IReadOnlyDictionary<int, UserAccount> UploaderUsersById
+        {
+            get; init;
+        }
+
+        public required CancellationToken CancellationToken
+        {
+            get; init;
+        }
     }
 }

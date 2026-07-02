@@ -13,9 +13,35 @@ public sealed class UploadAuditLogItem
         get; set;
     }
     public string UploaderDisplayName { get; set; } = string.Empty;
+    public string UploaderTeamName { get; set; } = string.Empty;
+    public string UploaderPositionName { get; set; } = string.Empty;
     public string TeamName { get; set; } = string.Empty;
     public DateTime UploadedAt
     {
         get; set;
+    }
+
+    public string GetUploaderAffiliationText()
+    {
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(UploaderTeamName, UploaderPositionName);
+        string affiliationText = affiliationLabel.GetFullText();
+        if (string.IsNullOrWhiteSpace(affiliationText))
+        {
+            return UploaderDisplayName;
+        }
+
+        return affiliationText;
+    }
+
+    public string GetUploaderPositionText()
+    {
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(UploaderTeamName, UploaderPositionName);
+        string positionText = affiliationLabel.GetPositionText();
+        if (string.IsNullOrWhiteSpace(positionText))
+        {
+            return UploaderDisplayName;
+        }
+
+        return positionText;
     }
 }

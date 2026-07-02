@@ -5,6 +5,13 @@ namespace OrganizationHub.Web.Models;
 public sealed class ApprovalRequestFormModel
 {
     public string Title { get; set; } = string.Empty;
+    public ApprovalRequestTitle TitleValue
+    {
+        get
+        {
+            return ApprovalRequestTitle.CreateOptional(Title);
+        }
+    }
     public string SourceFolderId { get; set; } = string.Empty;
     public DriveFolderId SourceFolderIdValue
     {
@@ -29,12 +36,16 @@ public sealed class ApprovalRequestFormModel
             return DriveItemId.CreateOptional(FileId);
         }
     }
-    public int StepCount { get; set; } = 2;
+    public int StepCount { get; set; } = ApprovalStepCount.DEFAULT_VALUE;
     public ApprovalStepCountSelection StepCountValue
     {
         get
         {
             return new ApprovalStepCountSelection(StepCount);
+        }
+        set
+        {
+            StepCount = value.GetRequiredValue();
         }
     }
 
@@ -48,6 +59,10 @@ public sealed class ApprovalRequestFormModel
         {
             return ApprovalUserId.CreateOptional(FirstApproverUserId);
         }
+        set
+        {
+            FirstApproverUserId = value.GetOptionalValue();
+        }
     }
     public int SecondApproverUserId
     {
@@ -58,6 +73,10 @@ public sealed class ApprovalRequestFormModel
         get
         {
             return ApprovalUserId.CreateOptional(SecondApproverUserId);
+        }
+        set
+        {
+            SecondApproverUserId = value.GetOptionalValue();
         }
     }
     public int FinalApproverUserId
@@ -70,18 +89,43 @@ public sealed class ApprovalRequestFormModel
         {
             return ApprovalUserId.CreateOptional(FinalApproverUserId);
         }
+        set
+        {
+            FinalApproverUserId = value.GetOptionalValue();
+        }
+    }
+
+    public void ClearFirstApprover()
+    {
+        FirstApproverUserIdValue = ApprovalUserId.Empty;
+    }
+
+    public void ClearSecondApprover()
+    {
+        SecondApproverUserIdValue = ApprovalUserId.Empty;
+    }
+
+    public void ClearFinalApprover()
+    {
+        FinalApproverUserIdValue = ApprovalUserId.Empty;
     }
 
     public ApprovalRequestCommand CreateCommand()
     {
+        return CreateCommand(TitleValue);
+    }
+
+    public ApprovalRequestCommand CreateCommand(ApprovalRequestTitle title)
+    {
         return new ApprovalRequestCommand(
-            Title,
+            title,
             SourceFolderIdValue,
             DestinationFolderIdValue,
             FileIdValue,
             StepCountValue,
-            FirstApproverUserIdValue,
-            SecondApproverUserIdValue,
-            FinalApproverUserIdValue);
+            new ApprovalApproverSelection(
+                FirstApproverUserIdValue,
+                SecondApproverUserIdValue,
+                FinalApproverUserIdValue));
     }
 }

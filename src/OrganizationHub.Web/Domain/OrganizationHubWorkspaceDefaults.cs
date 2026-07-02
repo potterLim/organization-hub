@@ -14,6 +14,8 @@ public static class OrganizationHubWorkspaceDefaults
     public const string TEAM_ROOT_FOLDER_NAME = "팀별 자료";
     public const string TEAM_MATERIALS_FOLDER_NAME = "자료";
     public const string APPROVED_FOLDER_NAME = "결재 완료 자료";
+    public const string NOTICE_FILE_NAME = "공지.txt";
+    public const string WORK_GUIDELINE_FILE_NAME = "업무 기준.txt";
     public const string ORGANIZATION_CALENDAR_NAME = "조직 공용";
     public const string RESPONSIBLE_CALENDAR_NAME = "책임자";
     public const string ORGANIZATION_TASK_LIST_NAME = "조직 공용 할 일";

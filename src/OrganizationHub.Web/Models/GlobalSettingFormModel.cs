@@ -10,6 +10,6 @@ public sealed class GlobalSettingFormModel
     public GlobalSettingCalendarResourceFormModel CalendarResources { get; } = new GlobalSettingCalendarResourceFormModel();
     public GlobalSettingTaskResourceFormModel TaskResources { get; } = new GlobalSettingTaskResourceFormModel();
     public GlobalSettingFileResourceFormModel FileResources { get; } = new GlobalSettingFileResourceFormModel();
-    public bool ShowTodoAuthor { get; set; } = true;
-    public bool ShowCalendarAuthor { get; set; } = true;
+    public bool ShouldShowTodoAuthor { get; set; } = true;
+    public bool ShouldShowCalendarAuthor { get; set; } = true;
 }

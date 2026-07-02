@@ -7,7 +7,7 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed partial class DriveBrowserService
+internal sealed partial class DriveBrowserService
 {
     public void InvalidateRecentFiles()
     {
@@ -62,7 +62,7 @@ public sealed partial class DriveBrowserService
         string teamIdText = "none";
         if (userSession.HasTeam)
         {
-            teamIdText = userSession.GetRequiredTeamIdValue().ToString(CultureInfo.InvariantCulture);
+            teamIdText = userSession.GetRequiredOrganizationTeamId().GetRequiredValue().ToString(CultureInfo.InvariantCulture);
         }
 
         string managementTeamFilterText = managementTeamFilter == EManagementTeamFilter.ExcludeManagementTeam ? "exclude-management" : "include-management";
@@ -73,8 +73,8 @@ public sealed partial class DriveBrowserService
             "RecentFiles",
             sourceName,
             getRecentFilesCacheVersion(),
-            userSession.UserId.ToString(CultureInfo.InvariantCulture),
-            userSession.Role.ToString(),
+            userSession.UserAccountId.GetRequiredValue().ToString(CultureInfo.InvariantCulture),
+            userSession.StoredCompatibilityRole.ToString(),
             teamIdText,
             folderKind.ToString(),
             maximumCount.GetRequiredValue().ToString(CultureInfo.InvariantCulture),
@@ -132,6 +132,8 @@ public sealed partial class DriveBrowserService
         clonedFile.TeamName = file.TeamName;
         clonedFile.FolderDisplayName = file.FolderDisplayName;
         clonedFile.UploadedByDisplayName = file.UploadedByDisplayName;
+        clonedFile.UploadedByTeamName = file.UploadedByTeamName;
+        clonedFile.UploadedByPositionName = file.UploadedByPositionName;
         clonedFile.UploadedAt = file.UploadedAt;
         clonedFile.CanPreviewInSite = file.CanPreviewInSite;
         clonedFile.Size = file.Size;

@@ -7,7 +7,7 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public interface INavigationMenuService
+internal interface INavigationMenuService
 {
     Task<IReadOnlyList<NavigationMenuSection>> GetMenuSectionsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyList<NavigationMenuItem>> GetManageableMenuItemsAsync(CancellationToken cancellationToken);

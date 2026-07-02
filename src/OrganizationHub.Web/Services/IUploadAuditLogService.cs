@@ -29,6 +29,13 @@ public interface IUploadAuditLogService
         EManagementTeamFilter managementTeamFilter,
         CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadSnapshotsForReadableRootsAsync(
+        UserSession userSession,
+        EDriveFolderKind folderKind,
+        RecentItemLimit maximumCount,
+        EManagementTeamFilter managementTeamFilter,
+        CancellationToken cancellationToken);
+
     Task<IReadOnlyList<UploadAuditLogItem>> GetRecentUploadsForRootAsync(
         UserSession userSession,
         DriveFolderReference rootFolder,

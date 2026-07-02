@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 using GoogleCalendarApi = Google.Apis.Calendar.v3.CalendarService;
 using GoogleTasksApi = Google.Apis.Tasks.v1.TasksService;
@@ -14,7 +15,7 @@ public sealed partial class GoogleHealthCheckService
     {
         if (connectionOrNull == null)
         {
-            addItem(items, "연결", "Calendar 수정 권한", STATUS_ERROR, "활성 Google 연결을 찾을 수 없습니다.");
+            addItem(items, "연결", "Calendar 수정 권한", EGoogleHealthStatus.Error, "활성 Google 연결을 찾을 수 없습니다.");
             return;
         }
 
@@ -23,7 +24,7 @@ public sealed partial class GoogleHealthCheckService
             items,
             "연결",
             "Calendar 수정 권한",
-            hasCalendarWriteScope ? STATUS_HEALTHY : STATUS_WARNING,
+            hasCalendarWriteScope ? EGoogleHealthStatus.Healthy : EGoogleHealthStatus.Warning,
             hasCalendarWriteScope ? "일정 추가, 수정, 삭제 권한이 포함되어 있습니다." : "기존 연결은 읽기만 가능할 수 있습니다. Google 계정을 다시 연결해 주세요.");
     }
 
@@ -33,7 +34,7 @@ public sealed partial class GoogleHealthCheckService
     {
         if (connectionOrNull == null)
         {
-            addItem(items, "연결", "Google Tasks 권한", STATUS_ERROR, "활성 Google 연결을 찾을 수 없습니다.");
+            addItem(items, "연결", "Google Tasks 권한", EGoogleHealthStatus.Error, "활성 Google 연결을 찾을 수 없습니다.");
             return;
         }
 
@@ -42,7 +43,7 @@ public sealed partial class GoogleHealthCheckService
             items,
             "연결",
             "Google Tasks 권한",
-            hasTasksScope ? STATUS_HEALTHY : STATUS_WARNING,
+            hasTasksScope ? EGoogleHealthStatus.Healthy : EGoogleHealthStatus.Warning,
             hasTasksScope ? "할 일 추가, 수정, 삭제 권한이 포함되어 있습니다." : "기존 연결에 Google Tasks 권한이 없습니다. Google 계정을 다시 연결해 주세요.");
     }
 }

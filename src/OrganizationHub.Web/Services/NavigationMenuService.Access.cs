@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,11 +11,11 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed partial class NavigationMenuService
+internal sealed partial class NavigationMenuService
 {
     public async Task<bool> CanAccessPathAsync(UserSession userSession, NavigationPath path, CancellationToken cancellationToken)
     {
-        string routePath = path.GetRequiredValue();
+        NavigationPath routePath = getMenuGuardPath(path);
         if (shouldBypassMenuGuard(routePath))
         {
             return true;
@@ -28,33 +29,46 @@ public sealed partial class NavigationMenuService
                 .ThenInclude(menuPermission => menuPermission.Team)
                 .OrderByDescending(menuItem => menuItem.Href.Length)
                 .ToListAsync(cancellationToken);
+            NavigationMenuVisibilityEvaluationContext evaluationContext =
+                await createVisibilityEvaluationContextAsync(userSession, cancellationToken);
             foreach (NavigationMenuItem menuItem in menuItems)
             {
-                if (isPathMatch(routePath, menuItem.Href))
+                if (isPathMatch(routePath, NavigationPath.CreateOptional(menuItem.Href)))
                 {
-                    EPermissionConfigurationMode configurationMode = await getNavigationPermissionConfigurationModeAsync(userSession, cancellationToken);
-                    return await canUseMenuItemAsync(menuItem, userSession, configurationMode, cancellationToken);
+                    return await canUseMenuItemAsync(menuItem, evaluationContext, cancellationToken);
                 }
             }
         }
 
-        return true;
+        return false;
     }
 
-    private bool shouldBypassMenuGuard(string routePath)
+    private NavigationPath getMenuGuardPath(NavigationPath routePath)
     {
+        if (routePath.GetRequiredValue() == "/")
+        {
+            return NavigationPath.Dashboard;
+        }
+
+        return routePath;
+    }
+
+    private bool shouldBypassMenuGuard(NavigationPath routePath)
+    {
+        string routePathValue = routePath.GetRequiredValue();
         return
-            routePath == "/login" ||
-            routePath == "/access-denied" ||
-            routePath == "/not-found" ||
-            routePath == "/Error" ||
-            routePath.StartsWith("/account") ||
-            routePath.StartsWith("/files");
+            routePathValue == "/login" ||
+            routePathValue == "/access-denied" ||
+            routePathValue == "/not-found" ||
+            routePathValue == "/Error" ||
+            routePathValue.StartsWith("/account", StringComparison.Ordinal) ||
+            routePathValue.StartsWith("/files", StringComparison.Ordinal);
     }
 
-    private bool isPathMatch(string routePath, string menuHref)
+    private bool isPathMatch(NavigationPath routePath, NavigationPath menuHref)
     {
-        string normalizedMenuHref = NavigationPath.CreateOptional(menuHref).GetRequiredValue();
-        return routePath == normalizedMenuHref || routePath.StartsWith(normalizedMenuHref + "/");
+        string routePathValue = routePath.GetRequiredValue();
+        string menuHrefValue = menuHref.GetRequiredValue();
+        return routePathValue == menuHrefValue || routePathValue.StartsWith(menuHrefValue + "/", StringComparison.Ordinal);
     }
 }

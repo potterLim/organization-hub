@@ -43,7 +43,7 @@ public sealed partial class GoogleWorkspaceSetupService
 
     private string createFolderNameFailureMessage(IReadOnlyList<string> failureMessages)
     {
-        List<string> visibleMessages = failureMessages.Take(3).ToList();
+        List<string> visibleMessages = failureMessages.Take(VISIBLE_FAILURE_MESSAGE_COUNT).ToList();
         string message = "일부 Drive 폴더명을 변경하지 못했습니다. " + string.Join(" / ", visibleMessages);
         if (failureMessages.Count > visibleMessages.Count)
         {

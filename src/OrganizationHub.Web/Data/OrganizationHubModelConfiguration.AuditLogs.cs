@@ -26,7 +26,14 @@ internal static partial class OrganizationHubModelConfiguration
         uploadAuditBuilder.Property(auditLog => auditLog.FolderDisplayName).HasMaxLength(160).IsRequired();
         uploadAuditBuilder.Property(auditLog => auditLog.FolderKind).HasConversion<string>().HasMaxLength(32).IsRequired();
         uploadAuditBuilder.Property(auditLog => auditLog.UploaderDisplayName).HasMaxLength(120).IsRequired();
-        uploadAuditBuilder.Property(auditLog => auditLog.UploaderRole).HasConversion<string>().HasMaxLength(32).IsRequired();
+        uploadAuditBuilder
+            .Property(auditLog => auditLog.UploaderStoredCompatibilityRole)
+            .HasColumnName("UploaderRole")
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .IsRequired();
+        uploadAuditBuilder.Property(auditLog => auditLog.UploaderTeamName).HasMaxLength(120).IsRequired();
+        uploadAuditBuilder.Property(auditLog => auditLog.UploaderPositionName).HasMaxLength(120).IsRequired();
         uploadAuditBuilder.Property(auditLog => auditLog.TeamName).HasMaxLength(120).IsRequired();
     }
 
@@ -46,7 +53,13 @@ internal static partial class OrganizationHubModelConfiguration
         calendarDeletionAuditBuilder.Property(auditLog => auditLog.EventSummary).HasMaxLength(512).IsRequired();
         calendarDeletionAuditBuilder.Property(auditLog => auditLog.EventLocation).HasMaxLength(256).IsRequired();
         calendarDeletionAuditBuilder.Property(auditLog => auditLog.DeletedByDisplayName).HasMaxLength(120).IsRequired();
-        calendarDeletionAuditBuilder.Property(auditLog => auditLog.DeletedByRole).HasConversion<string>().HasMaxLength(32).IsRequired();
+        calendarDeletionAuditBuilder
+            .Property(auditLog => auditLog.DeletedByStoredCompatibilityRole)
+            .HasColumnName("DeletedByRole")
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .IsRequired();
+        calendarDeletionAuditBuilder.Property(auditLog => auditLog.DeletedByPositionName).HasMaxLength(120).IsRequired();
         calendarDeletionAuditBuilder.Property(auditLog => auditLog.DeletedByTeamName).HasMaxLength(120).IsRequired();
         calendarDeletionAuditBuilder.Property(auditLog => auditLog.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
         calendarDeletionAuditBuilder.Property(auditLog => auditLog.ErrorMessage).HasMaxLength(1024).IsRequired();

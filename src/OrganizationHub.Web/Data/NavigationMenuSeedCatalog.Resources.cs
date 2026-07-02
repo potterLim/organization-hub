@@ -5,16 +5,23 @@ namespace OrganizationHub.Web.Data;
 
 internal static partial class NavigationMenuSeedCatalog
 {
+    private const int MATERIALS_MENU_SORT_ORDER = 100;
+    private const int RESPONSIBLE_RESOURCES_MENU_SORT_ORDER = 110;
+    private const int MANAGEMENT_FILES_MENU_SORT_ORDER = 120;
+    private const int COMMON_FILES_MENU_SORT_ORDER = 130;
+    private const int PUBLIC_FILES_MENU_SORT_ORDER = 140;
+    private const int UPLOAD_MENU_SORT_ORDER = 150;
+
     private static void addResourceMenuDefinitions(List<NavigationMenuSeedDefinition> menuDefinitions)
     {
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "Materials",
+            MenuKey = NavigationMenuKey.MATERIALS,
             DisplayName = "팀 자료",
             Href = "/materials",
             IconKey = "Folder",
-            SectionKey = "Resources",
-            SortOrder = 100,
+            SectionKey = RESOURCES_SECTION_KEY,
+            SortOrder = MATERIALS_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.TeamMember,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.AllTeams,
@@ -22,12 +29,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "ResponsibleResources",
+            MenuKey = NavigationMenuKey.RESPONSIBLE_RESOURCES,
             DisplayName = OrganizationHubWorkspaceDefaults.RESPONSIBLE_RESOURCES_FOLDER_NAME,
             Href = "/responsible-resources",
             IconKey = "SupervisorAccount",
-            SectionKey = "Resources",
-            SortOrder = 110,
+            SectionKey = RESOURCES_SECTION_KEY,
+            SortOrder = RESPONSIBLE_RESOURCES_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.TeamLeader,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.AllTeams,
@@ -35,12 +42,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "ManagementFiles",
+            MenuKey = NavigationMenuKey.MANAGEMENT_FILES,
             DisplayName = OrganizationHubWorkspaceDefaults.MANAGEMENT_FOLDER_NAME,
             Href = "/management-files",
             IconKey = "Business",
-            SectionKey = "Resources",
-            SortOrder = 120,
+            SectionKey = RESOURCES_SECTION_KEY,
+            SortOrder = MANAGEMENT_FILES_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.Management,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.SelectedTeams,
@@ -48,12 +55,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "Common",
+            MenuKey = NavigationMenuKey.COMMON,
             DisplayName = OrganizationHubWorkspaceDefaults.COMMON_FOLDER_NAME,
             Href = "/common",
             IconKey = "Groups",
-            SectionKey = "Resources",
-            SortOrder = 130,
+            SectionKey = RESOURCES_SECTION_KEY,
+            SortOrder = COMMON_FILES_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.Authenticated,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.AllTeams,
@@ -61,12 +68,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "Public",
+            MenuKey = NavigationMenuKey.PUBLIC,
             DisplayName = OrganizationHubWorkspaceDefaults.PUBLIC_FOLDER_NAME,
             Href = "/public-files",
             IconKey = "Public",
-            SectionKey = "Resources",
-            SortOrder = 140,
+            SectionKey = RESOURCES_SECTION_KEY,
+            SortOrder = PUBLIC_FILES_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.Authenticated,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.AllTeams,
@@ -74,12 +81,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "Upload",
+            MenuKey = NavigationMenuKey.UPLOAD,
             DisplayName = "파일 올리기",
             Href = "/upload",
             IconKey = "UploadFile",
-            SectionKey = "Resources",
-            SortOrder = 150,
+            SectionKey = RESOURCES_SECTION_KEY,
+            SortOrder = UPLOAD_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.TeamMember,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.AllTeams,

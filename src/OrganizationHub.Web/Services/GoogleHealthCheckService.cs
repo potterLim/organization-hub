@@ -13,10 +13,6 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleHealthCheckService : IGoogleHealthCheckService
 {
-    private const string STATUS_HEALTHY = "Healthy";
-    private const string STATUS_WARNING = "Warning";
-    private const string STATUS_ERROR = "Error";
-
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;
     private readonly IGoogleConnectionService mGoogleConnectionService;
     private readonly IDriveService mDriveService;
@@ -42,14 +38,14 @@ public sealed partial class GoogleHealthCheckService : IGoogleHealthCheckService
             items,
             "연결",
             "Google 연결 정보",
-            status.HasOAuthConfiguration ? STATUS_HEALTHY : STATUS_ERROR,
+            status.HasOAuthConfiguration ? EGoogleHealthStatus.Healthy : EGoogleHealthStatus.Error,
             status.HasOAuthConfiguration ? "Google 연결 정보가 준비되어 있습니다." : "배포 설정에 Google 연결 정보가 필요합니다.");
         addItem(
             items,
             "연결",
             "Google 계정",
-            status.IsConnected ? STATUS_HEALTHY : STATUS_ERROR,
-            status.IsConnected ? status.ConnectedEmail + " 계정이 연결되어 있습니다." : "조직 운영용 Google 계정을 연결해 주세요.");
+            status.IsConnected ? EGoogleHealthStatus.Healthy : EGoogleHealthStatus.Error,
+            status.IsConnected ? "Google 계정이 연결되어 있습니다." : "조직 운영용 Google 계정을 연결해 주세요.");
         if (status.IsConnected == false)
         {
             return items;
@@ -69,7 +65,7 @@ public sealed partial class GoogleHealthCheckService : IGoogleHealthCheckService
             List<Team> teams = await getWorkspaceTeamsAsync(dbContext, cancellationToken);
             if (settingOrNull == null)
             {
-                addItem(items, "설정", "시스템 설정", STATUS_ERROR, "시스템 설정 행이 없습니다.");
+                addItem(items, "설정", "시스템 설정", EGoogleHealthStatus.Error, "시스템 설정 행이 없습니다.");
                 return items;
             }
 
@@ -79,7 +75,7 @@ public sealed partial class GoogleHealthCheckService : IGoogleHealthCheckService
             }
             catch (Exception exception)
             {
-                addItem(items, "Drive", "폴더 접근", STATUS_ERROR, "Drive 폴더 진단 중 오류가 발생했습니다. " + exception.Message);
+                addItem(items, "Drive", "폴더 접근", EGoogleHealthStatus.Error, createGoogleDriveErrorMessage(exception));
             }
 
             try
@@ -88,7 +84,7 @@ public sealed partial class GoogleHealthCheckService : IGoogleHealthCheckService
             }
             catch (Exception exception)
             {
-                addItem(items, "Calendar", "Calendar 접근", STATUS_ERROR, "Calendar 진단 중 오류가 발생했습니다. " + exception.Message);
+                addItem(items, "Calendar", "Calendar 접근", EGoogleHealthStatus.Error, createGoogleCalendarErrorMessage(exception));
             }
 
             try
@@ -97,7 +93,7 @@ public sealed partial class GoogleHealthCheckService : IGoogleHealthCheckService
             }
             catch (Exception exception)
             {
-                addItem(items, "Google Tasks", "Google Tasks 목록 접근", STATUS_ERROR, createGoogleTasksErrorMessage(exception));
+                addItem(items, "Google Tasks", "Google Tasks 목록 접근", EGoogleHealthStatus.Error, createGoogleTasksErrorMessage(exception));
             }
 
             try
@@ -106,7 +102,7 @@ public sealed partial class GoogleHealthCheckService : IGoogleHealthCheckService
             }
             catch (Exception exception)
             {
-                addItem(items, "파일", "공지/업무 기준 파일", STATUS_ERROR, "연결 파일 진단 중 오류가 발생했습니다. " + exception.Message);
+                addItem(items, "파일", "공지/업무 기준 파일", EGoogleHealthStatus.Error, createGoogleDriveErrorMessage(exception));
             }
         }
 
@@ -122,7 +118,12 @@ public sealed partial class GoogleHealthCheckService : IGoogleHealthCheckService
             .ToListAsync(cancellationToken);
     }
 
-    private void addItem(List<GoogleHealthCheckItem> items, string area, string name, string status, string message)
+    private void addItem(
+        List<GoogleHealthCheckItem> items,
+        string area,
+        string name,
+        EGoogleHealthStatus status,
+        string message)
     {
         GoogleHealthCheckItem item = new GoogleHealthCheckItem();
         item.Area = area;
@@ -135,6 +136,16 @@ public sealed partial class GoogleHealthCheckService : IGoogleHealthCheckService
     private string createGoogleTasksErrorMessage(Exception exception)
     {
         return GoogleApiExceptionMessageFormatter.CreateGoogleTasksMessage(exception, "Google Tasks 진단 중 오류가 발생했습니다.");
+    }
+
+    private string createGoogleCalendarErrorMessage(Exception exception)
+    {
+        return GoogleApiExceptionMessageFormatter.CreateGoogleCalendarMessage(exception, "Calendar 진단 중 오류가 발생했습니다.");
+    }
+
+    private string createGoogleDriveErrorMessage(Exception exception)
+    {
+        return GoogleApiExceptionMessageFormatter.CreateGoogleDriveMessage(exception, "Drive 진단 중 오류가 발생했습니다.");
     }
 
     private string getTextOrEmpty(string? textOrNull)

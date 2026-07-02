@@ -14,8 +14,11 @@ public sealed class ApprovalRequestItem
     public string FileId { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
     public string ApprovedFileId { get; set; } = string.Empty;
+    public string ApprovedFolderId { get; set; } = string.Empty;
     public string ApprovedFolderDisplayName { get; set; } = string.Empty;
     public string TeamName { get; set; } = string.Empty;
+    public string RequesterTeamName { get; set; } = string.Empty;
+    public string RequesterPositionName { get; set; } = string.Empty;
     public string RequesterDisplayName { get; set; } = string.Empty;
     public DateTime RequestedAt
     {
@@ -52,5 +55,17 @@ public sealed class ApprovalRequestItem
         }
 
         return ApprovedFileId;
+    }
+
+    public string GetRequesterAffiliationText()
+    {
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(RequesterTeamName, RequesterPositionName);
+        string affiliationText = affiliationLabel.GetFullText();
+        if (string.IsNullOrWhiteSpace(affiliationText))
+        {
+            return RequesterDisplayName;
+        }
+
+        return affiliationText;
     }
 }

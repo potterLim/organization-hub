@@ -13,6 +13,11 @@ namespace OrganizationHub.Web.Controllers;
 [Authorize]
 public sealed class FilesController : Controller
 {
+    private const int FILE_RESPONSE_CACHE_SECONDS = 120;
+    private const int MINIMUM_SAFE_ASCII_CODE = 32;
+    private const int MAXIMUM_SAFE_ASCII_CODE = 126;
+    private static readonly TimeSpan FILE_RESPONSE_CACHE_DURATION = TimeSpan.FromSeconds(FILE_RESPONSE_CACHE_SECONDS);
+
     private readonly IDriveService mDriveService;
     private readonly IPermissionService mPermissionService;
     private readonly IFilePolicyService mFilePolicyService;
@@ -78,14 +83,14 @@ public sealed class FilesController : Controller
         FileDownloadResult downloadResult = await mDriveService.DownloadFileAsync(requestedFileId, HttpContext.RequestAborted);
         Response.Headers.ContentDisposition = createInlineContentDisposition(fileMetadataOrNull.Name);
         setShortPrivateCacheHeaders();
-        return File(downloadResult.ContentStream, "application/pdf", true);
+        return File(downloadResult.ContentStream, GoogleMimeTypes.PDF, true);
     }
 
     private void setShortPrivateCacheHeaders()
     {
-        Response.Headers.CacheControl = "private, max-age=120";
+        Response.Headers.CacheControl = "private, max-age=" + FILE_RESPONSE_CACHE_SECONDS.ToString(CultureInfo.InvariantCulture);
         Response.Headers.Pragma = "cache";
-        Response.Headers.Expires = DateTimeOffset.UtcNow.AddMinutes(2).ToString("R", CultureInfo.InvariantCulture);
+        Response.Headers.Expires = DateTimeOffset.UtcNow.Add(FILE_RESPONSE_CACHE_DURATION).ToString("R", CultureInfo.InvariantCulture);
     }
 
     private static string createInlineContentDisposition(string fileName)
@@ -110,7 +115,7 @@ public sealed class FilesController : Controller
     {
         foreach (char currentCharacter in headerValue)
         {
-            if (currentCharacter < 32 || currentCharacter > 126 || currentCharacter == '"' || currentCharacter == '\\' || currentCharacter == ';')
+            if (currentCharacter < MINIMUM_SAFE_ASCII_CODE || currentCharacter > MAXIMUM_SAFE_ASCII_CODE || currentCharacter == '"' || currentCharacter == '\\' || currentCharacter == ';')
             {
                 return false;
             }

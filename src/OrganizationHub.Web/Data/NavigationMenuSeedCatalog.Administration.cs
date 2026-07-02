@@ -5,16 +5,25 @@ namespace OrganizationHub.Web.Data;
 
 internal static partial class NavigationMenuSeedCatalog
 {
+    private const int ADMIN_USERS_MENU_SORT_ORDER = 300;
+    private const int ADMIN_TEAMS_MENU_SORT_ORDER = 310;
+    private const int ADMIN_POSITIONS_MENU_SORT_ORDER = 320;
+    private const int ADMIN_APPROVAL_WORKFLOWS_MENU_SORT_ORDER = 330;
+    private const int ADMIN_SETTINGS_MENU_SORT_ORDER = 340;
+    private const int ADMIN_MENUS_MENU_SORT_ORDER = 350;
+    private const int ADMIN_GOOGLE_MENU_SORT_ORDER = 360;
+    private const int ADMIN_CALENDAR_AUDIT_MENU_SORT_ORDER = 370;
+
     private static void addAdministrationMenuDefinitions(List<NavigationMenuSeedDefinition> menuDefinitions)
     {
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "AdminUsers",
+            MenuKey = NavigationMenuKey.ADMIN_USERS,
             DisplayName = "사용자 관리",
             Href = "/admin/users",
             IconKey = "ManageAccounts",
-            SectionKey = "Administration",
-            SortOrder = 300,
+            SectionKey = ADMINISTRATION_SECTION_KEY,
+            SortOrder = ADMIN_USERS_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.ManagementManager,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.SelectedTeams,
@@ -22,12 +31,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "AdminTeams",
+            MenuKey = NavigationMenuKey.ADMIN_TEAMS,
             DisplayName = "팀 관리",
             Href = "/admin/teams",
             IconKey = "Groups2",
-            SectionKey = "Administration",
-            SortOrder = 310,
+            SectionKey = ADMINISTRATION_SECTION_KEY,
+            SortOrder = ADMIN_TEAMS_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.Admin,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.SelectedTeams,
@@ -35,12 +44,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "AdminPositions",
+            MenuKey = NavigationMenuKey.ADMIN_POSITIONS,
             DisplayName = "직책과 권한 설정",
             Href = "/admin/positions",
             IconKey = "AdminPanelSettings",
-            SectionKey = "Administration",
-            SortOrder = 320,
+            SectionKey = ADMINISTRATION_SECTION_KEY,
+            SortOrder = ADMIN_POSITIONS_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.Admin,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.SelectedTeams,
@@ -48,12 +57,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "AdminApprovalWorkflows",
+            MenuKey = NavigationMenuKey.ADMIN_APPROVAL_WORKFLOWS,
             DisplayName = "결재 경로 설정",
             Href = "/admin/approval-workflows",
             IconKey = "AccountTree",
-            SectionKey = "Administration",
-            SortOrder = 330,
+            SectionKey = ADMINISTRATION_SECTION_KEY,
+            SortOrder = ADMIN_APPROVAL_WORKFLOWS_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.Admin,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.SelectedTeams,
@@ -61,12 +70,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "AdminSettings",
+            MenuKey = NavigationMenuKey.ADMIN_SETTINGS,
             DisplayName = "기본 설정",
             Href = "/admin/settings",
             IconKey = "Settings",
-            SectionKey = "Administration",
-            SortOrder = 340,
+            SectionKey = ADMINISTRATION_SECTION_KEY,
+            SortOrder = ADMIN_SETTINGS_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.Admin,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.SelectedTeams,
@@ -74,12 +83,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "AdminMenus",
+            MenuKey = NavigationMenuKey.ADMIN_MENUS,
             DisplayName = "메뉴 보이기 설정",
             Href = "/admin/menus",
             IconKey = "Menu",
-            SectionKey = "Administration",
-            SortOrder = 350,
+            SectionKey = ADMINISTRATION_SECTION_KEY,
+            SortOrder = ADMIN_MENUS_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.Admin,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.SelectedTeams,
@@ -87,12 +96,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "AdminGoogle",
+            MenuKey = NavigationMenuKey.ADMIN_GOOGLE,
             DisplayName = "Google 연결 설정",
             Href = "/admin/google",
             IconKey = "CloudSync",
-            SectionKey = "Administration",
-            SortOrder = 360,
+            SectionKey = ADMINISTRATION_SECTION_KEY,
+            SortOrder = ADMIN_GOOGLE_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.Admin,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.SelectedTeams,
@@ -100,12 +109,12 @@ internal static partial class NavigationMenuSeedCatalog
         });
         menuDefinitions.Add(new NavigationMenuSeedDefinition
         {
-            MenuKey = "AdminCalendarAudit",
+            MenuKey = NavigationMenuKey.ADMIN_CALENDAR_AUDIT,
             DisplayName = "일정 삭제 기록",
             Href = "/admin/calendar-audit",
             IconKey = "History",
-            SectionKey = "Administration",
-            SortOrder = 370,
+            SectionKey = ADMINISTRATION_SECTION_KEY,
+            SortOrder = ADMIN_CALENDAR_AUDIT_MENU_SORT_ORDER,
             AccessLevel = EMenuAccessLevel.ManagementManager,
             ActivationState = EActivationState.Active,
             TeamVisibility = EMenuTeamVisibility.SelectedTeams,

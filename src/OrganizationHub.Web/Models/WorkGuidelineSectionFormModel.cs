@@ -7,6 +7,14 @@ public sealed class WorkGuidelineSectionFormModel
 {
     public string ClientKey { get; set; } = Guid.NewGuid().ToString("N");
 
+    public SortableItemKey ClientKeyValue
+    {
+        get
+        {
+            return SortableItemKey.CreateRequired(ClientKey);
+        }
+    }
+
     public int Id
     {
         get; set;

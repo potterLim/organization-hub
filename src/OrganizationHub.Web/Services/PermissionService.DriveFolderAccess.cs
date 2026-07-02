@@ -21,7 +21,7 @@ public sealed partial class PermissionService
         }
 
         DriveFileMetadata? folderMetadataOrNull = await mDriveService.GetFileOrNullAsync(DriveItemId.CreateRequired(folderId.GetRequiredValue()), cancellationToken);
-        if (folderMetadataOrNull == null || folderMetadataOrNull.MimeType != GOOGLE_DRIVE_FOLDER_MIME_TYPE)
+        if (folderMetadataOrNull == null || folderMetadataOrNull.MimeType != GoogleMimeTypes.DRIVE_FOLDER)
         {
             return null;
         }
@@ -52,7 +52,7 @@ public sealed partial class PermissionService
         }
 
         DriveFileMetadata? folderMetadataOrNull = await mDriveService.GetFileOrNullAsync(DriveItemId.CreateRequired(folderId.GetRequiredValue()), cancellationToken);
-        if (folderMetadataOrNull == null || folderMetadataOrNull.MimeType != GOOGLE_DRIVE_FOLDER_MIME_TYPE)
+        if (folderMetadataOrNull == null || folderMetadataOrNull.MimeType != GoogleMimeTypes.DRIVE_FOLDER)
         {
             return null;
         }

@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
 using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Models;
 
-public sealed class ApprovalWorkflowOrderUpdateRequest
+internal sealed class ApprovalWorkflowOrderUpdateRequest
 {
     public IReadOnlyList<ApprovalWorkflowId> OrderedWorkflowIds
     {
@@ -12,6 +13,8 @@ public sealed class ApprovalWorkflowOrderUpdateRequest
 
     public ApprovalWorkflowOrderUpdateRequest(IReadOnlyList<ApprovalWorkflowId> orderedWorkflowIds)
     {
+        ArgumentNullException.ThrowIfNull(orderedWorkflowIds);
+
         OrderedWorkflowIds = orderedWorkflowIds;
     }
 }

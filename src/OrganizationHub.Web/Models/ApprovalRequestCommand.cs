@@ -1,10 +1,11 @@
+using System;
 using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Models;
 
 public sealed class ApprovalRequestCommand
 {
-    public string Title
+    public ApprovalRequestTitle Title
     {
         get;
     }
@@ -29,38 +30,53 @@ public sealed class ApprovalRequestCommand
         get;
     }
 
-    public ApprovalUserId FirstApproverUserId
+    public ApprovalApproverSelection ApproverSelection
     {
         get;
+    }
+
+    public ApprovalUserId FirstApproverUserId
+    {
+        get
+        {
+            return ApproverSelection.FirstApproverUserId;
+        }
     }
 
     public ApprovalUserId SecondApproverUserId
     {
-        get;
+        get
+        {
+            return ApproverSelection.SecondApproverUserId;
+        }
     }
 
     public ApprovalUserId FinalApproverUserId
     {
-        get;
+        get
+        {
+            return ApproverSelection.FinalApproverUserId;
+        }
     }
 
     public ApprovalRequestCommand(
-        string title,
+        ApprovalRequestTitle title,
         DriveFolderId sourceFolderId,
         DriveFolderId destinationFolderId,
         DriveItemId fileId,
         ApprovalStepCountSelection stepCount,
-        ApprovalUserId firstApproverUserId,
-        ApprovalUserId secondApproverUserId,
-        ApprovalUserId finalApproverUserId)
+        ApprovalApproverSelection approverSelection)
     {
         Title = title;
         SourceFolderId = sourceFolderId;
         DestinationFolderId = destinationFolderId;
         FileId = fileId;
         StepCount = stepCount;
-        FirstApproverUserId = firstApproverUserId;
-        SecondApproverUserId = secondApproverUserId;
-        FinalApproverUserId = finalApproverUserId;
+        if (approverSelection == null)
+        {
+            throw new ArgumentNullException(nameof(approverSelection));
+        }
+
+        ApproverSelection = approverSelection;
     }
 }

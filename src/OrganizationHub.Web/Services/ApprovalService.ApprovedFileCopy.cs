@@ -13,6 +13,7 @@ public sealed partial class ApprovalService
     private async Task<ServiceResult> copyApprovedFileIfConfiguredAsync(
         OrganizationHubDbContext dbContext,
         ApprovalRequest request,
+        EDriveFileNameConflictResolution conflictResolution,
         CancellationToken cancellationToken
     )
     {
@@ -27,7 +28,25 @@ public sealed partial class ApprovalService
         try
         {
             DriveFolderId approvedFolderId = DriveFolderId.CreateOptional(request.ApprovedFolderId);
-            DriveFileItem copiedFile = await mDriveService.CopyFileToFolderAsync(DriveItemId.CreateOptional(request.FileId), approvedFolderId, DriveItemName.CreateRequired(request.FileName), cancellationToken);
+            DriveItemName approvedFileName = DriveItemName.CreateRequired(request.FileName);
+            DriveItemId replacementFileId = DriveItemId.Empty;
+            if (mDriveFileNameConflictServiceOrNull != null)
+            {
+                DriveFileNameConflictCheckResult conflictCheckResult = await mDriveFileNameConflictServiceOrNull.CheckFileNameConflictAsync(
+                    approvedFolderId,
+                    approvedFileName,
+                    cancellationToken);
+                approvedFileName = getApprovedFileName(approvedFileName, conflictCheckResult, conflictResolution);
+                replacementFileId = getReplacementFileId(conflictCheckResult, conflictResolution);
+            }
+
+            DriveFileCopyRequest copyRequest = createDriveFileCopyRequest(
+                DriveItemId.CreateOptional(request.FileId),
+                approvedFolderId,
+                approvedFileName,
+                conflictResolution,
+                replacementFileId);
+            DriveFileItem copiedFile = await mDriveService.CopyFileToFolderAsync(copyRequest, cancellationToken);
             request.ApprovedFileId = copiedFile.Id;
             dbContext.UploadAuditLogs.Add(createUploadAuditLogForApprovedCopy(request, copiedFile));
             if (mDriveBrowserServiceOrNull != null)
@@ -43,6 +62,50 @@ public sealed partial class ApprovalService
         }
     }
 
+    private static DriveItemName getApprovedFileName(
+        DriveItemName requestedFileName,
+        DriveFileNameConflictCheckResult conflictCheckResult,
+        EDriveFileNameConflictResolution conflictResolution)
+    {
+        if (conflictResolution == EDriveFileNameConflictResolution.AddNewFile && conflictCheckResult.HasConflict)
+        {
+            return conflictCheckResult.SuggestedNewFileName;
+        }
+
+        return requestedFileName;
+    }
+
+    private static DriveItemId getReplacementFileId(
+        DriveFileNameConflictCheckResult conflictCheckResult,
+        EDriveFileNameConflictResolution conflictResolution)
+    {
+        if (conflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile && conflictCheckResult.HasConflict)
+        {
+            return conflictCheckResult.GetFirstExistingFileId();
+        }
+
+        return DriveItemId.Empty;
+    }
+
+    private static DriveFileCopyRequest createDriveFileCopyRequest(
+        DriveItemId sourceFileId,
+        DriveFolderId approvedFolderId,
+        DriveItemName approvedFileName,
+        EDriveFileNameConflictResolution conflictResolution,
+        DriveItemId replacementFileId)
+    {
+        if (conflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile)
+        {
+            return DriveFileCopyRequest.CreateReplacementFile(
+                sourceFileId,
+                approvedFolderId,
+                approvedFileName,
+                replacementFileId);
+        }
+
+        return DriveFileCopyRequest.CreateNewFile(sourceFileId, approvedFolderId, approvedFileName);
+    }
+
     private UploadAuditLog createUploadAuditLogForApprovedCopy(ApprovalRequest request, DriveFileItem copiedFile)
     {
         UploadAuditLog auditLog = new UploadAuditLog();
@@ -53,7 +116,11 @@ public sealed partial class ApprovalService
         auditLog.FolderKind = EDriveFolderKind.TeamApproved;
         auditLog.UploaderUserId = request.RequesterUserId;
         auditLog.UploaderDisplayName = request.RequesterDisplayName;
-        auditLog.UploaderRole = getRequesterRole(request);
+        auditLog.UploaderStoredCompatibilityRole = getRequesterRole(request);
+        auditLog.UploaderTeamId = getRequesterTeamIdOrNull(request);
+        auditLog.UploaderTeamName = getRequesterTeamName(request);
+        auditLog.UploaderPositionId = getRequesterPositionIdOrNull(request);
+        auditLog.UploaderPositionName = getRequesterPositionName(request);
         auditLog.TeamId = request.TeamId;
         auditLog.TeamName = request.TeamName;
         auditLog.UploadedAt = DateTime.UtcNow;

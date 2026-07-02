@@ -10,7 +10,7 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed class PositionManagementService : IPositionManagementService
+internal sealed class PositionManagementService : IPositionManagementService
 {
     private const int SORT_ORDER_STEP = 10;
 
@@ -123,7 +123,12 @@ public sealed class PositionManagementService : IPositionManagementService
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             int requiredTeamId = request.TeamId.GetRequiredValue();
-            List<int> orderedPositionIdValues = request.OrderedPositionIds.Select(positionId => positionId.GetRequiredValue()).Distinct().ToList();
+            if (OrderUpdateRequestValidation.hasDuplicateValues(request.OrderedPositionIds))
+            {
+                return ServiceResult.Fail("정렬할 직책이 중복되어 있습니다.");
+            }
+
+            List<int> orderedPositionIdValues = request.OrderedPositionIds.Select(positionId => positionId.GetRequiredValue()).ToList();
             List<OrganizationPosition> positions = await dbContext.Positions
                 .Where(position => position.TeamId == requiredTeamId && orderedPositionIdValues.Contains(position.Id))
                 .ToListAsync(cancellationToken);

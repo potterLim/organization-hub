@@ -11,8 +11,9 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed partial class NavigationMenuService
+internal sealed partial class NavigationMenuService
 {
+    private const int EMPTY_SORT_ORDER_BASE = 0;
     private const int SORT_ORDER_STEP = 10;
 
     public async Task<IReadOnlyList<NavigationMenuSection>> GetMenuSectionsAsync(CancellationToken cancellationToken)
@@ -37,7 +38,9 @@ public sealed partial class NavigationMenuService
                 .ThenInclude(menuPermission => menuPermission.Team)
                 .ToListAsync(cancellationToken);
             List<NavigationMenuItem> manageableMenuItems = menuItems
-                .Where(menuItem => NavigationMenuRetirementPolicy.IsRetired(menuItem.MenuKey, menuItem.Href) == false)
+                .Where(menuItem => NavigationMenuRetirementPolicy.IsRetired(
+                    NavigationMenuKey.CreateOptional(menuItem.MenuKey),
+                    NavigationPath.CreateOptional(menuItem.Href)) == false)
                 .OrderBy(menuItem => menuItem.Section == null ? int.MaxValue : menuItem.Section.SortOrder)
                 .ThenBy(menuItem => menuItem.SortOrder)
                 .ThenBy(menuItem => menuItem.DisplayName)
@@ -90,7 +93,12 @@ public sealed partial class NavigationMenuService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<int> orderedSectionIdValues = request.OrderedSectionIds.Select(sectionId => sectionId.GetRequiredValue()).Distinct().ToList();
+            if (OrderUpdateRequestValidation.hasDuplicateValues(request.OrderedSectionIds))
+            {
+                return ServiceResult.Fail("정렬할 메뉴 섹션이 중복되어 있습니다.");
+            }
+
+            List<int> orderedSectionIdValues = request.OrderedSectionIds.Select(sectionId => sectionId.GetRequiredValue()).ToList();
             List<NavigationMenuSection> sections = await dbContext.NavigationMenuSections
                 .Where(section => orderedSectionIdValues.Contains(section.Id))
                 .ToListAsync(cancellationToken);
@@ -125,6 +133,11 @@ public sealed partial class NavigationMenuService
             return ServiceResult.Fail("메뉴 섹션을 선택해 주세요.");
         }
 
+        if (NavigationMenuPermissionKeys.ContainsUnknownPermissionKey(formModel.RequiredPermissionKeyValues))
+        {
+            return ServiceResult.Fail("지원하지 않는 필요 권한이 포함되어 있습니다.");
+        }
+
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             NavigationMenuItemId menuItemId = formModel.NavigationMenuItemIdValue;
@@ -138,8 +151,8 @@ public sealed partial class NavigationMenuService
                 return ServiceResult.Fail("메뉴 항목을 찾을 수 없습니다.");
             }
 
-            bool sectionExists = await dbContext.NavigationMenuSections.AnyAsync(section => section.Id == requiredSectionId, cancellationToken);
-            if (sectionExists == false)
+            bool hasSection = await dbContext.NavigationMenuSections.AnyAsync(section => section.Id == requiredSectionId, cancellationToken);
+            if (hasSection == false)
             {
                 return ServiceResult.Fail("메뉴 섹션을 찾을 수 없습니다.");
             }
@@ -148,6 +161,7 @@ public sealed partial class NavigationMenuService
             menuItemOrNull.SectionId = requiredSectionId;
             menuItemOrNull.SortOrder = formModel.SortOrder;
             menuItemOrNull.AccessLevel = menuItemOrNull.IsLocked ? menuItemOrNull.AccessLevel : formModel.AccessLevel;
+            menuItemOrNull.RequiredPermissionKeys = menuItemOrNull.IsLocked ? menuItemOrNull.RequiredPermissionKeys : NavigationMenuPermissionKeys.CreateStorageValue(formModel.RequiredPermissionKeyValues);
             menuItemOrNull.IsActive = menuItemOrNull.IsLocked || formModel.IsActive;
             menuItemOrNull.IsVisibleToAllTeams = MenuAccessLevelUtility.IsTeamScoped(menuItemOrNull.AccessLevel) && formModel.IsVisibleToAllTeams;
             dbContext.NavigationMenuTeamPermissions.RemoveRange(menuItemOrNull.TeamPermissions);
@@ -181,7 +195,12 @@ public sealed partial class NavigationMenuService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<int> orderedMenuItemIdValues = request.OrderedMenuItemIds.Select(menuItemId => menuItemId.GetRequiredValue()).Distinct().ToList();
+            if (OrderUpdateRequestValidation.hasDuplicateValues(request.OrderedMenuItemIds))
+            {
+                return ServiceResult.Fail("정렬할 메뉴가 중복되어 있습니다.");
+            }
+
+            List<int> orderedMenuItemIdValues = request.OrderedMenuItemIds.Select(menuItemId => menuItemId.GetRequiredValue()).ToList();
             List<NavigationMenuItem> menuItems = await dbContext.NavigationMenuItems
                 .Where(menuItem => orderedMenuItemIdValues.Contains(menuItem.Id))
                 .ToListAsync(cancellationToken);
@@ -206,7 +225,13 @@ public sealed partial class NavigationMenuService
 
     private async Task<int> getNextSectionSortOrderAsync(OrganizationHubDbContext dbContext, CancellationToken cancellationToken)
     {
-        int maximumSortOrder = await dbContext.NavigationMenuSections.Select(section => (int?)section.SortOrder).MaxAsync(cancellationToken) ?? 0;
+        int? maximumSortOrderOrNull = await dbContext.NavigationMenuSections.Select(section => (int?)section.SortOrder).MaxAsync(cancellationToken);
+        int maximumSortOrder = EMPTY_SORT_ORDER_BASE;
+        if (maximumSortOrderOrNull.HasValue)
+        {
+            maximumSortOrder = maximumSortOrderOrNull.GetValueOrDefault();
+        }
+
         return maximumSortOrder + SORT_ORDER_STEP;
     }
 }

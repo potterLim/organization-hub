@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,7 +8,7 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed partial class DriveBrowserService
+internal sealed partial class DriveBrowserService
 {
     public async Task<IReadOnlyList<DriveFileItem>> GetRecentFilesAsync(
         UserSession userSession,
@@ -63,14 +62,21 @@ public sealed partial class DriveBrowserService
             return cloneDriveFileItems(cachedFilesOrNull);
         }
 
-        IReadOnlyList<UploadAuditLogItem> recentUploads = await mUploadAuditLogService.GetRecentUploadsForReadableRootsAsync(userSession, folderKind, maximumCount, managementTeamFilter, cancellationToken);
-        List<DriveFileItem> files = new List<DriveFileItem>();
-        foreach (UploadAuditLogItem recentUpload in recentUploads)
-        {
-            files.Add(createDriveFileItemFromRecentUpload(recentUpload));
-        }
+        RecentItemLimit snapshotCount = RecentUploadedFileCachePolicy.CreateSnapshotLimit(maximumCount);
+        IReadOnlyList<UploadAuditLogItem> recentUploads = await mUploadAuditLogService.GetRecentUploadSnapshotsForReadableRootsAsync(userSession, folderKind, snapshotCount, managementTeamFilter, cancellationToken);
+        List<DriveFileItem> files = RecentUploadedFileItemMapper.CreateDriveFileItems(recentUploads, maximumCount);
 
-        mMemoryCache.Set(cacheKey, cloneDriveFileItems(files), RECENT_FILES_CACHE_DURATION);
+        mMemoryCache.Set(cacheKey, cloneDriveFileItems(files), RecentUploadedFileCachePolicy.CACHE_DURATION);
+        RecentUploadedFileCacheRefreshRequest refreshRequest = new RecentUploadedFileCacheRefreshRequest
+        {
+            CacheKey = cacheKey,
+            SnapshotUploads = recentUploads,
+            UserSession = userSession,
+            FolderKind = folderKind,
+            MaximumCount = maximumCount,
+            ManagementTeamFilter = managementTeamFilter
+        };
+        mRecentUploadedFileCacheRefreshQueue.TryEnqueue(refreshRequest);
         return files;
     }
 
@@ -96,51 +102,10 @@ public sealed partial class DriveBrowserService
                 continue;
             }
 
-            DriveFileItem file = createDriveFileItemFromRecentUpload(recentUpload, folder);
+            DriveFileItem file = RecentUploadedFileItemMapper.CreateDriveFileItem(recentUpload, folder);
             files.Add(file);
             existingFileIds.Add(DriveItemId.CreateOptional(file.Id));
         }
-    }
-
-    private static DriveFileItem createDriveFileItemFromRecentUpload(UploadAuditLogItem recentUpload, DriveFolderReference folder)
-    {
-        DriveFileItem file = createDriveFileItemFromRecentUpload(recentUpload);
-        file.TeamKey = folder.TeamKey.GetOptionalValue();
-        file.TeamName = string.IsNullOrWhiteSpace(recentUpload.TeamName) ? folder.TeamName : recentUpload.TeamName;
-        if (string.IsNullOrWhiteSpace(file.TeamName))
-        {
-            file.TeamName = folder.DisplayName;
-        }
-
-        file.FolderDisplayName = folder.DisplayName;
-        return file;
-    }
-
-    private static DriveFileItem createDriveFileItemFromRecentUpload(UploadAuditLogItem recentUpload)
-    {
-        DriveFileItem file = new DriveFileItem();
-        file.Id = recentUpload.FileId;
-        file.Name = recentUpload.FileName;
-        file.MimeType = inferMimeTypeFromFileName(recentUpload.FileName);
-        file.CreatedTime = recentUpload.UploadedAt;
-        file.ModifiedTime = recentUpload.UploadedAt;
-        file.IsFolder = false;
-        file.TeamName = recentUpload.TeamName;
-        file.FolderDisplayName = recentUpload.FolderDisplayName;
-        file.UploadedByDisplayName = recentUpload.UploaderDisplayName;
-        file.UploadedAt = recentUpload.UploadedAt;
-        file.CanPreviewInSite = file.MimeType == "application/pdf";
-        return file;
-    }
-
-    private static string inferMimeTypeFromFileName(string fileName)
-    {
-        if (fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-        {
-            return "application/pdf";
-        }
-
-        return string.Empty;
     }
 
     private static bool isManagementFile(DriveFileItem file)

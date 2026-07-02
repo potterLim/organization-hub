@@ -54,6 +54,6 @@ public class GlobalSetting
     {
         get; set;
     }
-    public bool ShowTodoAuthor { get; set; } = true;
-    public bool ShowCalendarAuthor { get; set; } = true;
+    public bool ShouldShowTodoAuthor { get; set; } = true;
+    public bool ShouldShowCalendarAuthor { get; set; } = true;
 }

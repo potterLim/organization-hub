@@ -14,7 +14,12 @@ internal static partial class OrganizationHubModelConfiguration
         userBuilder.Property(user => user.Username).HasMaxLength(64).IsRequired();
         userBuilder.Property(user => user.DisplayName).HasMaxLength(120).IsRequired();
         userBuilder.Property(user => user.PasswordHash).HasMaxLength(512).IsRequired();
-        userBuilder.Property(user => user.Role).HasConversion<string>().HasMaxLength(32).IsRequired();
+        userBuilder
+            .Property(user => user.StoredCompatibilityRole)
+            .HasColumnName("Role")
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .IsRequired();
         userBuilder
             .HasOne(user => user.Team)
             .WithMany(team => team.UserAccounts)

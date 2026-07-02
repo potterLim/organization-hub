@@ -16,13 +16,18 @@ internal static partial class OrganizationHubModelConfiguration
     {
         EntityTypeBuilder<ApprovalWorkflow> approvalWorkflowBuilder = modelBuilder.Entity<ApprovalWorkflow>();
         approvalWorkflowBuilder.HasKey(approvalWorkflow => approvalWorkflow.Id);
-        approvalWorkflowBuilder.HasIndex(approvalWorkflow => new { approvalWorkflow.AppliesToTeamId, approvalWorkflow.Priority });
+        approvalWorkflowBuilder.HasIndex(approvalWorkflow => new { approvalWorkflow.AppliesToTeamId, approvalWorkflow.AppliesToPositionId, approvalWorkflow.Priority });
         approvalWorkflowBuilder.Property(approvalWorkflow => approvalWorkflow.Name).HasMaxLength(120).IsRequired();
         approvalWorkflowBuilder.Property(approvalWorkflow => approvalWorkflow.Description).HasMaxLength(500).IsRequired();
         approvalWorkflowBuilder
             .HasOne(approvalWorkflow => approvalWorkflow.AppliesToTeam)
             .WithMany(team => team.ApprovalWorkflows)
             .HasForeignKey(approvalWorkflow => approvalWorkflow.AppliesToTeamId)
+            .OnDelete(DeleteBehavior.Restrict);
+        approvalWorkflowBuilder
+            .HasOne(approvalWorkflow => approvalWorkflow.AppliesToPosition)
+            .WithMany(position => position.RequesterApprovalWorkflows)
+            .HasForeignKey(approvalWorkflow => approvalWorkflow.AppliesToPositionId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -103,15 +102,15 @@ public sealed partial class PermissionService
     {
         string cacheKey = "OrganizationHub:FolderInsideOfficialRoot:" + officialRootFolderId.GetRequiredValue() + ":" + folderId.GetRequiredValue();
         object? cachedValueOrNull;
-        if (mMemoryCache.TryGetValue(cacheKey, out cachedValueOrNull) && cachedValueOrNull is bool cachedResult)
+        if (mMemoryCache.TryGetValue(cacheKey, out cachedValueOrNull) && cachedValueOrNull is bool isInsideRootCached)
         {
-            return cachedResult;
+            return isInsideRootCached;
         }
 
         IReadOnlySet<DriveFolderId> ancestorFolderIds = await mDriveService.GetAncestorFolderIdsAsync(DriveItemId.CreateRequired(folderId.GetRequiredValue()), cancellationToken);
         bool isInsideRoot = ancestorFolderIds.Contains(officialRootFolderId);
         MemoryCacheEntryOptions cacheEntryOptions = new MemoryCacheEntryOptions();
-        cacheEntryOptions.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2);
+        cacheEntryOptions.AbsoluteExpirationRelativeToNow = OFFICIAL_ROOT_FOLDER_CHECK_CACHE_DURATION;
         mMemoryCache.Set(cacheKey, isInsideRoot, cacheEntryOptions);
         return isInsideRoot;
     }

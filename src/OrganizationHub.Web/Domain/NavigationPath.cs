@@ -3,6 +3,7 @@ namespace OrganizationHub.Web.Domain;
 public readonly record struct NavigationPath
 {
     public const string DASHBOARD_VALUE = "/dashboard";
+    private const int ROOT_PATH_LENGTH = 1;
 
     private readonly string? mValueOrNull;
 
@@ -40,7 +41,7 @@ public readonly record struct NavigationPath
         }
 
         string normalizedPath = pathOrNull.Trim();
-        if (normalizedPath.EndsWith("/") && normalizedPath.Length > 1)
+        if (normalizedPath.EndsWith("/") && normalizedPath.Length > ROOT_PATH_LENGTH)
         {
             normalizedPath = normalizedPath.TrimEnd('/');
         }

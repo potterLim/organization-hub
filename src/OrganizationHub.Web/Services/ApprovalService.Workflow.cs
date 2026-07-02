@@ -20,19 +20,26 @@ public sealed partial class ApprovalService
     {
         OrganizationTeamId? userTeamIdOrNull = createUserTeamIdOrNull(userSession);
         int? userTeamIdValueOrNull = OrganizationTeamId.GetValueOrNull(userTeamIdOrNull);
-        ApprovalWorkflow? workflowOrNull = await dbContext.ApprovalWorkflows
+        OrganizationPositionId? userPositionIdOrNull = createUserPositionIdOrNull(users, userSession);
+        int? userPositionIdValueOrNull = OrganizationPositionId.GetValueOrNull(userPositionIdOrNull);
+        List<ApprovalWorkflow> candidateWorkflows = await dbContext.ApprovalWorkflows
             .Include(workflow => workflow.Steps)
-            .Where(workflow => workflow.IsActive && (workflow.AppliesToTeamId == null || workflow.AppliesToTeamId == userTeamIdValueOrNull))
-            .OrderBy(workflow => workflow.AppliesToTeamId == userTeamIdValueOrNull ? 0 : 1)
+            .Where(workflow =>
+                workflow.IsActive &&
+                (workflow.AppliesToTeamId == null || workflow.AppliesToTeamId == userTeamIdValueOrNull) &&
+                (workflow.AppliesToPositionId == null || workflow.AppliesToPositionId == userPositionIdValueOrNull))
+            .ToListAsync(cancellationToken);
+        ApprovalWorkflow? workflowOrNull = candidateWorkflows
+            .OrderBy(workflow => getWorkflowMatchOrder(workflow, userTeamIdValueOrNull, userPositionIdValueOrNull))
             .ThenBy(workflow => workflow.Priority)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefault();
         if (workflowOrNull == null)
         {
             return null;
         }
 
         List<ApprovalWorkflowStep> steps = workflowOrNull.Steps.OrderBy(step => step.StepOrder).ToList();
-        if (steps.Count <= 0 || steps.Count > 3)
+        if (ApprovalStepCount.IsSupportedValue(steps.Count) == false)
         {
             return null;
         }
@@ -67,18 +74,57 @@ public sealed partial class ApprovalService
         ApprovalStepCount selectedStepCount = new ApprovalStepCount(selectedApprovers.Count);
         ApprovalDefaultLineOption defaultLine = new ApprovalDefaultLineOption();
         defaultLine.StepCount = selectedStepCount;
-        defaultLine.FinalApproverUserId = finalApprover.UserId;
-        if (selectedApprovers.Count >= 2)
+        defaultLine.FinalApproverUserIdValue = ApprovalUserId.CreateExisting(finalApprover.UserId);
+        if (selectedStepCount.RequiresFirstApprover())
         {
-            defaultLine.FirstApproverUserId = selectedApprovers[0].UserId;
+            defaultLine.FirstApproverUserIdValue = ApprovalUserId.CreateExisting(selectedApprovers[0].UserId);
         }
 
-        if (selectedApprovers.Count == 3)
+        if (selectedStepCount.RequiresSecondApprover())
         {
-            defaultLine.SecondApproverUserId = selectedApprovers[1].UserId;
+            defaultLine.SecondApproverUserIdValue = ApprovalUserId.CreateExisting(selectedApprovers[1].UserId);
         }
 
         return new ConfiguredApprovalLine(selectedStepCount, intermediateApprovers, new List<ApprovalUserOption> { finalApprover }, defaultLine);
+    }
+
+    private OrganizationPositionId? createUserPositionIdOrNull(
+        IReadOnlyList<UserAccount> users,
+        UserSession userSession)
+    {
+        int currentUserId = userSession.UserAccountId.GetRequiredValue();
+        UserAccount? userAccountOrNull = users.FirstOrDefault(user => user.Id == currentUserId);
+        if (userAccountOrNull == null || userAccountOrNull.PositionId.HasValue == false)
+        {
+            return null;
+        }
+
+        return OrganizationPositionId.CreateExisting(userAccountOrNull.PositionId.GetValueOrDefault());
+    }
+
+    private EApprovalWorkflowMatchOrder getWorkflowMatchOrder(
+        ApprovalWorkflow workflow,
+        int? userTeamIdValueOrNull,
+        int? userPositionIdValueOrNull)
+    {
+        bool isExactTeamMatch = workflow.AppliesToTeamId.HasValue && workflow.AppliesToTeamId == userTeamIdValueOrNull;
+        bool isExactPositionMatch = workflow.AppliesToPositionId.HasValue && workflow.AppliesToPositionId == userPositionIdValueOrNull;
+        if (isExactTeamMatch && isExactPositionMatch)
+        {
+            return EApprovalWorkflowMatchOrder.TeamAndPosition;
+        }
+
+        if (isExactTeamMatch)
+        {
+            return EApprovalWorkflowMatchOrder.Team;
+        }
+
+        if (isExactPositionMatch)
+        {
+            return EApprovalWorkflowMatchOrder.Position;
+        }
+
+        return EApprovalWorkflowMatchOrder.Global;
     }
 
     private UserAccount? resolveWorkflowStepApproverOrNull(
@@ -88,9 +134,10 @@ public sealed partial class ApprovalService
         IReadOnlySet<int> usedUserIds,
         EApprovalWorkflowStepRole stepRole)
     {
+        int currentUserId = userSession.UserAccountId.GetRequiredValue();
         List<UserAccount> candidates = getWorkflowStepCandidates(users, userSession, step, stepRole)
-            .Where(user => user.Id != userSession.UserId && usedUserIds.Contains(user.Id) == false)
-            .Where(user => userHasWorkflowPermission(user, userSession, step, stepRole))
+            .Where(user => user.Id != currentUserId && usedUserIds.Contains(user.Id) == false)
+            .Where(user => hasUserWorkflowPermission(user, userSession, step, stepRole))
             .OrderBy(user => getApproverSortOrder(user, userSession))
             .ThenBy(user => user.DisplayName)
             .ToList();
@@ -114,7 +161,7 @@ public sealed partial class ApprovalService
             case EApproverSelectionType.PositionInSelectedTeam:
                 return getSelectedTeamPositionCandidates(users, step);
             case EApproverSelectionType.PermissionHolder:
-                return users.Where(user => userHasWorkflowPermission(user, userSession, step, stepRole)).ToList();
+                return users.Where(user => hasUserWorkflowPermission(user, userSession, step, stepRole)).ToList();
             default:
                 return new List<UserAccount>();
         }
@@ -160,7 +207,7 @@ public sealed partial class ApprovalService
             return new List<UserAccount>();
         }
 
-        int requesterTeamId = userSession.GetRequiredTeamIdValue();
+        int requesterTeamId = userSession.GetRequiredOrganizationTeamId().GetRequiredValue();
         int approverPositionId = step.ApproverPositionId.GetValueOrDefault();
         return users
             .Where(user =>
@@ -187,30 +234,38 @@ public sealed partial class ApprovalService
             .ToList();
     }
 
-    private bool userHasWorkflowPermission(UserAccount user, UserSession userSession, ApprovalWorkflowStep step, EApprovalWorkflowStepRole stepRole)
+    private bool hasUserWorkflowPermission(UserAccount user, UserSession userSession, ApprovalWorkflowStep step, EApprovalWorkflowStepRole stepRole)
     {
-        string permissionKey = getWorkflowStepPermissionKey(step, stepRole);
-        return userHasApprovalPermission(user, userSession, permissionKey);
+        PermissionKey permissionKey = getWorkflowStepPermissionKey(step, stepRole);
+        return hasUserApprovalPermission(user, userSession, permissionKey);
     }
 
-    private string getWorkflowStepPermissionKey(ApprovalWorkflowStep step, EApprovalWorkflowStepRole stepRole)
+    private PermissionKey getWorkflowStepPermissionKey(ApprovalWorkflowStep step, EApprovalWorkflowStepRole stepRole)
     {
         if (string.IsNullOrWhiteSpace(step.RequiredPermissionKey) == false)
         {
-            return step.RequiredPermissionKey;
+            return new PermissionKey(step.RequiredPermissionKey);
         }
 
         if (stepRole == EApprovalWorkflowStepRole.Final)
         {
-            return PermissionKeys.APPROVAL_FINAL_APPROVE;
+            return new PermissionKey(PermissionKeys.APPROVAL_FINAL_APPROVE);
         }
 
-        return PermissionKeys.APPROVAL_APPROVE;
+        return new PermissionKey(PermissionKeys.APPROVAL_APPROVE);
     }
 
     private enum EApprovalWorkflowStepRole
     {
         Intermediate,
         Final
+    }
+
+    private enum EApprovalWorkflowMatchOrder
+    {
+        TeamAndPosition = 0,
+        Team = 1,
+        Position = 2,
+        Global = 3
     }
 }

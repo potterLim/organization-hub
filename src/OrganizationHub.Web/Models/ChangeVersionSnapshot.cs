@@ -5,6 +5,8 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class ChangeVersionSnapshot
 {
+    private const long INITIAL_VERSION = 0;
+
     public Dictionary<ChangeVersionKey, long> Versions { get; set; } = new Dictionary<ChangeVersionKey, long>();
 
     public long GetVersion(ChangeVersionKey key)
@@ -15,6 +17,6 @@ public sealed class ChangeVersionSnapshot
             return version;
         }
 
-        return 0;
+        return INITIAL_VERSION;
     }
 }

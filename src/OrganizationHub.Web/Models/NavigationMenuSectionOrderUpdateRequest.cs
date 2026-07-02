@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
 using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Models;
 
-public sealed class NavigationMenuSectionOrderUpdateRequest
+internal sealed class NavigationMenuSectionOrderUpdateRequest
 {
     public IReadOnlyList<NavigationMenuSectionId> OrderedSectionIds
     {
@@ -12,6 +13,8 @@ public sealed class NavigationMenuSectionOrderUpdateRequest
 
     public NavigationMenuSectionOrderUpdateRequest(IReadOnlyList<NavigationMenuSectionId> orderedSectionIds)
     {
+        ArgumentNullException.ThrowIfNull(orderedSectionIds);
+
         OrderedSectionIds = orderedSectionIds;
     }
 }

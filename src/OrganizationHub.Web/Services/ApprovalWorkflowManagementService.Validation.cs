@@ -9,7 +9,7 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed partial class ApprovalWorkflowManagementService
+internal sealed partial class ApprovalWorkflowManagementService
 {
     private async Task<ServiceResult> validateWorkflowFormAsync(ApprovalWorkflowFormModel formModel, CancellationToken cancellationToken)
     {
@@ -28,12 +28,19 @@ public sealed partial class ApprovalWorkflowManagementService
             IReadOnlySet<int> teamIds = await dbContext.Teams.Select(team => team.Id).ToHashSetAsync(cancellationToken);
             IReadOnlySet<int> userIds = await dbContext.UserAccounts.Select(user => user.Id).ToHashSetAsync(cancellationToken);
             IReadOnlySet<int> positionIds = await dbContext.Positions.Select(position => position.Id).ToHashSetAsync(cancellationToken);
+            Dictionary<int, int> positionTeamIdsByPositionId = await dbContext.Positions.ToDictionaryAsync(position => position.Id, position => position.TeamId, cancellationToken);
             IReadOnlySet<string> permissionKeys = PermissionCatalog.GetDefinitions().Select(definition => definition.Key).ToHashSet();
 
             int? appliesToTeamIdValueOrNull = OrganizationTeamId.GetValueOrNull(formModel.AppliesToTeamIdOrNull);
             if (appliesToTeamIdValueOrNull.HasValue && teamIds.Contains(appliesToTeamIdValueOrNull.GetValueOrDefault()) == false)
             {
                 return ServiceResult.Fail("적용 팀을 찾을 수 없습니다.");
+            }
+
+            ServiceResult requesterPositionValidationResult = validateRequesterPositionCondition(formModel, appliesToTeamIdValueOrNull, positionTeamIdsByPositionId);
+            if (requesterPositionValidationResult.IsSuccess == false)
+            {
+                return requesterPositionValidationResult;
             }
 
             foreach (ApprovalWorkflowStepFormModel stepFormModel in formModel.Steps.OrderBy(step => step.StepOrder))
@@ -47,6 +54,38 @@ public sealed partial class ApprovalWorkflowManagementService
         }
 
         return ServiceResult.Succeed();
+    }
+
+    private ServiceResult validateRequesterPositionCondition(
+        ApprovalWorkflowFormModel formModel,
+        int? appliesToTeamIdValueOrNull,
+        IReadOnlyDictionary<int, int> positionTeamIdsByPositionId)
+    {
+        int? appliesToPositionIdValueOrNull = OrganizationPositionId.GetValueOrNull(formModel.AppliesToPositionIdOrNull);
+        if (appliesToPositionIdValueOrNull.HasValue == false)
+        {
+            return ServiceResult.Succeed();
+        }
+
+        int appliesToPositionIdValue = appliesToPositionIdValueOrNull.GetValueOrDefault();
+        int positionTeamId;
+        bool hasPosition = positionTeamIdsByPositionId.TryGetValue(appliesToPositionIdValue, out positionTeamId);
+        if (hasPosition == false)
+        {
+            return ServiceResult.Fail("요청 직책을 찾을 수 없습니다.");
+        }
+
+        if (appliesToTeamIdValueOrNull.HasValue == false)
+        {
+            return ServiceResult.Succeed();
+        }
+
+        if (positionTeamId == appliesToTeamIdValueOrNull.GetValueOrDefault())
+        {
+            return ServiceResult.Succeed();
+        }
+
+        return ServiceResult.Fail("요청 직책은 선택한 요청 팀에 속해야 합니다.");
     }
 
     private ServiceResult validateWorkflowStep(

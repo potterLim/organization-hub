@@ -13,6 +13,8 @@ public sealed class ApprovalStepItem
     {
         get; set;
     }
+    public string ApproverTeamName { get; set; } = string.Empty;
+    public string ApproverPositionName { get; set; } = string.Empty;
     public string ApproverDisplayName { get; set; } = string.Empty;
     public EApprovalStepStatus Status
     {
@@ -23,4 +25,16 @@ public sealed class ApprovalStepItem
         get; set;
     }
     public string Comment { get; set; } = string.Empty;
+
+    public string GetApproverAffiliationText()
+    {
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(ApproverTeamName, ApproverPositionName);
+        string affiliationText = affiliationLabel.GetFullText();
+        if (string.IsNullOrWhiteSpace(affiliationText))
+        {
+            return ApproverDisplayName;
+        }
+
+        return affiliationText;
+    }
 }

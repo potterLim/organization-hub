@@ -6,16 +6,13 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using OrganizationHub.Web.Data;
 using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
 public sealed class WorkGuidelineService : IWorkGuidelineService
 {
-    private const int MIN_SECTION_COUNT = 1;
-    private const int MAX_SECTION_COUNT = 6;
-    private const int SORT_ORDER_STEP = 10;
-
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;
 
     public WorkGuidelineService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory)
@@ -45,15 +42,20 @@ public sealed class WorkGuidelineService : IWorkGuidelineService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
+            List<WorkGuidelineSection> existingSections = await dbContext.WorkGuidelineSections.ToListAsync(cancellationToken);
+            Dictionary<int, WorkGuidelineSection> sectionsById = existingSections.ToDictionary(section => section.Id);
+            ServiceResult sectionIdValidationResult = validateExistingSectionIds(formModels, sectionsById);
+            if (sectionIdValidationResult.IsSuccess == false)
+            {
+                return sectionIdValidationResult;
+            }
+
             List<int> existingSectionIdValues = formModels
                 .Where(formModel => formModel.SectionIdValue.HasValue)
                 .Select(formModel => formModel.SectionIdValue.GetRequiredValue())
-                .Distinct()
                 .ToList();
-            List<WorkGuidelineSection> existingSections = await dbContext.WorkGuidelineSections.ToListAsync(cancellationToken);
-            Dictionary<int, WorkGuidelineSection> sectionsById = existingSections.ToDictionary(section => section.Id);
 
-            int sortOrder = SORT_ORDER_STEP;
+            int sortOrder = WorkGuidelinePolicy.SORT_ORDER_STEP;
             foreach (WorkGuidelineSectionFormModel formModel in formModels)
             {
                 WorkGuidelineSection section = getOrCreateSection(dbContext, sectionsById, formModel);
@@ -61,7 +63,7 @@ public sealed class WorkGuidelineService : IWorkGuidelineService
                 section.Body = formModel.Body.Trim();
                 section.SortOrder = sortOrder;
                 section.UpdatedAt = DateTime.UtcNow;
-                sortOrder += SORT_ORDER_STEP;
+                sortOrder += WorkGuidelinePolicy.SORT_ORDER_STEP;
             }
 
             foreach (WorkGuidelineSection section in existingSections)
@@ -79,9 +81,9 @@ public sealed class WorkGuidelineService : IWorkGuidelineService
 
     private static ServiceResult validateSections(IReadOnlyList<WorkGuidelineSectionFormModel> formModels)
     {
-        if (formModels.Count < MIN_SECTION_COUNT || formModels.Count > MAX_SECTION_COUNT)
+        if (WorkGuidelinePolicy.IsValidSectionCount(formModels.Count) == false)
         {
-            return ServiceResult.Fail("업무 기준은 1개부터 6개까지 구성할 수 있습니다.");
+            return ServiceResult.Fail("업무 기준은 0개부터 9개까지 구성할 수 있습니다.");
         }
 
         foreach (WorkGuidelineSectionFormModel formModel in formModels)
@@ -89,6 +91,33 @@ public sealed class WorkGuidelineService : IWorkGuidelineService
             if (string.IsNullOrWhiteSpace(formModel.Title))
             {
                 return ServiceResult.Fail("각 업무 기준에는 제목이 필요합니다.");
+            }
+        }
+
+        return ServiceResult.Succeed();
+    }
+
+    private static ServiceResult validateExistingSectionIds(
+        IReadOnlyList<WorkGuidelineSectionFormModel> formModels,
+        IReadOnlyDictionary<int, WorkGuidelineSection> sectionsById)
+    {
+        HashSet<int> sectionIdValues = new HashSet<int>();
+        foreach (WorkGuidelineSectionFormModel formModel in formModels)
+        {
+            if (formModel.SectionIdValue.HasValue == false)
+            {
+                continue;
+            }
+
+            int sectionIdValue = formModel.SectionIdValue.GetRequiredValue();
+            if (sectionIdValues.Add(sectionIdValue) == false)
+            {
+                return ServiceResult.Fail("중복된 업무 기준이 포함되어 있습니다.");
+            }
+
+            if (sectionsById.ContainsKey(sectionIdValue) == false)
+            {
+                return ServiceResult.Fail("저장할 업무 기준을 찾을 수 없습니다.");
             }
         }
 
@@ -115,5 +144,4 @@ public sealed class WorkGuidelineService : IWorkGuidelineService
         dbContext.WorkGuidelineSections.Add(createdSection);
         return createdSection;
     }
-
 }

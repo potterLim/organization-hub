@@ -31,10 +31,15 @@ public class CalendarEventDeletionAuditLog
         get; set;
     }
     public string DeletedByDisplayName { get; set; } = string.Empty;
-    public EUserRole DeletedByRole
+    public EStoredCompatibilityRole DeletedByStoredCompatibilityRole
     {
         get; set;
     }
+    public int? DeletedByPositionId
+    {
+        get; set;
+    }
+    public string DeletedByPositionName { get; set; } = string.Empty;
     public int? DeletedByTeamId
     {
         get; set;

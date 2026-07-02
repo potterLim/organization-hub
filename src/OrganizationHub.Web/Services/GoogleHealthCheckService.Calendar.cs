@@ -18,7 +18,7 @@ public sealed partial class GoogleHealthCheckService
     {
         IReadOnlyList<GoogleCalendarListItem> calendars =
             await mGoogleWorkspaceBrowserService.ListCalendarsAsync(cancellationToken);
-        HashSet<string> calendarIds = new HashSet<string>(calendars.Select(calendar => calendar.Id));
+        HashSet<string> calendarIds = createCalendarIdSet(calendars);
         addCalendarItem(
             items,
             "Calendar",
@@ -52,7 +52,7 @@ public sealed partial class GoogleHealthCheckService
     {
         if (string.IsNullOrWhiteSpace(calendarIdOrNull))
         {
-            addItem(items, area, name, STATUS_WARNING, "Calendar가 연결되지 않았습니다.");
+            addItem(items, area, name, EGoogleHealthStatus.Warning, "Calendar가 연결되지 않았습니다.");
             return;
         }
 
@@ -61,7 +61,18 @@ public sealed partial class GoogleHealthCheckService
             items,
             area,
             name,
-            hasCalendar ? STATUS_HEALTHY : STATUS_ERROR,
+            hasCalendar ? EGoogleHealthStatus.Healthy : EGoogleHealthStatus.Error,
             hasCalendar ? "연결된 계정에서 확인되었습니다." : "연결된 계정에서 이 Calendar를 찾을 수 없습니다.");
+    }
+
+    private static HashSet<string> createCalendarIdSet(IReadOnlyList<GoogleCalendarListItem> calendars)
+    {
+        HashSet<string> calendarIds = new HashSet<string>(calendars.Select(calendar => calendar.Id));
+        if (calendars.Any(calendar => calendar.IsPrimary))
+        {
+            calendarIds.Add("primary");
+        }
+
+        return calendarIds;
     }
 }

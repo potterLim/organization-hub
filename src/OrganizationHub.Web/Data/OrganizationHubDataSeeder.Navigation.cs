@@ -27,6 +27,11 @@ public sealed partial class OrganizationHubDataSeeder
             existingMenuItemOrNull.Href = defaultMenuItem.Href;
             existingMenuItemOrNull.IconKey = defaultMenuItem.IconKey;
             existingMenuItemOrNull.IsLocked = defaultMenuItem.IsLocked;
+            if (string.IsNullOrWhiteSpace(existingMenuItemOrNull.RequiredPermissionKeys) || existingMenuItemOrNull.IsLocked)
+            {
+                existingMenuItemOrNull.RequiredPermissionKeys = defaultMenuItem.RequiredPermissionKeys;
+            }
+
             if (existingMenuItemOrNull.SectionId <= 0 || existingMenuItemOrNull.Section == null)
             {
                 existingMenuItemOrNull.Section = defaultMenuItem.Section;

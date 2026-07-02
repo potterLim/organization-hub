@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 using DriveDataFile = Google.Apis.Drive.v3.Data.File;
 using DriveFileList = Google.Apis.Drive.v3.Data.FileList;
@@ -49,6 +50,8 @@ public sealed partial class GoogleDriveService
         clonedFile.TeamName = file.TeamName;
         clonedFile.FolderDisplayName = file.FolderDisplayName;
         clonedFile.UploadedByDisplayName = file.UploadedByDisplayName;
+        clonedFile.UploadedByTeamName = file.UploadedByTeamName;
+        clonedFile.UploadedByPositionName = file.UploadedByPositionName;
         clonedFile.UploadedAt = file.UploadedAt;
         clonedFile.CanPreviewInSite = file.CanPreviewInSite;
         clonedFile.Size = file.Size;
@@ -61,13 +64,13 @@ public sealed partial class GoogleDriveService
         item.Id = getTextOrEmpty(file.Id);
         item.Name = getTextOrEmpty(file.Name);
         item.MimeType = getTextOrEmpty(file.MimeType);
-        item.CreatedTime = file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.DateTime : null;
-        item.ModifiedTime = file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.DateTime : null;
+        item.CreatedTime = file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.UtcDateTime : null;
+        item.ModifiedTime = file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.UtcDateTime : null;
         item.IconLink = getTextOrEmpty(file.IconLink);
         item.ThumbnailLink = getTextOrEmpty(file.ThumbnailLink);
-        item.IsFolder = file.MimeType == "application/vnd.google-apps.folder";
+        item.IsFolder = file.MimeType == GoogleMimeTypes.DRIVE_FOLDER;
         item.TeamName = teamName;
-        item.CanPreviewInSite = file.MimeType == "application/pdf";
+        item.CanPreviewInSite = file.MimeType == GoogleMimeTypes.PDF;
         item.Size = file.Size;
         return item;
     }

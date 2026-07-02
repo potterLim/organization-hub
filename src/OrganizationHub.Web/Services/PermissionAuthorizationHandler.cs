@@ -23,26 +23,11 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
             return;
         }
 
-        bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSessionOrNull, CancellationToken.None);
-        if (usesConfiguredPermissions)
+        OrganizationTeamId? targetTeamIdOrNull = getTargetTeamIdOrNull(requirement, userSessionOrNull);
+        foreach (PermissionKey permissionKey in requirement.PermissionKeys)
         {
-            OrganizationTeamId? targetTeamIdOrNull = getTargetTeamIdOrNull(requirement, userSessionOrNull);
-            foreach (PermissionKey permissionKey in requirement.PermissionKeys)
-            {
-                bool hasPermission = await mOrganizationPermissionService.HasPermissionAsync(userSessionOrNull, permissionKey, targetTeamIdOrNull, CancellationToken.None);
-                if (hasPermission)
-                {
-                    context.Succeed(requirement);
-                    return;
-                }
-            }
-
-            return;
-        }
-
-        foreach (string roleName in requirement.FallbackRoleNames)
-        {
-            if (context.User.IsInRole(roleName))
+            bool hasPermission = await mOrganizationPermissionService.HasPermissionAsync(userSessionOrNull, permissionKey, targetTeamIdOrNull, CancellationToken.None);
+            if (hasPermission)
             {
                 context.Succeed(requirement);
                 return;

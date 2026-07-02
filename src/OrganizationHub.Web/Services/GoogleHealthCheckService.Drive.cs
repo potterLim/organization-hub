@@ -101,7 +101,7 @@ public sealed partial class GoogleHealthCheckService
     {
         if (string.IsNullOrWhiteSpace(request.FolderIdOrNull))
         {
-            addItem(items, request.Area, request.Name, STATUS_WARNING, "폴더가 연결되지 않았습니다.");
+            addItem(items, request.Area, request.Name, EGoogleHealthStatus.Warning, "폴더가 연결되지 않았습니다.");
             return;
         }
 
@@ -109,14 +109,14 @@ public sealed partial class GoogleHealthCheckService
         DriveFileMetadata? metadataOrNull = await mDriveService.GetFileOrNullAsync(folderItemId, cancellationToken);
         if (metadataOrNull == null)
         {
-            addItem(items, request.Area, request.Name, STATUS_ERROR, "연결된 계정에서 폴더를 찾을 수 없습니다.");
+            addItem(items, request.Area, request.Name, EGoogleHealthStatus.Error, "연결된 계정에서 폴더를 찾을 수 없습니다.");
             return;
         }
 
         if (request.FolderCheckKind == EGoogleHealthFolderCheckKind.RootFolder ||
             string.IsNullOrWhiteSpace(request.OfficialRootFolderId))
         {
-            addItem(items, request.Area, request.Name, STATUS_HEALTHY, metadataOrNull.Name + " 폴더에 접근할 수 있습니다.");
+            addItem(items, request.Area, request.Name, EGoogleHealthStatus.Healthy, metadataOrNull.Name + " 폴더에 접근할 수 있습니다.");
             return;
         }
 
@@ -137,7 +137,7 @@ public sealed partial class GoogleHealthCheckService
             items,
             request.Area,
             request.Name,
-            isInsideOfficialRoot ? STATUS_HEALTHY : STATUS_ERROR,
+            isInsideOfficialRoot ? EGoogleHealthStatus.Healthy : EGoogleHealthStatus.Error,
             isInsideOfficialRoot ? metadata.Name + " 폴더가 기본 자료 위치 안에 있습니다." : metadata.Name + " 폴더가 기본 자료 위치 안에 있지 않습니다.");
     }
 

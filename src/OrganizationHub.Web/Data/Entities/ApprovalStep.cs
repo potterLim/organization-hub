@@ -30,6 +30,16 @@ public class ApprovalStep
         get; set;
     }
     public string ApproverDisplayName { get; set; } = string.Empty;
+    public int? ApproverTeamId
+    {
+        get; set;
+    }
+    public string ApproverTeamName { get; set; } = string.Empty;
+    public int? ApproverPositionId
+    {
+        get; set;
+    }
+    public string ApproverPositionName { get; set; } = string.Empty;
     public EApprovalStepStatus Status
     {
         get; set;

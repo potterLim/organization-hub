@@ -24,7 +24,7 @@ public sealed partial class GoogleWorkspaceBrowserService
             GoogleDriveFolderItem folderItem = new GoogleDriveFolderItem();
             folderItem.Id = getTextOrEmpty(file.Id);
             folderItem.Name = getTextOrEmpty(file.Name);
-            folderItem.ModifiedTime = file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.DateTime : null;
+            folderItem.ModifiedTime = file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.UtcDateTime : null;
             folders.Add(folderItem);
         }
 

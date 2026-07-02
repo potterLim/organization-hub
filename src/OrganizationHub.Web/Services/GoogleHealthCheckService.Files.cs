@@ -27,7 +27,7 @@ public sealed partial class GoogleHealthCheckService
     {
         if (string.IsNullOrWhiteSpace(fileIdOrNull))
         {
-            addItem(items, area, name, STATUS_WARNING, "파일이 연결되지 않았습니다.");
+            addItem(items, area, name, EGoogleHealthStatus.Warning, "파일이 연결되지 않았습니다.");
             return;
         }
 
@@ -35,7 +35,7 @@ public sealed partial class GoogleHealthCheckService
             await mDriveService.GetFileOrNullAsync(DriveItemId.CreateOptional(fileIdOrNull), cancellationToken);
         if (metadataOrNull == null)
         {
-            addItem(items, area, name, STATUS_ERROR, "연결된 계정에서 파일을 찾을 수 없습니다.");
+            addItem(items, area, name, EGoogleHealthStatus.Error, "연결된 계정에서 파일을 찾을 수 없습니다.");
             return;
         }
 
@@ -43,7 +43,7 @@ public sealed partial class GoogleHealthCheckService
             items,
             area,
             name,
-            STATUS_HEALTHY,
+            EGoogleHealthStatus.Healthy,
             metadataOrNull.Name + " 파일에 접근할 수 있습니다.");
     }
 }

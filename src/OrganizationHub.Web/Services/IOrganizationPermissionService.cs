@@ -7,7 +7,6 @@ namespace OrganizationHub.Web.Services;
 
 public interface IOrganizationPermissionService
 {
-    Task<bool> UsesConfiguredPermissionsAsync(UserSession userSession, CancellationToken cancellationToken);
     Task<bool> HasPermissionAsync(
         UserSession userSession,
         PermissionKey permissionKey,

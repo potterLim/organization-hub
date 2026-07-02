@@ -25,6 +25,8 @@ public sealed class DriveFileItem
     public string TeamName { get; set; } = string.Empty;
     public string FolderDisplayName { get; set; } = string.Empty;
     public string UploadedByDisplayName { get; set; } = string.Empty;
+    public string UploadedByTeamName { get; set; } = string.Empty;
+    public string UploadedByPositionName { get; set; } = string.Empty;
     public DateTime? UploadedAt
     {
         get; set;
@@ -36,5 +38,29 @@ public sealed class DriveFileItem
     public long? Size
     {
         get; set;
+    }
+
+    public string GetUploaderAffiliationText()
+    {
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(UploadedByTeamName, UploadedByPositionName);
+        string affiliationText = affiliationLabel.GetFullText();
+        if (string.IsNullOrWhiteSpace(affiliationText))
+        {
+            return UploadedByDisplayName;
+        }
+
+        return affiliationText;
+    }
+
+    public string GetUploaderPositionText()
+    {
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(UploadedByTeamName, UploadedByPositionName);
+        string positionText = affiliationLabel.GetPositionText();
+        if (string.IsNullOrWhiteSpace(positionText))
+        {
+            return UploadedByDisplayName;
+        }
+
+        return positionText;
     }
 }

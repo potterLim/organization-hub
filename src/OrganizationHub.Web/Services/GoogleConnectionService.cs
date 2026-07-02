@@ -24,7 +24,11 @@ namespace OrganizationHub.Web.Services;
 
 public sealed class GoogleConnectionService : IGoogleConnectionService
 {
-    private static readonly string[] OAUTH_SCOPES = new[]
+    private const int OAUTH_STATE_PART_COUNT = 2;
+
+    private static readonly TimeSpan OAUTH_STATE_VALIDITY_DURATION = TimeSpan.FromMinutes(15);
+
+    private static readonly string[] OAUTH_SCOPES = new string[]
     {
         DriveService.Scope.Drive,
         CalendarService.Scope.Calendar,
@@ -105,7 +109,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
             return ServiceResult.Fail("Google OAuth 인증 코드가 비어 있습니다.");
         }
 
-        if (validateState(state) == false)
+        if (isStateValid(state) == false)
         {
             return ServiceResult.Fail("Google OAuth state가 유효하지 않습니다. 다시 연결해 주세요.");
         }
@@ -117,8 +121,9 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
             return ServiceResult.Fail("Google refresh token을 받지 못했습니다. Google 권한 연결을 해제한 뒤 다시 연결해 주세요.");
         }
 
-        string connectedEmail = await getConnectedEmailAsync(tokenResponse);
-        await saveConnectionAsync(connectedEmail, tokenResponse.RefreshToken, cancellationToken);
+        GoogleConnectedEmail connectedEmail = await getConnectedEmailAsync(tokenResponse);
+        GoogleRefreshToken refreshToken = GoogleRefreshToken.CreateRequired(tokenResponse.RefreshToken);
+        await saveConnectionAsync(connectedEmail, refreshToken, cancellationToken);
         return ServiceResult.Succeed();
     }
 
@@ -161,7 +166,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
         return mStateProtector.Protect(statePayload);
     }
 
-    private bool validateState(GoogleOAuthState state)
+    private bool isStateValid(GoogleOAuthState state)
     {
         if (state.HasValue == false)
         {
@@ -172,7 +177,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
         {
             string statePayload = mStateProtector.Unprotect(state.GetRequiredValue());
             string[] parts = statePayload.Split(':');
-            if (parts.Length != 2)
+            if (parts.Length != OAUTH_STATE_PART_COUNT)
             {
                 return false;
             }
@@ -185,7 +190,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
             }
 
             DateTimeOffset createdAt = DateTimeOffset.FromUnixTimeSeconds(createdUnixSeconds);
-            return DateTimeOffset.UtcNow - createdAt < TimeSpan.FromMinutes(15);
+            return DateTimeOffset.UtcNow - createdAt < OAUTH_STATE_VALIDITY_DURATION;
         }
         catch (Exception)
         {
@@ -193,7 +198,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
         }
     }
 
-    private async Task<string> getConnectedEmailAsync(TokenResponse tokenResponse)
+    private async Task<GoogleConnectedEmail> getConnectedEmailAsync(TokenResponse tokenResponse)
     {
         if (string.IsNullOrWhiteSpace(tokenResponse.IdToken))
         {
@@ -206,13 +211,16 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
             throw new InvalidOperationException("Google account email is required.");
         }
 
-        return payload.Email;
+        return GoogleConnectedEmail.CreateRequired(payload.Email);
     }
 
-    private async Task saveConnectionAsync(string connectedEmail, string refreshToken, CancellationToken cancellationToken)
+    private async Task saveConnectionAsync(
+        GoogleConnectedEmail connectedEmail,
+        GoogleRefreshToken refreshToken,
+        CancellationToken cancellationToken)
     {
         DateTime now = DateTime.UtcNow;
-        string encryptedRefreshToken = mRefreshTokenProtector.Protect(refreshToken);
+        string encryptedRefreshToken = mRefreshTokenProtector.Protect(refreshToken.GetRequiredValue());
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             List<GoogleStorageConnection> existingConnections = await dbContext.GoogleStorageConnections.ToListAsync(cancellationToken);
@@ -223,7 +231,7 @@ public sealed class GoogleConnectionService : IGoogleConnectionService
             }
 
             GoogleStorageConnection storageConnection = new GoogleStorageConnection();
-            storageConnection.ConnectedEmail = connectedEmail;
+            storageConnection.ConnectedEmail = connectedEmail.GetRequiredValue();
             storageConnection.EncryptedRefreshToken = encryptedRefreshToken;
             storageConnection.Scopes = string.Join(" ", OAUTH_SCOPES);
             storageConnection.IsActive = true;

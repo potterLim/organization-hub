@@ -48,7 +48,7 @@ public sealed class FilePolicyService : IFilePolicyService
 
     public bool CanPreviewInSite(DriveFileMetadata fileMetadata)
     {
-        if (fileMetadata.MimeType == "application/pdf")
+        if (fileMetadata.MimeType == GoogleMimeTypes.PDF)
         {
             return true;
         }
@@ -63,7 +63,7 @@ public sealed class FilePolicyService : IFilePolicyService
         switch (extension)
         {
             case ".pdf":
-                return FileContentType.CreateOptional("application/pdf");
+                return FileContentType.CreateOptional(GoogleMimeTypes.PDF);
             case ".docx":
                 return FileContentType.CreateOptional("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
             case ".xlsx":

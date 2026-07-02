@@ -7,7 +7,7 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public interface IPositionManagementService
+internal interface IPositionManagementService
 {
     Task<IReadOnlyList<OrganizationPosition>> GetPositionsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyList<PermissionDefinition>> GetPermissionDefinitionsAsync(CancellationToken cancellationToken);

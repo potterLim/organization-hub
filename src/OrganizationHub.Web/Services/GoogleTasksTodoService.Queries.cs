@@ -89,7 +89,7 @@ public sealed partial class GoogleTasksTodoService
             request.ShowCompleted = true;
             request.ShowDeleted = false;
             request.ShowHidden = false;
-            request.MaxResults = 100;
+            request.MaxResults = TASK_PAGE_SIZE;
             request.PageToken = string.IsNullOrWhiteSpace(pageToken) ? null : pageToken;
             request.Fields = "items(" + TASK_FIELDS + "),nextPageToken";
             GoogleTaskList taskList = await request.ExecuteAsync(cancellationToken);

@@ -24,6 +24,22 @@ public sealed partial class GoogleWorkspaceSetupService
                 DriveFileItem officialRoot = await getOrCreateDriveFolderAsync(DriveFolderId.Root, DriveItemName.CreateRequired(OrganizationHubProduct.NAME), summary, cancellationToken);
                 assignIfChanged(setting.OfficialRootFolderId, officialRoot.Id, value => setting.OfficialRootFolderId = value, summary);
                 DriveFolderId officialRootFolderId = DriveFolderId.CreateRequired(officialRoot.Id);
+                DriveFileItem noticeFile = await getOrCreateDefaultDriveFileAsync(
+                    officialRootFolderId,
+                    DriveItemName.CreateRequired(OrganizationHubWorkspaceDefaults.NOTICE_FILE_NAME),
+                    DEFAULT_NOTICE_FILE_CONTENT,
+                    summary,
+                    cancellationToken
+                );
+                assignIfChanged(setting.NoticeFileId, noticeFile.Id, value => setting.NoticeFileId = value, summary);
+                DriveFileItem workGuidelineFile = await getOrCreateDefaultDriveFileAsync(
+                    officialRootFolderId,
+                    DriveItemName.CreateRequired(OrganizationHubWorkspaceDefaults.WORK_GUIDELINE_FILE_NAME),
+                    DEFAULT_WORK_GUIDELINE_FILE_CONTENT,
+                    summary,
+                    cancellationToken
+                );
+                assignIfChanged(setting.WorkGuidelineFileId, workGuidelineFile.Id, value => setting.WorkGuidelineFileId = value, summary);
                 DriveFileItem publicFolder = await getOrCreateDriveFolderAsync(officialRootFolderId, DriveItemName.CreateRequired(OrganizationHubWorkspaceDefaults.PUBLIC_FOLDER_NAME), summary, cancellationToken);
                 assignIfChanged(setting.PublicFolderId, publicFolder.Id, value => setting.PublicFolderId = value, summary);
                 DriveFileItem commonFolder = await getOrCreateDriveFolderAsync(officialRootFolderId, DriveItemName.CreateRequired(OrganizationHubWorkspaceDefaults.COMMON_FOLDER_NAME), summary, cancellationToken);
@@ -40,18 +56,22 @@ public sealed partial class GoogleWorkspaceSetupService
                     await ensureTeamDriveFoldersAsync(team, officialRootFolderId, teamRootFolderId, summary, cancellationToken);
                 }
 
-                await dbContext.SaveChangesAsync(cancellationToken);
-                clearDriveFolderCaches(officialRoot.Id, teamRootFolder.Id);
+                validateStandardDriveAssignments(setting, teams, failureMessages);
+                if (failureMessages.Count == 0)
+                {
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    clearDriveFolderCaches(officialRoot.Id, teamRootFolder.Id);
+                }
             }
         }
         catch (Exception exception)
         {
-            failureMessages.Add("기본 Drive 폴더를 준비하지 못했습니다. " + exception.Message);
+            failureMessages.Add("기본 Drive 리소스를 준비하지 못했습니다. " + exception.Message);
         }
 
         if (failureMessages.Count > 0)
         {
-            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("Drive 폴더", failureMessages));
+            return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Fail(createResourceSetupFailureMessage("Drive 리소스", failureMessages));
         }
 
         return ServiceResultOfT<GoogleWorkspaceResourceSetupSummary>.Succeed(summary);
@@ -121,22 +141,4 @@ public sealed partial class GoogleWorkspaceSetupService
         summary.AssignedCount = summary.AssignedCount + 1;
     }
 
-    private void clearDriveFolderCaches(params string[] folderIds)
-    {
-        if (mMemoryCacheOrNull == null)
-        {
-            return;
-        }
-
-        mMemoryCacheOrNull.Remove(DRIVE_FOLDER_CACHE_PREFIX + "root");
-        foreach (string folderId in folderIds)
-        {
-            if (string.IsNullOrWhiteSpace(folderId))
-            {
-                continue;
-            }
-
-            mMemoryCacheOrNull.Remove(DRIVE_FOLDER_CACHE_PREFIX + folderId);
-        }
-    }
 }

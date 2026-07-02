@@ -59,7 +59,7 @@ public sealed partial class GoogleCalendarService
         CalendarEventMetadata metadata = new CalendarEventMetadata();
         metadata.CalendarId = requiredCalendarId;
         metadata.EventId = requiredEventId;
-        metadata.CreatedByUserId = userSession.UserId;
+        metadata.CreatedByUserId = userSession.UserAccountId.GetRequiredValue();
         metadata.CreatedByDisplayName = userSession.DisplayName;
         metadata.CreatedAt = DateTime.UtcNow;
 

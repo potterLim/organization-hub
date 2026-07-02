@@ -44,6 +44,14 @@ public sealed class NavigationMenuItemFormModel
     {
         get; set;
     }
+    public List<string> RequiredPermissionKeys { get; set; } = new List<string>();
+    public IReadOnlyList<PermissionKey> RequiredPermissionKeyValues
+    {
+        get
+        {
+            return NavigationMenuPermissionKeys.CreatePermissionKeys(RequiredPermissionKeys);
+        }
+    }
     public List<int> TeamIds { get; set; } = new List<int>();
     public IReadOnlyList<OrganizationTeamId> TeamIdValues
     {

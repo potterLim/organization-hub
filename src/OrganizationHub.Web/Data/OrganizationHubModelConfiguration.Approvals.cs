@@ -30,6 +30,8 @@ internal static partial class OrganizationHubModelConfiguration
         approvalRequestBuilder.Property(request => request.SourceFolderKind).HasConversion<string>().HasMaxLength(32).IsRequired();
         approvalRequestBuilder.Property(request => request.TeamName).HasMaxLength(120).IsRequired();
         approvalRequestBuilder.Property(request => request.RequesterDisplayName).HasMaxLength(120).IsRequired();
+        approvalRequestBuilder.Property(request => request.RequesterTeamName).HasMaxLength(120).IsRequired();
+        approvalRequestBuilder.Property(request => request.RequesterPositionName).HasMaxLength(120).IsRequired();
         approvalRequestBuilder.Property(request => request.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
         approvalRequestBuilder.Property(request => request.ApprovedFileId).HasMaxLength(256).IsRequired();
         approvalRequestBuilder.Property(request => request.ApprovedFolderId).HasMaxLength(256).IsRequired();
@@ -54,6 +56,8 @@ internal static partial class OrganizationHubModelConfiguration
         approvalStepBuilder.HasIndex(step => step.ApproverUserId);
         approvalStepBuilder.HasIndex(step => step.Status);
         approvalStepBuilder.Property(step => step.ApproverDisplayName).HasMaxLength(120).IsRequired();
+        approvalStepBuilder.Property(step => step.ApproverTeamName).HasMaxLength(120).IsRequired();
+        approvalStepBuilder.Property(step => step.ApproverPositionName).HasMaxLength(120).IsRequired();
         approvalStepBuilder.Property(step => step.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
         approvalStepBuilder.Property(step => step.Comment).HasMaxLength(1000).IsRequired();
         approvalStepBuilder
@@ -77,6 +81,8 @@ internal static partial class OrganizationHubModelConfiguration
         approvalAuditBuilder.HasIndex(auditLog => auditLog.Action);
         approvalAuditBuilder.HasIndex(auditLog => auditLog.CreatedAt);
         approvalAuditBuilder.Property(auditLog => auditLog.ActorDisplayName).HasMaxLength(120).IsRequired();
+        approvalAuditBuilder.Property(auditLog => auditLog.ActorTeamName).HasMaxLength(120).IsRequired();
+        approvalAuditBuilder.Property(auditLog => auditLog.ActorPositionName).HasMaxLength(120).IsRequired();
         approvalAuditBuilder.Property(auditLog => auditLog.Action).HasConversion<string>().HasMaxLength(32).IsRequired();
         approvalAuditBuilder.Property(auditLog => auditLog.Comment).HasMaxLength(1000).IsRequired();
         approvalAuditBuilder.Property(auditLog => auditLog.PreviousApproverDisplayName).HasMaxLength(120).IsRequired();

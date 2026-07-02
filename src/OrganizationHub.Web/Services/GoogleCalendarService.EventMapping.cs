@@ -17,7 +17,7 @@ public sealed partial class GoogleCalendarService
         return changeVersionKeys;
     }
 
-    private Event createGoogleEvent(CalendarEventFormModel formModel)
+    private Event createGoogleEvent(CalendarEventFormModel formModel, CalendarName calendarName)
     {
         Event googleEvent = new Event();
         googleEvent.Summary = formModel.Summary.Trim();
@@ -25,7 +25,18 @@ public sealed partial class GoogleCalendarService
         googleEvent.Location = getTrimmedTextOrNullIfBlank(formModel.Location);
         googleEvent.Start = createEventDateTime(formModel, ECalendarEventDateKind.Start);
         googleEvent.End = createEventDateTime(formModel, ECalendarEventDateKind.End);
+        googleEvent.ExtendedProperties = createLogicalCalendarProperties(calendarName);
         return googleEvent;
+    }
+
+    private Event.ExtendedPropertiesData createLogicalCalendarProperties(CalendarName calendarName)
+    {
+        Event.ExtendedPropertiesData extendedProperties = new Event.ExtendedPropertiesData();
+        extendedProperties.Private__ = new Dictionary<string, string>
+        {
+            [LOGICAL_CALENDAR_NAME_PROPERTY] = calendarName.GetOptionalValue()
+        };
+        return extendedProperties;
     }
 
     private EventDateTime createEventDateTime(CalendarEventFormModel formModel, ECalendarEventDateKind dateKind)
@@ -133,7 +144,7 @@ public sealed partial class GoogleCalendarService
         CalendarEventItem item = new CalendarEventItem();
         item.Id = getTextOrEmpty(googleEvent.Id);
         item.CalendarId = calendarId.GetRequiredValue();
-        item.CalendarName = calendarName.GetOptionalValue();
+        item.CalendarName = getLogicalCalendarName(googleEvent, calendarName);
         item.Summary = getTextOrEmpty(googleEvent.Summary);
         item.Description = getTextOrEmpty(googleEvent.Description);
         item.Location = getTextOrEmpty(googleEvent.Location);
@@ -141,6 +152,23 @@ public sealed partial class GoogleCalendarService
         item.End = getEventTimeOrNull(googleEvent.End);
         item.IsAllDay = googleEvent.Start != null && string.IsNullOrWhiteSpace(googleEvent.Start.Date) == false;
         return item;
+    }
+
+    private string getLogicalCalendarName(Event googleEvent, CalendarName fallbackCalendarName)
+    {
+        IDictionary<string, string>? privatePropertiesOrNull = googleEvent.ExtendedProperties?.Private__;
+        if (privatePropertiesOrNull == null)
+        {
+            return fallbackCalendarName.GetOptionalValue();
+        }
+
+        string? logicalCalendarNameOrNull;
+        if (privatePropertiesOrNull.TryGetValue(LOGICAL_CALENDAR_NAME_PROPERTY, out logicalCalendarNameOrNull) && string.IsNullOrWhiteSpace(logicalCalendarNameOrNull) == false)
+        {
+            return logicalCalendarNameOrNull.Trim();
+        }
+
+        return fallbackCalendarName.GetOptionalValue();
     }
 
     private DateTimeOffset? getEventTimeOrNull(EventDateTime eventDateTimeOrNull)

@@ -10,7 +10,7 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed partial class ApprovalWorkflowManagementService : IApprovalWorkflowManagementService
+internal sealed partial class ApprovalWorkflowManagementService : IApprovalWorkflowManagementService
 {
     private const int PRIORITY_STEP = 10;
 
@@ -27,6 +27,8 @@ public sealed partial class ApprovalWorkflowManagementService : IApprovalWorkflo
         {
             List<ApprovalWorkflow> workflows = await dbContext.ApprovalWorkflows
                 .Include(workflow => workflow.AppliesToTeam)
+                .Include(workflow => workflow.AppliesToPosition)
+                .ThenInclude(position => position!.Team)
                 .Include(workflow => workflow.Steps)
                 .ThenInclude(step => step.ApproverUser)
                 .Include(workflow => workflow.Steps)
@@ -115,7 +117,12 @@ public sealed partial class ApprovalWorkflowManagementService : IApprovalWorkflo
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            List<int> orderedWorkflowIdValues = request.OrderedWorkflowIds.Select(workflowId => workflowId.GetRequiredValue()).Distinct().ToList();
+            if (OrderUpdateRequestValidation.hasDuplicateValues(request.OrderedWorkflowIds))
+            {
+                return ServiceResult.Fail("정렬할 결재 경로가 중복되어 있습니다.");
+            }
+
+            List<int> orderedWorkflowIdValues = request.OrderedWorkflowIds.Select(workflowId => workflowId.GetRequiredValue()).ToList();
             List<ApprovalWorkflow> workflows = await dbContext.ApprovalWorkflows.Where(workflow => orderedWorkflowIdValues.Contains(workflow.Id)).ToListAsync(cancellationToken);
             if (workflows.Count != orderedWorkflowIdValues.Count)
             {

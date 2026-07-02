@@ -5,7 +5,7 @@ namespace OrganizationHub.Web.Domain;
 
 public static class ApprovalStepLabelUtility
 {
-    public static string GetStepRoleName(ApprovalStepCount stepCount, ApprovalStepNumber stepNumber)
+    public static string GetStepLabel(ApprovalStepCount stepCount, ApprovalStepNumber stepNumber)
     {
         if (stepCount.ContainsStepNumber(stepNumber) == false)
         {
@@ -34,7 +34,7 @@ public static class ApprovalStepLabelUtility
             return "결재권자";
         }
 
-        if (stepCount.RequiresSecondApprover == false)
+        if (stepCount.RequiresSecondApprover() == false)
         {
             return "검토자 + 결재권자";
         }
@@ -49,7 +49,7 @@ public static class ApprovalStepLabelUtility
             return "결재권자에게 바로 요청합니다.";
         }
 
-        if (stepCount.RequiresSecondApprover == false)
+        if (stepCount.RequiresSecondApprover() == false)
         {
             return "검토 후 결재권자에게 요청합니다.";
         }

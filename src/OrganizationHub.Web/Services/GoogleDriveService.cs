@@ -3,14 +3,16 @@ using Google.Apis.Drive.v3;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using OrganizationHub.Web.Configuration;
+using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleDriveService : IDriveService
 {
-    private const int MAX_CACHED_DOWNLOAD_BYTES = 20971520;
+    private const int MAX_CACHED_DOWNLOAD_BYTES = OrganizationHubFileLimits.DEFAULT_MAXIMUM_UPLOAD_BYTES;
+    private const int MAX_ANCESTOR_FOLDER_INSPECTION_COUNT = 40;
 
-    private static readonly string[] DRIVE_SCOPES = new[] { DriveService.Scope.Drive };
+    private static readonly string[] DRIVE_SCOPES = new string[] { DriveService.Scope.Drive };
     private static readonly TimeSpan FOLDER_LIST_CACHE_DURATION = TimeSpan.FromSeconds(45);
     private static readonly TimeSpan FILE_METADATA_CACHE_DURATION = TimeSpan.FromMinutes(3);
     private static readonly TimeSpan ANCESTOR_CACHE_DURATION = TimeSpan.FromMinutes(5);

@@ -7,7 +7,7 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public interface IApprovalWorkflowManagementService
+internal interface IApprovalWorkflowManagementService
 {
     Task<IReadOnlyList<ApprovalWorkflow>> GetWorkflowsAsync(CancellationToken cancellationToken);
     Task<IReadOnlyList<UserAccount>> GetApproverUsersAsync(CancellationToken cancellationToken);

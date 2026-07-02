@@ -38,7 +38,7 @@ public sealed partial class GoogleWorkspaceSetupService
         do
         {
             CalendarListResource.ListRequest request = calendarService.CalendarList.List();
-            request.MaxResults = 250;
+            request.MaxResults = GOOGLE_CALENDAR_LIST_PAGE_SIZE;
             request.PageToken = string.IsNullOrWhiteSpace(pageToken) ? null : pageToken;
             request.Fields = "items(id,summary),nextPageToken";
             GoogleCalendarListData response = await request.ExecuteAsync(cancellationToken);

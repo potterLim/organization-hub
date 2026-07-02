@@ -8,7 +8,7 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed partial class DriveBrowserService
+internal sealed partial class DriveBrowserService
 {
     public async Task<IReadOnlyList<DriveFolderReference>> GetReadableFoldersAsync(
         UserSession userSession,
@@ -17,7 +17,7 @@ public sealed partial class DriveBrowserService
     )
     {
         IReadOnlyList<DriveFolderReference> folders = await mPermissionService.GetReadableDriveFoldersAsync(userSession, folderKind, cancellationToken);
-        List<DriveFolderReference> filteredFolders = folders.OrderBy(folder => getFolderSortOrder(folder)).ThenBy(folder => folder.TeamName).ThenBy(folder => folder.DisplayName).ToList();
+        List<DriveFolderReference> filteredFolders = folders.OrderBy(folder => getFolderSortGroup(folder)).ThenBy(folder => folder.TeamName).ThenBy(folder => folder.DisplayName).ToList();
         return filteredFolders;
     }
 
@@ -132,7 +132,7 @@ public sealed partial class DriveBrowserService
         }
 
         DriveFileMetadata? folderMetadataOrNull = await mDriveService.GetFileOrNullAsync(DriveItemId.CreateRequired(folderId.GetRequiredValue()), cancellationToken);
-        if (folderMetadataOrNull == null || folderMetadataOrNull.MimeType != GOOGLE_DRIVE_FOLDER_MIME_TYPE)
+        if (folderMetadataOrNull == null || folderMetadataOrNull.MimeType != GoogleMimeTypes.DRIVE_FOLDER)
         {
             return false;
         }
@@ -143,22 +143,39 @@ public sealed partial class DriveBrowserService
 
     private List<DriveFileItem> orderFilesForBrowser(IReadOnlyList<DriveFileItem> files)
     {
-        List<DriveFileItem> orderedFiles = files.OrderBy(file => file.IsFolder ? 0 : 1).ThenBy(file => file.IsFolder ? file.Name : string.Empty).ThenByDescending(file => file.ModifiedTime).ThenBy(file => file.Name).ToList();
+        List<DriveFileItem> orderedFiles = files.OrderBy(file => getDriveItemSortGroup(file)).ThenBy(file => file.IsFolder ? file.Name : string.Empty).ThenByDescending(file => file.ModifiedTime).ThenBy(file => file.Name).ToList();
         return orderedFiles;
     }
 
-    private int getFolderSortOrder(DriveFolderReference folder)
+    private static EDriveItemSortGroup getDriveItemSortGroup(DriveFileItem file)
     {
-        if (folder.FolderKind != EDriveFolderKind.TeamApproved)
+        if (file.IsFolder)
         {
-            return 1;
+            return EDriveItemSortGroup.Folder;
         }
 
-        if (folder.IsManagementTeam)
+        return EDriveItemSortGroup.File;
+    }
+
+    private EDriveFolderSortGroup getFolderSortGroup(DriveFolderReference folder)
+    {
+        if (folder.FolderKind == EDriveFolderKind.TeamApproved && folder.IsManagementTeam)
         {
-            return 0;
+            return EDriveFolderSortGroup.ManagementApproved;
         }
 
-        return 1;
+        return EDriveFolderSortGroup.Standard;
+    }
+
+    private enum EDriveItemSortGroup
+    {
+        Folder,
+        File
+    }
+
+    private enum EDriveFolderSortGroup
+    {
+        ManagementApproved,
+        Standard
     }
 }

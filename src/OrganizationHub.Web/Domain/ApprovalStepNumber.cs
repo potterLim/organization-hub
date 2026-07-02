@@ -5,6 +5,8 @@ namespace OrganizationHub.Web.Domain;
 public readonly record struct ApprovalStepNumber
 {
     public const int MINIMUM_VALUE = 1;
+    public const int FIRST_APPROVER_STEP_VALUE = MINIMUM_VALUE;
+    public const int SECOND_APPROVER_STEP_VALUE = ApprovalStepCount.FIRST_APPROVER_REQUIRED_STEP_COUNT;
 
     private int Value
     {
@@ -19,6 +21,16 @@ public readonly record struct ApprovalStepNumber
         }
 
         Value = numberValue;
+    }
+
+    public static ApprovalStepNumber CreateFirstApproverStep()
+    {
+        return new ApprovalStepNumber(FIRST_APPROVER_STEP_VALUE);
+    }
+
+    public static ApprovalStepNumber CreateSecondApproverStep()
+    {
+        return new ApprovalStepNumber(SECOND_APPROVER_STEP_VALUE);
     }
 
     public int GetRequiredValue()

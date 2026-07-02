@@ -6,59 +6,48 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
+    private const int SAME_TEAM_SORT_WEIGHT = 0;
+    private const int DIFFERENT_TEAM_SORT_WEIGHT = 1000000;
+    private const int MISSING_POSITION_SORT_WEIGHT = 900000;
+    private const int POSITION_SORT_ORDER_MULTIPLIER = 1000;
+    private const int MISSING_TEAM_SORT_WEIGHT = 900;
+
     private int getApproverSortOrder(UserAccount user, UserSession userSession)
     {
-        return getApproverSortOrder(user.Role, userSession, OrganizationTeamId.CreateExistingOrNull(user.TeamId));
+        int sameTeamWeight = getSameTeamSortWeight(user, userSession);
+        int positionSortOrder = getPositionSortOrder(user);
+        int teamSortOrder = getTeamSortOrder(user);
+        return sameTeamWeight + positionSortOrder + teamSortOrder;
     }
 
-    private int getApproverSortOrder(EUserRole role, UserSession userSession, OrganizationTeamId? teamIdOrNull)
+    private int getSameTeamSortWeight(UserAccount user, UserSession userSession)
     {
-        if (UserRoleUtility.IsManagementMemberRole(userSession.Role))
+        int? requesterTeamIdValueOrNull = OrganizationTeamId.GetValueOrNull(userSession.OrganizationTeamIdOrNull);
+        if (requesterTeamIdValueOrNull.HasValue && user.TeamId == requesterTeamIdValueOrNull)
         {
-            switch (role)
-            {
-                case EUserRole.ManagementDirector:
-                    return 0;
-                case EUserRole.ManagementDeputyDirector:
-                    return 1;
-                case EUserRole.ManagementManager:
-                    return 2;
-                case EUserRole.TeamLeader:
-                    return 3;
-                case EUserRole.ManagementStaff:
-                    return 4;
-                case EUserRole.ManagementRecorder:
-                    return 5;
-                default:
-                    return 100;
-            }
+            return SAME_TEAM_SORT_WEIGHT;
         }
 
-        OrganizationTeamId teamId = teamIdOrNull.GetValueOrDefault();
-        bool isSameTeamLeader = userSession.HasTeam &&
-            teamId.HasValue &&
-            teamId.GetRequiredValue() == userSession.GetRequiredTeamIdValue() &&
-            role == EUserRole.TeamLeader;
-        if (isSameTeamLeader)
+        return DIFFERENT_TEAM_SORT_WEIGHT;
+    }
+
+    private int getPositionSortOrder(UserAccount user)
+    {
+        if (user.Position == null)
         {
-            return 0;
+            return MISSING_POSITION_SORT_WEIGHT;
         }
 
-        if (role == EUserRole.TeamLeader)
+        return user.Position.SortOrder * POSITION_SORT_ORDER_MULTIPLIER;
+    }
+
+    private int getTeamSortOrder(UserAccount user)
+    {
+        if (user.Team == null)
         {
-            return 1;
+            return MISSING_TEAM_SORT_WEIGHT;
         }
 
-        if (role == EUserRole.ManagementStaff)
-        {
-            return 2;
-        }
-
-        if (role == EUserRole.ManagementRecorder)
-        {
-            return 3;
-        }
-
-        return 4;
+        return user.Team.SortOrder;
     }
 }

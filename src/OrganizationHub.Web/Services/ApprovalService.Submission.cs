@@ -40,13 +40,13 @@ public sealed partial class ApprovalService
         }
 
         DriveFileMetadata? fileMetadataOrNull = await mDriveService.GetFileOrNullAsync(fileId, cancellationToken);
-        if (fileMetadataOrNull == null || fileMetadataOrNull.MimeType == "application/vnd.google-apps.folder")
+        if (fileMetadataOrNull == null || fileMetadataOrNull.MimeType == GoogleMimeTypes.DRIVE_FOLDER)
         {
             return ServiceResult.Fail("결재할 파일을 선택해 주세요.");
         }
 
         DriveFileMetadata? destinationFolderMetadataOrNull = await mDriveService.GetFileOrNullAsync(DriveItemId.CreateRequired(destinationFolderId.GetRequiredValue()), cancellationToken);
-        if (destinationFolderMetadataOrNull == null || destinationFolderMetadataOrNull.MimeType != "application/vnd.google-apps.folder")
+        if (destinationFolderMetadataOrNull == null || destinationFolderMetadataOrNull.MimeType != GoogleMimeTypes.DRIVE_FOLDER)
         {
             return ServiceResult.Fail("승인 완료 후 저장할 위치를 선택해 주세요.");
         }
@@ -59,7 +59,21 @@ public sealed partial class ApprovalService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            ApprovalRequest request = createPendingApprovalRequest(userSession, command, context, sourceFolderOrNull, fileMetadataOrNull, destinationFolderMetadataOrNull);
+            UserAccount? requesterUserOrNull = await loadUserAccountWithAffiliationOrNullAsync(
+                dbContext,
+                userSession.UserAccountId,
+                cancellationToken);
+            ValidatedApprovalSubmission submission = new ValidatedApprovalSubmission
+            {
+                UserSession = userSession,
+                RequesterUserOrNull = requesterUserOrNull,
+                Command = command,
+                CreateContext = context,
+                SourceFolder = sourceFolderOrNull,
+                FileMetadata = fileMetadataOrNull,
+                DestinationFolderMetadata = destinationFolderMetadataOrNull
+            };
+            ApprovalRequest request = createPendingApprovalRequest(submission);
             dbContext.ApprovalRequests.Add(request);
             await dbContext.SaveChangesAsync(cancellationToken);
             bumpApprovalVersion();
@@ -89,33 +103,32 @@ public sealed partial class ApprovalService
         return ServiceResult.Succeed();
     }
 
-    private ApprovalRequest createPendingApprovalRequest(
-        UserSession userSession,
-        ApprovalRequestCommand command,
-        ApprovalCreateContext context,
-        DriveFolderReference sourceFolder,
-        DriveFileMetadata fileMetadata,
-        DriveFileMetadata destinationFolderMetadata)
+    private ApprovalRequest createPendingApprovalRequest(ValidatedApprovalSubmission submission)
     {
-        ApprovalUserOption? firstApproverOrNull = getFirstApproverOrNull(context.ApproverOptions, command);
-        ApprovalUserOption? secondApproverOrNull = getSecondApproverOrNull(context.ApproverOptions, command);
-        ApprovalUserId requestedFinalApproverUserId = command.FinalApproverUserId;
-        ApprovalUserId finalApproverUserId = resolveFinalApproverUserId(context.FinalApproverOptions, requestedFinalApproverUserId);
-        ApprovalUserOption finalApprover = getRequiredUserOption(context.FinalApproverOptions, finalApproverUserId);
-        ApprovalStepCount stepCount = command.StepCount.GetRequiredStepCount();
-        ApprovalRequest request = createApprovalRequest(userSession, command, sourceFolder, fileMetadata, destinationFolderMetadata);
-        if (command.StepCount.RequiresFirstApprover && firstApproverOrNull != null)
+        ApprovalUserOption? firstApproverOrNull = getFirstApproverOrNull(submission.CreateContext.ApproverOptions, submission.Command);
+        ApprovalUserOption? secondApproverOrNull = getSecondApproverOrNull(submission.CreateContext.ApproverOptions, submission.Command);
+        ApprovalUserId requestedFinalApproverUserId = submission.Command.FinalApproverUserId;
+        ApprovalUserId finalApproverUserId = resolveFinalApproverUserId(submission.CreateContext.FinalApproverOptions, requestedFinalApproverUserId);
+        ApprovalUserOption finalApprover = getRequiredUserOption(submission.CreateContext.FinalApproverOptions, finalApproverUserId);
+        ApprovalStepCount stepCount = submission.Command.StepCount.GetRequiredStepCount();
+        ApprovalRequest request = createApprovalRequest(submission);
+        if (submission.Command.StepCount.RequiresFirstApprover() && firstApproverOrNull != null)
         {
-            request.Steps.Add(createApprovalStep(new ApprovalStepNumber(1), firstApproverOrNull));
+            request.Steps.Add(createApprovalStep(ApprovalStepNumber.CreateFirstApproverStep(), firstApproverOrNull));
         }
 
-        if (command.StepCount.RequiresSecondApprover && secondApproverOrNull != null)
+        if (submission.Command.StepCount.RequiresSecondApprover() && secondApproverOrNull != null)
         {
-            request.Steps.Add(createApprovalStep(new ApprovalStepNumber(2), secondApproverOrNull));
+            request.Steps.Add(createApprovalStep(ApprovalStepNumber.CreateSecondApproverStep(), secondApproverOrNull));
         }
 
         request.Steps.Add(createApprovalStep(stepCount.GetFinalStepNumber(), finalApprover));
-        request.AuditLogs.Add(createAuditLog(createAuditLogRequest(userSession, EApprovalAuditAction.Submitted, null, "결재 요청")));
+        request.AuditLogs.Add(createAuditLog(createAuditLogRequest(
+            submission.UserSession,
+            submission.RequesterUserOrNull,
+            EApprovalAuditAction.Submitted,
+            null,
+            ApprovalComment.CreateOptional("결재 요청"))));
         return request;
     }
 }

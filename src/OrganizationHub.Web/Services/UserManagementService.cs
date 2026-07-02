@@ -13,7 +13,7 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class UserManagementService : IUserManagementService
 {
-    private const EUserRole DEFAULT_ORGANIZATION_MEMBER_ROLE = EUserRole.TeamUser;
+    private const EStoredCompatibilityRole STANDARD_USER_STORED_COMPATIBILITY_ROLE = EStoredCompatibilityRole.TeamUser;
 
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;
     private readonly IPasswordHashService mPasswordHashService;
@@ -24,14 +24,20 @@ public sealed partial class UserManagementService : IUserManagementService
         mPasswordHashService = passwordHashService;
     }
 
+    public async Task<bool> CanManageSystemAdministratorsAsync(UserSession userSession, CancellationToken cancellationToken)
+    {
+        return await isSystemAdministratorAsync(userSession, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<UserAccount>> GetUsersAsync(UserSession userSession, CancellationToken cancellationToken)
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             IQueryable<UserAccount> query = dbContext.UserAccounts.Include(user => user.Team).Include(user => user.Position);
-            if (UserPermissionPolicy.CanManageSystemAdministratorAccounts(userSession.Role) == false)
+            bool canManageSystemAdministrators = await isSystemAdministratorAsync(userSession, cancellationToken);
+            if (canManageSystemAdministrators == false)
             {
-                query = query.Where(user => user.Role != EUserRole.Admin);
+                query = query.Where(user => user.Position == null || user.Position.IsSystemAdministrator == false);
             }
 
             List<UserAccount> users = await query.OrderBy(user => user.Username).ToListAsync(cancellationToken);
@@ -41,10 +47,10 @@ public sealed partial class UserManagementService : IUserManagementService
 
     public async Task<ServiceResult> CreateUserAsync(UserSession userSession, UserAccountFormModel formModel, CancellationToken cancellationToken)
     {
-        ServiceResult administratorValidationResult = validateAdministratorRoleChange(userSession, formModel.Role);
-        if (administratorValidationResult.IsSuccess == false)
+        ServiceResult requestedAdministratorValidationResult = await validateRequestedSystemAdministratorAccountChangeAsync(userSession, formModel, cancellationToken);
+        if (requestedAdministratorValidationResult.IsSuccess == false)
         {
-            return administratorValidationResult;
+            return requestedAdministratorValidationResult;
         }
 
         ServiceResult validationResult = await validateUserFormAsync(formModel, EPasswordRequirement.Required, cancellationToken);
@@ -62,15 +68,22 @@ public sealed partial class UserManagementService : IUserManagementService
                 return ServiceResult.Fail("이미 사용 중인 아이디입니다.");
             }
 
-            EUserRole role = getAllowedRole(formModel);
-            OrganizationTeamId? teamIdOrNull = await getAllowedTeamIdOrNullAsync(dbContext, formModel, role, cancellationToken);
-            OrganizationPosition? positionOrNull = await getAllowedPositionOrNullAsync(dbContext, formModel, role, teamIdOrNull, cancellationToken);
+            EUserAccountKind accountKind = formModel.AccountKind;
+            EStoredCompatibilityRole storedCompatibilityRole = createStoredCompatibilityRole(accountKind);
+            OrganizationTeamId? teamIdOrNull = await getAllowedTeamIdOrNullAsync(dbContext, formModel, accountKind, cancellationToken);
+            OrganizationPosition? positionOrNull = await getAllowedPositionOrNullAsync(dbContext, formModel, accountKind, teamIdOrNull, cancellationToken);
+            ServiceResult resolvedAdministratorValidationResult = await validateSystemAdministratorAccountChangeAsync(userSession, positionOrNull, cancellationToken);
+            if (resolvedAdministratorValidationResult.IsSuccess == false)
+            {
+                return resolvedAdministratorValidationResult;
+            }
+
             UserAccount userAccount = new UserAccount();
             userAccount.Username = username;
             userAccount.DisplayName = formModel.DisplayName.Trim();
             PasswordHash passwordHash = mPasswordHashService.HashPassword(PlainPassword.CreateFromInput(formModel.Password));
             userAccount.PasswordHash = passwordHash.GetRequiredValue();
-            userAccount.Role = role;
+            userAccount.StoredCompatibilityRole = storedCompatibilityRole;
             userAccount.TeamId = OrganizationTeamId.GetValueOrNull(teamIdOrNull);
             applyUserPosition(userAccount, positionOrNull);
             userAccount.IsActive = formModel.IsActive;
@@ -83,10 +96,10 @@ public sealed partial class UserManagementService : IUserManagementService
 
     public async Task<ServiceResult> UpdateUserAsync(UserSession userSession, UserAccountFormModel formModel, CancellationToken cancellationToken)
     {
-        ServiceResult administratorValidationResult = validateAdministratorRoleChange(userSession, formModel.Role);
-        if (administratorValidationResult.IsSuccess == false)
+        ServiceResult requestedAdministratorValidationResult = await validateRequestedSystemAdministratorAccountChangeAsync(userSession, formModel, cancellationToken);
+        if (requestedAdministratorValidationResult.IsSuccess == false)
         {
-            return administratorValidationResult;
+            return requestedAdministratorValidationResult;
         }
 
         ServiceResult validationResult = await validateUserFormAsync(formModel, EPasswordRequirement.Optional, cancellationToken);
@@ -99,22 +112,18 @@ public sealed partial class UserManagementService : IUserManagementService
         {
             UserAccountId userAccountId = formModel.UserAccountIdValue;
             int requiredUserAccountId = userAccountId.GetRequiredValue();
-            UserAccount? userAccountOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Id == requiredUserAccountId, cancellationToken);
+            UserAccount? userAccountOrNull = await dbContext.UserAccounts
+                .Include(user => user.Position)
+                .FirstOrDefaultAsync(user => user.Id == requiredUserAccountId, cancellationToken);
             if (userAccountOrNull == null)
             {
                 return ServiceResult.Fail("사용자를 찾을 수 없습니다.");
             }
 
-            ServiceResult existingAdministratorValidationResult = validateAdministratorRoleChange(userSession, userAccountOrNull.Role);
+            ServiceResult existingAdministratorValidationResult = await validateSystemAdministratorAccountChangeAsync(userSession, userAccountOrNull, cancellationToken);
             if (existingAdministratorValidationResult.IsSuccess == false)
             {
                 return existingAdministratorValidationResult;
-            }
-
-            ServiceResult existingManagementLeadershipValidationResult = validateManagementLeadershipRoleChange(userSession, userAccountOrNull.Role);
-            if (existingManagementLeadershipValidationResult.IsSuccess == false)
-            {
-                return existingManagementLeadershipValidationResult;
             }
 
             string username = formModel.Username.Trim();
@@ -126,10 +135,17 @@ public sealed partial class UserManagementService : IUserManagementService
 
             userAccountOrNull.Username = username;
             userAccountOrNull.DisplayName = formModel.DisplayName.Trim();
-            EUserRole role = getAllowedRole(formModel);
-            OrganizationTeamId? teamIdOrNull = await getAllowedTeamIdOrNullAsync(dbContext, formModel, role, cancellationToken);
-            OrganizationPosition? positionOrNull = await getAllowedPositionOrNullAsync(dbContext, formModel, role, teamIdOrNull, cancellationToken);
-            userAccountOrNull.Role = role;
+            EUserAccountKind accountKind = formModel.AccountKind;
+            EStoredCompatibilityRole storedCompatibilityRole = createStoredCompatibilityRole(accountKind);
+            OrganizationTeamId? teamIdOrNull = await getAllowedTeamIdOrNullAsync(dbContext, formModel, accountKind, cancellationToken);
+            OrganizationPosition? positionOrNull = await getAllowedPositionOrNullAsync(dbContext, formModel, accountKind, teamIdOrNull, cancellationToken);
+            ServiceResult resolvedAdministratorValidationResult = await validateSystemAdministratorAccountChangeAsync(userSession, positionOrNull, cancellationToken);
+            if (resolvedAdministratorValidationResult.IsSuccess == false)
+            {
+                return resolvedAdministratorValidationResult;
+            }
+
+            userAccountOrNull.StoredCompatibilityRole = storedCompatibilityRole;
             userAccountOrNull.TeamId = OrganizationTeamId.GetValueOrNull(teamIdOrNull);
             applyUserPosition(userAccountOrNull, positionOrNull);
             userAccountOrNull.IsActive = formModel.IsActive;
@@ -157,22 +173,18 @@ public sealed partial class UserManagementService : IUserManagementService
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             int requiredUserAccountId = userAccountId.GetRequiredValue();
-            UserAccount? userAccountOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Id == requiredUserAccountId, cancellationToken);
+            UserAccount? userAccountOrNull = await dbContext.UserAccounts
+                .Include(user => user.Position)
+                .FirstOrDefaultAsync(user => user.Id == requiredUserAccountId, cancellationToken);
             if (userAccountOrNull == null)
             {
                 return ServiceResult.Fail("사용자를 찾을 수 없습니다.");
             }
 
-            ServiceResult administratorValidationResult = validateAdministratorRoleChange(userSession, userAccountOrNull.Role);
+            ServiceResult administratorValidationResult = await validateSystemAdministratorAccountChangeAsync(userSession, userAccountOrNull, cancellationToken);
             if (administratorValidationResult.IsSuccess == false)
             {
                 return administratorValidationResult;
-            }
-
-            ServiceResult managementLeadershipValidationResult = validateManagementLeadershipRoleChange(userSession, userAccountOrNull.Role);
-            if (managementLeadershipValidationResult.IsSuccess == false)
-            {
-                return managementLeadershipValidationResult;
             }
 
             userAccountOrNull.IsActive = activationState == EActivationState.Active;
@@ -198,7 +210,7 @@ public sealed partial class UserManagementService : IUserManagementService
         CancellationToken cancellationToken
     )
     {
-        if (newPassword.HasMinimumLength(8) == false)
+        if (newPassword.HasRequiredMinimumLength() == false)
         {
             return ServiceResult.Fail("비밀번호는 8자 이상이어야 합니다.");
         }
@@ -206,22 +218,18 @@ public sealed partial class UserManagementService : IUserManagementService
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             int requiredUserAccountId = userAccountId.GetRequiredValue();
-            UserAccount? userAccountOrNull = await dbContext.UserAccounts.FirstOrDefaultAsync(user => user.Id == requiredUserAccountId, cancellationToken);
+            UserAccount? userAccountOrNull = await dbContext.UserAccounts
+                .Include(user => user.Position)
+                .FirstOrDefaultAsync(user => user.Id == requiredUserAccountId, cancellationToken);
             if (userAccountOrNull == null)
             {
                 return ServiceResult.Fail("사용자를 찾을 수 없습니다.");
             }
 
-            ServiceResult administratorValidationResult = validateAdministratorRoleChange(userSession, userAccountOrNull.Role);
+            ServiceResult administratorValidationResult = await validateSystemAdministratorAccountChangeAsync(userSession, userAccountOrNull, cancellationToken);
             if (administratorValidationResult.IsSuccess == false)
             {
                 return administratorValidationResult;
-            }
-
-            ServiceResult managementLeadershipValidationResult = validateManagementLeadershipRoleChange(userSession, userAccountOrNull.Role);
-            if (managementLeadershipValidationResult.IsSuccess == false)
-            {
-                return managementLeadershipValidationResult;
             }
 
             PasswordHash passwordHash = mPasswordHashService.HashPassword(newPassword);

@@ -11,9 +11,11 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleCalendarService : ICalendarService
 {
-    private const string EVENT_FIELDS = "id,summary,description,location,start,end";
-    private static readonly string[] CALENDAR_SCOPES = new[] { CalendarService.Scope.Calendar };
+    private const string EVENT_FIELDS = "id,summary,description,location,start,end,extendedProperties";
+    private const string LOGICAL_CALENDAR_NAME_PROPERTY = "organizationHub.logicalCalendarName";
+    private static readonly string[] CALENDAR_SCOPES = new string[] { CalendarService.Scope.Calendar };
     private static readonly TimeSpan EVENT_LIST_CACHE_DURATION = TimeSpan.FromSeconds(45);
+    private static readonly TimeSpan CALENDAR_VERSION_CACHE_DURATION = TimeSpan.FromHours(1);
 
     private readonly IGoogleApiCredentialFactory mCredentialFactory;
     private readonly GoogleApiOptions mOptions;
@@ -21,6 +23,7 @@ public sealed partial class GoogleCalendarService : ICalendarService
     private readonly IMemoryCache mMemoryCache;
     private readonly ILogger<GoogleCalendarService> mLogger;
     private readonly IChangeVersionService mChangeVersionService;
+    private readonly IPermissionService mPermissionService;
 
     public GoogleCalendarService(
         IGoogleApiCredentialFactory credentialFactory,
@@ -28,7 +31,8 @@ public sealed partial class GoogleCalendarService : ICalendarService
         IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
         IMemoryCache memoryCache,
         ILogger<GoogleCalendarService> logger,
-        IChangeVersionService changeVersionService)
+        IChangeVersionService changeVersionService,
+        IPermissionService permissionService)
     {
         mCredentialFactory = credentialFactory;
         mOptions = options.Value;
@@ -36,6 +40,7 @@ public sealed partial class GoogleCalendarService : ICalendarService
         mMemoryCache = memoryCache;
         mLogger = logger;
         mChangeVersionService = changeVersionService;
+        mPermissionService = permissionService;
     }
 
 }

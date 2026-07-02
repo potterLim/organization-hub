@@ -33,7 +33,7 @@ public sealed partial class GoogleTasksTodoService
         string requiredTaskListId = taskListId.GetRequiredValue();
         string requiredTaskId = taskId.GetRequiredValue();
         TodoTaskItem latestTask = new TodoTaskItem();
-        for (int attempt = 0; attempt < 6; attempt++)
+        for (int attempt = 0; attempt < TASK_COMPLETION_SETTLE_RETRY_COUNT; ++attempt)
         {
             Google.Apis.Tasks.v1.TasksResource.GetRequest getRequest = tasksService.Tasks.Get(requiredTaskListId, requiredTaskId);
             getRequest.Fields = TASK_FIELDS;
@@ -44,7 +44,7 @@ public sealed partial class GoogleTasksTodoService
                 return latestTask;
             }
 
-            await Task.Delay(700, cancellationToken);
+            await Task.Delay(TASK_COMPLETION_SETTLE_DELAY_MILLISECONDS, cancellationToken);
         }
 
         string expectedStatus = getGoogleTaskStatus(expectedCompletionState);
@@ -69,12 +69,35 @@ public sealed partial class GoogleTasksTodoService
         item.Title = getTextOrEmpty(googleTask.Title);
         item.Position = getTextOrEmpty(googleTask.Position);
         item.IsCompleted = googleTask.Status == TASK_STATUS_COMPLETED;
-        item.UpdatedAt = parseGoogleDateTime(googleTask.Updated);
-        item.CompletedAt = parseGoogleDateTime(googleTask.Completed);
+        item.UpdatedAt = parseGoogleDateTimeOrNull(googleTask.Updated);
+        item.CompletedAt = parseGoogleDateTimeOrNull(googleTask.Completed);
+        item.DueAt = parseGoogleTaskDueOrNull(googleTask.Due);
         return item;
     }
 
-    private DateTimeOffset? parseGoogleDateTime(string? dateTimeTextOrNull)
+    private DateTime? parseGoogleTaskDueOrNull(string? dueTextOrNull)
+    {
+        DateTimeOffset? parsedDueAtOrNull = parseGoogleDateTimeOrNull(dueTextOrNull);
+        if (parsedDueAtOrNull.HasValue == false)
+        {
+            return null;
+        }
+
+        return parsedDueAtOrNull.Value.UtcDateTime;
+    }
+
+    private string? formatGoogleTaskDueOrNull(DateTime? dueAtOrNull)
+    {
+        if (dueAtOrNull.HasValue == false)
+        {
+            return null;
+        }
+
+        DateTime utcDueAt = TodoDueAtUtc.CreateRequiredUtc(dueAtOrNull.Value).GetRequiredValue();
+        return utcDueAt.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
+    }
+
+    private DateTimeOffset? parseGoogleDateTimeOrNull(string? dateTimeTextOrNull)
     {
         if (string.IsNullOrWhiteSpace(dateTimeTextOrNull))
         {

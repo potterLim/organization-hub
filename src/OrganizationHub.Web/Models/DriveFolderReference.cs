@@ -54,7 +54,7 @@ public sealed class DriveFolderReference
         }
     }
 
-    public DriveFolderReference(DriveFolderReferenceCreationRequest request)
+    internal DriveFolderReference(DriveFolderReferenceCreationRequest request)
     {
         FolderId = request.FolderId;
         DisplayName = request.DisplayName;

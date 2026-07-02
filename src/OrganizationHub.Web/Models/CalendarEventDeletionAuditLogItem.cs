@@ -27,10 +27,7 @@ public sealed class CalendarEventDeletionAuditLogItem
         get; set;
     }
     public string DeletedByDisplayName { get; set; } = string.Empty;
-    public EUserRole DeletedByRole
-    {
-        get; set;
-    }
+    public string DeletedByPositionName { get; set; } = string.Empty;
     public string DeletedByTeamName { get; set; } = string.Empty;
     public DateTime DeletedAt
     {

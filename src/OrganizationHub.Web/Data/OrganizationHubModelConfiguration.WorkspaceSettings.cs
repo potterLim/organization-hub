@@ -28,8 +28,8 @@ internal static partial class OrganizationHubModelConfiguration
         settingBuilder.Property(setting => setting.ResponsibleTaskListId).HasMaxLength(256);
         settingBuilder.Property(setting => setting.NoticeFileId).HasMaxLength(256);
         settingBuilder.Property(setting => setting.WorkGuidelineFileId).HasMaxLength(256);
-        settingBuilder.Property(setting => setting.ShowTodoAuthor).HasDefaultValue(true);
-        settingBuilder.Property(setting => setting.ShowCalendarAuthor).HasDefaultValue(true);
+        settingBuilder.Property(setting => setting.ShouldShowTodoAuthor).HasColumnName("ShowTodoAuthor").HasDefaultValue(true);
+        settingBuilder.Property(setting => setting.ShouldShowCalendarAuthor).HasColumnName("ShowCalendarAuthor").HasDefaultValue(true);
     }
 
     private static void configureGoogleStorageConnections(ModelBuilder modelBuilder)

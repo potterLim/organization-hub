@@ -21,17 +21,35 @@ public sealed partial class GoogleDriveService
             return cachedFilesOrNull;
         }
 
-        DriveService driveService = await createDriveServiceAsync(cancellationToken);
-        FilesResource.ListRequest request = driveService.Files.List();
-        request.Q = "'" + escapeDriveQueryValue(requiredFolderId) + "' in parents and trashed = false";
-        request.Fields = "files(id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size)";
-        request.OrderBy = "modifiedTime desc";
-        request.SupportsAllDrives = true;
-        request.IncludeItemsFromAllDrives = true;
-        DriveFileList fileList = await request.ExecuteAsync(cancellationToken);
-        IReadOnlyList<DriveFileItem> files = createDriveFileItems(fileList, string.Empty);
+        IReadOnlyList<DriveFileItem> files = await listFilesFromDriveAsync(folderId, cancellationToken);
         setDriveFileItemsCache(cacheKey, files, FOLDER_LIST_CACHE_DURATION);
         return cloneDriveFileItems(files);
+    }
+
+    public async Task<DriveFileNameConflictCheckResult> CheckFileNameConflictAsync(
+        DriveFolderId folderId,
+        DriveItemName fileName,
+        CancellationToken cancellationToken
+    )
+    {
+        IReadOnlyList<DriveFileItem> existingItems = await listFilesFromDriveAsync(folderId, cancellationToken);
+        List<DriveFileItem> conflictingFiles = new List<DriveFileItem>();
+        string requestedFileName = fileName.GetRequiredValue();
+        foreach (DriveFileItem item in existingItems)
+        {
+            if (item.IsFolder)
+            {
+                continue;
+            }
+
+            if (string.Equals(item.Name, requestedFileName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                conflictingFiles.Add(item);
+            }
+        }
+
+        DriveItemName suggestedNewFileName = DriveFileNamePolicy.CreateAvailableFileName(fileName, existingItems);
+        return new DriveFileNameConflictCheckResult(fileName, suggestedNewFileName, conflictingFiles);
     }
 
     public async Task<IReadOnlyList<DriveFileItem>> SearchFilesAsync(
@@ -45,6 +63,23 @@ public sealed partial class GoogleDriveService
         DriveService driveService = await createDriveServiceAsync(cancellationToken);
         FilesResource.ListRequest request = driveService.Files.List();
         request.Q = "'" + escapeDriveQueryValue(requiredFolderId) + "' in parents and trashed = false and name contains '" + escapeDriveQueryValue(requiredKeyword) + "'";
+        request.Fields = "files(id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size)";
+        request.OrderBy = "modifiedTime desc";
+        request.SupportsAllDrives = true;
+        request.IncludeItemsFromAllDrives = true;
+        DriveFileList fileList = await request.ExecuteAsync(cancellationToken);
+        return createDriveFileItems(fileList, string.Empty);
+    }
+
+    private async Task<IReadOnlyList<DriveFileItem>> listFilesFromDriveAsync(
+        DriveFolderId folderId,
+        CancellationToken cancellationToken
+    )
+    {
+        string requiredFolderId = folderId.GetRequiredValue();
+        DriveService driveService = await createDriveServiceAsync(cancellationToken);
+        FilesResource.ListRequest request = driveService.Files.List();
+        request.Q = "'" + escapeDriveQueryValue(requiredFolderId) + "' in parents and trashed = false";
         request.Fields = "files(id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size)";
         request.OrderBy = "modifiedTime desc";
         request.SupportsAllDrives = true;
@@ -112,7 +147,7 @@ public sealed partial class GoogleDriveService
 
         DriveService driveService = await createDriveServiceAsync(cancellationToken);
         int inspectedFolderCount = 0;
-        while (pendingFolderIds.Count > 0 && inspectedFolderCount < 40)
+        while (pendingFolderIds.Count > 0 && inspectedFolderCount < MAX_ANCESTOR_FOLDER_INSPECTION_COUNT)
         {
             inspectedFolderCount = inspectedFolderCount + 1;
             string currentFolderId = pendingFolderIds.Dequeue();

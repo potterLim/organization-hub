@@ -15,28 +15,12 @@ public sealed partial class ApprovalService
     public async Task<ApprovalCreateContext> GetCreateContextAsync(UserSession userSession, CancellationToken cancellationToken)
     {
         ApprovalCreateContext context = new ApprovalCreateContext();
-        PermissionDecision createApprovalRequestDecision = UserPermissionPolicy.DecideCreateApprovalRequest(userSession.Role);
-        if (createApprovalRequestDecision.IsAllowed == false)
-        {
-            context.BlockReason = createApprovalRequestDecision.Reason;
-            return context;
-        }
-
-        bool usesConfiguredPermissions = await mOrganizationPermissionService.UsesConfiguredPermissionsAsync(userSession, cancellationToken);
         OrganizationTeamId? userTeamIdOrNull = createUserTeamIdOrNull(userSession);
-        bool canCreateApprovalRequest;
-        if (usesConfiguredPermissions)
-        {
-            canCreateApprovalRequest = await mOrganizationPermissionService.HasPermissionAsync(
-                userSession,
-                new PermissionKey(PermissionKeys.APPROVAL_REQUEST),
-                userTeamIdOrNull,
-                cancellationToken);
-        }
-        else
-        {
-            canCreateApprovalRequest = UserPermissionPolicy.CanCreateApprovalRequests(userSession.Role);
-        }
+        bool canCreateApprovalRequest = await mOrganizationPermissionService.HasPermissionAsync(
+            userSession,
+            new PermissionKey(PermissionKeys.APPROVAL_REQUEST),
+            userTeamIdOrNull,
+            cancellationToken);
 
         if (canCreateApprovalRequest == false)
         {
@@ -45,10 +29,9 @@ public sealed partial class ApprovalService
         }
 
         IReadOnlyList<DriveFolderReference> readableFolders = await mPermissionService.GetReadableDriveFoldersAsync(userSession, cancellationToken);
-        List<DriveFolderReference> sourceFolders = createApprovalSourceFolders(userSession, readableFolders);
+        List<DriveFolderReference> sourceFolders = createApprovalSourceFolders(readableFolders);
         context.SourceFolders = sourceFolders;
         context.DestinationFolders = await mPermissionService.GetApprovalDestinationDriveFoldersAsync(userSession, cancellationToken);
-        context.UsesDefaultFinalApprover = usesConfiguredPermissions == false && UserPermissionPolicy.UsesDefaultFinalApproval(userSession.Role);
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             List<UserAccount> users = await loadActiveApprovalUsersAsync(dbContext, cancellationToken);
@@ -59,13 +42,13 @@ public sealed partial class ApprovalService
                 return context;
             }
 
-            context.ApproverOptions = createApproverOptions(users, userSession, usesConfiguredPermissions);
-            context.FinalApproverCandidates = createFinalApproverOptions(users, userSession, usesConfiguredPermissions);
-            context.FinalApproverOptions = createFinalApproverOptions(users, userSession, usesConfiguredPermissions);
+            context.ApproverOptions = createApproverOptions(users, userSession);
+            context.FinalApproverCandidates = createFinalApproverOptions(users, userSession);
+            context.FinalApproverOptions = context.FinalApproverCandidates;
         }
 
-        context.AvailableStepCounts = createAvailableStepCounts(userSession, context.ApproverOptions, context.FinalApproverOptions);
-        context.DefaultLineOptions = ApprovalDefaultLinePolicy.CreateDefaultLineOptions(userSession, context.ApproverOptions, context.FinalApproverOptions, context.AvailableStepCounts);
+        context.AvailableStepCounts = createAvailableStepCounts(context.ApproverOptions, context.FinalApproverOptions);
+        context.DefaultLineOptions = ApprovalDefaultLinePolicy.CreateDefaultLineOptions(context.ApproverOptions, context.FinalApproverOptions, context.AvailableStepCounts);
         context.CanCreateRequest = sourceFolders.Count > 0 && context.DestinationFolders.Count > 0 && context.FinalApproverOptions.Count > 0 && context.AvailableStepCounts.Count > 0;
         if (context.CanCreateRequest == false)
         {

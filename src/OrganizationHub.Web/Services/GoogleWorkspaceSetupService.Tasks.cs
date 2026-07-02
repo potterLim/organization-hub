@@ -16,13 +16,13 @@ namespace OrganizationHub.Web.Services;
 public sealed partial class GoogleWorkspaceSetupService
 {
     private const string TASK_LIST_CACHE_KEY = "OrganizationHub:GoogleWorkspace:TaskLists";
-    private static readonly string[] TASK_SCOPES = new[] { GoogleTasksApi.Scope.Tasks };
+    private static readonly string[] TASK_SCOPES = new string[] { GoogleTasksApi.Scope.Tasks };
 
     public async Task<IReadOnlyList<GoogleTaskListAssignmentOption>> GetTaskListAssignmentOptionsAsync(CancellationToken cancellationToken)
     {
         List<GoogleTaskListAssignmentOption> options = new List<GoogleTaskListAssignmentOption>();
-        options.Add(createTaskListAssignmentOption(GoogleWorkspaceAssignmentTargetKey.OrganizationResource, "조직 공용 Google Tasks 목록", EGoogleTaskListAssignmentKind.Organization, null));
-        options.Add(createTaskListAssignmentOption(GoogleWorkspaceAssignmentTargetKey.ResponsibleResource, "책임자 Google Tasks 목록", EGoogleTaskListAssignmentKind.Responsible, null));
+        options.Add(createTaskListAssignmentOption(GoogleWorkspaceAssignmentTargetKey.OrganizationResource, OrganizationHubWorkspaceDefaults.ORGANIZATION_TASK_LIST_NAME, EGoogleTaskListAssignmentKind.Organization, null));
+        options.Add(createTaskListAssignmentOption(GoogleWorkspaceAssignmentTargetKey.ResponsibleResource, OrganizationHubWorkspaceDefaults.RESPONSIBLE_TASK_LIST_NAME, EGoogleTaskListAssignmentKind.Responsible, null));
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
@@ -30,7 +30,7 @@ public sealed partial class GoogleWorkspaceSetupService
             foreach (Team team in teams)
             {
                 OrganizationTeamId teamId = OrganizationTeamId.CreateExisting(team.Id);
-                options.Add(createTaskListAssignmentOption(GoogleWorkspaceAssignmentTargetKey.CreateTeamResource(teamId), team.DisplayName + " Google Tasks 목록", EGoogleTaskListAssignmentKind.Team, teamId));
+                options.Add(createTaskListAssignmentOption(GoogleWorkspaceAssignmentTargetKey.CreateTeamResource(teamId), team.DisplayName + " 할 일", EGoogleTaskListAssignmentKind.Team, teamId));
             }
         }
 
@@ -128,7 +128,7 @@ public sealed partial class GoogleWorkspaceSetupService
                 int? teamIdValueOrNull = OrganizationTeamId.GetValueOrNull(optionOrNull.TeamIdOrNull);
                 if (teamIdValueOrNull.HasValue == false)
                 {
-                    return ServiceResult.Fail("팀 Google Tasks 목록 대상을 찾을 수 없습니다.");
+                    return ServiceResult.Fail("팀 할 일 목록 대상을 찾을 수 없습니다.");
                 }
 
                 int teamId = teamIdValueOrNull.GetValueOrDefault();

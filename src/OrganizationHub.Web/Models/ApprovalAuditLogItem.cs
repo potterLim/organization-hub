@@ -10,6 +10,8 @@ public sealed class ApprovalAuditLogItem
         get; set;
     }
     public string ActorDisplayName { get; set; } = string.Empty;
+    public string ActorTeamName { get; set; } = string.Empty;
+    public string ActorPositionName { get; set; } = string.Empty;
     public int? StepNumber
     {
         get; set;
@@ -20,5 +22,17 @@ public sealed class ApprovalAuditLogItem
     public DateTime CreatedAt
     {
         get; set;
+    }
+
+    public string GetActorAffiliationText()
+    {
+        OrganizationAffiliationLabel affiliationLabel = new OrganizationAffiliationLabel(ActorTeamName, ActorPositionName);
+        string affiliationText = affiliationLabel.GetFullText();
+        if (string.IsNullOrWhiteSpace(affiliationText))
+        {
+            return ActorDisplayName;
+        }
+
+        return affiliationText;
     }
 }

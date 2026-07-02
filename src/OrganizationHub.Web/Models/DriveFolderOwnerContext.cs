@@ -2,7 +2,7 @@ using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Models;
 
-public sealed class DriveFolderOwnerContext
+internal sealed class DriveFolderOwnerContext
 {
     public OrganizationTeamId? TeamIdOrNull
     {

@@ -5,24 +5,32 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class UserSession
 {
+    private readonly Username mUsername;
+    private readonly DisplayName mDisplayName;
+    private readonly DisplayName mTeamDisplayName;
+
     public UserAccountId UserAccountId
     {
         get; private init;
     }
 
-    public int UserId
+    public string Username
     {
         get
         {
-            return UserAccountId.GetRequiredValue();
+            return mUsername.GetOptionalValue();
         }
     }
 
-    public string Username { get; private init; } = string.Empty;
+    public string DisplayName
+    {
+        get
+        {
+            return mDisplayName.GetOptionalValue();
+        }
+    }
 
-    public string DisplayName { get; private init; } = string.Empty;
-
-    public EUserRole Role
+    public EStoredCompatibilityRole StoredCompatibilityRole
     {
         get; private init;
     }
@@ -41,19 +49,6 @@ public sealed class UserSession
         }
     }
 
-    public int? TeamId
-    {
-        get
-        {
-            if (HasTeam == false)
-            {
-                return null;
-            }
-
-            return GetRequiredOrganizationTeamId().GetRequiredValue();
-        }
-    }
-
     public OrganizationTeamKey TeamKey
     {
         get; private init;
@@ -67,44 +62,25 @@ public sealed class UserSession
         }
     }
 
-    public string TeamDisplayName { get; private init; } = string.Empty;
-
-    public UserSession(
-        UserAccountId userId,
-        string username,
-        string displayName,
-        EUserRole role,
-        OrganizationTeamId? teamIdOrNull,
-        OrganizationTeamKey teamKey,
-        string teamDisplayName)
+    public string TeamDisplayName
     {
-        UserAccountId = userId;
-        Username = username;
-        DisplayName = displayName;
-        Role = role;
-        OrganizationTeamIdOrNull = teamIdOrNull;
-        TeamKey = teamKey;
-        TeamDisplayName = teamDisplayName;
+        get
+        {
+            return mTeamDisplayName.GetOptionalValue();
+        }
     }
 
-    public bool IsManagementRole()
+    internal UserSession(UserSessionCreateRequest request)
     {
-        return UserRoleUtility.IsManagementRole(Role);
-    }
+        ArgumentNullException.ThrowIfNull(request);
 
-    public bool IsManagementManagerLevelRole()
-    {
-        return UserRoleUtility.IsManagementManagerLevelRole(Role);
-    }
-
-    public bool IsTeamRole()
-    {
-        return UserRoleUtility.IsTeamRole(Role);
-    }
-
-    public bool IsTeamLeaderOrHigherRole()
-    {
-        return UserRoleUtility.IsTeamLeaderOrHigherRole(Role);
+        UserAccountId = request.UserAccountId;
+        mUsername = request.Username;
+        mDisplayName = request.DisplayName;
+        StoredCompatibilityRole = request.StoredCompatibilityRole;
+        OrganizationTeamIdOrNull = request.OrganizationTeamIdOrNull;
+        TeamKey = request.TeamKey;
+        mTeamDisplayName = request.TeamDisplayName;
     }
 
     public OrganizationTeamId GetRequiredOrganizationTeamId()
@@ -116,10 +92,5 @@ public sealed class UserSession
         }
 
         return teamId;
-    }
-
-    public int GetRequiredTeamIdValue()
-    {
-        return GetRequiredOrganizationTeamId().GetRequiredValue();
     }
 }

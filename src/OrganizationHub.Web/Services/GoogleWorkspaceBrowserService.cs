@@ -18,9 +18,9 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrowserService
 {
-    private static readonly string[] DRIVE_SCOPES = new[] { DriveService.Scope.Drive };
-    private static readonly string[] CALENDAR_SCOPES = new[] { CalendarService.Scope.Calendar };
-    private static readonly string[] TASK_SCOPES = new[] { GoogleTasksApi.Scope.Tasks };
+    private static readonly string[] DRIVE_SCOPES = new string[] { DriveService.Scope.Drive };
+    private static readonly string[] CALENDAR_SCOPES = new string[] { CalendarService.Scope.Calendar };
+    private static readonly string[] TASK_SCOPES = new string[] { GoogleTasksApi.Scope.Tasks };
     private static readonly TimeSpan DRIVE_FOLDER_CACHE_DURATION = TimeSpan.FromSeconds(45);
     private static readonly TimeSpan CALENDAR_LIST_CACHE_DURATION = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan TASK_LIST_CACHE_DURATION = TimeSpan.FromSeconds(60);
@@ -48,7 +48,7 @@ public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrow
 
         DriveService driveService = await createDriveServiceAsync(cancellationToken);
         FilesResource.ListRequest request = driveService.Files.List();
-        request.Q = "'" + escapeDriveQueryValue(effectiveParentFolderId.GetRequiredValue()) + "' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+        request.Q = "'" + escapeDriveQueryValue(effectiveParentFolderId.GetRequiredValue()) + "' in parents and mimeType = '" + GoogleMimeTypes.DRIVE_FOLDER + "' and trashed = false";
         request.Fields = "files(id,name,modifiedTime)";
         request.OrderBy = "name";
         request.SupportsAllDrives = true;

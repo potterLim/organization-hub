@@ -7,6 +7,13 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class PermissionService
 {
+    private const int SHARED_FOLDER_REFERENCE_PRIORITY = 0;
+    private const int TEAM_MATERIALS_FOLDER_REFERENCE_PRIORITY = 10;
+    private const int TEAM_APPROVED_FOLDER_REFERENCE_PRIORITY = 20;
+    private const int UNKNOWN_FOLDER_REFERENCE_PRIORITY = 100;
+    private const int MANAGEMENT_APPROVAL_DESTINATION_SORT_ORDER = 0;
+    private const int STANDARD_APPROVAL_DESTINATION_SORT_ORDER = 1;
+
     private IReadOnlyList<DriveFolderReference> filterFolders(List<DriveFolderReference> folders, EDriveFolderAccessMode accessMode)
     {
         if (accessMode != EDriveFolderAccessMode.Uploadable)
@@ -38,13 +45,13 @@ public sealed partial class PermissionService
             case EDriveFolderKind.Common:
             case EDriveFolderKind.WorkResources:
             case EDriveFolderKind.ResponsibleResources:
-                return 0;
+                return SHARED_FOLDER_REFERENCE_PRIORITY;
             case EDriveFolderKind.TeamMaterials:
-                return 10;
+                return TEAM_MATERIALS_FOLDER_REFERENCE_PRIORITY;
             case EDriveFolderKind.TeamApproved:
-                return 20;
+                return TEAM_APPROVED_FOLDER_REFERENCE_PRIORITY;
             default:
-                return 100;
+                return UNKNOWN_FOLDER_REFERENCE_PRIORITY;
         }
     }
 
@@ -52,10 +59,10 @@ public sealed partial class PermissionService
     {
         if (folder.IsManagementTeam)
         {
-            return 0;
+            return MANAGEMENT_APPROVAL_DESTINATION_SORT_ORDER;
         }
 
-        return 1;
+        return STANDARD_APPROVAL_DESTINATION_SORT_ORDER;
     }
 
     private bool isManagementApprovedFolder(DriveFolderReference folder)

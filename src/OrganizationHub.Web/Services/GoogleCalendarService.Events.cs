@@ -5,8 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Apis.Calendar.v3;
 using Google.Apis.Calendar.v3.Data;
-using Microsoft.EntityFrameworkCore;
-using OrganizationHub.Web.Data;
 using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
@@ -16,6 +14,17 @@ namespace OrganizationHub.Web.Services;
 public sealed partial class GoogleCalendarService
 {
     public async Task<IReadOnlyList<CalendarEventItem>> GetEventsAsync(
+        UserSession userSession,
+        CalendarId calendarId,
+        CalendarName calendarName,
+        CalendarEventDateRange dateRange,
+        CancellationToken cancellationToken)
+    {
+        await ensureCanReadCalendarAsync(userSession, calendarId, cancellationToken);
+        return await getEventsByCalendarAsync(calendarId, calendarName, dateRange, cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<CalendarEventItem>> getEventsByCalendarAsync(
         CalendarId calendarId,
         CalendarName calendarName,
         CalendarEventDateRange dateRange,
@@ -54,21 +63,6 @@ public sealed partial class GoogleCalendarService
         return cloneCalendarEvents(calendarEvents);
     }
 
-    public async Task<IReadOnlyList<CalendarEventItem>> GetTeamEventsAsync(OrganizationTeamId teamId, CalendarEventDateRange dateRange, CancellationToken cancellationToken)
-    {
-        await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
-        {
-            int requiredTeamId = teamId.GetRequiredValue();
-            Team? teamOrNull = await dbContext.Teams.FirstOrDefaultAsync(team => team.Id == requiredTeamId && team.IsActive, cancellationToken);
-            if (teamOrNull == null || string.IsNullOrWhiteSpace(teamOrNull.CalendarId))
-            {
-                return new List<CalendarEventItem>();
-            }
-
-            return await GetEventsAsync(CalendarId.CreateOptional(teamOrNull.CalendarId), CalendarName.CreateOptional(teamOrNull.DisplayName), dateRange, cancellationToken);
-        }
-    }
-
     public async Task<IReadOnlyList<CalendarEventItem>> GetAggregateEventsAsync(
         UserSession userSession,
         CalendarEventDateRange dateRange,
@@ -77,36 +71,15 @@ public sealed partial class GoogleCalendarService
     {
         List<CalendarFetchTarget> fetchTargets = new List<CalendarFetchTarget>();
         HashSet<string> fetchedCalendarIds = new HashSet<string>();
-        await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        IReadOnlyList<CalendarReference> readableCalendars = await mPermissionService.GetReadableCalendarsAsync(userSession, cancellationToken);
+        foreach (CalendarReference readableCalendar in readableCalendars)
         {
-            GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
-            if (settingOrNull != null && userSession.IsManagementRole())
+            if (readableCalendar.CalendarId.IsAggregate)
             {
-                addCalendarFetchTarget(fetchTargets, fetchedCalendarIds, settingOrNull.OrganizationCalendarId, OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME);
+                continue;
             }
 
-            if (settingOrNull != null && userSession.IsTeamLeaderOrHigherRole())
-            {
-                addCalendarFetchTarget(fetchTargets, fetchedCalendarIds, settingOrNull.ResponsibleCalendarId, OrganizationHubWorkspaceDefaults.RESPONSIBLE_CALENDAR_NAME);
-            }
-
-            IQueryable<Team> teamQuery = dbContext.Teams.Where(team => team.IsActive && team.CalendarId != null && team.CalendarId != string.Empty).OrderBy(team => team.SortOrder);
-            if (userSession.IsManagementRole() == false)
-            {
-                if (userSession.HasTeam == false)
-                {
-                    return new List<CalendarEventItem>();
-                }
-
-                int teamId = userSession.GetRequiredTeamIdValue();
-                teamQuery = teamQuery.Where(team => team.Id == teamId);
-            }
-
-            List<Team> teams = await teamQuery.ToListAsync(cancellationToken);
-            foreach (Team team in teams)
-            {
-                addCalendarFetchTarget(fetchTargets, fetchedCalendarIds, team.CalendarId, team.DisplayName);
-            }
+            addCalendarFetchTarget(fetchTargets, fetchedCalendarIds, readableCalendar.CalendarId.GetRequiredValue(), readableCalendar.DisplayName);
         }
 
         if (fetchTargets.Count == 0)
@@ -141,11 +114,12 @@ public sealed partial class GoogleCalendarService
     )
     {
         CalendarId calendarId = formModel.CalendarIdValue;
+        await ensureCanWriteCalendarAsync(userSession, calendarId, cancellationToken);
         string requiredCalendarId = calendarId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarId)))
         {
             CalendarService calendarService = await createCalendarServiceAsync(cancellationToken);
-            Event googleEvent = createGoogleEvent(formModel);
+            Event googleEvent = createGoogleEvent(formModel, calendarName);
             EventsResource.InsertRequest request = calendarService.Events.Insert(googleEvent, requiredCalendarId);
             request.Fields = EVENT_FIELDS;
             Event createdEvent = await request.ExecuteAsync(cancellationToken);
@@ -157,16 +131,22 @@ public sealed partial class GoogleCalendarService
         }
     }
 
-    public async Task<CalendarEventItem> UpdateEventAsync(CalendarEventFormModel formModel, CalendarName calendarName, CancellationToken cancellationToken)
+    public async Task<CalendarEventItem> UpdateEventAsync(
+        UserSession userSession,
+        CalendarEventFormModel formModel,
+        CalendarName calendarName,
+        CancellationToken cancellationToken
+    )
     {
         CalendarId calendarId = formModel.CalendarIdValue;
         CalendarEventId eventId = formModel.EventIdValue;
+        await ensureCanWriteCalendarAsync(userSession, calendarId, cancellationToken);
         string requiredCalendarId = calendarId.GetRequiredValue();
         string requiredEventId = eventId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarId)))
         {
             CalendarService calendarService = await createCalendarServiceAsync(cancellationToken);
-            Event googleEvent = createGoogleEvent(formModel);
+            Event googleEvent = createGoogleEvent(formModel, calendarName);
             EventsResource.PatchRequest request = calendarService.Events.Patch(googleEvent, requiredCalendarId, requiredEventId);
             request.Fields = EVENT_FIELDS;
             Event updatedEvent = await request.ExecuteAsync(cancellationToken);
@@ -175,8 +155,9 @@ public sealed partial class GoogleCalendarService
         }
     }
 
-    public async Task DeleteEventAsync(CalendarId calendarId, CalendarEventId eventId, CancellationToken cancellationToken)
+    public async Task DeleteEventAsync(UserSession userSession, CalendarId calendarId, CalendarEventId eventId, CancellationToken cancellationToken)
     {
+        await ensureCanWriteCalendarAsync(userSession, calendarId, cancellationToken);
         string requiredCalendarId = calendarId.GetRequiredValue();
         string requiredEventId = eventId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarId)))
@@ -186,6 +167,24 @@ public sealed partial class GoogleCalendarService
             await request.ExecuteAsync(cancellationToken);
             await deleteMetadataAsync(calendarId, eventId, cancellationToken);
             expireCalendarEventCache(calendarId);
+        }
+    }
+
+    private async Task ensureCanWriteCalendarAsync(UserSession userSession, CalendarId calendarId, CancellationToken cancellationToken)
+    {
+        bool canWrite = await mPermissionService.CanWriteCalendarAsync(userSession, calendarId, cancellationToken);
+        if (canWrite == false)
+        {
+            throw new UnauthorizedAccessException("The current user cannot write to the selected calendar.");
+        }
+    }
+
+    private async Task ensureCanReadCalendarAsync(UserSession userSession, CalendarId calendarId, CancellationToken cancellationToken)
+    {
+        bool canRead = await mPermissionService.CanReadCalendarAsync(userSession, calendarId, cancellationToken);
+        if (canRead == false)
+        {
+            throw new UnauthorizedAccessException("The current user cannot read the selected calendar.");
         }
     }
 

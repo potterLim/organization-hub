@@ -37,6 +37,16 @@ public class ApprovalRequest
         get; set;
     }
     public string RequesterDisplayName { get; set; } = string.Empty;
+    public int? RequesterTeamId
+    {
+        get; set;
+    }
+    public string RequesterTeamName { get; set; } = string.Empty;
+    public int? RequesterPositionId
+    {
+        get; set;
+    }
+    public string RequesterPositionName { get; set; } = string.Empty;
     public DateTime RequestedAt
     {
         get; set;

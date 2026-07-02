@@ -22,6 +22,16 @@ public class ApprovalAuditLog
         get; set;
     }
     public string ActorDisplayName { get; set; } = string.Empty;
+    public int? ActorTeamId
+    {
+        get; set;
+    }
+    public string ActorTeamName { get; set; } = string.Empty;
+    public int? ActorPositionId
+    {
+        get; set;
+    }
+    public string ActorPositionName { get; set; } = string.Empty;
     public EApprovalAuditAction Action
     {
         get; set;

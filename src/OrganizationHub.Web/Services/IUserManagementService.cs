@@ -9,6 +9,7 @@ namespace OrganizationHub.Web.Services;
 
 public interface IUserManagementService
 {
+    Task<bool> CanManageSystemAdministratorsAsync(UserSession userSession, CancellationToken cancellationToken);
     Task<IReadOnlyList<UserAccount>> GetUsersAsync(UserSession userSession, CancellationToken cancellationToken);
     Task<ServiceResult> CreateUserAsync(UserSession userSession, UserAccountFormModel formModel, CancellationToken cancellationToken);
     Task<ServiceResult> UpdateUserAsync(UserSession userSession, UserAccountFormModel formModel, CancellationToken cancellationToken);

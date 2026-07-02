@@ -18,6 +18,14 @@ public class ApprovalWorkflow
     {
         get; set;
     }
+    public int? AppliesToPositionId
+    {
+        get; set;
+    }
+    public OrganizationPosition? AppliesToPosition
+    {
+        get; set;
+    }
     public int Priority
     {
         get; set;

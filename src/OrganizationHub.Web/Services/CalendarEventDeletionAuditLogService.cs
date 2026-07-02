@@ -14,10 +14,14 @@ namespace OrganizationHub.Web.Services;
 public sealed class CalendarEventDeletionAuditLogService : ICalendarEventDeletionAuditLogService
 {
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;
+    private readonly IOrganizationPermissionService mOrganizationPermissionService;
 
-    public CalendarEventDeletionAuditLogService(IDbContextFactory<OrganizationHubDbContext> dbContextFactory)
+    public CalendarEventDeletionAuditLogService(
+        IDbContextFactory<OrganizationHubDbContext> dbContextFactory,
+        IOrganizationPermissionService organizationPermissionService)
     {
         mDbContextFactory = dbContextFactory;
+        mOrganizationPermissionService = organizationPermissionService;
     }
 
     public async Task<CalendarEventDeletionAuditLogId> RecordPendingDeletionAsync(
@@ -28,6 +32,10 @@ public sealed class CalendarEventDeletionAuditLogService : ICalendarEventDeletio
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
+            UserAccount? deletedByUserOrNull = await loadUserAccountWithPositionOrNullAsync(
+                dbContext,
+                userSession.UserAccountId,
+                cancellationToken);
             CalendarEventDeletionAuditLog auditLog = new CalendarEventDeletionAuditLog();
             auditLog.CalendarId = calendarEvent.CalendarId;
             auditLog.CalendarName = calendarEvent.CalendarName;
@@ -37,9 +45,10 @@ public sealed class CalendarEventDeletionAuditLogService : ICalendarEventDeletio
             auditLog.EventStart = calendarEvent.Start;
             auditLog.EventEnd = calendarEvent.End;
             auditLog.IsAllDay = calendarEvent.IsAllDay;
-            auditLog.DeletedByUserId = userSession.UserId;
+            auditLog.DeletedByUserId = userSession.UserAccountId.GetRequiredValue();
             auditLog.DeletedByDisplayName = userSession.DisplayName;
-            auditLog.DeletedByRole = userSession.Role;
+            auditLog.DeletedByStoredCompatibilityRole = userSession.StoredCompatibilityRole;
+            assignDeletedByPositionSnapshot(auditLog, deletedByUserOrNull);
             auditLog.DeletedByTeamId = OrganizationTeamId.GetValueOrNull(userSession.OrganizationTeamIdOrNull);
             auditLog.DeletedByTeamName = userSession.TeamDisplayName;
             auditLog.DeletedAt = DateTime.UtcNow;
@@ -66,7 +75,12 @@ public sealed class CalendarEventDeletionAuditLogService : ICalendarEventDeletio
         CancellationToken cancellationToken
     )
     {
-        if (userSession.IsManagementRole() == false)
+        bool canReadAuditLogs = await mOrganizationPermissionService.HasPermissionAsync(
+            userSession,
+            new PermissionKey(PermissionKeys.CALENDAR_AUDIT_READ),
+            null,
+            cancellationToken);
+        if (canReadAuditLogs == false)
         {
             return new List<CalendarEventDeletionAuditLogItem>();
         }
@@ -119,11 +133,38 @@ public sealed class CalendarEventDeletionAuditLogService : ICalendarEventDeletio
         item.EventEnd = auditLog.EventEnd;
         item.IsAllDay = auditLog.IsAllDay;
         item.DeletedByDisplayName = auditLog.DeletedByDisplayName;
-        item.DeletedByRole = auditLog.DeletedByRole;
+        item.DeletedByPositionName = auditLog.DeletedByPositionName;
         item.DeletedByTeamName = auditLog.DeletedByTeamName;
         item.DeletedAt = auditLog.DeletedAt;
         item.Status = auditLog.Status;
         item.ErrorMessage = auditLog.ErrorMessage;
         return item;
+    }
+
+    private static async Task<UserAccount?> loadUserAccountWithPositionOrNullAsync(
+        OrganizationHubDbContext dbContext,
+        UserAccountId userAccountId,
+        CancellationToken cancellationToken)
+    {
+        int requiredUserAccountId = userAccountId.GetRequiredValue();
+        return await dbContext.UserAccounts
+            .AsNoTracking()
+            .Include(userAccount => userAccount.Position)
+            .FirstOrDefaultAsync(userAccount => userAccount.Id == requiredUserAccountId, cancellationToken);
+    }
+
+    private static void assignDeletedByPositionSnapshot(
+        CalendarEventDeletionAuditLog auditLog,
+        UserAccount? deletedByUserOrNull)
+    {
+        if (deletedByUserOrNull == null || deletedByUserOrNull.Position == null)
+        {
+            auditLog.DeletedByPositionId = null;
+            auditLog.DeletedByPositionName = string.Empty;
+            return;
+        }
+
+        auditLog.DeletedByPositionId = deletedByUserOrNull.PositionId;
+        auditLog.DeletedByPositionName = deletedByUserOrNull.Position.Name;
     }
 }

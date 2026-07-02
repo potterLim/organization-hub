@@ -22,8 +22,6 @@ public interface IPermissionService
     Task<bool> CanCreateFolderInFolderAsync(UserSession userSession, DriveFolderId parentFolderId, CancellationToken cancellationToken);
     Task<PermissionDecision> DecideDeleteInFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken);
     Task<bool> CanDeleteInFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken);
-    PermissionDecision DecideDeleteInsideRoot(UserSession userSession, DriveFolderReference rootFolder);
-    bool CanDeleteInsideRoot(UserSession userSession, DriveFolderReference rootFolder);
     Task<PermissionDecision> DecideStoreApprovedFileToFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken);
     Task<bool> CanStoreApprovedFileToFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken);
     Task<PermissionDecision> DecideReadCalendarAsync(UserSession userSession, CalendarId calendarId, CancellationToken cancellationToken);

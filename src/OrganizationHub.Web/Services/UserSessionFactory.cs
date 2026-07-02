@@ -21,9 +21,9 @@ public static class UserSessionFactory
             return null;
         }
 
-        string roleText = getClaimValue(principal, OrganizationHubClaimTypes.ROLE);
-        EUserRole role;
-        bool isRoleParsed = UserRoleUtility.TryGetRole(roleText, out role);
+        string compatibilityRoleText = getClaimValue(principal, OrganizationHubClaimTypes.ROLE);
+        EStoredCompatibilityRole storedCompatibilityRole;
+        bool isRoleParsed = StoredCompatibilityRoleUtility.TryParseClaimRoleName(compatibilityRoleText, out storedCompatibilityRole);
         if (isRoleParsed == false)
         {
             return null;
@@ -36,7 +36,17 @@ public static class UserSessionFactory
         string teamDisplayName = getClaimValue(principal, OrganizationHubClaimTypes.TEAM_DISPLAY_NAME);
         UserAccountId userAccountId = UserAccountId.CreateExisting(userId);
         OrganizationTeamId? organizationTeamIdOrNull = createOrganizationTeamIdOrNull(teamIdText);
-        return new UserSession(userAccountId, username, displayName, role, organizationTeamIdOrNull, new OrganizationTeamKey(teamKey), teamDisplayName);
+        UserSessionCreateRequest request = new UserSessionCreateRequest
+        {
+            UserAccountId = userAccountId,
+            Username = Username.CreateOptional(username),
+            DisplayName = DisplayName.CreateOptional(displayName),
+            StoredCompatibilityRole = storedCompatibilityRole,
+            OrganizationTeamIdOrNull = organizationTeamIdOrNull,
+            TeamKey = new OrganizationTeamKey(teamKey),
+            TeamDisplayName = DisplayName.CreateOptional(teamDisplayName)
+        };
+        return new UserSession(request);
     }
 
     private static string getClaimValue(ClaimsPrincipal principal, string claimType)

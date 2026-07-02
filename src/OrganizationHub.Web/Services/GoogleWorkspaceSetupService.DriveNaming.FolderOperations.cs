@@ -44,7 +44,7 @@ public sealed partial class GoogleWorkspaceSetupService
             DriveFileMetadata createdMetadata = new DriveFileMetadata();
             createdMetadata.Id = createdFolder.Id;
             createdMetadata.Name = createdFolder.Name;
-            createdMetadata.MimeType = GOOGLE_DRIVE_FOLDER_MIME_TYPE;
+            createdMetadata.MimeType = GoogleMimeTypes.DRIVE_FOLDER;
             createdMetadata.ParentFolderIds = new List<string> { teamRootFolderId.GetRequiredValue() };
             return createdMetadata;
         }
@@ -109,7 +109,7 @@ public sealed partial class GoogleWorkspaceSetupService
                 return null;
             }
 
-            if (metadataOrNull.MimeType != GOOGLE_DRIVE_FOLDER_MIME_TYPE)
+            if (metadataOrNull.MimeType != GoogleMimeTypes.DRIVE_FOLDER)
             {
                 syncContext.FailureMessages.Add(standardName + " 연결 대상이 폴더가 아닙니다.");
                 return null;

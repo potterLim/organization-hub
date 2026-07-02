@@ -13,24 +13,18 @@ public readonly record struct ApprovalStepCountSelection
     {
         get
         {
-            return Value >= ApprovalStepCount.MINIMUM_VALUE && Value <= ApprovalStepCount.MAXIMUM_VALUE;
+            return ApprovalStepCount.IsSupportedValue(Value);
         }
     }
 
-    public bool RequiresFirstApprover
+    public bool RequiresFirstApprover()
     {
-        get
-        {
-            return Value >= 2;
-        }
+        return Value >= ApprovalStepCount.FIRST_APPROVER_REQUIRED_STEP_COUNT;
     }
 
-    public bool RequiresSecondApprover
+    public bool RequiresSecondApprover()
     {
-        get
-        {
-            return Value == 3;
-        }
+        return Value == ApprovalStepCount.SECOND_APPROVER_REQUIRED_STEP_COUNT;
     }
 
     public ApprovalStepCountSelection(int countValue)

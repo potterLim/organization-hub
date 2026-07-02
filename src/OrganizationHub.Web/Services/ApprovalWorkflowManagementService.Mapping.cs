@@ -6,13 +6,14 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed partial class ApprovalWorkflowManagementService
+internal sealed partial class ApprovalWorkflowManagementService
 {
     private void applyWorkflowForm(ApprovalWorkflow workflow, ApprovalWorkflowFormModel formModel)
     {
         workflow.Name = formModel.Name.Trim();
         workflow.Description = getTrimmedTextOrEmpty(formModel.Description);
         workflow.AppliesToTeamId = OrganizationTeamId.GetValueOrNull(formModel.AppliesToTeamIdOrNull);
+        workflow.AppliesToPositionId = OrganizationPositionId.GetValueOrNull(formModel.AppliesToPositionIdOrNull);
         workflow.Priority = formModel.Priority;
         workflow.IsActive = formModel.IsActive;
     }
