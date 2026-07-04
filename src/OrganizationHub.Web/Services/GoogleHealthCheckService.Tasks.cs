@@ -16,8 +16,7 @@ public sealed partial class GoogleHealthCheckService
         List<Team> teams,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<GoogleTaskListItem> taskLists =
-            await mGoogleWorkspaceBrowserService.ListTaskListsAsync(cancellationToken);
+        IReadOnlyList<GoogleTaskListItem> taskLists = await mGoogleWorkspaceBrowserService.ListTaskListsAsync(cancellationToken);
         HashSet<string> taskListIds = new HashSet<string>(taskLists.Select(taskList => taskList.Id));
         addTaskListItem(items, "Google Tasks", OrganizationHubWorkspaceDefaults.ORGANIZATION_TASK_LIST_NAME, setting.OrganizationTaskListId, taskListIds);
         addTaskListItem(items, "Google Tasks", OrganizationHubWorkspaceDefaults.RESPONSIBLE_TASK_LIST_NAME, setting.ResponsibleTaskListId, taskListIds);

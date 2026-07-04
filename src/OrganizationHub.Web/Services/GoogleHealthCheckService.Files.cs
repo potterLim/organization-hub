@@ -31,8 +31,7 @@ public sealed partial class GoogleHealthCheckService
             return;
         }
 
-        DriveFileMetadata? metadataOrNull =
-            await mDriveService.GetFileOrNullAsync(DriveItemId.CreateOptional(fileIdOrNull), cancellationToken);
+        DriveFileMetadata? metadataOrNull = await mDriveService.GetFileOrNullAsync(DriveItemId.CreateOptional(fileIdOrNull), cancellationToken);
         if (metadataOrNull == null)
         {
             addItem(items, area, name, EGoogleHealthStatus.Error, "연결된 계정에서 파일을 찾을 수 없습니다.");

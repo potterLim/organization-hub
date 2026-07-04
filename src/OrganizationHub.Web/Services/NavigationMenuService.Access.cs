@@ -29,8 +29,7 @@ internal sealed partial class NavigationMenuService
                 .ThenInclude(menuPermission => menuPermission.Team)
                 .OrderByDescending(menuItem => menuItem.Href.Length)
                 .ToListAsync(cancellationToken);
-            NavigationMenuVisibilityEvaluationContext evaluationContext =
-                await createVisibilityEvaluationContextAsync(userSession, cancellationToken);
+            NavigationMenuVisibilityEvaluationContext evaluationContext = await createVisibilityEvaluationContextAsync(userSession, cancellationToken);
             foreach (NavigationMenuItem menuItem in menuItems)
             {
                 if (isPathMatch(routePath, NavigationPath.CreateOptional(menuItem.Href)))

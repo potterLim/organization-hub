@@ -25,8 +25,7 @@ internal sealed partial class NavigationMenuService
                 .ThenBy(menuItem => menuItem.DisplayName)
                 .ToListAsync(cancellationToken);
             List<NavigationMenuItem> visibleMenuItems = new List<NavigationMenuItem>();
-            NavigationMenuVisibilityEvaluationContext evaluationContext =
-                await createVisibilityEvaluationContextAsync(userSession, cancellationToken);
+            NavigationMenuVisibilityEvaluationContext evaluationContext = await createVisibilityEvaluationContextAsync(userSession, cancellationToken);
             foreach (NavigationMenuItem menuItem in menuItems)
             {
                 if (await canUseMenuItemAsync(menuItem, evaluationContext, cancellationToken))

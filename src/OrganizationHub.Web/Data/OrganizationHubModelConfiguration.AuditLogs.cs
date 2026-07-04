@@ -39,8 +39,7 @@ internal static partial class OrganizationHubModelConfiguration
 
     private static void configureCalendarEventDeletionAuditLogs(ModelBuilder modelBuilder)
     {
-        EntityTypeBuilder<CalendarEventDeletionAuditLog> calendarDeletionAuditBuilder =
-            modelBuilder.Entity<CalendarEventDeletionAuditLog>();
+        EntityTypeBuilder<CalendarEventDeletionAuditLog> calendarDeletionAuditBuilder = modelBuilder.Entity<CalendarEventDeletionAuditLog>();
         calendarDeletionAuditBuilder.HasKey(auditLog => auditLog.Id);
         calendarDeletionAuditBuilder.HasIndex(auditLog => auditLog.CalendarId);
         calendarDeletionAuditBuilder.HasIndex(auditLog => auditLog.EventId);

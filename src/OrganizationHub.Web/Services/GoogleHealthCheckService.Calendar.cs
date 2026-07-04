@@ -16,8 +16,7 @@ public sealed partial class GoogleHealthCheckService
         List<Team> teams,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<GoogleCalendarListItem> calendars =
-            await mGoogleWorkspaceBrowserService.ListCalendarsAsync(cancellationToken);
+        IReadOnlyList<GoogleCalendarListItem> calendars = await mGoogleWorkspaceBrowserService.ListCalendarsAsync(cancellationToken);
         HashSet<string> calendarIds = createCalendarIdSet(calendars);
         addCalendarItem(
             items,
