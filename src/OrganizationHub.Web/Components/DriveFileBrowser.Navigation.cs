@@ -64,6 +64,7 @@ public partial class DriveFileBrowser
                 return;
             }
             bool canDeleteFiles = false;
+            bool canUploadFiles = false;
             if (currentRootFolderOrNull == null)
             {
                 canDeleteFiles = false;
@@ -72,9 +73,9 @@ public partial class DriveFileBrowser
             {
                 PermissionDecision deleteDecision = await PermissionService.DecideDeleteInFolderAsync(CurrentUserSessionOrNull, currentRootFolderOrNull.FolderId, CancellationToken.None);
                 canDeleteFiles = deleteDecision.IsAllowed;
+                canUploadFiles = await PermissionService.CanUploadToFolderAsync(CurrentUserSessionOrNull, DriveFolderId.CreateOptional(getCurrentFolderId()), CancellationToken.None);
             }
 
-            bool canUploadFiles = await PermissionService.CanUploadToFolderAsync(CurrentUserSessionOrNull, DriveFolderId.CreateOptional(getCurrentFolderId()), CancellationToken.None);
             if (loadVersion != mFileLoadVersion)
             {
                 return;
