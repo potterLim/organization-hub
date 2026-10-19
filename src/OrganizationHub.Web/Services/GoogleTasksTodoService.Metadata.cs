@@ -92,35 +92,6 @@ public sealed partial class GoogleTasksTodoService
         return metadata;
     }
 
-    private async Task updateMetadataDueAtAsync(
-        TodoTaskListId taskListId,
-        TodoTaskId taskId,
-        DateTime? dueAtOrNull,
-        CancellationToken cancellationToken
-    )
-    {
-        try
-        {
-            await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
-            {
-                string requiredTaskListId = taskListId.GetRequiredValue();
-                string requiredTaskId = taskId.GetRequiredValue();
-                TodoTaskMetadata? metadataOrNull = await dbContext.TodoTaskMetadata.FirstOrDefaultAsync(metadata => metadata.TaskListId == requiredTaskListId && metadata.TaskId == requiredTaskId, cancellationToken);
-                if (metadataOrNull == null)
-                {
-                    return;
-                }
-
-                metadataOrNull.DueAt = dueAtOrNull;
-                await dbContext.SaveChangesAsync(cancellationToken);
-            }
-        }
-        catch (Exception exception)
-        {
-            mLogger.LogWarning(exception, "Failed to update Google Tasks due metadata for task {TaskId}.", taskId.GetRequiredValue());
-        }
-    }
-
     private async Task deleteMetadataAsync(TodoTaskListId taskListId, TodoTaskId taskId, CancellationToken cancellationToken)
     {
         try
@@ -168,7 +139,12 @@ public sealed partial class GoogleTasksTodoService
         task.CreatedByDisplayName = metadata.CreatedByDisplayName;
         task.CreatedByUserIdOrNull = metadata.CreatedByUserId > 0 ? metadata.CreatedByUserId : null;
         task.CreatedAt = metadata.CreatedAt;
-        task.DueAt = normalizeStoredDueAtOrNull(metadata.DueAt);
+        bool hasMatchingVersion = string.IsNullOrEmpty(metadata.GoogleETag) == false && metadata.GoogleETag == task.ETag;
+        bool hasMatchingDate = task.DueAt?.Date == metadata.DueAt?.Date;
+        if (hasMatchingVersion || hasMatchingDate)
+        {
+            task.DueAt = normalizeStoredDueAtOrNull(metadata.DueAt);
+        }
     }
 
     private DateTime? normalizeStoredDueAtOrNull(DateTime? dueAtOrNull)

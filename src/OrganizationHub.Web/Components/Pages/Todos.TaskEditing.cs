@@ -1,5 +1,7 @@
 using System;
+using OrganizationHub.Web.Services;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Domain;
@@ -19,6 +21,7 @@ public partial class Todos
         mEditingTaskId = task.Id;
         mEditingTitle = task.Title;
         mEditingETag = task.ETag;
+        mHasEditConflict = false;
         mEditingDueAt = createEditorDueAtOrNull(task.DueAt);
         mIsEditingDuePickerOpen = false;
         mDeletingTaskId = string.Empty;
@@ -32,6 +35,7 @@ public partial class Todos
     private void cancelEdit()
     {
         mEditingTaskId = string.Empty;
+        mHasEditConflict = false;
         mEditingTitle = string.Empty;
         mEditingDueAt = null;
         mIsEditingDuePickerOpen = false;
@@ -65,10 +69,10 @@ public partial class Todos
 
         mIsSaving = true;
         List<TodoTaskItem> previousTasks = cloneTasks(mTasks);
+        string editedTitle = mEditingTitle.Trim();
+        DateTime? editedDueAtUtcOrNull = createDueAtUtcOrNull(mEditingDueAt);
         try
         {
-            string editedTitle = mEditingTitle.Trim();
-            DateTime? editedDueAtUtcOrNull = createDueAtUtcOrNull(mEditingDueAt);
             TodoTaskItem optimisticTask = cloneTask(task);
             optimisticTask.Title = editedTitle;
             optimisticTask.DueAt = editedDueAtUtcOrNull;
@@ -88,16 +92,34 @@ public partial class Todos
             replaceTask(updatedTask);
             recordLoadedChangeSnapshot();
         }
+        catch (ResourceSynchronizationException exception)
+        {
+            await loadTasksAsync();
+            showError(exception.Message);
+        }
         catch (Exception exception)
         {
             mTasks = cloneTasks(previousTasks);
             mEditingTaskId = task.Id;
-            mEditingTitle = task.Title;
-            mEditingDueAt = createEditorDueAtOrNull(task.DueAt);
+            mEditingTitle = editedTitle;
+            mEditingDueAt = createEditorDueAtOrNull(editedDueAtUtcOrNull);
+            mHasEditConflict = exception is ResourceEditConflictException;
             showError(createTodoErrorMessage(exception));
         }
 
         mIsSaving = false;
+    }
+
+    private async Task reloadConflictedTaskAsync()
+    {
+        string taskId = mEditingTaskId;
+        cancelEdit();
+        await loadTasksAsync();
+        TodoTaskItem? latestOrNull = mTasks.FirstOrDefault(item => item.Id == taskId);
+        if (latestOrNull != null)
+        {
+            beginEdit(latestOrNull);
+        }
     }
 
     private Task setEditingDueAtAsync(DateTime? dueAtOrNull)

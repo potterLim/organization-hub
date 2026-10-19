@@ -10,12 +10,20 @@ internal static partial class OrganizationHubModelConfiguration
     {
         configureTodoTaskMetadata(modelBuilder);
         configureCalendarEventMetadata(modelBuilder);
+        EntityTypeBuilder<TodoDeadlineChange> pendingBuilder = modelBuilder.Entity<TodoDeadlineChange>();
+        pendingBuilder.HasKey(change => change.Id);
+        pendingBuilder.HasIndex(change => change.CreatedAt);
+        pendingBuilder.Property(change => change.TaskListId).HasMaxLength(256).IsRequired();
+        pendingBuilder.Property(change => change.TaskId).HasMaxLength(256).IsRequired();
+        pendingBuilder.Property(change => change.ExpectedETag).HasMaxLength(256).IsRequired();
+        pendingBuilder.Property(change => change.Title).HasMaxLength(1024).IsRequired();
     }
 
     private static void configureTodoTaskMetadata(ModelBuilder modelBuilder)
     {
         EntityTypeBuilder<TodoTaskMetadata> todoTaskMetadataBuilder = modelBuilder.Entity<TodoTaskMetadata>();
         todoTaskMetadataBuilder.HasKey(metadata => metadata.Id);
+        todoTaskMetadataBuilder.Property(metadata => metadata.GoogleETag).IsConcurrencyToken();
         todoTaskMetadataBuilder.HasIndex(metadata => new { metadata.TaskListId, metadata.TaskId }).IsUnique();
         todoTaskMetadataBuilder.HasIndex(metadata => metadata.CreatedByUserId);
         todoTaskMetadataBuilder.Property(metadata => metadata.TaskListId).HasMaxLength(256).IsRequired();

@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
@@ -64,9 +65,19 @@ public sealed partial class GoogleTasksTodoService
                 Google.Apis.Tasks.v1.TasksResource.PatchRequest request = tasksService.Tasks.Patch(googleTask, requiredTaskListId, requiredTaskId);
                 request.Fields = TASK_FIELDS;
                 request.ModifyRequest = message => prepareTaskEdit(message, formModel, googleTask.Title);
+                ResourceEditVersion.Validate(formModel.ETag);
+                TodoDeadlineChange deadlineChange = await prepareDeadlineChangeAsync(formModel, cancellationToken);
                 GoogleTask updatedTask = await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
                 TodoTaskItem updatedItem = createTaskItem(taskListId, updatedTask);
-                await updateMetadataDueAtAsync(taskListId, taskId, dueAtUtcOrNull, cancellationToken);
+                try
+                {
+                    await finishDeadlineChangeAsync(deadlineChange, updatedItem.ETag, cancellationToken);
+                }
+                catch (Exception exception)
+                {
+                    mLogger.LogWarning(exception, "Deadline change {ChangeId} will be recovered from Google.", deadlineChange.Id);
+                    throw new ResourceSynchronizationException(exception);
+                }
                 await applyMetadataAsync(updatedItem, cancellationToken);
                 await applyItemPermissionsAsync(userSession, new TodoTaskItem[] { updatedItem }, false, cancellationToken);
                 return updatedItem;

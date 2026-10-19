@@ -10,11 +10,16 @@ internal static class ResourceEditVersion
 {
     public static void Apply(HttpRequestMessage message, string etag)
     {
+        Validate(etag);
+        message.Headers.IfMatch.Add(EntityTagHeaderValue.Parse(etag));
+    }
+
+    public static void Validate(string etag)
+    {
         if (EntityTagHeaderValue.TryParse(etag, out EntityTagHeaderValue? parsedOrNull) == false || parsedOrNull.Tag == "*" || parsedOrNull.IsWeak)
         {
             throw new ResourceEditConflictException();
         }
-        message.Headers.IfMatch.Add(parsedOrNull);
     }
 
     public static async Task<T> ExecuteAsync<T>(Func<Task<T>> executeAsync)

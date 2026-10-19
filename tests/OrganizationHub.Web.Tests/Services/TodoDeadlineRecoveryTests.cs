@@ -23,9 +23,20 @@ public sealed class TodoDeadlineRecoveryTests
 {
     private sealed class StorageFailure : SaveChangesInterceptor
     {
-        public bool ShouldFail { get; set; }
+        public bool ShouldFail
+        {
+            get; set;
+        }
+        public bool ShouldFailIntent
+        {
+            get; set;
+        }
         public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData data, InterceptionResult<int> result, CancellationToken cancellationToken = default)
         {
+            if (ShouldFailIntent && data.Context!.ChangeTracker.Entries<TodoDeadlineChange>().Any(entry => entry.State == EntityState.Added))
+            {
+                throw new IOException("Intent storage failed before Google.");
+            }
             if (ShouldFail && data.Context!.ChangeTracker.Entries<TodoTaskMetadata>().Any(entry => entry.State == EntityState.Modified))
             {
                 throw new IOException("Storage failed after the Google write.");
@@ -76,6 +87,27 @@ public sealed class TodoDeadlineRecoveryTests
                 Assert.Equal(transport.ETag, db.TodoTaskMetadata.Single().GoogleETag);
             }
             Assert.Equal(1, transport.Writes);
+            TodoTaskItem completed = await createService(factory, transport).CompleteTaskAsync(OperationPermissionRegressionTests.createSession(), TodoTaskListId.CreateRequired("tasks"), TodoTaskId.CreateRequired("item"), CancellationToken.None);
+            Assert.Equal(form.DueAtUtc, completed.DueAt);
+        }
+    }
+
+    [Fact]
+    public async Task FailedIntentStorageDoesNotModifyGoogleAsync()
+    {
+        StorageFailure failure = new StorageFailure();
+        using (TestDbContextFactory raw = new TestDbContextFactory(failure))
+        using (TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(PermissionKeys.TODOS_UPDATE, raw))
+        {
+            VersionedGoogleTransport transport = new VersionedGoogleTransport();
+            TodoTaskFormModel form = new TodoTaskFormModel();
+            form.TaskId = "item";
+            form.TaskListId = "tasks";
+            form.Title = "Never written";
+            form.ETag = transport.ETag;
+            failure.ShouldFailIntent = true;
+            await Assert.ThrowsAsync<IOException>(() => createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None));
+            Assert.Equal(0, transport.Writes);
         }
     }
 

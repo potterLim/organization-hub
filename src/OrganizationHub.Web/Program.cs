@@ -136,6 +136,8 @@ public class Program
         builder.Services.AddScoped<DashboardAccessService>();
         builder.Services.AddScoped<IApprovalPublicationService, ApprovalService>();
         builder.Services.AddHostedService<ApprovalPublicationWorker>();
+        builder.Services.AddScoped<GoogleTasksTodoService>();
+        builder.Services.AddHostedService<TodoDeadlineRecoveryWorker>();
         builder.Services.AddScoped<IApprovalWorkflowManagementService, ApprovalWorkflowManagementService>();
         builder.Services.AddScoped<IWorkGuidelineService, WorkGuidelineService>();
         builder.Services.AddScoped<OrganizationHubDataSeeder>();

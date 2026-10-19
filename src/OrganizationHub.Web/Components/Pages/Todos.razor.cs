@@ -38,6 +38,7 @@ public partial class Todos
     private bool mIsLoadingLists = true;
     private bool mIsLoadingTasks;
     private bool mIsSaving;
+    private bool mHasEditConflict;
     private bool mShouldInitializeSortable;
     private bool mShouldShowTodoAuthor = true;
     private bool mHasExternalChanges;

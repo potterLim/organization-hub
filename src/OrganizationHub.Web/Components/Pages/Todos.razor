@@ -16,7 +16,13 @@
 
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
-    <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
+    <MudAlert Severity="@mMessageSeverity" Class="mb-4">
+        @mMessage
+        @if (mHasEditConflict)
+        {
+            <MudButton OnClick="reloadConflictedTaskAsync" Disabled="mIsSaving">최신 내용 불러오기</MudButton>
+        }
+    </MudAlert>
 }
 
 @if (mIsLoadingLists)
