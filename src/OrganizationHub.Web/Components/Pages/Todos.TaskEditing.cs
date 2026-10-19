@@ -34,6 +34,7 @@ public partial class Todos
 
     private void cancelEdit()
     {
+        mPendingTaskListIdOrNull = null;
         mEditingTaskId = string.Empty;
         mHasEditConflict = false;
         mEditingTitle = string.Empty;

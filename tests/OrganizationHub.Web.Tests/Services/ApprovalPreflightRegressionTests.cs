@@ -1,6 +1,6 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +32,10 @@ public sealed class ApprovalPreflightRegressionTests
 
     public class ApprovalSpy : DispatchProxy
     {
-        public int ApprovalCalls { get; private set; }
+        public int ApprovalCalls
+        {
+            get; private set;
+        }
 
         protected override object? Invoke(MethodInfo? targetMethodOrNull, object?[]? argsOrNull)
         {
@@ -79,6 +82,5 @@ public sealed class ApprovalPreflightRegressionTests
         await (Task)approve.Invoke(page, new object[] { request })!;
         Assert.Equal(1, ((ApprovalSpy)approvalService).ApprovalCalls);
         Assert.Empty((Dictionary<int, string>)typeof(ApprovalInbox).GetField("mErrorsByApprovalId", flags)!.GetValue(page)!);
-
     }
 }

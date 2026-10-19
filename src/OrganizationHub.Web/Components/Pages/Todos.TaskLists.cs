@@ -81,10 +81,8 @@ public partial class Todos
     {
         mSelectedTaskListId = taskListId;
         await ensureAvailableTaskSortModeAsync();
-        mEditingTaskId = string.Empty;
-        mEditingTitle = string.Empty;
-        mEditingDueAt = null;
-        mIsEditingDuePickerOpen = false;
+        cancelEdit();
+        mIsNewTaskDuePickerOpen = false;
         mDeletingTaskId = string.Empty;
         await loadTasksAsync();
     }

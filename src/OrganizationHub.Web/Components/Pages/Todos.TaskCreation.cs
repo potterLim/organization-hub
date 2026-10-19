@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Web;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
-
 using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -34,6 +33,7 @@ public partial class Todos
         try
         {
             prependTask(optimisticTask);
+            mPendingTaskListIdOrNull = null;
             mNewTaskTitle = string.Empty;
             mNewTaskDueAt = null;
             mIsNewTaskDuePickerOpen = false;
