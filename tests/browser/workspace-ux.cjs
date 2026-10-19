@@ -56,7 +56,10 @@ async function check(page, width, name, action) {
                         await expect(title).toHaveValue('날짜를 둘러보는 동안 유지할 협업 일정');
                         await page.getByRole('button', { name: '일정 추가', exact: true }).click();
                         await expect(title).toHaveValue('날짜를 둘러보는 동안 유지할 협업 일정');
+                        await page.screenshot({ path: path.join(output, `${width}-calendar-draft-retained.png`) });
                         await page.getByRole('button', { name: '취소', exact: true }).click();
+                        await expect(page.getByRole('button', { name: '계속 작성', exact: true })).toBeVisible();
+                        await page.screenshot({ path: path.join(output, `${width}-calendar-discard-confirmation.png`) });
                         await page.getByRole('button', { name: '계속 작성', exact: true }).click();
                         await expect(title).toHaveValue('날짜를 둘러보는 동안 유지할 협업 일정');
                         await page.getByRole('button', { name: '취소', exact: true }).click();
@@ -117,6 +120,7 @@ async function check(page, width, name, action) {
                     if (account === 'ux-admin') {
                         const action = page.locator('.hub-file-empty-state').getByRole('link', { name: '파일 올리기', exact: true });
                         await expect(action).toBeVisible();
+                        await page.screenshot({ path: path.join(output, `${width}-empty-upload-action.png`) });
                         await action.click();
                         await page.waitForURL('**/upload?root=qa-team');
                         await expect(page.locator('.hub-browser-root-select')).toContainText('경영지원팀 자료');
