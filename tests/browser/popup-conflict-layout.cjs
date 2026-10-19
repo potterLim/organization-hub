@@ -72,11 +72,12 @@ async function inspectPopup(page) {
         const violations = [];
         if (document.documentElement.scrollWidth > width + 1) violations.push('document overflows client viewport');
         if (rect.left < 0 || rect.right > width + 1) violations.push('popup leaves viewport');
+        if (rect.top < 0 || rect.bottom > innerHeight + 1) violations.push('popup leaves vertical viewport');
         for (const button of panel.querySelectorAll('button')) {
             const bounds = button.getBoundingClientRect();
             if (bounds.left < rect.left - 1 || bounds.right > rect.right + 1) violations.push('popup control leaves panel');
         }
-        return { clientWidth: width, innerWidth, scrollWidth: document.documentElement.scrollWidth, left: rect.left, right: rect.right, violations };
+        return { clientWidth: width, innerWidth, scrollWidth: document.documentElement.scrollWidth, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, viewportHeight: innerHeight, violations };
     });
 }
 
