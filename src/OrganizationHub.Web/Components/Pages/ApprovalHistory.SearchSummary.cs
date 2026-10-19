@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Domain;
 
@@ -19,7 +20,11 @@ public partial class ApprovalHistory
             case EApprovalHistoryFilter.Rejected:
                 status = "반려";
                 break;
+            case EApprovalHistoryFilter.AllRelated:
+                status = "전체 상태";
+                break;
             default:
+                Debug.Fail("Unexpected history filter: " + mHistoryFilter);
                 status = "전체 상태";
                 break;
         }
