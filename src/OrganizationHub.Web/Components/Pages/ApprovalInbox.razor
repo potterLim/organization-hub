@@ -56,14 +56,14 @@ else
                 }
                 @if (approvalRequest.Status != EApprovalRequestStatus.Publishing)
                 {
-                <MudTextField Value="@getCommentValue(ApprovalRequestId.CreateExisting(approvalRequest.Id))"
-                              ValueChanged="@((string comment) => setCommentValue(ApprovalRequestId.CreateExisting(approvalRequest.Id), comment))"
-                              Label="코멘트"
-                              ReadOnly="@(approvalRequest.Status == EApprovalRequestStatus.Publishing)"
-                              Lines="3"
-                              Variant="Variant.Outlined"
-                              Margin="Margin.Dense"
-                              Class="hub-approval-comment-field" />
+                    <MudTextField Value="@getCommentValue(ApprovalRequestId.CreateExisting(approvalRequest.Id))"
+                                  ValueChanged="@((string comment) => setCommentValue(ApprovalRequestId.CreateExisting(approvalRequest.Id), comment))"
+                                  Label="코멘트"
+                                  ReadOnly="@(approvalRequest.Status == EApprovalRequestStatus.Publishing)"
+                                  Lines="3"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Class="hub-approval-comment-field" />
                 }
                 @if (hasApprovedFileConflict(approvalRequest))
                 {
