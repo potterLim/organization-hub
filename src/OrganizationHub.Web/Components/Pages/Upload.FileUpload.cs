@@ -70,7 +70,7 @@ public partial class Upload
 
         if (mSelectedFileOrNull.Size > uploadPolicy.MaximumUploadBytes)
         {
-            showMessage("파일 크기가 제한을 초과했습니다.", Severity.Error);
+            showMessage("파일 크기가 제한을 초과했습니다. 최대 " + formatUploadLimit(uploadPolicy.MaximumUploadBytes) + "까지 올릴 수 있습니다.", Severity.Error);
             return;
         }
 

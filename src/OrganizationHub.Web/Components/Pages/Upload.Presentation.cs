@@ -4,12 +4,42 @@ using System.Linq;
 using MudBlazor;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Services;
+using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Upload
 {
     private const string FILE_SIZE_DECIMAL_FORMAT = "0.0";
+
+    private FileUploadPolicy? getCurrentUploadPolicyOrNull()
+    {
+        DriveFolderReference? rootFolderOrNull = getSelectedRootFolderOrNull();
+        if (rootFolderOrNull == null)
+        {
+            return null;
+        }
+
+        EFileUploadPolicyContext policyContext = isCurrentPathMinutesFolder() ? EFileUploadPolicyContext.MinutesFolder : EFileUploadPolicyContext.RegularFolder;
+        return FilePolicyService.GetUploadPolicy(rootFolderOrNull.FolderKind, policyContext);
+    }
+
+    private string getUploadPolicyText()
+    {
+        FileUploadPolicy? policyOrNull = getCurrentUploadPolicyOrNull();
+        if (policyOrNull == null)
+        {
+            return "파일을 올릴 위치를 먼저 선택해 주세요.";
+        }
+
+        return "허용 형식: " + string.Join(", ", policyOrNull.AllowedExtensions.OrderBy(extension => extension)) + " · 최대 " + formatUploadLimit(policyOrNull.MaximumUploadBytes);
+    }
+
+    private static string formatUploadLimit(long maximumUploadBytes)
+    {
+        const decimal BYTES_PER_MEGABYTE = 1_048_576m;
+        return (maximumUploadBytes / BYTES_PER_MEGABYTE).ToString("0.#", CultureInfo.InvariantCulture) + " MB";
+    }
 
     private void showMessage(string message, Severity severity)
     {

@@ -15,8 +15,6 @@
     {
         <div class="hub-google-meta">연결일 @FormatDate(Status.ConnectedAt)</div>
     }
-    <MudExpansionPanels Elevation="0" Class="hub-advanced-settings hub-google-advanced-settings">
-        <MudExpansionPanel Text="자세히">
             @if (shouldShowConnectedEmail())
             {
                 <div class="hub-google-callback mb-3">
@@ -24,6 +22,8 @@
                     <code>@Status.ConnectedEmail</code>
                 </div>
             }
+    <MudExpansionPanels Elevation="0" Class="hub-advanced-settings hub-google-advanced-settings">
+        <MudExpansionPanel Text="자세히">
             <div class="hub-google-callback">
                 <div class="hub-google-callback-label">승인 후 돌아올 주소</div>
                 <code>@CallbackUri</code>

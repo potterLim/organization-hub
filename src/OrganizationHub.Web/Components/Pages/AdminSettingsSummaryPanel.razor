@@ -5,13 +5,14 @@
         </div>
         <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => RefreshRequested.InvokeAsync())" StartIcon="@Icons.Material.Filled.Refresh" Disabled="IsRefreshing">새로고침</MudButton>
     </div>
+    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">공식 루트 폴더는 문서 보관 구조를 준비하는 기본 위치입니다. Calendar와 Google Tasks는 사용할 업무만 연결하세요. 미설정된 일정·할 일 목록은 해당 업무에서 표시되지 않으며, 다른 연결에는 영향을 주지 않습니다.</MudAlert>
     <div class="hub-resource-summary-grid">
         @foreach (SettingResourceSummary summary in ResourceSummaries)
         {
             <div class="hub-resource-summary-card">
                 <div class="hub-resource-summary-heading">
                     <span>@summary.GroupName</span>
-                    <span class="@(summary.IsConfigured ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(summary.IsConfigured ? "위치 지정됨" : "미설정")</span>
+                    <span class="@(summary.IsConfigured ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-pending")">@(summary.IsConfigured ? "위치 지정됨" : "미설정")</span>
                 </div>
                 <div class="hub-resource-summary-title">@summary.DisplayName</div>
                 <div class="hub-muted">@summary.Detail</div>

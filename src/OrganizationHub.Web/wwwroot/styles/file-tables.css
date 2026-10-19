@@ -157,3 +157,5 @@
 .hub-calendar-action-cell {
     min-width: 76px;
 }
+
+.hub-file-date-text, .hub-file-compact-meta, .hub-uploaded-by { font-weight: 500; color: var(--hub-text-muted); }
