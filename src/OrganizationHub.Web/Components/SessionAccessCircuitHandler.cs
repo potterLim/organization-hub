@@ -61,7 +61,7 @@ internal sealed class SessionAccessCircuitHandler : CircuitHandler
         if (result.State != ESessionAccessState.Allowed)
         {
             mHasRedirected = true;
-            mNavigationManager.NavigateTo(result.State == ESessionAccessState.SignedOut ? "/login" : "/access-denied", forceLoad: true);
+            mNavigationManager.NavigateTo(result.State == ESessionAccessState.SignedOut ? "/login?reason=session-ended" : "/access-denied", forceLoad: true);
             return false;
         }
 

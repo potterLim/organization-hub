@@ -35,7 +35,7 @@ public sealed partial class SessionAccessRegressionTests
             TestNavigationManager navigation = new TestNavigationManager();
             SessionAccessCircuitHandler circuit = new SessionAccessCircuitHandler(new StaleAuthenticationStateProvider(principal), navigation, access);
             Assert.False(await circuit.CheckAccessAsync(CancellationToken.None));
-            Assert.Equal("/login", navigation.Destination);
+            Assert.Equal("/login?reason=session-ended", navigation.Destination);
         }
     }
 

@@ -21,7 +21,7 @@
             <MudSpacer />
             <AuthorizeView>
                 <Authorized Context="authorizedContext">
-                    <div class="hub-session-pill">@getDisplayName(authorizedContext.User)</div>
+                    <div class="hub-session-pill" title="@getSessionLabel(authorizedContext.User)">@getDisplayName(authorizedContext.User)</div>
                     <form method="post" action="/account/logout">
                         <AntiforgeryToken />
                         <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Logout" Class="hub-logout-button-wide">로그아웃</MudButton>
@@ -32,6 +32,11 @@
         </div>
     </MudAppBar>
     <MudDrawer @bind-Open="mIsDrawerOpen" Elevation="0" Variant="DrawerVariant.Responsive" Class="hub-drawer">
+        <AuthorizeView>
+            <Authorized Context="drawerContext">
+                <div class="hub-drawer-identity">@getSessionLabel(drawerContext.User)</div>
+            </Authorized>
+        </AuthorizeView>
         <NavMenu />
     </MudDrawer>
     <MudMainContent Class="hub-main">
@@ -93,6 +98,12 @@
         }
 
         return "hub-appbar";
+    }
+
+    private string getSessionLabel(ClaimsPrincipal principal)
+    {
+        string teamName = principal.FindFirst(OrganizationHubClaimTypes.TEAM_DISPLAY_NAME)?.Value ?? string.Empty;
+        return getDisplayName(principal) + (string.IsNullOrWhiteSpace(teamName) ? string.Empty : " · " + teamName);
     }
 
     private string getDisplayName(ClaimsPrincipal principal)

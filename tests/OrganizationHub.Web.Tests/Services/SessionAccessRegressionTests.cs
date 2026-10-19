@@ -136,7 +136,7 @@ public sealed partial class SessionAccessRegressionTests
             SessionAccessResult result = await access.ValidateAsync(principal, NavigationPath.CreateOptional("/admin/settings"), CancellationToken.None);
             Assert.Equal(expected, result.State);
             Assert.False(await handler.CheckAccessAsync(CancellationToken.None));
-            Assert.Equal(expected == ESessionAccessState.SignedOut ? "/login" : "/access-denied", navigation.Destination);
+            Assert.Equal(expected == ESessionAccessState.SignedOut ? "/login?reason=session-ended" : "/access-denied", navigation.Destination);
             ServiceResult saved = await settings.UpdateDisplayOptionsAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None);
             Assert.False(saved.IsSuccess);
             Assert.True((await settings.GetGlobalSettingAsync(CancellationToken.None)).ShouldShowTodoAuthor);

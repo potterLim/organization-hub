@@ -33,7 +33,13 @@
     }
 
     .hub-session-pill {
-        display: none;
+        display: block;
+        max-width: 70px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11px;
+        padding: 4px;
     }
 
     .hub-logout-button-wide {
