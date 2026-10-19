@@ -28,8 +28,8 @@
                 <span>팀 이름은 사용자 화면에 그대로 표시됩니다.</span>
                 <span>고유 코드는 영문과 숫자로 짧게 정하면 관리하기 쉽습니다.</span>
             </div>
-            <MudTextField @bind-Value="mFormModel.DisplayName" Label="팀 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-            <MudTextField @bind-Value="mFormModel.TeamKey" Label="팀 고유 코드" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <MudTextField @bind-Value="mFormModel.DisplayName" Label="팀 이름 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <MudTextField @bind-Value="mFormModel.TeamKey" Label="팀 고유 코드 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="활성 상태" Color="Color.Primary" />
             <MudExpansionPanels Elevation="0" Class="hub-advanced-settings hub-team-advanced-settings">
                 <MudExpansionPanel Text="고급: 연결된 Google 위치">

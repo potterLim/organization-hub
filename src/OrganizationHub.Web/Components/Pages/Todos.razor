@@ -14,6 +14,7 @@
         <strong>다시 불러오기 전 내 입력</strong>
         <div class="hub-draft-copy">@mPreviousDraft</div>
         <span>현재의 최신 내용과 비교한 뒤 필요한 변경을 다시 입력해 주세요.</span>
+        <MudButton Variant="Variant.Text" OnClick="@(() => mPreviousDraft = string.Empty)">비교 마침</MudButton>
     </MudAlert>
 }
 

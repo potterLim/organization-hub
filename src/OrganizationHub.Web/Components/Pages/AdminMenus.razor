@@ -11,6 +11,7 @@
         <strong>다시 불러오기 전 내 입력</strong>
         <div class="hub-draft-copy">@mPreviousDraft</div>
         <span>현재의 최신 내용과 비교한 뒤 필요한 변경을 다시 입력해 주세요.</span>
+        <MudButton Variant="Variant.Text" OnClick="@(() => mPreviousDraft = string.Empty)">비교 마침</MudButton>
     </MudAlert>
 }
 
@@ -60,7 +61,7 @@
                         <MudSelectItem T="int" Value="@menuSection.Id">@menuSection.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
-                <MudTextField @bind-Value="mFormModel.DisplayName" Label="메뉴 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                <MudTextField @bind-Value="mFormModel.DisplayName" Label="메뉴 이름 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                 <MudSelect T="EMenuAccessLevel" Label="표시 대상" Value="mFormModel.AccessLevel" ValueChanged="setAccessLevel" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@mSelectedMenuItemOrNull.IsLocked">
                     <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.Authenticated">전체 사용자</MudSelectItem>
                     <MudSelectItem T="EMenuAccessLevel" Value="EMenuAccessLevel.TeamMember">선택한 팀</MudSelectItem>
@@ -122,7 +123,7 @@
                     <span>섹션은 왼쪽 메뉴의 묶음 제목입니다.</span>
                     <span>섹션 순서에서 드래그하거나 위·아래 버튼으로 위치를 바꿀 수 있습니다.</span>
                 </div>
-            <MudTextField @bind-Value="mSectionFormModel.DisplayName" Label="섹션 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <MudTextField @bind-Value="mSectionFormModel.DisplayName" Label="섹션 이름 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             @if (mMessageSeverity == Severity.Error && string.IsNullOrWhiteSpace(mMessage) == false)
             {
                 <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3" role="alert">@mMessage</MudAlert>

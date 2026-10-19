@@ -15,6 +15,11 @@ public partial class AdminPositions
             return "직책 선택 필요";
         }
 
+        if (getSelectedPositionOrNull()?.IsSystemAdministrator == true)
+        {
+            return "모든 권한";
+        }
+
         return mPermissionFormModel.PermissionGrants.Count(grant => grant.IsAllowed).ToString(CultureInfo.InvariantCulture) + "개 허용";
     }
 

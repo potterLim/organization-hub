@@ -114,65 +114,65 @@ else
                     }
                     else
                     {
-                    <div class="hub-permission-toolbar">
-                        <MudSelect T="string" Label="업무 영역" @bind-Value="mSelectedPermissionCategory" Variant="Variant.Outlined" Margin="Margin.Dense">
-                            <MudSelectItem T="string" Value="@ALL_PERMISSION_CATEGORY">전체</MudSelectItem>
-                            @foreach (string category in getPermissionCategories())
+                        <div class="hub-permission-toolbar">
+                            <MudSelect T="string" Label="업무 영역" @bind-Value="mSelectedPermissionCategory" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelectItem T="string" Value="@ALL_PERMISSION_CATEGORY">전체</MudSelectItem>
+                                @foreach (string category in getPermissionCategories())
+                                {
+                                    <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
+                                }
+                            </MudSelect>
+                            <MudCheckBox T="bool" @bind-Value="mShouldShowOnlyAllowedPermissions" Label="허용만 보기" Color="Color.Primary" />
+                        </div>
+                        <div class="hub-permission-editor">
+                            @foreach (string category in getVisiblePermissionCategories())
                             {
-                                <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
-                            }
-                        </MudSelect>
-                        <MudCheckBox T="bool" @bind-Value="mShouldShowOnlyAllowedPermissions" Label="허용만 보기" Color="Color.Primary" />
-                    </div>
-                    <div class="hub-permission-editor">
-                        @foreach (string category in getVisiblePermissionCategories())
-                        {
-                            IReadOnlyList<PermissionDefinition> visibleDefinitions = getVisiblePermissionDefinitions(category);
-                            <section class="hub-permission-group">
-                                <div class="hub-permission-group-title">@category</div>
-                                <div class="hub-permission-card-grid">
-                                    @foreach (PermissionDefinition definition in visibleDefinitions)
-                                    {
-                                        PositionPermissionGrantFormModel grantForm = getPermissionGrantForm(definition.Key);
-                                        <div class="@(grantForm.IsAllowed ? "hub-permission-row hub-permission-row-active" : "hub-permission-row")">
-                                            <div class="hub-permission-copy">
-                                                <div class="hub-permission-name">@definition.DisplayName</div>
-                                                <div class="hub-muted">@definition.Description</div>
-                                            </div>
-                                            <div class="hub-permission-controls">
-                                                <MudCheckBox T="bool" Value="@grantForm.IsAllowed" ValueChanged="@((bool isAllowed) => setPermissionAllowed(definition.Key, isAllowed ? EPermissionGrantState.Allowed : EPermissionGrantState.Denied))" Color="Color.Primary" Label="@(definition.DisplayName + " 사용")" Class="hub-permission-allow" />
-                                                @if (grantForm.IsAllowed)
-                                                {
-                                                    <MudSelect T="EPermissionScopeType" Label="@(definition.DisplayName + " 적용 범위")" Value="@grantForm.ScopeType" ValueChanged="@(scopeType => setPermissionScope(definition.Key, scopeType))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-permission-scope">
-                                                        <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.Global">모든 팀</MudSelectItem>
-                                                        <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeam">소속 팀</MudSelectItem>
-                                                        <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.SelectedTeam">지정한 팀</MudSelectItem>
-                                                        <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnCreated">본인이 만든 항목</MudSelectItem>
-                                                    </MudSelect>
-                                                    @if (grantForm.ScopeType == EPermissionScopeType.SelectedTeam)
+                                IReadOnlyList<PermissionDefinition> visibleDefinitions = getVisiblePermissionDefinitions(category);
+                                <section class="hub-permission-group">
+                                    <div class="hub-permission-group-title">@category</div>
+                                    <div class="hub-permission-card-grid">
+                                        @foreach (PermissionDefinition definition in visibleDefinitions)
+                                        {
+                                            PositionPermissionGrantFormModel grantForm = getPermissionGrantForm(definition.Key);
+                                            <div class="@(grantForm.IsAllowed ? "hub-permission-row hub-permission-row-active" : "hub-permission-row")">
+                                                <div class="hub-permission-copy">
+                                                    <div class="hub-permission-name">@definition.DisplayName</div>
+                                                    <div class="hub-muted">@definition.Description</div>
+                                                </div>
+                                                <div class="hub-permission-controls">
+                                                    <MudCheckBox T="bool" Value="@grantForm.IsAllowed" ValueChanged="@((bool isAllowed) => setPermissionAllowed(definition.Key, isAllowed ? EPermissionGrantState.Allowed : EPermissionGrantState.Denied))" Color="Color.Primary" Label="@(definition.DisplayName + " 사용")" Class="hub-permission-allow" />
+                                                    @if (grantForm.IsAllowed)
                                                     {
-                                                        <MudSelect T="int?" Label="@(definition.DisplayName + " 대상 팀")" Value="@grantForm.TargetTeamId" ValueChanged="@(teamId => setPermissionTargetTeam(definition.Key, teamId))" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Class="hub-permission-target">
-                                                            @foreach (Team team in mActiveTeams)
-                                                            {
-                                                                <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
-                                                            }
+                                                        <MudSelect T="EPermissionScopeType" Label="@(definition.DisplayName + " 적용 범위")" Value="@grantForm.ScopeType" ValueChanged="@(scopeType => setPermissionScope(definition.Key, scopeType))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-permission-scope">
+                                                            <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.Global">모든 팀</MudSelectItem>
+                                                            <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeam">소속 팀</MudSelectItem>
+                                                            <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.SelectedTeam">지정한 팀</MudSelectItem>
+                                                            <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnCreated">본인이 만든 항목</MudSelectItem>
                                                         </MudSelect>
+                                                        @if (grantForm.ScopeType == EPermissionScopeType.SelectedTeam)
+                                                        {
+                                                            <MudSelect T="int?" Label="@(definition.DisplayName + " 대상 팀")" Value="@grantForm.TargetTeamId" ValueChanged="@(teamId => setPermissionTargetTeam(definition.Key, teamId))" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" Class="hub-permission-target">
+                                                                @foreach (Team team in mActiveTeams)
+                                                                {
+                                                                    <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
+                                                                }
+                                                            </MudSelect>
+                                                        }
                                                     }
-                                                }
-                                                else
-                                                {
-                                                    <div class="hub-permission-disabled-hint">사용으로 바꾸면 범위를 고를 수 있습니다.</div>
-                                                }
+                                                    else
+                                                    {
+                                                        <div class="hub-permission-disabled-hint">사용으로 바꾸면 범위를 고를 수 있습니다.</div>
+                                                    }
+                                                </div>
                                             </div>
-                                        </div>
-                                    }
-                                </div>
-                            </section>
-                        }
-                    </div>
-                    <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered hub-permission-save-bar mt-4">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="savePermissionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">권한 저장</MudButton>
-                    </MudStack>
+                                        }
+                                    </div>
+                                </section>
+                            }
+                        </div>
+                        <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered hub-permission-save-bar mt-4">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="savePermissionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">권한 저장</MudButton>
+                        </MudStack>
                     }
                 }
             </MudPaper>

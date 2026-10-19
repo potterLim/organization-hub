@@ -156,7 +156,8 @@
 }
 
 #workflow-editor,
-#position-create {
+#position-create,
+#user-editor {
     scroll-margin-top: 100px;
 }
 
@@ -172,4 +173,8 @@
     .hub-admin-page-grid > .hub-mobile-list-middle {
         order: 1;
     }
+}
+
+@media (max-width: 1919.98px) {
+    .hub-user-directory > .hub-mobile-create-last { order: 1; }
 }
