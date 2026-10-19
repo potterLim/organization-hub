@@ -2,6 +2,7 @@ namespace OrganizationHub.Web.Domain;
 
 public static class OrganizationHubClaimTypes
 {
+    public const string LOGIN_SESSION_ID = "organization_hub_login_session_id";
     public const string AUTHENTICATION_VERSION = "organization_hub_authentication_version";
     public const string USER_ID = "organization_hub_user_id";
     public const string USERNAME = "organization_hub_username";

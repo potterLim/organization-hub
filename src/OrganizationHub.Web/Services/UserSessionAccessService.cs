@@ -30,7 +30,18 @@ internal sealed class UserSessionAccessService
     public async Task<ClaimsPrincipal?> GetCurrentPrincipalOrNullAsync(ClaimsPrincipal principal, CancellationToken cancellationToken)
     {
         UserAccount? userOrNull = await loadActiveUserOrNullAsync(principal, cancellationToken);
-        return userOrNull == null ? null : mAuthService.CreateClaimsPrincipal(userOrNull);
+        if (userOrNull == null)
+        {
+            return null;
+        }
+
+        ClaimsPrincipal current = mAuthService.CreateClaimsPrincipal(userOrNull);
+        Claim? loginClaimOrNull = principal.FindFirst(OrganizationHubClaimTypes.LOGIN_SESSION_ID);
+        if (loginClaimOrNull != null)
+        {
+            ((ClaimsIdentity)current.Identity!).AddClaim(loginClaimOrNull);
+        }
+        return current;
     }
 
     public async Task<SessionAccessResult> ValidateAsync(ClaimsPrincipal principal, NavigationPath path, CancellationToken cancellationToken)
@@ -77,6 +88,11 @@ internal sealed class UserSessionAccessService
         int authenticationVersion = sessionOrNull.AuthenticationVersion;
         await using (OrganizationHubDbContext db = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
+            string? loginIdOrNull = principal.FindFirstValue(OrganizationHubClaimTypes.LOGIN_SESSION_ID);
+            if (string.IsNullOrEmpty(loginIdOrNull) == false && await db.RevokedLoginSessions.AnyAsync(item => item.SessionId == loginIdOrNull, cancellationToken))
+            {
+                return null;
+            }
             return await db.UserAccounts.AsNoTracking().Include(user => user.Team).Include(user => user.Position).ThenInclude(position => position!.PermissionGrants)
                 .FirstOrDefaultAsync(user => user.Id == userId && user.AuthenticationVersion == authenticationVersion && user.IsActive && user.Position != null && user.Position.IsActive &&
                     (user.TeamId == null || (user.Team != null && user.Team.IsActive)), cancellationToken);

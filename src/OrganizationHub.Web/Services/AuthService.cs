@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -74,6 +75,7 @@ public sealed class AuthService : IAuthService
                 return LoginResult.Fail("계정 정보가 변경되었습니다. 다시 로그인해 주세요.");
             }
             ClaimsPrincipal principal = CreateClaimsPrincipal(userAccountOrNull);
+            ((ClaimsIdentity)principal.Identity!).AddClaim(new Claim(OrganizationHubClaimTypes.LOGIN_SESSION_ID, Guid.NewGuid().ToString("N")));
             return LoginResult.Succeed(principal);
         }
     }
@@ -102,5 +104,50 @@ public sealed class AuthService : IAuthService
 
         ClaimsIdentity identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         return new ClaimsPrincipal(identity);
+    }
+
+    public async Task RevokeLoginAsync(ClaimsPrincipal principal, CancellationToken cancellationToken)
+    {
+        UserSession? sessionOrNull = UserSessionFactory.CreateOrNull(principal);
+        if (sessionOrNull == null)
+        {
+            return;
+        }
+
+        int userId = sessionOrNull.UserAccountId.GetRequiredValue();
+        string? loginIdOrNull = principal.FindFirstValue(OrganizationHubClaimTypes.LOGIN_SESSION_ID);
+        await using (OrganizationHubDbContext db = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            if (string.IsNullOrEmpty(loginIdOrNull))
+            {
+                // Legacy cookies cannot distinguish separate logins of the same account.
+                await db.UserAccounts.Where(user => user.Id == userId && user.AuthenticationVersion == sessionOrNull.AuthenticationVersion)
+                    .ExecuteUpdateAsync(setters => setters.SetProperty(user => user.AuthenticationVersion, user => user.AuthenticationVersion + 1)
+                        .SetProperty(user => user.Revision, user => user.Revision + 1), cancellationToken);
+                return;
+            }
+
+            if (await db.RevokedLoginSessions.AnyAsync(item => item.SessionId == loginIdOrNull, cancellationToken))
+            {
+                return;
+            }
+
+            RevokedLoginSession revoked = new RevokedLoginSession();
+            revoked.SessionId = loginIdOrNull;
+            revoked.UserAccountId = userId;
+            revoked.RevokedAtUtc = DateTime.UtcNow;
+            db.RevokedLoginSessions.Add(revoked);
+            try
+            {
+                await db.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                if (await db.RevokedLoginSessions.AsNoTracking().AnyAsync(item => item.SessionId == loginIdOrNull, cancellationToken) == false)
+                {
+                    throw;
+                }
+            }
+        }
     }
 }

@@ -881,6 +881,25 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.ToTable("PositionPermissionGrants");
                 });
 
+            modelBuilder.Entity("OrganizationHub.Web.Data.Entities.RevokedLoginSession", b =>
+                {
+                    b.Property<string>("SessionId")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RevokedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserAccountId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("SessionId");
+
+                    b.HasIndex("UserAccountId");
+
+                    b.ToTable("RevokedLoginSessions");
+                });
+
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.Team", b =>
                 {
                     b.Property<int>("Id")
@@ -1318,6 +1337,15 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Navigation("Position");
 
                     b.Navigation("TargetTeam");
+                });
+
+            modelBuilder.Entity("OrganizationHub.Web.Data.Entities.RevokedLoginSession", b =>
+                {
+                    b.HasOne("OrganizationHub.Web.Data.Entities.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UserAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.UserAccount", b =>

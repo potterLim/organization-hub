@@ -54,6 +54,7 @@ public sealed class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> LogoutAsync()
     {
+        await mAuthService.RevokeLoginAsync(User, HttpContext.RequestAborted);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Redirect("/login");
     }

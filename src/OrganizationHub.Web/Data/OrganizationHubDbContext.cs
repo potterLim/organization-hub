@@ -8,6 +8,13 @@ namespace OrganizationHub.Web.Data;
 
 public sealed partial class OrganizationHubDbContext : DbContext
 {
+    public DbSet<RevokedLoginSession> RevokedLoginSessions
+    {
+        get
+        {
+            return Set<RevokedLoginSession>();
+        }
+    }
     public DbSet<ApprovalDocument> ApprovalDocuments
     {
         get; set;
@@ -134,6 +141,9 @@ public sealed partial class OrganizationHubDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<RevokedLoginSession>().HasKey(session => session.SessionId);
+        modelBuilder.Entity<RevokedLoginSession>().Property(session => session.SessionId).HasMaxLength(32);
+        modelBuilder.Entity<RevokedLoginSession>().HasOne<UserAccount>().WithMany().HasForeignKey(session => session.UserAccountId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.applyOrganizationHubModelConfiguration();
     }
 
