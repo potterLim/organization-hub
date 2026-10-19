@@ -11,10 +11,13 @@ internal sealed class ApprovalWorkflowOrderUpdateRequest
         get;
     }
 
-    public ApprovalWorkflowOrderUpdateRequest(IReadOnlyList<ApprovalWorkflowId> orderedWorkflowIds)
+    public IReadOnlyDictionary<int, int> ExpectedRevisions { get; }
+
+    public ApprovalWorkflowOrderUpdateRequest(IReadOnlyList<ApprovalWorkflowId> orderedWorkflowIds, IReadOnlyDictionary<int, int>? expectedRevisionsOrNull = null)
     {
         ArgumentNullException.ThrowIfNull(orderedWorkflowIds);
 
         OrderedWorkflowIds = orderedWorkflowIds;
+        ExpectedRevisions = expectedRevisionsOrNull == null ? new Dictionary<int, int>() : new Dictionary<int, int>(expectedRevisionsOrNull);
     }
 }

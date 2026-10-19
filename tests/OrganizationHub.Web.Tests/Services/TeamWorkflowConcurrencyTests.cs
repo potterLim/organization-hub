@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -89,6 +90,33 @@ public sealed class TeamWorkflowConcurrencyTests
                 await first.SaveChangesAsync();
                 await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => second.SaveChangesAsync());
             }
+        }
+    }
+
+    [Fact]
+    public async Task StaleWorkflowOrderCannotUndoAnotherAdministratorsMoveAsync()
+    {
+        using (TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(PermissionKeys.CALENDAR_READ))
+        {
+            ApprovalWorkflowManagementService service = new ApprovalWorkflowManagementService(factory);
+            for (int index = 0; index < 3; index++)
+            {
+                ApprovalWorkflowFormModel form = createWorkflowForm();
+                form.Name = "Route " + index;
+                form.Priority = index * 10;
+                Assert.True((await service.CreateWorkflowAsync(form, CancellationToken.None)).IsSuccess);
+            }
+            IReadOnlyList<ApprovalWorkflow> initial = await service.GetWorkflowsAsync(CancellationToken.None);
+            Dictionary<int, int> revisions = initial.ToDictionary(item => item.Id, item => item.Revision);
+            ApprovalWorkflowId[] firstOrder = new ApprovalWorkflowId[] { ApprovalWorkflowId.CreateExisting(initial[1].Id), ApprovalWorkflowId.CreateExisting(initial[0].Id), ApprovalWorkflowId.CreateExisting(initial[2].Id) };
+            ApprovalWorkflowId[] staleOrder = new ApprovalWorkflowId[] { ApprovalWorkflowId.CreateExisting(initial[0].Id), ApprovalWorkflowId.CreateExisting(initial[2].Id), ApprovalWorkflowId.CreateExisting(initial[1].Id) };
+            Assert.True((await service.UpdateWorkflowOrderAsync(new ApprovalWorkflowOrderUpdateRequest(firstOrder, revisions), CancellationToken.None)).IsSuccess);
+            ServiceResult stale = await service.UpdateWorkflowOrderAsync(new ApprovalWorkflowOrderUpdateRequest(staleOrder, revisions), CancellationToken.None);
+            Assert.True(stale.IsConcurrencyConflict);
+            IReadOnlyList<ApprovalWorkflow> saved = await service.GetWorkflowsAsync(CancellationToken.None);
+            Assert.Equal(firstOrder.Select(id => id.GetRequiredValue()), saved.Select(item => item.Id));
+            ServiceResult fresh = await service.UpdateWorkflowOrderAsync(new ApprovalWorkflowOrderUpdateRequest(staleOrder, saved.ToDictionary(item => item.Id, item => item.Revision)), CancellationToken.None);
+            Assert.True(fresh.IsSuccess);
         }
     }
 
