@@ -1,0 +1,48 @@
+@inherits TimeZoneAwareOrganizationHubComponentBase
+@inject IApprovalPublicationService PublicationService
+@inject Microsoft.Extensions.Logging.ILogger<ApprovalPublicationDiagnostics> Logger
+
+<MudPaper Class="hub-card pa-4 mt-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudText Typo="Typo.h6">승인본 저장 관리</MudText>
+        <MudButton OnClick="reloadAsync" Disabled="mIsLoading">저장 상태 새로고침</MudButton>
+    </MudStack>
+    <MudText Typo="Typo.body2" Class="mb-3">연결이나 폴더 권한 문제를 해결한 뒤 다시 시도할 수 있습니다. 자동 재시도와 동일한 저장 작업을 사용합니다.</MudText>
+    @if (string.IsNullOrEmpty(mMessage) == false)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-3">@mMessage</MudAlert>
+    }
+    @if (mIsLoading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (mPageOrNull != null)
+    {
+        <MudText Typo="Typo.body2">미완료 @mPageOrNull.TotalCount 건</MudText>
+        @foreach (ApprovalPublicationItem item in mPageOrNull.Items)
+        {
+            <MudPaper Outlined="true" Class="pa-3 my-3">
+                <MudText Typo="Typo.subtitle1">@item.Title</MudText>
+                <MudText Typo="Typo.body2">@item.AttemptCount 회 시도 · @(item.IsProcessing ? "저장 중" : "재시도 대기")</MudText>
+                <MudText Typo="Typo.body2">마지막 시도: @formatTime(item.LastAttemptAt) · 다음 시도: @formatTime(item.NextAttemptAt)</MudText>
+                @if (string.IsNullOrEmpty(item.LastError) == false)
+                {
+                    <MudText Typo="Typo.body2" Class="my-2">@item.LastError</MudText>
+                }
+                <MudButton OnClick="@(() => retryAsync(item.RequestId))" Disabled="item.IsProcessing" Color="Color.Primary">승인본 저장 다시 시도</MudButton>
+            </MudPaper>
+        }
+        @if (mPageOrNull.TotalCount == 0)
+        {
+            <MudText Class="my-3">저장 대기 중인 승인본이 없습니다.</MudText>
+        }
+        @if (mPageOrNull.TotalPages > 1)
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudButton OnClick="@(() => changePageAsync(-1))" Disabled="@(mPageNumber <= 1)">이전 저장 작업</MudButton>
+                <MudText>@mPageNumber / @mPageOrNull.TotalPages</MudText>
+                <MudButton OnClick="@(() => changePageAsync(1))" Disabled="@(mPageNumber >= mPageOrNull.TotalPages)">다음 저장 작업</MudButton>
+            </MudStack>
+        }
+    }
+</MudPaper>

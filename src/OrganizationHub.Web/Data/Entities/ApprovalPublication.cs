@@ -4,6 +4,15 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public sealed class ApprovalPublication
 {
+    public int AttemptCount
+    {
+        get; set;
+    }
+    public DateTime? LastAttemptAt
+    {
+        get; set;
+    }
+    public string LastError { get; set; } = string.Empty;
     public int ApprovalRequestId
     {
         get; set;

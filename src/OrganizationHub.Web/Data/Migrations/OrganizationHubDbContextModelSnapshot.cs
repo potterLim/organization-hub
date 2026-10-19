@@ -116,6 +116,9 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<int>("ApprovalRequestId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -125,6 +128,13 @@ namespace OrganizationHub.Web.Data.Migrations
 
                     b.Property<bool>("IsReplacement")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LastAttemptAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastError")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("LeaseExpiresAt")
                         .HasColumnType("TEXT");
