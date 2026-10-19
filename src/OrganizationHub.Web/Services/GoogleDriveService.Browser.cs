@@ -15,10 +15,10 @@ public sealed partial class GoogleDriveService
     {
         string requiredFolderId = folderId.GetRequiredValue();
         string cacheKey = createFolderListCacheKey(folderId);
-        IReadOnlyList<DriveFileItem>? cachedFilesOrNull = getCachedDriveFileItemsOrNull(cacheKey);
-        if (cachedFilesOrNull != null)
+        IReadOnlyList<DriveFileItem> cachedFiles;
+        if (tryGetCachedDriveFileItems(cacheKey, out cachedFiles))
         {
-            return cachedFilesOrNull;
+            return cachedFiles;
         }
 
         IReadOnlyList<DriveFileItem> files = await listFilesFromDriveAsync(folderId, cancellationToken);
@@ -102,10 +102,10 @@ public sealed partial class GoogleDriveService
     public async Task<IReadOnlySet<DriveFolderId>> GetAncestorFolderIdsAsync(DriveItemId fileId, CancellationToken cancellationToken)
     {
         string cacheKey = createAncestorFolderIdsCacheKey(fileId);
-        IReadOnlySet<DriveFolderId>? cachedAncestorFolderIdsOrNull = getCachedAncestorFolderIdsOrNull(cacheKey);
-        if (cachedAncestorFolderIdsOrNull != null)
+        IReadOnlySet<DriveFolderId> cachedAncestorFolderIds;
+        if (tryGetCachedAncestorFolderIds(cacheKey, out cachedAncestorFolderIds))
         {
-            return new HashSet<DriveFolderId>(cachedAncestorFolderIdsOrNull);
+            return new HashSet<DriveFolderId>(cachedAncestorFolderIds);
         }
 
         HashSet<DriveFolderId> ancestorFolderIds = new HashSet<DriveFolderId>();

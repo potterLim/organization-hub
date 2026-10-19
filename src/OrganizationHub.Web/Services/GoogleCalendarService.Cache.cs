@@ -23,15 +23,17 @@ public sealed partial class GoogleCalendarService
         return new CalendarService(initializer);
     }
 
-    private IReadOnlyList<CalendarEventItem>? getCachedCalendarEventsOrNull(string cacheKey)
+    private bool tryGetCachedCalendarEvents(string cacheKey, out IReadOnlyList<CalendarEventItem> cachedItems)
     {
         IReadOnlyList<CalendarEventItem>? cachedEventsOrNull = mMemoryCache.Get<IReadOnlyList<CalendarEventItem>>(cacheKey);
         if (cachedEventsOrNull == null)
         {
-            return null;
+            cachedItems = System.Array.Empty<CalendarEventItem>();
+            return false;
         }
 
-        return cloneCalendarEvents(cachedEventsOrNull);
+        cachedItems = cloneCalendarEvents(cachedEventsOrNull);
+        return true;
     }
 
     private void setCalendarEventsCache(string cacheKey, IReadOnlyList<CalendarEventItem> calendarEvents)

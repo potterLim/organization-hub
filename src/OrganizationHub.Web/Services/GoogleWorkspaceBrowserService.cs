@@ -40,10 +40,10 @@ public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrow
     {
         DriveFolderId effectiveParentFolderId = getEffectiveParentFolderId(parentFolderId);
         string cacheKey = createDriveFolderCacheKey(effectiveParentFolderId);
-        IReadOnlyList<GoogleDriveFolderItem>? cachedFoldersOrNull = getCachedDriveFoldersOrNull(cacheKey);
-        if (cachedFoldersOrNull != null)
+        IReadOnlyList<GoogleDriveFolderItem> cachedFolders;
+        if (tryGetCachedDriveFolders(cacheKey, out cachedFolders))
         {
-            return cachedFoldersOrNull;
+            return cachedFolders;
         }
 
         using (DriveService driveService = await createDriveServiceAsync(cancellationToken))
@@ -69,10 +69,10 @@ public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrow
 
     public async Task<IReadOnlyList<GoogleCalendarListItem>> ListCalendarsAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyList<GoogleCalendarListItem>? cachedCalendarsOrNull = getCachedCalendarsOrNull();
-        if (cachedCalendarsOrNull != null)
+        IReadOnlyList<GoogleCalendarListItem> cachedCalendars;
+        if (tryGetCachedCalendars(out cachedCalendars))
         {
-            return cachedCalendarsOrNull;
+            return cachedCalendars;
         }
 
         using (CalendarService calendarService = await createCalendarServiceAsync(cancellationToken))
@@ -94,10 +94,10 @@ public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrow
 
     public async Task<IReadOnlyList<GoogleTaskListItem>> ListTaskListsAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyList<GoogleTaskListItem>? cachedTaskListsOrNull = getCachedTaskListsOrNull();
-        if (cachedTaskListsOrNull != null)
+        IReadOnlyList<GoogleTaskListItem> cachedTaskLists;
+        if (tryGetCachedTaskLists(out cachedTaskLists))
         {
-            return cachedTaskListsOrNull;
+            return cachedTaskLists;
         }
 
         using (GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken))

@@ -10,15 +10,17 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleDriveService
 {
-    private IReadOnlyList<DriveFileItem>? getCachedDriveFileItemsOrNull(string cacheKey)
+    private bool tryGetCachedDriveFileItems(string cacheKey, out IReadOnlyList<DriveFileItem> cachedItems)
     {
         IReadOnlyList<DriveFileItem>? cachedFilesOrNull = mMemoryCache.Get<IReadOnlyList<DriveFileItem>>(cacheKey);
         if (cachedFilesOrNull == null)
         {
-            return null;
+            cachedItems = System.Array.Empty<DriveFileItem>();
+            return false;
         }
 
-        return cloneDriveFileItems(cachedFilesOrNull);
+        cachedItems = cloneDriveFileItems(cachedFilesOrNull);
+        return true;
     }
 
     private void setDriveFileItemsCache(string cacheKey, IReadOnlyList<DriveFileItem> files, TimeSpan cacheDuration)
@@ -46,15 +48,17 @@ public sealed partial class GoogleDriveService
         mMemoryCache.Set(cacheKey, cloneDriveFileMetadata(metadata), cacheEntryOptions);
     }
 
-    private IReadOnlySet<DriveFolderId>? getCachedAncestorFolderIdsOrNull(string cacheKey)
+    private bool tryGetCachedAncestorFolderIds(string cacheKey, out IReadOnlySet<DriveFolderId> cachedItems)
     {
         IReadOnlySet<DriveFolderId>? cachedAncestorFolderIdsOrNull = mMemoryCache.Get<IReadOnlySet<DriveFolderId>>(cacheKey);
         if (cachedAncestorFolderIdsOrNull == null)
         {
-            return null;
+            cachedItems = new HashSet<DriveFolderId>();
+            return false;
         }
 
-        return new HashSet<DriveFolderId>(cachedAncestorFolderIdsOrNull);
+        cachedItems = new HashSet<DriveFolderId>(cachedAncestorFolderIdsOrNull);
+        return true;
     }
 
     private void setAncestorFolderIdsCache(string cacheKey, IReadOnlySet<DriveFolderId> ancestorFolderIds, TimeSpan cacheDuration)

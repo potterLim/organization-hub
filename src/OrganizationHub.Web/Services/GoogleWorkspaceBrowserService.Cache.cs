@@ -7,15 +7,17 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleWorkspaceBrowserService
 {
-    private IReadOnlyList<GoogleDriveFolderItem>? getCachedDriveFoldersOrNull(string cacheKey)
+    private bool tryGetCachedDriveFolders(string cacheKey, out IReadOnlyList<GoogleDriveFolderItem> cachedItems)
     {
         IReadOnlyList<GoogleDriveFolderItem>? cachedFoldersOrNull = mMemoryCache.Get<IReadOnlyList<GoogleDriveFolderItem>>(cacheKey);
         if (cachedFoldersOrNull == null)
         {
-            return null;
+            cachedItems = System.Array.Empty<GoogleDriveFolderItem>();
+            return false;
         }
 
-        return cloneDriveFolders(cachedFoldersOrNull);
+        cachedItems = cloneDriveFolders(cachedFoldersOrNull);
+        return true;
     }
 
     private void setDriveFolderCache(string cacheKey, IReadOnlyList<GoogleDriveFolderItem> folders)
@@ -25,15 +27,17 @@ public sealed partial class GoogleWorkspaceBrowserService
         mMemoryCache.Set(cacheKey, cloneDriveFolders(folders), cacheEntryOptions);
     }
 
-    private IReadOnlyList<GoogleCalendarListItem>? getCachedCalendarsOrNull()
+    private bool tryGetCachedCalendars(out IReadOnlyList<GoogleCalendarListItem> cachedItems)
     {
         IReadOnlyList<GoogleCalendarListItem>? cachedCalendarsOrNull = mMemoryCache.Get<IReadOnlyList<GoogleCalendarListItem>>(createCalendarListCacheKey());
         if (cachedCalendarsOrNull == null)
         {
-            return null;
+            cachedItems = System.Array.Empty<GoogleCalendarListItem>();
+            return false;
         }
 
-        return cloneCalendars(cachedCalendarsOrNull);
+        cachedItems = cloneCalendars(cachedCalendarsOrNull);
+        return true;
     }
 
     private void setCalendarCache(IReadOnlyList<GoogleCalendarListItem> calendars)
@@ -43,15 +47,17 @@ public sealed partial class GoogleWorkspaceBrowserService
         mMemoryCache.Set(createCalendarListCacheKey(), cloneCalendars(calendars), cacheEntryOptions);
     }
 
-    private IReadOnlyList<GoogleTaskListItem>? getCachedTaskListsOrNull()
+    private bool tryGetCachedTaskLists(out IReadOnlyList<GoogleTaskListItem> cachedItems)
     {
         IReadOnlyList<GoogleTaskListItem>? cachedTaskListsOrNull = mMemoryCache.Get<IReadOnlyList<GoogleTaskListItem>>(createTaskListCacheKey());
         if (cachedTaskListsOrNull == null)
         {
-            return null;
+            cachedItems = System.Array.Empty<GoogleTaskListItem>();
+            return false;
         }
 
-        return cloneTaskLists(cachedTaskListsOrNull);
+        cachedItems = cloneTaskLists(cachedTaskListsOrNull);
+        return true;
     }
 
     private void setTaskListCache(IReadOnlyList<GoogleTaskListItem> taskLists)

@@ -174,10 +174,10 @@ public sealed partial class GoogleCalendarService
     private async Task<IReadOnlyList<CalendarEventItem>> getEventsAsync(CalendarEventFetchRequest request, CancellationToken cancellationToken)
     {
         string cacheKey = createEventListCacheKey(request.CalendarId, request.CalendarName, request.DateRange);
-        IReadOnlyList<CalendarEventItem>? cachedEventsOrNull = getCachedCalendarEventsOrNull(cacheKey);
-        if (cachedEventsOrNull != null)
+        IReadOnlyList<CalendarEventItem> cachedEvents;
+        if (tryGetCachedCalendarEvents(cacheKey, out cachedEvents))
         {
-            return cachedEventsOrNull;
+            return cachedEvents;
         }
 
         string requiredCalendarId = request.CalendarId.GetRequiredValue();
