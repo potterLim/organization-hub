@@ -96,11 +96,12 @@ public sealed partial class GoogleTasksTodoService
                 metadataOrNull.TaskId = change.TaskId;
                 db.TodoTaskMetadata.Add(metadataOrNull);
             }
-            // An older recovery must not replace metadata already bound to a later Google version.
-            if (string.IsNullOrEmpty(metadataOrNull.GoogleETag) || metadataOrNull.GoogleETag == change.ExpectedETag || metadataOrNull.GoogleETag == googleETag)
+            // Google ETags are opaque and also change on completion. Persist operation order independently.
+            if (metadataOrNull.LastDeadlineChangeId < change.Id)
             {
                 metadataOrNull.DueAt = change.DueAt;
                 metadataOrNull.GoogleETag = googleETag;
+                metadataOrNull.LastDeadlineChangeId = change.Id;
             }
             db.TodoDeadlineChanges.Remove(pendingOrNull);
             await db.SaveChangesAsync(cancellationToken);

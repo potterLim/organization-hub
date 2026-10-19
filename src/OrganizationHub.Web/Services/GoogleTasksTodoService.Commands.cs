@@ -67,7 +67,16 @@ public sealed partial class GoogleTasksTodoService
                 request.ModifyRequest = message => prepareTaskEdit(message, formModel, googleTask.Title);
                 ResourceEditVersion.Validate(formModel.ETag);
                 TodoDeadlineChange deadlineChange = await prepareDeadlineChangeAsync(formModel, cancellationToken);
-                GoogleTask updatedTask = await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
+                GoogleTask updatedTask;
+                try
+                {
+                    updatedTask = await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
+                }
+                catch (ResourceEditConflictException)
+                {
+                    await removeDeadlineChangeAsync(deadlineChange.Id, CancellationToken.None);
+                    throw;
+                }
                 TodoTaskItem updatedItem = createTaskItem(taskListId, updatedTask);
                 try
                 {
