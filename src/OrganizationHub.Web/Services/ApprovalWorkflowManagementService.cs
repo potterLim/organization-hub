@@ -131,6 +131,14 @@ internal sealed partial class ApprovalWorkflowManagementService : IApprovalWorkf
                 return ServiceResult.Fail("정렬할 결재 경로를 찾을 수 없습니다.");
             }
 
+            foreach (ApprovalWorkflow workflow in workflows)
+            {
+                if (request.ExpectedRevisions.TryGetValue(workflow.Id, out int expectedRevision) == false || workflow.Revision != expectedRevision)
+                {
+                    return AdministrativeSaveUtility.CreateConflictResult();
+                }
+            }
+
             Dictionary<int, ApprovalWorkflow> workflowsById = workflows.ToDictionary(workflow => workflow.Id);
             int priority = PRIORITY_STEP;
             foreach (ApprovalWorkflowId workflowId in request.OrderedWorkflowIds)

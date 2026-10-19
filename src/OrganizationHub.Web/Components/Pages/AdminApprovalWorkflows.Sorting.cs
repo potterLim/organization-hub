@@ -93,7 +93,7 @@ public partial class AdminApprovalWorkflows
         }
 
         IReadOnlyList<ApprovalWorkflowId> orderedWorkflowIds = reorderedWorkflows.Select(workflow => ApprovalWorkflowId.CreateExisting(workflow.Id)).ToList();
-        ServiceResult orderResult = await ApprovalWorkflowManagementService.UpdateWorkflowOrderAsync(new ApprovalWorkflowOrderUpdateRequest(orderedWorkflowIds), CancellationToken.None);
+        ServiceResult orderResult = await ApprovalWorkflowManagementService.UpdateWorkflowOrderAsync(new ApprovalWorkflowOrderUpdateRequest(orderedWorkflowIds, mWorkflows.ToDictionary(workflow => workflow.Id, workflow => workflow.Revision)), CancellationToken.None);
         showOperationResult(orderResult, "결재 경로 적용 순서가 저장되었습니다.");
         await loadDataAsync();
         await InvokeAsync(StateHasChanged);
