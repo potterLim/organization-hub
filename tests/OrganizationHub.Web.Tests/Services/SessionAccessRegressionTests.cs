@@ -16,7 +16,7 @@ using Xunit;
 
 namespace OrganizationHub.Web.Tests.Services;
 
-public sealed class SessionAccessRegressionTests
+public sealed partial class SessionAccessRegressionTests
 {
     private sealed class StaleAuthenticationStateProvider : AuthenticationStateProvider
     {
