@@ -43,6 +43,10 @@
                     <SettingIdField @bind-Value="mFormModel.TaskListId" Label="Google Tasks 목록 ID" IsReadOnly="true" />
                 </MudExpansionPanel>
             </MudExpansionPanels>
+            @if (mMessageSeverity == Severity.Error && string.IsNullOrWhiteSpace(mMessage) == false)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3" role="alert">@mMessage</MudAlert>
+            }
             <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveTeamAsync" Class="hub-primary-action-button">저장</MudButton>
                 @if (mFormModel.Id != 0)

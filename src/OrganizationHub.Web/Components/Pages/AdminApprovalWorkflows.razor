@@ -28,15 +28,15 @@
             </div>
             <section class="hub-workflow-section">
                 <div class="hub-workflow-section-title">적용 조건</div>
-                <MudTextField @bind-Value="mFormModel.Name" Label="결재 경로 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-                <MudTextField @bind-Value="mFormModel.Description" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Immediate="true" />
-                <MudSelect T="int?" Label="요청 팀" Value="mFormModel.AppliesToTeamId" ValueChanged="setAppliesToTeamId" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                <MudTextField @bind-Value="mFormModel.Name" Label="결재 경로 이름 (필수)" Error="@(mMessageSeverity == Severity.Error && string.IsNullOrWhiteSpace(mFormModel.Name))" ErrorText="결재 경로 이름을 입력해 주세요." Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                <MudTextField @bind-Value="mFormModel.Description" Label="설명 (선택)" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Immediate="true" />
+                <MudSelect T="int?" Label="요청 팀 (선택 · 모든 팀)" Value="mFormModel.AppliesToTeamId" ValueChanged="setAppliesToTeamId" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
                     @foreach (Team team in mTeams)
                     {
                         <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
-                <MudSelect T="int?" Label="요청 직책" Value="mFormModel.AppliesToPositionId" ValueChanged="setAppliesToPositionId" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                <MudSelect T="int?" Label="요청 직책 (선택 · 모든 직책)" Value="mFormModel.AppliesToPositionId" ValueChanged="setAppliesToPositionId" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
                     @foreach (OrganizationPosition position in getRequesterPositionOptions())
                     {
                         <MudSelectItem T="int?" Value="@((int?)position.Id)">@getPositionDisplayName(position)</MudSelectItem>
@@ -66,7 +66,7 @@
                             </MudTooltip>
                         </div>
                         <div class="hub-workflow-step-fields">
-                            <MudTextField @bind-Value="step.StepName" Label="단계 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                            <MudTextField @bind-Value="step.StepName" Label="단계 이름 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                             <MudSelect T="EApproverSelectionType" Label="결재자 지정 방식" Value="step.ApproverSelectionType" ValueChanged="@(selectionType => setApproverSelectionType(step, selectionType))" Variant="Variant.Outlined" Margin="Margin.Dense">
                                 <MudSelectItem T="EApproverSelectionType" Value="EApproverSelectionType.SpecificUser">특정 사용자</MudSelectItem>
                                 <MudSelectItem T="EApproverSelectionType" Value="EApproverSelectionType.SpecificPosition">특정 직책</MudSelectItem>
@@ -77,7 +77,7 @@
 
                             @if (step.ApproverSelectionType == EApproverSelectionType.SpecificUser)
                             {
-                                <MudSelect T="int?" Label="결재자" Value="step.ApproverUserId" ValueChanged="@(userId => step.ApproverUserId = userId)" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect T="int?" Label="결재자 (필수)" Value="step.ApproverUserId" ValueChanged="@(userId => step.ApproverUserId = userId)" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (UserAccount user in mUsers)
                                     {
                                         <MudSelectItem T="int?" Value="@((int?)user.Id)">@getUserDisplayName(user)</MudSelectItem>
@@ -87,7 +87,7 @@
 
                             @if (requiresPositionSelection(step.ApproverSelectionType))
                             {
-                                <MudSelect T="int?" Label="결재 직책" Value="step.ApproverPositionId" ValueChanged="@(positionId => step.ApproverPositionId = positionId)" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect T="int?" Label="결재 직책 (필수)" Value="step.ApproverPositionId" ValueChanged="@(positionId => step.ApproverPositionId = positionId)" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (OrganizationPosition position in mPositions)
                                     {
                                         <MudSelectItem T="int?" Value="@((int?)position.Id)">@getPositionDisplayName(position)</MudSelectItem>
@@ -97,7 +97,7 @@
 
                             @if (step.ApproverSelectionType == EApproverSelectionType.PositionInSelectedTeam)
                             {
-                                <MudSelect T="int?" Label="결재 팀" Value="step.ApproverTeamId" ValueChanged="@(teamId => step.ApproverTeamId = teamId)" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect T="int?" Label="결재 팀 (필수)" Value="step.ApproverTeamId" ValueChanged="@(teamId => step.ApproverTeamId = teamId)" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (Team team in mTeams)
                                     {
                                         <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
@@ -150,6 +150,10 @@
                 <strong>@getWorkflowTargetPreview()</strong>
             </div>
 
+            @if (mMessageSeverity == Severity.Error && string.IsNullOrWhiteSpace(mMessage) == false)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3" role="alert">@mMessage</MudAlert>
+            }
             <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveWorkflowAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
                 @if (mFormModel.Id != 0)

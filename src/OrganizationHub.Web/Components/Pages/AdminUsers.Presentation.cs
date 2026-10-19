@@ -10,6 +10,15 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminUsers
 {
+    private IReadOnlyList<UserAccount> getFilteredUsers()
+    {
+        string keyword = mUserSearch.Trim();
+        return mUsers.Where(user => (keyword.Length == 0 || user.Username.Contains(keyword, StringComparison.OrdinalIgnoreCase) || user.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
+            .Where(user => mFilterTeamIdOrNull.HasValue == false || user.TeamId == mFilterTeamIdOrNull)
+            .Where(user => mFilterStatus == "all" || user.IsActive == (mFilterStatus == "active"))
+            .ToList();
+    }
+
     private void showOperationResult(ServiceResult operationResult, string successMessage)
     {
         if (operationResult.IsSuccess)

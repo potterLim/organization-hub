@@ -25,11 +25,11 @@
                 <MudText Typo="Typo.h6">@mFormTitle</MudText>
                 <span>@(mFormModel.Id == 0 ? "새 계정" : "수정 중")</span>
             </div>
-            <MudTextField @bind-Value="mFormModel.Username" Label="아이디" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-            <MudTextField @bind-Value="mFormModel.DisplayName" Label="표시 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <MudTextField @bind-Value="mFormModel.Username" Label="아이디 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            <MudTextField @bind-Value="mFormModel.DisplayName" Label="표시 이름 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
             @if (mFormModel.Id == 0)
             {
-                <MudTextField @bind-Value="mFormModel.Password" Label="초기 비밀번호" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password" Immediate="true" />
+                <MudTextField @bind-Value="mFormModel.Password" Label="초기 비밀번호 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Password" Immediate="true" />
             }
             @if (mCanManageSystemAdmins)
             {
@@ -37,13 +37,13 @@
             }
             @if (mIsSystemAdministratorSelected == false)
             {
-                <MudSelect T="int?" Label="팀" Value="mFormModel.TeamId" ValueChanged="handleTeamChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelect T="int?" Label="팀 (필수)" Value="mFormModel.TeamId" ValueChanged="handleTeamChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
                     @foreach (Team team in getSelectableTeams())
                     {
                         <MudSelectItem T="int?" Value="@team.Id">@team.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
-                <MudSelect T="int?" Label="직책" Value="mFormModel.PositionId" ValueChanged="handlePositionChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(getSelectablePositions().Count == 0)">
+                <MudSelect T="int?" Label="직책 (필수)" Value="mFormModel.PositionId" ValueChanged="handlePositionChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(getSelectablePositions().Count == 0)">
                     @foreach (OrganizationPosition position in getSelectablePositions())
                     {
                         <MudSelectItem T="int?" Value="@position.Id">@position.Name</MudSelectItem>
@@ -55,6 +55,10 @@
                 }
             }
             <MudSwitch T="bool" @bind-Value="mFormModel.IsActive" Label="활성 상태" Color="Color.Primary" />
+            @if (mMessageSeverity == Severity.Error && string.IsNullOrWhiteSpace(mMessage) == false)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3" role="alert">@mMessage</MudAlert>
+            }
             <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveUserAsync" Class="hub-primary-action-button">저장</MudButton>
                 @if (mFormModel.Id != 0)
@@ -74,8 +78,26 @@
     </MudItem>
     <MudItem xs="12" lg="12" xl="8">
         <MudPaper Class="hub-card hub-list-card pa-4">
-            <MudText Typo="Typo.h6">사용자 목록</MudText>
-            <MudTable Items="mUsers" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
+            <div class="hub-admin-section-heading">
+                <MudText Typo="Typo.h6">사용자 목록 · @getFilteredUsers().Count 명</MudText>
+                <MudButton Href="/admin/users#user-editor" OnClick="clearForm" Variant="Variant.Outlined" Color="Color.Primary">새 사용자</MudButton>
+            </div>
+            <MudTextField @bind-Value="mUserSearch" Label="사용자 검색" Placeholder="아이디 또는 표시 이름" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <div class="hub-position-selection-grid">
+                <MudSelect T="int?" Label="소속 팀 필터" @bind-Value="mFilterTeamIdOrNull" Clearable="true" Placeholder="모든 팀" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (Team team in mTeams)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="string" Label="활성 상태 필터" @bind-Value="mFilterStatus" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <MudSelectItem T="string" Value='@("all")'>전체</MudSelectItem>
+                    <MudSelectItem T="string" Value='@("active")'>활성</MudSelectItem>
+                    <MudSelectItem T="string" Value='@("inactive")'>비활성</MudSelectItem>
+                </MudSelect>
+            </div>
+            <MudTable Items="getFilteredUsers()" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
+                <NoRecordsContent><MudText>조건에 맞는 사용자가 없습니다. 검색어나 필터를 변경해 주세요.</MudText></NoRecordsContent>
                 <HeaderContent>
                     <MudTh>아이디</MudTh>
                     <MudTh>표시 이름</MudTh>
@@ -85,10 +107,10 @@
                     <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate Context="user">
-                    <MudTd DataLabel="아이디">@user.Username</MudTd>
-                    <MudTd DataLabel="표시 이름">@user.DisplayName</MudTd>
+                    <MudTd DataLabel="아이디 (필수)">@user.Username</MudTd>
+                    <MudTd DataLabel="표시 이름 (필수)">@user.DisplayName</MudTd>
                     <MudTd DataLabel="소속">@getAffiliationName(user)</MudTd>
-                    <MudTd DataLabel="직책">@getPositionName(user)</MudTd>
+                    <MudTd DataLabel="직책 (필수)">@getPositionName(user)</MudTd>
                     <MudTd DataLabel="상태"><span class="@(user.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(user.IsActive ? "활성" : "비활성")</span></MudTd>
                     <MudTd DataLabel="작업" Class="hub-action-cell">
                         <div class="hub-table-actions">

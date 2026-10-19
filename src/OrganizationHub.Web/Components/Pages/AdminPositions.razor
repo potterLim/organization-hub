@@ -41,8 +41,8 @@ else
                         <MudSelectItem T="int" Value="@team.Id">@team.DisplayName</MudSelectItem>
                     }
                 </MudSelect>
-                <MudTextField @bind-Value="mNewPositionFormModel.Name" Label="새 직책 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-                <MudTextField @bind-Value="mNewPositionFormModel.Description" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Immediate="true" />
+                <MudTextField @bind-Value="mNewPositionFormModel.Name" Label="새 직책 이름 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                <MudTextField @bind-Value="mNewPositionFormModel.Description" Label="설명 (선택)" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Immediate="true" />
                 <MudStack Row="true" Spacing="3" Class="hub-position-switch-row mt-2">
                     <MudSwitch T="bool" @bind-Value="mNewPositionFormModel.IsActive" Label="바로 사용" Color="Color.Primary" />
                     <MudSwitch T="bool" @bind-Value="mNewPositionFormModel.IsSystemAdministrator" Label="시스템 관리자 직책" Color="Color.Warning" />
@@ -52,7 +52,11 @@ else
                     <MudAlert Severity="Severity.Warning" Class="mt-2">모든 설정을 관리하는 직책을 만들 때만 선택하세요.</MudAlert>
                 }
 
-                <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
+                @if (mMessageSeverity == Severity.Error && string.IsNullOrWhiteSpace(mMessage) == false)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3" role="alert">@mMessage</MudAlert>
+            }
+            <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="createPositionAsync" StartIcon="@Icons.Material.Filled.Add" Class="hub-primary-action-button">직책 만들기</MudButton>
                 </MudStack>
             </MudPaper>
