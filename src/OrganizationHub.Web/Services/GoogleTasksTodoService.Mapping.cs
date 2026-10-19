@@ -65,6 +65,7 @@ public sealed partial class GoogleTasksTodoService
     {
         TodoTaskItem item = new TodoTaskItem();
         item.Id = getTextOrEmpty(googleTask.Id);
+        item.ETag = getTextOrEmpty(googleTask.ETag);
         item.TaskListId = taskListId.GetRequiredValue();
         item.Title = getTextOrEmpty(googleTask.Title);
         item.Position = getTextOrEmpty(googleTask.Position);

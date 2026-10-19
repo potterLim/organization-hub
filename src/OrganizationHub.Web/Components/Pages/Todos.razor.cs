@@ -20,6 +20,7 @@ public partial class Todos
     private string mSelectedTaskListId = string.Empty;
     private string mNewTaskTitle = string.Empty;
     private string mEditingTaskId = string.Empty;
+    private string mEditingETag = string.Empty;
     private string mEditingTitle = string.Empty;
     private DateTime? mNewTaskDueAt;
     private DateTime? mEditingDueAt;

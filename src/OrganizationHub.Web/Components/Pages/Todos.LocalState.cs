@@ -50,6 +50,7 @@ public partial class Todos
     {
         TodoTaskItem clonedTask = new TodoTaskItem();
         clonedTask.Id = task.Id;
+        clonedTask.ETag = task.ETag;
         clonedTask.TaskListId = task.TaskListId;
         clonedTask.TaskListDisplayName = task.TaskListDisplayName;
         clonedTask.Title = task.Title;

@@ -125,6 +125,7 @@ public sealed partial class GoogleCalendarService
     {
         CalendarEventItem clonedEvent = new CalendarEventItem();
         clonedEvent.Id = calendarEvent.Id;
+        clonedEvent.ETag = calendarEvent.ETag;
         clonedEvent.CalendarId = calendarEvent.CalendarId;
         clonedEvent.CalendarName = calendarEvent.CalendarName;
         clonedEvent.Summary = calendarEvent.Summary;
@@ -145,6 +146,7 @@ public sealed partial class GoogleCalendarService
     {
         CalendarEventItem item = new CalendarEventItem();
         item.Id = getTextOrEmpty(googleEvent.Id);
+        item.ETag = getTextOrEmpty(googleEvent.ETag);
         item.CalendarId = calendarId.GetRequiredValue();
         item.CalendarName = getLogicalCalendarName(googleEvent, calendarName);
         item.Summary = getTextOrEmpty(googleEvent.Summary);

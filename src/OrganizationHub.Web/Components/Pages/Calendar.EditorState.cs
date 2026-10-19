@@ -41,6 +41,7 @@ public partial class Calendar
         mSelectedEventOrNull = calendarEvent;
         mSelectedDayOrNull = getEventLocalDateOrNull(calendarEvent);
         mEditorEventId = calendarEvent.Id;
+        mEditorETag = calendarEvent.ETag;
         mEditorCalendarId = calendarEvent.CalendarId;
         mEditorSummary = calendarEvent.Summary;
         mEditorDescription = calendarEvent.Description;

@@ -265,7 +265,7 @@ public partial class Todos
 
     private string createTodoErrorMessage(Exception exception)
     {
-        if (exception is ResourceCreationException)
+        if (exception is ResourceCreationException || exception is ResourceEditConflictException)
         {
             return exception.Message;
         }

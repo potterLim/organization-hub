@@ -288,7 +288,7 @@ public sealed class OwnedResourcePermissionTests
             return service.DeleteEventAsync(session, CalendarId.CreateOptional("calendar"), CalendarEventId.CreateOptional("event"), CancellationToken.None);
         }
 
-        CalendarEventFormModel form = new CalendarEventFormModel();
+        CalendarEventFormModel form = new CalendarEventFormModel(); form.ETag = "\"baseline\"";
         form.CalendarId = "calendar";
         form.Id = "event";
         form.Summary = "본인 일정 수정";
@@ -313,7 +313,7 @@ public sealed class OwnedResourcePermissionTests
             case "move":
                 return service.MoveTaskAsync(session, list, task, TodoTaskId.Empty, CancellationToken.None);
             default:
-                TodoTaskFormModel form = new TodoTaskFormModel();
+                TodoTaskFormModel form = new TodoTaskFormModel(); form.ETag = "\"baseline\"";
                 form.TaskListId = "tasks";
                 form.TaskId = "task";
                 form.Title = "본인 할 일 수정";

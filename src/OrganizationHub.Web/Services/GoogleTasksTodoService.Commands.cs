@@ -63,12 +63,8 @@ public sealed partial class GoogleTasksTodoService
                 applyTaskDueToGoogleTask(googleTask, dueAtUtcOrNull);
                 Google.Apis.Tasks.v1.TasksResource.PatchRequest request = tasksService.Tasks.Patch(googleTask, requiredTaskListId, requiredTaskId);
                 request.Fields = TASK_FIELDS;
-                if (dueAtUtcOrNull.HasValue == false)
-                {
-                    // The SDK omits null properties; PATCH needs an explicit null to remove a due date.
-                    request.ModifyRequest = message => applyClearedDueContent(message, googleTask.Title);
-                }
-                GoogleTask updatedTask = await request.ExecuteAsync(cancellationToken);
+                request.ModifyRequest = message => prepareTaskEdit(message, formModel, googleTask.Title);
+                GoogleTask updatedTask = await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
                 TodoTaskItem updatedItem = createTaskItem(taskListId, updatedTask);
                 await updateMetadataDueAtAsync(taskListId, taskId, dueAtUtcOrNull, cancellationToken);
                 await applyMetadataAsync(updatedItem, cancellationToken);
@@ -192,6 +188,15 @@ public sealed partial class GoogleTasksTodoService
         }
 
         googleTask.Due = googleDueOrNull;
+    }
+
+    private static void prepareTaskEdit(HttpRequestMessage message, TodoTaskFormModel form, string title)
+    {
+        ResourceEditVersion.Apply(message, form.ETag);
+        if (form.DueAtUtc.HasValue == false)
+        {
+            applyClearedDueContent(message, title);
+        }
     }
 
     private static void applyClearedDueContent(HttpRequestMessage message, string title)

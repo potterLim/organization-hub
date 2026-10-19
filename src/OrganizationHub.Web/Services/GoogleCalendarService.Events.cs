@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Apis.Calendar.v3;
 using Google.Apis.Calendar.v3.Data;
-using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
+using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
@@ -120,9 +120,17 @@ public sealed partial class GoogleCalendarService
                 Event googleEvent = createGoogleEvent(formModel, calendarName);
                 EventsResource.PatchRequest request = calendarService.Events.Patch(googleEvent, requiredCalendarId, requiredEventId);
                 request.Fields = EVENT_FIELDS;
-                Event updatedEvent = await request.ExecuteAsync(cancellationToken);
+                request.ModifyRequest = message => ResourceEditVersion.Apply(message, formModel.ETag);
+                Event updatedEvent = await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
                 expireCalendarEventCache(calendarId);
-                return createCalendarEventItem(updatedEvent, calendarId, calendarName);
+                CalendarEventItem updatedItem = createCalendarEventItem(updatedEvent, calendarId, calendarName);
+                Dictionary<string, CalendarEventMetadata> metadataById = await getMetadataByEventIdAsync(calendarId, new List<CalendarEventItem> { updatedItem }, cancellationToken);
+                if (metadataById.TryGetValue(updatedItem.Id, out CalendarEventMetadata? metadataOrNull))
+                {
+                    applyMetadata(updatedItem, metadataOrNull);
+                }
+                await applyItemPermissionsAsync(userSession, new CalendarEventItem[] { updatedItem }, false, cancellationToken);
+                return updatedItem;
             }
         }
     }

@@ -18,6 +18,7 @@ public partial class Todos
 
         mEditingTaskId = task.Id;
         mEditingTitle = task.Title;
+        mEditingETag = task.ETag;
         mEditingDueAt = createEditorDueAtOrNull(task.DueAt);
         mIsEditingDuePickerOpen = false;
         mDeletingTaskId = string.Empty;
@@ -79,6 +80,7 @@ public partial class Todos
             TodoTaskFormModel formModel = new TodoTaskFormModel();
             formModel.TaskListId = task.TaskListId;
             formModel.TaskId = task.Id;
+            formModel.ETag = mEditingETag;
             formModel.Title = editedTitle;
             formModel.DueAtUtc = editedDueAtUtcOrNull;
             TodoTaskItem updatedTask = await TodoService.UpdateTaskAsync(CurrentUserSessionOrNull, formModel, CancellationToken.None);

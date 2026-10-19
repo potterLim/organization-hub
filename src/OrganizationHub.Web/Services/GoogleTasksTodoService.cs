@@ -14,7 +14,7 @@ public sealed partial class GoogleTasksTodoService : ITodoService
 
     private const string TASK_STATUS_COMPLETED = "completed";
     private const string TASK_STATUS_NEEDS_ACTION = "needsAction";
-    private const string TASK_FIELDS = "id,title,status,position,updated,completed,due";
+    private const string TASK_FIELDS = "id,etag,title,status,position,updated,completed,due";
     private static readonly string[] TASK_SCOPES = new string[] { GoogleTasksApi.Scope.Tasks };
 
     private readonly IDbContextFactory<OrganizationHubDbContext> mDbContextFactory;

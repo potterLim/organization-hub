@@ -27,6 +27,7 @@ public partial class Calendar
     {
         CalendarEventItem clonedEvent = new CalendarEventItem();
         clonedEvent.Id = calendarEvent.Id;
+        clonedEvent.ETag = calendarEvent.ETag;
         clonedEvent.CalendarId = calendarEvent.CalendarId;
         clonedEvent.CalendarName = calendarEvent.CalendarName;
         clonedEvent.Summary = calendarEvent.Summary;

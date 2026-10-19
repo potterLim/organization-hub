@@ -162,7 +162,7 @@ public sealed class OperationPermissionRegressionTests
         UserSession session = createSession();
         TodoTaskListId listId = TodoTaskListId.CreateOptional("tasks");
         TodoTaskId taskId = TodoTaskId.CreateOptional("task");
-        TodoTaskFormModel form = new TodoTaskFormModel();
+        TodoTaskFormModel form = new TodoTaskFormModel(); form.ETag = "\"baseline\"";
         form.Title = "검증";
         form.TaskListId = "tasks";
         form.TaskId = "task";
@@ -194,7 +194,7 @@ public sealed class OperationPermissionRegressionTests
     private static async Task executeCalendarAsync(GoogleCalendarService service, string operation)
     {
         UserSession session = createSession();
-        CalendarEventFormModel form = new CalendarEventFormModel();
+        CalendarEventFormModel form = new CalendarEventFormModel(); form.ETag = "\"baseline\"";
         form.CalendarId = "calendar";
         form.Id = "event";
         form.Summary = "검증";

@@ -74,6 +74,14 @@ public partial class Calendar
             mSelectedEventOrNull = previousSelectedEventOrNull;
             mErrorMessage = "이 일정 위치를 수정할 권한이 없습니다.";
         }
+        catch (ResourceEditConflictException exception)
+        {
+            mMonthEvents = cloneCalendarEvents(previousMonthEvents);
+            refreshDerivedCalendarCollections();
+            mSelectedEventOrNull = previousSelectedEventOrNull;
+            mIsEditorOpen = true;
+            mEditorMessage = exception.Message;
+        }
         catch (ResourceCreationException exception)
         {
             mMonthEvents = cloneCalendarEvents(previousMonthEvents);
@@ -107,6 +115,7 @@ public partial class Calendar
 
         CalendarEventFormModel formModel = new CalendarEventFormModel();
         formModel.Id = mEditorEventId;
+        formModel.ETag = mEditorETag;
         formModel.CalendarId = mEditorCalendarId;
         formModel.Summary = mEditorSummary;
         formModel.Description = mEditorDescription;

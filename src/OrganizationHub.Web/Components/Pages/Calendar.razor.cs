@@ -32,6 +32,7 @@ public partial class Calendar
     private string mSelectedCalendarId = "all";
     private string mErrorMessage = string.Empty;
     private string mEditorCalendarId = string.Empty;
+    private string mEditorETag = string.Empty;
     private string mEditorEventId = string.Empty;
     private string mEditorSummary = string.Empty;
     private string mEditorDescription = string.Empty;

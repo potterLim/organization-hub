@@ -11,7 +11,7 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleCalendarService : ICalendarService
 {
-    private const string EVENT_FIELDS = "id,summary,description,location,start,end,extendedProperties";
+    private const string EVENT_FIELDS = "id,etag,summary,description,location,start,end,extendedProperties";
     private const string LOGICAL_CALENDAR_NAME_PROPERTY = "organizationHub.logicalCalendarName";
     private static readonly string[] CALENDAR_SCOPES = new string[] { CalendarService.Scope.Calendar };
     private static readonly TimeSpan EVENT_LIST_CACHE_DURATION = TimeSpan.FromSeconds(45);
