@@ -370,3 +370,7 @@
     max-width: 178px;
     text-align: left;
 }
+
+.hub-dashboard-todo-toggle {
+    display: none;
+}

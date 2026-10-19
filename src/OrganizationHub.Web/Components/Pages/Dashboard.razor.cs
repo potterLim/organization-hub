@@ -17,6 +17,7 @@ public partial class Dashboard
     private string mWeekEventsErrorMessage = string.Empty;
     private string mWeekTodosErrorMessage = string.Empty;
     private string mRecentMaterialsErrorMessage = string.Empty;
+    private bool mIsDashboardTodosExpanded;
     private bool mIsLoadingPendingApprovals = true;
     private bool mIsLoadingWeekEvents = true;
     private bool mIsLoadingWeekTodos = true;

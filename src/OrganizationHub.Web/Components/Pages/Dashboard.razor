@@ -108,7 +108,7 @@
                     }
                     else
                     {
-                        <div class="hub-dashboard-todo-list">
+                        <div class="@(mIsDashboardTodosExpanded ? "hub-dashboard-todo-list is-expanded" : "hub-dashboard-todo-list")">
                             @foreach (TodoTaskItem task in mWeekTodos)
                             {
                                 string todoMeta = formatDashboardTodoMeta(task);
@@ -135,6 +135,10 @@
                                 </div>
                             }
                         </div>
+                        @if (mWeekTodos.Count > MOBILE_TODO_PREVIEW_COUNT)
+                        {
+                            <MudButton Class="hub-dashboard-todo-toggle" Variant="Variant.Text" Color="Color.Primary" OnClick="toggleDashboardTodos" aria-expanded="@(mIsDashboardTodosExpanded ? "true" : "false")">@(mIsDashboardTodosExpanded ? "간략히 보기" : "나머지 " + (mWeekTodos.Count - MOBILE_TODO_PREVIEW_COUNT) + "개 보기")</MudButton>
+                        }
                     }
                 </div>
             </MudPaper>

@@ -14,6 +14,7 @@ public partial class Dashboard
 {
     private const int DASHBOARD_PENDING_APPROVAL_MAXIMUM_COUNT = 3;
     private const int DASHBOARD_TODO_MAXIMUM_COUNT = 12;
+    private const int MOBILE_TODO_PREVIEW_COUNT = 3;
     private const int DASHBOARD_WEEK_EVENT_MAXIMUM_COUNT = 6;
     private const int DASHBOARD_RECENT_MATERIAL_MAXIMUM_COUNT = 5;
 
@@ -249,6 +250,11 @@ public partial class Dashboard
         {
             cancellationTokenSource.Dispose();
         }
+    }
+
+    private void toggleDashboardTodos()
+    {
+        mIsDashboardTodosExpanded = mIsDashboardTodosExpanded == false;
     }
 
     private List<TodoTaskItem> createDashboardTodos(IReadOnlyList<TodoTaskItem> tasks)

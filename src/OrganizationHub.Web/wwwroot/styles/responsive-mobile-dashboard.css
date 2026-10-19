@@ -1,4 +1,13 @@
 @media (max-width: 720px) {
+    .hub-dashboard-todo-list:not(.is-expanded) .hub-dashboard-todo-row:nth-child(n + 4) {
+        display: none;
+    }
+
+    .hub-dashboard-todo-toggle {
+        display: inline-flex;
+        width: 100%;
+    }
+
     .hub-dashboard-grid {
         --hub-dashboard-list-row-height: auto;
     }
