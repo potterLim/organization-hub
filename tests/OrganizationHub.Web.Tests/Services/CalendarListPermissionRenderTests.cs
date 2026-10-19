@@ -10,25 +10,13 @@ using Microsoft.JSInterop;
 using MudBlazor.Services;
 using OrganizationHub.Web.Components.Pages;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Tests.Infrastructure;
 using Xunit;
 
 namespace OrganizationHub.Web.Tests.Services;
 
 public sealed class CalendarListPermissionRenderTests
 {
-    private sealed class StaticJavaScriptRuntime : IJSRuntime
-    {
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? argsOrNull)
-        {
-            return ValueTask.FromResult(default(TValue)!);
-        }
-
-        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? argsOrNull)
-        {
-            return InvokeAsync<TValue>(identifier, argsOrNull);
-        }
-    }
-
     [Theory]
     [InlineData(true, false)]
     [InlineData(false, true)]

@@ -1,4 +1,6 @@
-<div class="@getRootClass()">
+@implements IAsyncDisposable
+
+<div @ref="mRootElement" class="@getRootClass()">
     <button type="button" class="@getButtonClass()" disabled="@IsDisabled" aria-expanded="@IsOpen" @onclick="togglePickerAsync">
         <span class="hub-calendar-date-time-field-label">@Label</span>
         <span class="hub-calendar-date-time-field-value">@getValueText()</span>
@@ -25,7 +27,7 @@
             <div class="hub-calendar-date-time-days">
                 @foreach (CalendarDateTimeDayCell dayCell in mDayCells)
                 {
-                    <button type="button" class="@getDayButtonClass(dayCell)" disabled="@dayCell.IsDisabled" @onclick="@(() => selectDateAsync(dayCell.Date))">
+                    <button type="button" class="@getDayButtonClass(dayCell)" data-picker-date="@dayCell.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" aria-label="@dayCell.Date.ToString("yyyy년 M월 d일 dddd", KOREAN_CULTURE)" aria-pressed="@(dayCell.IsSelected ? "true" : "false")" tabindex="@(dayCell.IsSelected ? 0 : -1)" disabled="@dayCell.IsDisabled" @onclick="@(() => selectDateAsync(dayCell.Date))">
                         @dayCell.Date.Day.ToString(CultureInfo.InvariantCulture)
                     </button>
                 }
@@ -40,10 +42,10 @@
                     <div class="hub-calendar-date-time-parts">
                         <div>
                             <span class="hub-calendar-date-time-part-title">시</span>
-                            <div class="hub-calendar-date-time-hours">
+                            <div class="hub-calendar-date-time-hours" data-picker-time-group>
                                 @foreach (int hour in HOUR_SLOTS)
                                 {
-                                    <button type="button" class="@getHourButtonClass(hour)" disabled="@isHourDisabled(hour)" @onclick="@(() => selectHourAsync(hour))">
+                                    <button type="button" class="@getHourButtonClass(hour)" aria-label="@(hour.ToString(CultureInfo.InvariantCulture) + "시")" aria-pressed="@(createSelectionPolicy().getSelectedHour() == hour ? "true" : "false")" tabindex="@(createSelectionPolicy().getSelectedHour() == hour ? 0 : -1)" disabled="@isHourDisabled(hour)" @onclick="@(() => selectHourAsync(hour))">
                                         @formatTimePart(hour)
                                     </button>
                                 }
@@ -51,10 +53,10 @@
                         </div>
                         <div>
                             <span class="hub-calendar-date-time-part-title">분</span>
-                            <div class="hub-calendar-date-time-minutes">
+                            <div class="hub-calendar-date-time-minutes" data-picker-time-group>
                                 @foreach (int minute in MINUTE_SLOTS)
                                 {
-                                    <button type="button" class="@getMinuteButtonClass(minute)" disabled="@isMinuteDisabled(minute)" @onclick="@(() => selectMinuteAsync(minute))">
+                                    <button type="button" class="@getMinuteButtonClass(minute)" aria-label="@(minute.ToString(CultureInfo.InvariantCulture) + "분")" aria-pressed="@(createSelectionPolicy().getSelectedMinute() == minute ? "true" : "false")" tabindex="@(createSelectionPolicy().getSelectedMinute() == minute ? 0 : -1)" disabled="@isMinuteDisabled(minute)" @onclick="@(() => selectMinuteAsync(minute))">
                                         @formatTimePart(minute)
                                     </button>
                                 }
