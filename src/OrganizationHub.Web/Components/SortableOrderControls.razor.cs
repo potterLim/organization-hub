@@ -13,6 +13,9 @@ public partial class SortableOrderControls
     private bool mIsMoving;
 
     [Parameter]
+    public string ItemKeyPrefix { get; set; } = string.Empty;
+
+    [Parameter]
     public int ItemId
     {
         get; set;
@@ -62,7 +65,7 @@ public partial class SortableOrderControls
             return;
         }
         int target = OrderedIds[getIndex() + offset];
-        SortableItemMoveRequest request = SortableItemMoveRequest.CreateFromScript(ItemId.ToString(CultureInfo.InvariantCulture), target.ToString(CultureInfo.InvariantCulture), offset < 0 ? ESortableMoveDirection.Before : ESortableMoveDirection.After);
+        SortableItemMoveRequest request = SortableItemMoveRequest.CreateFromScript(ItemKeyPrefix + ItemId.ToString(CultureInfo.InvariantCulture), ItemKeyPrefix + target.ToString(CultureInfo.InvariantCulture), offset < 0 ? ESortableMoveDirection.Before : ESortableMoveDirection.After);
         mIsMoving = true;
         try
         {

@@ -26,6 +26,10 @@
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
     <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
+    @if (mHasSaveConflict)
+    {
+        <MudButton OnClick="cancelEditAsync" Variant="Variant.Outlined" Color="Color.Primary" Class="mb-4">최신 업무 기준 불러오기</MudButton>
+    }
 }
 
 @if (mIsEditMode)
@@ -38,7 +42,7 @@
                     <span>@(mSectionCount)개 카드</span>
                 </div>
                 <div class="hub-form-hint">
-                    <span>카드 수를 고르고 목록을 드래그해 순서를 정합니다.</span>
+                    <span>카드 수를 고르고 드래그하거나 위·아래 버튼으로 순서를 정합니다.</span>
                     <span>일반 사용자에게는 오른쪽 미리보기처럼 보입니다.</span>
                 </div>
                 <MudSelect T="int" Label="카드 수" Value="mSectionCount" ValueChanged="setSectionCount" Variant="Variant.Outlined" Margin="Margin.Dense">
@@ -51,13 +55,14 @@
                     @foreach (WorkGuidelineSectionFormModel sectionFormModel in mSectionFormModels)
                     {
                         <div class="hub-sortable-row hub-work-guideline-editor-row" data-sortable-item-id="@sectionFormModel.ClientKey" draggable="true">
-                            <span class="hub-sortable-handle" role="button" aria-label="업무 기준 순서 변경">
+                            <span class="hub-sortable-handle" aria-hidden="true">
                                 <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
                             </span>
                             <div class="hub-sortable-main">
                                 <MudTextField @bind-Value="sectionFormModel.Title" Label="카드 제목" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                                 <MudTextField @bind-Value="sectionFormModel.Body" Label="내용" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="4" Immediate="true" />
                             </div>
+                            <SortableOrderControls ItemId="@(mSectionFormModels.IndexOf(sectionFormModel) + 1)" Label="@sectionFormModel.Title" OrderedIds="@(Enumerable.Range(1, mSectionFormModels.Count).ToArray())" MoveRequested="moveSectionByIndex" />
                         </div>
                     }
                 </div>

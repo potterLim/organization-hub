@@ -26,13 +26,14 @@ public sealed class WorkGuidelineService : IWorkGuidelineService
         {
             await using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken))
             {
-            WorkGuidelineState state = await dbContext.Set<WorkGuidelineState>().SingleAsync(cancellationToken);
-            List<WorkGuidelineSection> sections = await dbContext.WorkGuidelineSections
-                .OrderBy(section => section.SortOrder)
-                .ThenBy(section => section.Title)
-                .ToListAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            return new WorkGuidelineSnapshot { Revision = state.Revision, Sections = sections };
+                WorkGuidelineState state = await dbContext.Set<WorkGuidelineState>().SingleAsync(cancellationToken);
+                List<WorkGuidelineSectionItem> sections = await dbContext.WorkGuidelineSections
+                    .OrderBy(section => section.SortOrder)
+                    .ThenBy(section => section.Title)
+                    .Select(section => new WorkGuidelineSectionItem { Id = section.Id, Title = section.Title, Body = section.Body, SortOrder = section.SortOrder })
+                    .ToListAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                return new WorkGuidelineSnapshot { Revision = state.Revision, Sections = sections };
             }
         }
     }

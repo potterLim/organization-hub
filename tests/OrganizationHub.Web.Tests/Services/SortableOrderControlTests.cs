@@ -12,6 +12,20 @@ namespace OrganizationHub.Web.Tests.Services;
 public sealed class SortableOrderControlTests
 {
     [Theory]
+    [InlineData("menu:")]
+    [InlineData("section:")]
+    public async Task MenuKeyboardMovesPreserveSortableKeyNamespaceAsync(string prefix)
+    {
+        List<SortableItemMoveRequest> requests = new List<SortableItemMoveRequest>();
+        SortableOrderControls control = createControl(2, requests);
+        typeof(SortableOrderControls).GetProperty("ItemKeyPrefix")!.SetValue(control, prefix);
+        await invokeMoveAsync(control, -1);
+        SortableItemMoveRequest request = Assert.Single(requests);
+        Assert.Equal(prefix + "2", request.SourceItemKey.GetRequiredValue());
+        Assert.Equal(prefix + "1", request.TargetItemKey.GetRequiredValue());
+    }
+
+    [Theory]
     [InlineData(2, -1, 1, ESortableMoveDirection.Before)]
     [InlineData(2, 1, 3, ESortableMoveDirection.After)]
     public async Task KeyboardMoveUsesAdjacentItemAndExistingReorderContractAsync(int itemId, int offset, int targetId, ESortableMoveDirection direction)

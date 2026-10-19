@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
-using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
@@ -20,6 +19,7 @@ public partial class WorkGuidelines
     private IJSObjectReference? mSortableModuleOrNull;
     private DotNetObjectReference<WorkGuidelines>? mDotNetReferenceOrNull;
     private bool mIsEditMode;
+    private bool mHasSaveConflict;
     private bool mShouldInitializeSortable;
     private int mSectionCount;
     private int mRevision;
@@ -93,9 +93,10 @@ public partial class WorkGuidelines
     {
         WorkGuidelineSnapshot snapshot = await WorkGuidelineService.GetSnapshotAsync(CancellationToken.None);
         mRevision = snapshot.Revision;
-        IReadOnlyList<WorkGuidelineSection> sections = snapshot.Sections;
+        IReadOnlyList<WorkGuidelineSectionItem> sections = snapshot.Sections;
         mSectionFormModels = sections.Select(createFormModel).ToList();
         mSectionCount = mSectionFormModels.Count;
+        mHasSaveConflict = false;
     }
 
     private void enterEditMode()
@@ -115,6 +116,7 @@ public partial class WorkGuidelines
     {
         setSortOrders();
         ServiceResult saveResult = await WorkGuidelineService.SaveSectionsAsync(mSectionFormModels, mRevision, CancellationToken.None);
+        mHasSaveConflict = saveResult.IsConcurrencyConflict;
         showOperationResult(saveResult, "업무 기준이 저장되었습니다.");
         if (saveResult.IsSuccess == false)
         {
@@ -189,6 +191,17 @@ public partial class WorkGuidelines
         return new string[] { "내용을 입력해 주세요." };
     }
 
+    private void moveSectionByIndex(SortableItemMoveRequest request)
+    {
+        int sourceIndex = int.Parse(request.SourceItemKey.GetRequiredValue(), CultureInfo.InvariantCulture) - 1;
+        int targetIndex = int.Parse(request.TargetItemKey.GetRequiredValue(), CultureInfo.InvariantCulture) - 1;
+        if (sourceIndex < 0 || sourceIndex >= mSectionFormModels.Count || targetIndex < 0 || targetIndex >= mSectionFormModels.Count)
+        {
+            return;
+        }
+        moveSection(SortableItemMoveRequest.CreateFromScript(mSectionFormModels[sourceIndex].ClientKey, mSectionFormModels[targetIndex].ClientKey, request.MoveDirection));
+    }
+
     private void moveSection(SortableItemMoveRequest moveRequest)
     {
         if (moveRequest.HasRequiredItems == false)
@@ -230,7 +243,7 @@ public partial class WorkGuidelines
         }
     }
 
-    private WorkGuidelineSectionFormModel createFormModel(WorkGuidelineSection section)
+    private WorkGuidelineSectionFormModel createFormModel(WorkGuidelineSectionItem section)
     {
         WorkGuidelineSectionFormModel formModel = new WorkGuidelineSectionFormModel();
         formModel.Id = section.Id;

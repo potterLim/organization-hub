@@ -101,6 +101,23 @@ public sealed class WorkGuidelineServiceTests
         }
     }
 
+    [Fact]
+    public async Task EmptyDocumentSnapshotCannotRemoveCardsAddedAfterLoadAsync()
+    {
+        using (TestDbContextFactory factory = new TestDbContextFactory())
+        {
+            WorkGuidelineService service = new WorkGuidelineService(factory);
+            WorkGuidelineSnapshot empty = await service.GetSnapshotAsync(CancellationToken.None);
+            Assert.Empty(empty.Sections);
+            Assert.True((await service.SaveSectionsAsync(createSectionFormModels(1), empty.Revision, CancellationToken.None)).IsSuccess);
+            Assert.True((await service.SaveSectionsAsync(new WorkGuidelineSectionFormModel[0], empty.Revision, CancellationToken.None)).IsConcurrencyConflict);
+            WorkGuidelineSnapshot latest = await service.GetSnapshotAsync(CancellationToken.None);
+            Assert.Single(latest.Sections);
+            Assert.True((await service.SaveSectionsAsync(new WorkGuidelineSectionFormModel[0], latest.Revision, CancellationToken.None)).IsSuccess);
+            Assert.Empty((await service.GetSnapshotAsync(CancellationToken.None)).Sections);
+        }
+    }
+
     [Theory]
     [InlineData(0, EWorkGuidelineGridLayout.Empty)]
     [InlineData(1, EWorkGuidelineGridLayout.TwoColumns)]
