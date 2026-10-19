@@ -81,6 +81,7 @@ public partial class Calendar
             mSelectedEventOrNull = previousSelectedEventOrNull;
             mIsEditorOpen = true;
             mEditorMessage = exception.Message;
+            mHasEditConflict = true;
         }
         catch (ResourceCreationException exception)
         {

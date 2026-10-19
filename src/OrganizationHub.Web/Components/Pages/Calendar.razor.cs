@@ -40,6 +40,7 @@ public partial class Calendar
     private DateTime? mEditorStartLocalOrNull;
     private DateTime? mEditorEndLocalOrNull;
     private string mEditorMessage = string.Empty;
+    private bool mHasEditConflict;
     private TimeZoneInfo mClientTimeZoneInfo = TimeZoneInfo.Local;
     private DateTime mCurrentMonth;
     private ECalendarEditorDateTimeField? mOpenEditorDateTimeFieldOrNull;

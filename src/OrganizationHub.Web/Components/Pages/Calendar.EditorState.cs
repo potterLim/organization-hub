@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Models;
 
@@ -26,6 +27,7 @@ public partial class Calendar
         setEditorSchedule(CalendarEditorSchedule.CreateNormalized(nextStart, nextStart.AddHours(1)));
         mIsEditorAllDay = false;
         mEditorMessage = string.Empty;
+        mHasEditConflict = false;
         mEditorCalendarId = mCreatableCalendars.Count > 0 ? mCreatableCalendars[0].CalendarId.GetRequiredValue() : string.Empty;
     }
 
@@ -42,6 +44,7 @@ public partial class Calendar
         mSelectedDayOrNull = getEventLocalDateOrNull(calendarEvent);
         mEditorEventId = calendarEvent.Id;
         mEditorETag = calendarEvent.ETag;
+        mHasEditConflict = false;
         mEditorCalendarId = calendarEvent.CalendarId;
         mEditorSummary = calendarEvent.Summary;
         mEditorDescription = calendarEvent.Description;
@@ -59,6 +62,21 @@ public partial class Calendar
         mIsEditorOpen = false;
         mOpenEditorDateTimeFieldOrNull = null;
         mEditorMessage = string.Empty;
+        mHasEditConflict = false;
+    }
+
+    private async Task reloadConflictedEventAsync()
+    {
+        string eventId = mEditorEventId;
+        string calendarId = mEditorCalendarId;
+        closeEditor();
+        clearSelectedEvent();
+        await loadEventsAsync();
+        CalendarEventItem? latestOrNull = mMonthEvents.FirstOrDefault(item => item.Id == eventId && item.CalendarId == calendarId);
+        if (latestOrNull != null)
+        {
+            openEditEditor(latestOrNull);
+        }
     }
 
     private void selectEvent(CalendarEventItem calendarEvent)

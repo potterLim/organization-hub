@@ -139,7 +139,13 @@ else
                     </div>
                     @if (string.IsNullOrWhiteSpace(mEditorMessage) == false)
                     {
-                        <MudAlert Severity="Severity.Warning" Class="mb-3">@mEditorMessage</MudAlert>
+                        <MudAlert Severity="Severity.Warning" Class="mb-3">
+                            @mEditorMessage
+                            @if (mHasEditConflict)
+                            {
+                                <MudButton OnClick="reloadConflictedEventAsync">최신 내용 불러오기</MudButton>
+                            }
+                        </MudAlert>
                     }
                     <div class="hub-calendar-editor-stack">
                         <MudSelect T="string" Label="저장 위치" Value="mEditorCalendarId" ValueChanged="handleEditorCalendarChangedAsync" Disabled="mIsEditing" Variant="Variant.Outlined" Margin="Margin.Dense">
