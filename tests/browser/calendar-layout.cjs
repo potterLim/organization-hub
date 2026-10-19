@@ -68,9 +68,14 @@ async function inspectCells(page) {
                 const grid = page.locator('.hub-calendar-month-grid');
                 await grid.scrollIntoViewIfNeeded();
                 await page.screenshot({ path: path.join(output, `calendar-${width}.png`) });
+                await page.getByRole('button', { name: '10월 23일 일정 999건 보기', exact: true }).click();
+                const detail = page.locator('.hub-calendar-day-detail-list');
+                await detail.waitFor();
+                await page.waitForFunction(() => document.querySelectorAll('.hub-calendar-day-detail-item').length === 999);
+                const detailCount = await page.locator('.hub-calendar-day-detail-item').count();
                 const runtimeError = await page.locator('#blazor-error-ui').isVisible();
                 const pageOverflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
-                results.push({ width, height, title: await page.title(), url: page.url(), runtimeError, pageOverflow, cases, cellViolations: cells.filter(cell => cell.violations.length) });
+                results.push({ width, height, title: await page.title(), url: page.url(), runtimeError, pageOverflow, detailCount, cases, cellViolations: cells.filter(cell => cell.violations.length) });
             } finally {
                 await context.close();
             }
@@ -81,6 +86,7 @@ async function inspectCells(page) {
     }
     assert.equal(errors.length, 0, 'Browser errors');
     for (const result of results) {
+        assert.equal(result.detailCount, 999, 'All events remain available in day details');
         assert.equal(result.runtimeError, false);
         assert.equal(result.pageOverflow, false);
         assert.equal(result.cellViolations.length, 0, `${result.width}: ${JSON.stringify(result.cellViolations.slice(0, 5))}`);

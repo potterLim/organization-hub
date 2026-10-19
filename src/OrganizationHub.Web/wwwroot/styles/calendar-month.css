@@ -57,8 +57,9 @@
     display: grid;
     font-size: 13px;
     font-weight: 900;
-    gap: 6px;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 4px;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
     line-height: 1;
     min-height: 20px;
     white-space: nowrap;
@@ -70,7 +71,7 @@
     border-radius: 999px;
     display: inline-flex;
     flex: 0 0 auto;
-    grid-column: 2;
+    grid-column: 1;
     height: 24px;
     justify-content: center;
     min-width: 24px;
@@ -82,8 +83,9 @@
     display: inline-flex;
     flex: 0 1 auto;
     gap: 5px;
-    grid-column: 3;
-    justify-self: start;
+    grid-column: 1;
+    justify-self: center;
+    max-width: 100%;
     min-width: 0;
 }
 
@@ -102,8 +104,10 @@
     display: grid;
     gap: 3px;
     justify-items: center;
+    box-sizing: border-box;
     margin-top: 6px;
     min-height: 0;
+    min-width: 0;
     padding: 6px 8px;
     text-align: center;
     width: 100%;
@@ -120,11 +124,15 @@
     border: 1px solid rgba(33, 107, 255, .12);
     border-radius: 999px;
     color: var(--hub-brand-deep);
-    font-size: 10px;
+    box-sizing: border-box;
+    font-size: 11px;
     font-weight: 900;
-    line-height: 1;
-    padding: 5px 7px;
-    white-space: nowrap;
+    line-height: 1.2;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    padding: 3px 5px;
+    text-align: center;
+    white-space: normal;
 }
 
 .hub-calendar-day-time-line {
