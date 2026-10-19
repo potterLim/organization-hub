@@ -85,6 +85,7 @@ public sealed partial class GoogleCalendarService
         catch (Exception exception)
         {
             mLogger.LogWarning(exception, "Failed to store Google Calendar metadata for event {EventId}.", requiredEventId);
+            throw;
         }
 
         return metadata;

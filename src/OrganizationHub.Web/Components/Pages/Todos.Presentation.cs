@@ -265,6 +265,10 @@ public partial class Todos
 
     private string createTodoErrorMessage(Exception exception)
     {
+        if (exception is ResourceCreationException)
+        {
+            return exception.Message;
+        }
         return "할 일 작업을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
     }
 }

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
+using OrganizationHub.Web.Services;
+
 namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Calendar
@@ -72,12 +74,21 @@ public partial class Calendar
             mSelectedEventOrNull = previousSelectedEventOrNull;
             mErrorMessage = "이 일정 위치를 수정할 권한이 없습니다.";
         }
+        catch (ResourceCreationException exception)
+        {
+            mMonthEvents = cloneCalendarEvents(previousMonthEvents);
+            refreshDerivedCalendarCollections();
+            mSelectedEventOrNull = previousSelectedEventOrNull;
+            mErrorMessage = exception.Message;
+            mIsEditorOpen = exception.IsRemoteStateUncertain == false;
+            mEditorMessage = exception.Message;
+        }
         catch
         {
             mMonthEvents = cloneCalendarEvents(previousMonthEvents);
             refreshDerivedCalendarCollections();
             mSelectedEventOrNull = previousSelectedEventOrNull;
-            mErrorMessage = "일정을 저장하지 못했습니다. 변경 내용은 저장되지 않았습니다. 잠시 후 다시 시도해 주세요.";
+            mErrorMessage = "일정의 저장 결과를 확인하지 못했습니다. 새로고침해 현재 상태를 확인한 뒤 다시 시도해 주세요.";
         }
     }
 

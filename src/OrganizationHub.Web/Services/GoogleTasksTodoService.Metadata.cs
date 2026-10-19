@@ -86,6 +86,7 @@ public sealed partial class GoogleTasksTodoService
         catch (Exception exception)
         {
             mLogger.LogWarning(exception, "Failed to store Google Tasks metadata for task {TaskId}.", requiredTaskId);
+            throw;
         }
 
         return metadata;

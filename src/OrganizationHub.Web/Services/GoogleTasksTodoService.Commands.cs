@@ -30,7 +30,10 @@ public sealed partial class GoogleTasksTodoService
                 request.Fields = TASK_FIELDS;
                 GoogleTask createdTask = await request.ExecuteAsync(cancellationToken);
                 TodoTaskItem createdItem = createTaskItem(taskListId, createdTask);
-                TodoTaskMetadata createdMetadata = await createMetadataAsync(userSession, taskListId, TodoTaskId.CreateOptional(createdItem.Id), dueAtUtcOrNull, cancellationToken);
+                TodoTaskMetadata createdMetadata = await ResourceCreationGuard.PersistMetadataAsync(
+                    () => createMetadataAsync(userSession, taskListId, TodoTaskId.CreateOptional(createdItem.Id), dueAtUtcOrNull, cancellationToken),
+                    rollbackToken => tasksService.Tasks.Delete(requiredTaskListId, createdItem.Id).ExecuteAsync(rollbackToken),
+                    requiredTaskListId + "/" + createdItem.Id, mLogger);
                 applyMetadata(createdItem, createdMetadata);
                 await applyItemPermissionsAsync(userSession, new TodoTaskItem[] { createdItem }, false, cancellationToken);
                 return createdItem;

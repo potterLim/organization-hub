@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Components.Web;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
+using OrganizationHub.Web.Services;
+
 namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Todos
@@ -49,12 +51,13 @@ public partial class Todos
         catch (Exception exception)
         {
             removeTaskFromLocalList(TodoTaskListId.CreateOptional(optimisticTask.TaskListId), TodoTaskId.CreateOptional(optimisticTask.Id));
-            if (string.IsNullOrWhiteSpace(mNewTaskTitle))
+            bool canRetry = exception is not ResourceCreationException creationError || creationError.IsRemoteStateUncertain == false;
+            if (canRetry && string.IsNullOrWhiteSpace(mNewTaskTitle))
             {
                 mNewTaskTitle = taskTitle;
             }
 
-            mNewTaskDueAt = selectedDueAtOrNull;
+            mNewTaskDueAt = canRetry ? selectedDueAtOrNull : null;
             showError(createTodoErrorMessage(exception));
         }
 

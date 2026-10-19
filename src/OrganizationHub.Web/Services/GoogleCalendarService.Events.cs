@@ -89,7 +89,10 @@ public sealed partial class GoogleCalendarService
                 request.Fields = EVENT_FIELDS;
                 Event createdEvent = await request.ExecuteAsync(cancellationToken);
                 CalendarEventItem createdItem = createCalendarEventItem(createdEvent, calendarId, calendarName);
-                CalendarEventMetadata createdMetadata = await createMetadataAsync(userSession, calendarId, CalendarEventId.CreateOptional(createdItem.Id), cancellationToken);
+                CalendarEventMetadata createdMetadata = await ResourceCreationGuard.PersistMetadataAsync(
+                    () => createMetadataAsync(userSession, calendarId, CalendarEventId.CreateOptional(createdItem.Id), cancellationToken),
+                    rollbackToken => calendarService.Events.Delete(requiredCalendarId, createdItem.Id).ExecuteAsync(rollbackToken),
+                    requiredCalendarId + "/" + createdItem.Id, mLogger);
                 applyMetadata(createdItem, createdMetadata);
                 expireCalendarEventCache(calendarId);
                 await applyItemPermissionsAsync(userSession, new CalendarEventItem[] { createdItem }, false, cancellationToken);
