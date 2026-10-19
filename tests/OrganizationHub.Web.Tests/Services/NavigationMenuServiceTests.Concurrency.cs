@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Data;
+using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 using OrganizationHub.Web.Services;
@@ -12,6 +13,45 @@ namespace OrganizationHub.Web.Tests.Services;
 
 public sealed partial class NavigationMenuServiceTests
 {
+    [Fact]
+    public async Task TeamOnlyAccessChangeInvalidatesStaleMenuFormAsync()
+    {
+        using (TestDbContextFactory factory = new TestDbContextFactory())
+        {
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                db.Teams.Add(createTeam(1, "first", "첫 팀", 10));
+                db.Teams.Add(createTeam(2, "second", "다음 팀", 20));
+                NavigationMenuItem menu = createMenuItem(1, "Custom", "자료", "/custom", EMenuAccessLevel.TeamMember, 10);
+                menu.IsVisibleToAllTeams = false;
+                NavigationMenuTeamPermission permission = new NavigationMenuTeamPermission();
+                permission.NavigationMenuItem = menu;
+                permission.TeamId = 1;
+                menu.TeamPermissions.Add(permission);
+                db.NavigationMenuItems.Add(menu);
+                await db.SaveChangesAsync();
+            }
+            NavigationMenuService service = new NavigationMenuService(factory, new OrganizationPermissionService(factory));
+            NavigationMenuItemFormModel form = new NavigationMenuItemFormModel();
+            form.Id = 1;
+            form.SectionId = 1;
+            form.DisplayName = "자료";
+            form.SortOrder = 10;
+            form.AccessLevel = EMenuAccessLevel.TeamMember;
+            form.IsActive = true;
+            form.TeamIds.Add(2);
+            Assert.True((await service.UpdateMenuItemAsync(form, CancellationToken.None)).IsSuccess);
+            form.TeamIds.Clear();
+            form.TeamIds.Add(1);
+            Assert.True((await service.UpdateMenuItemAsync(form, CancellationToken.None)).IsConcurrencyConflict);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                Assert.Equal(2, db.NavigationMenuTeamPermissions.Single().TeamId);
+                Assert.Equal(1, db.NavigationMenuItems.Single().Revision);
+            }
+        }
+    }
+
     [Fact]
     public async Task StaleMenuRenameDoesNotRestoreRevokedAccessAsync()
     {
