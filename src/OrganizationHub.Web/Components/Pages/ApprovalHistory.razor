@@ -15,25 +15,31 @@
     <MudButton OnClick="reloadAsync" Disabled="mIsLoading" StartIcon="@Icons.Material.Filled.Refresh">새로고침</MudButton>
 </MudStack>
 
-<MudGrid Spacing="2" Class="mb-3">
-    <MudItem xs="12" md="4">
+<MudGrid Spacing="2" Class="mb-2">
+    <MudItem xs="9" md="10">
         <MudTextField @bind-Value="mSearchKeyword" Immediate="true" Label="제목 또는 파일명 검색" MaxLength="120" Variant="Variant.Outlined" Margin="Margin.Dense" OnKeyDown="handleSearchKeyDownAsync" />
     </MudItem>
-    <MudItem xs="8" md="2">
+    <MudItem xs="3" md="2">
+        <MudButton OnClick="searchAsync" Disabled="mIsLoading" Variant="Variant.Outlined" Color="Color.Primary" Class="mt-2">검색</MudButton>
+    </MudItem>
+</MudGrid>
+<MudExpansionPanels Elevation="0" Class="mb-3">
+    <MudExpansionPanel Text="상태·기간 상세 검색">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" md="4">
         <MudSelect T="EApprovalHistoryFilter" Label="상태" Value="mHistoryFilter" ValueChanged="handleFilterChangedAsync" Disabled="mIsLoading" Variant="Variant.Outlined" Margin="Margin.Dense">
             <MudSelectItem T="EApprovalHistoryFilter" Value="EApprovalHistoryFilter.AllRelated">전체 기록</MudSelectItem>
             <MudSelectItem T="EApprovalHistoryFilter" Value="EApprovalHistoryFilter.MyOngoing">내 진행 중 요청</MudSelectItem>
             <MudSelectItem T="EApprovalHistoryFilter" Value="EApprovalHistoryFilter.Approved">완료</MudSelectItem>
             <MudSelectItem T="EApprovalHistoryFilter" Value="EApprovalHistoryFilter.Rejected">반려</MudSelectItem>
         </MudSelect>
-    </MudItem>
-    <MudItem xs="12" md="4">
+            </MudItem>
+            <MudItem xs="12" md="8">
         <MudDateRangePicker @bind-DateRange="mRequestedDateRangeOrNull" Label="요청 기간" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
-    </MudItem>
-    <MudItem xs="4" md="2">
-        <MudButton OnClick="searchAsync" Disabled="mIsLoading" Variant="Variant.Outlined" Color="Color.Primary" Class="mt-2">검색</MudButton>
-    </MudItem>
-</MudGrid>
+            </MudItem>
+        </MudGrid>
+    </MudExpansionPanel>
+</MudExpansionPanels>
 <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
     <MudText Typo="Typo.body2">총 @mTotalCount 건 · @mPageNumber / @mTotalPages 페이지</MudText>
     <MudButton OnClick="previousPageAsync" Disabled="@(mIsLoading || mPageNumber <= 1)" aria-label="이전 페이지">이전</MudButton>

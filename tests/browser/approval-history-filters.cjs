@@ -33,10 +33,11 @@ async function main() {
         await page.getByLabel('비밀번호', { exact: true }).fill(password);
         await page.getByRole('button', { name: '로그인', exact: true }).click();
         await page.waitForURL('**/dashboard');
-        await page.goto(new URL('/approvals/history', baseUrl).href);
+        await page.getByRole('link', { name: '결재 기록', exact: true }).click();
         await page.waitForLoadState('networkidle');
         await expect(page).toHaveTitle('결재 기록 · Organization Hub');
         await expect(page.getByRole('heading', { name: '결재 기록', exact: true })).toBeAttached();
+        await page.getByRole('button', { name: '상태·기간 상세 검색', exact: true }).click();
         await page.getByLabel('상태', { exact: true }).locator('..').click();
         await page.getByRole('option', { name: '반려', exact: true }).click();
         await expect(page.getByLabel('상태', { exact: true })).toHaveValue('Rejected');
