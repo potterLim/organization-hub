@@ -137,3 +137,5 @@
 .hub-sortable-status {
     white-space: nowrap;
 }
+
+.hub-order-controls { display: inline-flex; flex-direction: column; flex-shrink: 0; }

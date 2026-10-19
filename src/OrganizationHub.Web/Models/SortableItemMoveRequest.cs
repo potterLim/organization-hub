@@ -2,7 +2,7 @@ using OrganizationHub.Web.Domain;
 
 namespace OrganizationHub.Web.Models;
 
-internal sealed class SortableItemMoveRequest
+public sealed class SortableItemMoveRequest
 {
     public SortableItemKey SourceItemKey
     {

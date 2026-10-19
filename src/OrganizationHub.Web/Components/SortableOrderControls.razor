@@ -1,0 +1,4 @@
+<span class="hub-order-controls" role="group" aria-label="@(Label + " 순서")">
+    <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp" Size="Size.Small" Disabled="@(canMove(-1) == false)" OnClick="moveUpAsync" aria-label="@(Label + " 위로 이동")" />
+    <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown" Size="Size.Small" Disabled="@(canMove(1) == false)" OnClick="moveDownAsync" aria-label="@(Label + " 아래로 이동")" />
+</span>

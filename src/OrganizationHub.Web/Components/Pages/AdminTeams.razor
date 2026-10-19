@@ -63,8 +63,8 @@
             <div @ref="mSortableRootElement" class="hub-sortable-list" data-sortable-list>
                 @foreach (Team team in mTeams)
                 {
-                    <div class="hub-sortable-row" data-sortable-item-id="@team.Id" draggable="true">
-                        <span class="hub-sortable-handle" role="button" aria-label="팀 순서 변경">
+                    <div @key="team.Id" class="hub-sortable-row" data-sortable-item-id="@team.Id" draggable="true">
+                        <span class="hub-sortable-handle" aria-hidden="true">
                             <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
                         </span>
                         <div class="hub-sortable-main">
@@ -76,6 +76,7 @@
                             </div>
                         </div>
                         <div class="hub-sortable-actions">
+                            <SortableOrderControls ItemId="team.Id" Label="@team.DisplayName" OrderedIds="@mTeams.Select(item => item.Id).ToArray()" MoveRequested="moveTeamAsync" />
                             <span class="hub-sortable-status @(team.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(team.IsActive ? "활성" : "비활성")</span>
                             <MudTooltip Text="팀 수정">
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editTeam(team))" aria-label="팀 수정" />

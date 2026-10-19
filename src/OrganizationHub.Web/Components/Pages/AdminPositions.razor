@@ -191,8 +191,8 @@ else
                                 <div class="hub-sortable-list" data-sortable-list>
                                     @foreach (OrganizationPosition position in teamPositions)
                                     {
-                                        <div class="hub-sortable-row" data-sortable-item-id="@position.Id" draggable="true">
-                                            <span class="hub-sortable-handle" role="button" aria-label="직책 순서 변경">
+                                        <div @key="position.Id" class="hub-sortable-row" data-sortable-item-id="@position.Id" draggable="true">
+                                            <span class="hub-sortable-handle" aria-hidden="true">
                                                 <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
                                             </span>
                                             <div class="hub-sortable-main">
@@ -209,6 +209,7 @@ else
                                                 </div>
                                             </div>
                                             <div class="hub-sortable-actions">
+                                                <SortableOrderControls ItemId="position.Id" Label="@position.Name" OrderedIds="@teamPositions.Select(item => item.Id).ToArray()" MoveRequested="movePositionAsync" />
                                                 <span class="hub-sortable-status @(position.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(position.IsActive ? "사용 중" : "비활성")</span>
                                                 <MudTooltip Text="이 직책 권한 설정">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" Size="Size.Small" OnClick="@(() => selectPositionForPermissions(position))" aria-label="이 직책 권한 설정" />
