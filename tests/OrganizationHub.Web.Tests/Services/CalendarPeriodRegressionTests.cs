@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
@@ -39,11 +38,10 @@ public sealed class CalendarPeriodRegressionTests
             item.CanEdit = true;
             item.Start = new DateTimeOffset(2026, 10, 19, 0, 0, 0, TimeSpan.FromHours(9));
             item.End = item.Start.Value.AddDays(1);
-            Calendar page = new Calendar();
             for (int repetition = 0; repetition < 3; repetition++)
             {
-                typeof(Calendar).GetMethod("openEditEditor", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(page, new object[] { item });
-                DateTime end = (DateTime)typeof(Calendar).GetField("mEditorEndLocalOrNull", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(page)!;
+                CalendarEditorSchedule schedule = CalendarEventPeriod.createOrNull(item, TimeZoneInfo.FindSystemTimeZoneById("Asia/Seoul"))!.Value.createEditorSchedule();
+                DateTime end = schedule.EndLocal;
                 Assert.Equal(new DateTime(2026, 10, 19), end.Date);
                 CalendarEventFormModel form = new CalendarEventFormModel();
                 form.Id = item.Id;
@@ -69,11 +67,36 @@ public sealed class CalendarPeriodRegressionTests
         item.Start = new DateTimeOffset(2026, 10, 19, 0, 0, 0, TimeSpan.FromHours(9));
         item.End = item.Start.Value.AddDays(2);
         item.IsAllDay = true;
-        Calendar page = new Calendar();
-        BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-        typeof(Calendar).GetField("mMonthEvents", flags)!.SetValue(page, new List<CalendarEventItem> { item });
-        typeof(Calendar).GetField("mSelectedDayOrNull", flags)!.SetValue(page, new DateTime(2026, 10, day));
-        IReadOnlyList<CalendarEventItem> selected = (IReadOnlyList<CalendarEventItem>)typeof(Calendar).GetMethod("getSelectedDayEvents", flags)!.Invoke(page, null)!;
-        Assert.Equal(shouldInclude ? 1 : 0, selected.Count);
+        CalendarEventPeriod period = CalendarEventPeriod.createOrNull(item, TimeZoneInfo.Utc)!.Value;
+        DateTime date = new DateTime(2026, 10, day);
+        Assert.Equal(shouldInclude, period.overlaps(date, date.AddDays(1)));
     }
+    [Theory]
+    [InlineData("2026-09-30T23:00:00+09:00", "2026-10-02T00:00:00+09:00", 1, true)]
+    [InlineData("2026-09-30T23:00:00+09:00", "2026-10-02T00:00:00+09:00", 2, false)]
+    [InlineData("2026-10-01T00:00:00+09:00", "2026-10-01T00:00:00+09:00", 1, true)]
+    public void TimedPeriodsRespectMidnightAndMonthBoundaries(string start, string end, int day, bool shouldInclude)
+    {
+        CalendarEventItem item = new CalendarEventItem();
+        item.Start = DateTimeOffset.Parse(start, System.Globalization.CultureInfo.InvariantCulture);
+        item.End = DateTimeOffset.Parse(end, System.Globalization.CultureInfo.InvariantCulture);
+        CalendarEventPeriod period = CalendarEventPeriod.createOrNull(item, TimeZoneInfo.FindSystemTimeZoneById("Asia/Seoul"))!.Value;
+        DateTime date = new DateTime(2026, 10, day);
+        Assert.Equal(shouldInclude, period.overlaps(date, date.AddDays(1)));
+    }
+
+    [Theory]
+    [InlineData("America/Los_Angeles")]
+    [InlineData("Asia/Seoul")]
+    public void AllDayDatesDoNotMoveWithViewerTimeZone(string timeZoneId)
+    {
+        CalendarEventItem item = new CalendarEventItem();
+        item.Start = new DateTimeOffset(2026, 10, 19, 0, 0, 0, TimeSpan.FromHours(9));
+        item.End = item.Start.Value.AddDays(1);
+        item.IsAllDay = true;
+        CalendarEventPeriod period = CalendarEventPeriod.createOrNull(item, TimeZoneInfo.FindSystemTimeZoneById(timeZoneId))!.Value;
+        Assert.Equal(new DateTime(2026, 10, 19), period.createEditorSchedule().StartLocal);
+        Assert.Equal(new DateTime(2026, 10, 19), period.createEditorSchedule().EndLocal);
+    }
+
 }

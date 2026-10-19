@@ -54,7 +54,7 @@ public partial class Calendar
         calendarEvent.Description = formModel.Description;
         calendarEvent.Location = formModel.Location;
         calendarEvent.Start = createClientDateTimeOffset(formModel.StartLocal);
-        calendarEvent.End = createClientDateTimeOffset(formModel.EndLocal);
+        calendarEvent.End = createClientDateTimeOffset(formModel.IsAllDay ? formModel.EndLocal.Date.AddDays(1) : formModel.EndLocal);
         calendarEvent.IsAllDay = formModel.IsAllDay;
         calendarEvent.CanEdit = true;
         calendarEvent.CanDelete = mIsEditing ? mSelectedEventOrNull != null && mSelectedEventOrNull.CanDelete : mDeletableCalendarIds.Contains(calendarEvent.CalendarId);
@@ -137,33 +137,12 @@ public partial class Calendar
 
     private bool isEventInsideCurrentMonth(CalendarEventItem calendarEvent)
     {
-        if (calendarEvent.Start.HasValue == false)
-        {
-            return false;
-        }
-
-        DateTime monthStart = mCurrentMonth.Date;
-        DateTime monthEnd = monthStart.AddMonths(1);
-        DateTime eventStart = createClientDateTime(calendarEvent.Start.Value).Date;
-        DateTime eventEnd = eventStart;
-        if (calendarEvent.End.HasValue)
-        {
-            eventEnd = createClientDateTime(calendarEvent.End.Value).Date;
-        }
-
-        return eventStart < monthEnd && eventEnd >= monthStart;
+        return isEventInsideClientDateRange(calendarEvent, mCurrentMonth.Date, mCurrentMonth.Date.AddMonths(1));
     }
 
     private bool isEventInsideClientDateRange(CalendarEventItem calendarEvent, DateTime rangeStart, DateTime rangeEnd)
     {
-        DateTime? eventDateOrNull = getEventLocalDateOrNull(calendarEvent);
-        if (eventDateOrNull.HasValue == false)
-        {
-            return false;
-        }
-
-        DateTime eventDate = eventDateOrNull.Value.Date;
-        return eventDate >= rangeStart && eventDate < rangeEnd;
+        return CalendarEventPeriod.createOrNull(calendarEvent, mClientTimeZoneInfo)?.overlaps(rangeStart, rangeEnd) == true;
     }
 
     private void refreshSelectedEvent()

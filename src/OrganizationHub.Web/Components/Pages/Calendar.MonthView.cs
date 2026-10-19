@@ -12,24 +12,6 @@ public partial class Calendar
     private List<CalendarDayCell> buildCalendarDayCells(DateTime monthStart, IReadOnlyList<CalendarEventItem> events)
     {
         DateTime calendarStart = monthStart.AddDays(-((int)monthStart.DayOfWeek));
-        Dictionary<DateTime, List<CalendarEventItem>> eventsByDate = new Dictionary<DateTime, List<CalendarEventItem>>();
-        foreach (CalendarEventItem calendarEvent in events.OrderBy(calendarEvent => calendarEvent.Start).ThenBy(calendarEvent => calendarEvent.Summary))
-        {
-            DateTime? eventDateOrNull = getEventLocalDateOrNull(calendarEvent);
-            if (eventDateOrNull.HasValue)
-            {
-                DateTime eventDate = eventDateOrNull.Value.Date;
-                List<CalendarEventItem>? dayEventsOrNull;
-                if (eventsByDate.TryGetValue(eventDate, out dayEventsOrNull) == false)
-                {
-                    dayEventsOrNull = new List<CalendarEventItem>();
-                    eventsByDate[eventDate] = dayEventsOrNull;
-                }
-
-                dayEventsOrNull.Add(calendarEvent);
-            }
-        }
-
         List<CalendarDayCell> dayCells = new List<CalendarDayCell>();
         for (int dayIndex = 0; dayIndex < CalendarGridPolicy.VISIBLE_DAY_COUNT; dayIndex++)
         {
@@ -38,11 +20,10 @@ public partial class Calendar
             dayCell.Date = date;
             dayCell.IsCurrentMonth = date.Month == monthStart.Month;
             dayCell.IsToday = date.Date == getClientToday();
-            List<CalendarEventItem>? eventsForDayOrNull;
-            if (eventsByDate.TryGetValue(date.Date, out eventsForDayOrNull))
-            {
-                dayCell.Events.AddRange(eventsForDayOrNull);
-            }
+            dayCell.Events.AddRange(events
+                .Where(calendarEvent => isEventInsideClientDateRange(calendarEvent, date.Date, date.Date.AddDays(1)))
+                .OrderBy(calendarEvent => calendarEvent.Start)
+                .ThenBy(calendarEvent => calendarEvent.Summary));
 
             dayCells.Add(dayCell);
         }
@@ -57,7 +38,7 @@ public partial class Calendar
             return null;
         }
 
-        return createClientDateTime(calendarEvent.Start.Value).Date;
+        return CalendarEventPeriod.createOrNull(calendarEvent, mClientTimeZoneInfo)?.StartLocal.Date;
     }
 
     private IReadOnlyList<CalendarEventItem> getSelectedDayEvents()
@@ -69,7 +50,7 @@ public partial class Calendar
 
         DateTime selectedDay = mSelectedDayOrNull.Value.Date;
         return mMonthEvents
-            .Where(calendarEvent => getEventLocalDateOrNull(calendarEvent) == selectedDay)
+            .Where(calendarEvent => isEventInsideClientDateRange(calendarEvent, selectedDay, selectedDay.AddDays(1)))
             .OrderBy(calendarEvent => calendarEvent.Start)
             .ThenBy(calendarEvent => calendarEvent.Summary)
             .ToList();

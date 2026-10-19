@@ -51,9 +51,8 @@ public partial class Calendar
         mEditorLocation = calendarEvent.Location;
         mIsEditorAllDay = calendarEvent.IsAllDay;
         DateTime clientNow = getClientNow();
-        DateTime startLocal = calendarEvent.Start is DateTimeOffset start ? createClientDateTime(start) : clientNow;
-        DateTime endLocal = calendarEvent.End is DateTimeOffset end ? createClientDateTime(end) : clientNow.AddHours(1);
-        setEditorSchedule(CalendarEditorSchedule.CreateNormalized(startLocal, endLocal));
+        CalendarEventPeriod? periodOrNull = CalendarEventPeriod.createOrNull(calendarEvent, mClientTimeZoneInfo);
+        setEditorSchedule(periodOrNull?.createEditorSchedule() ?? CalendarEditorSchedule.CreateNormalized(clientNow, clientNow.AddHours(1)));
         mEditorMessage = string.Empty;
     }
 
