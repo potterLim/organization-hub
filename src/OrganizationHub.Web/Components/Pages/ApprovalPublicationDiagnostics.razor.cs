@@ -20,6 +20,14 @@ public partial class ApprovalPublicationDiagnostics
         await reloadAsync();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await initializeClientTimeZoneAsync();
+        }
+    }
+
     private async Task reloadAsync()
     {
         if (CurrentUserSessionOrNull == null)
