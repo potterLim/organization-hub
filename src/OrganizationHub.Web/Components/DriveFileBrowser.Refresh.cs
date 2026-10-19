@@ -41,6 +41,7 @@ public partial class DriveFileBrowser
 
     public async ValueTask DisposeAsync()
     {
+        mFileLoadVersion++;
         try
         {
             if (mRefreshModuleOrNull != null)

@@ -77,6 +77,7 @@ public partial class DriveFileBrowser
     private DotNetObjectReference<DriveFileBrowser>? mRefreshDotNetReferenceOrNull;
     private bool mIsLoadingRoots;
     private bool mIsLoadingFiles;
+    private int mFileLoadVersion;
     private bool mCanDeleteFiles;
     private bool mIsDeleting;
 

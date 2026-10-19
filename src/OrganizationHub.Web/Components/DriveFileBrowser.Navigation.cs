@@ -44,6 +44,8 @@ public partial class DriveFileBrowser
             return;
         }
 
+        int loadVersion = ++mFileLoadVersion;
+        DriveFolderReference? currentRootFolderOrNull = getCurrentRootFolderOrNull();
         mIsLoadingFiles = true;
         mFileErrorMessage = string.Empty;
         try
@@ -56,27 +58,44 @@ public partial class DriveFileBrowser
                 changeVersionKeys,
                 cancellationToken => DriveBrowserService.GetFolderFilesAsync(request, cancellationToken),
                 CancellationToken.None);
-            mFiles = readResult.Value.ToList();
-            DriveFolderReference? currentRootFolderOrNull = getCurrentRootFolderOrNull();
+            if (loadVersion != mFileLoadVersion)
+            {
+                return;
+            }
+            bool canDeleteFiles = false;
             if (currentRootFolderOrNull == null)
             {
-                mCanDeleteFiles = false;
+                canDeleteFiles = false;
             }
             else
             {
                 PermissionDecision deleteDecision = await PermissionService.DecideDeleteInFolderAsync(CurrentUserSessionOrNull, currentRootFolderOrNull.FolderId, CancellationToken.None);
-                mCanDeleteFiles = deleteDecision.IsAllowed;
+                canDeleteFiles = deleteDecision.IsAllowed;
             }
 
+            if (loadVersion != mFileLoadVersion)
+            {
+                return;
+            }
+            mFiles = readResult.Value.ToList();
+            mCanDeleteFiles = canDeleteFiles;
             mDeleteCandidateOrNull = null;
             recordLoadedChangeSnapshot(readResult.Snapshot);
         }
         catch
         {
-            mFileErrorMessage = ErrorMessagePrefix;
+            if (loadVersion == mFileLoadVersion)
+            {
+                mFileErrorMessage = ErrorMessagePrefix;
+            }
         }
-
-        mIsLoadingFiles = false;
+        finally
+        {
+            if (loadVersion == mFileLoadVersion)
+            {
+                mIsLoadingFiles = false;
+            }
+        }
     }
 
     private async Task handleRootFolderChangedAsync(string folderId)
