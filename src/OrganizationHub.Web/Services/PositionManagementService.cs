@@ -231,6 +231,11 @@ internal sealed class PositionManagementService : IPositionManagementService
         }
 
         PermissionKey permissionKey = grantFormModel.PermissionKeyValue;
+        if (PermissionScopeSupport.IsSupported(grantFormModel.ScopeType) == false)
+        {
+            return ServiceResult.Fail("지원하지 않는 권한 범위입니다. 소속 팀 또는 지정한 팀을 선택해 주세요.");
+        }
+
         string requiredPermissionKey = permissionKey.GetRequiredValue();
         if (permissionKeys.Contains(requiredPermissionKey) == false)
         {

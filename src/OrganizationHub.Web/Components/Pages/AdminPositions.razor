@@ -135,7 +135,6 @@ else
                                                     <MudSelect T="EPermissionScopeType" Label="적용 범위" Value="@grantForm.ScopeType" ValueChanged="@(scopeType => setPermissionScope(definition.Key, scopeType))" Variant="Variant.Outlined" Margin="Margin.Dense" Class="hub-permission-scope">
                                                         <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.Global">모든 팀</MudSelectItem>
                                                         <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeam">소속 팀</MudSelectItem>
-                                                        <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnTeamAndChildren">소속 팀과 하위 팀</MudSelectItem>
                                                         <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.SelectedTeam">지정한 팀</MudSelectItem>
                                                         <MudSelectItem T="EPermissionScopeType" Value="EPermissionScopeType.OwnCreated">본인이 만든 항목</MudSelectItem>
                                                     </MudSelect>

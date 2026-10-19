@@ -28,7 +28,7 @@ public partial class AdminApprovalWorkflows
             stepFormModel.ApproverPositionId = step.ApproverPositionId;
             stepFormModel.ApproverTeamId = step.ApproverTeamId;
             stepFormModel.RequiredPermissionKey = step.RequiredPermissionKey;
-            stepFormModel.ScopeType = step.ScopeType;
+            stepFormModel.ScopeType = PermissionScopeSupport.GetEditableScope(step.ScopeType);
             stepFormModel.IsRequired = step.IsRequired;
             mFormModel.Steps.Add(stepFormModel);
         }

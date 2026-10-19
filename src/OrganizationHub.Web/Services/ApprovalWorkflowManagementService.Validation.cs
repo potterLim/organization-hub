@@ -95,6 +95,11 @@ internal sealed partial class ApprovalWorkflowManagementService
         IReadOnlySet<int> positionIds,
         IReadOnlySet<string> permissionKeys)
     {
+        if (PermissionScopeSupport.IsSupported(stepFormModel.ScopeType) == false)
+        {
+            return ServiceResult.Fail("지원하지 않는 권한 범위입니다. 소속 팀 또는 지정한 팀을 선택해 주세요.");
+        }
+
         if (string.IsNullOrWhiteSpace(stepFormModel.StepName))
         {
             return ServiceResult.Fail("결재 단계 이름을 입력해 주세요.");

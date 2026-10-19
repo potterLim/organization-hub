@@ -43,7 +43,7 @@ public partial class AdminPositions
         {
             PositionPermissionGrantFormModel grantForm = ensureGrantForm(formModel, new PermissionKey(permissionGrant.PermissionKey));
             grantForm.IsAllowed = permissionGrant.IsAllowed;
-            grantForm.ScopeType = permissionGrant.ScopeType;
+            grantForm.ScopeType = PermissionScopeSupport.GetEditableScope(permissionGrant.ScopeType);
             grantForm.TargetTeamId = permissionGrant.TargetTeamId;
         }
 
