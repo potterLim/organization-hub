@@ -22,6 +22,10 @@ public sealed class CalendarEventItem
     {
         get; set;
     }
+    public bool CanDelete
+    {
+        get; set;
+    }
     public bool CanEdit
     {
         get; set;

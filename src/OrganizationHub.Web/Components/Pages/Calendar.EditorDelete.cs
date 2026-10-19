@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Domain;
@@ -32,7 +31,7 @@ public partial class Calendar
         CalendarEventItem deleteCandidate = deleteCandidateOrNull;
         UserSession currentUserSession = currentUserSessionOrNull;
         CalendarId calendarId = CalendarId.CreateOptional(deleteCandidate.CalendarId);
-        bool hasWritableCalendar = mWritableCalendars.Any(calendar => calendar.CalendarId == calendarId);
+        bool hasWritableCalendar = mDeletableCalendarIds.Contains(calendarId.GetRequiredValue());
         if (hasWritableCalendar == false)
         {
             mErrorMessage = "이 일정을 삭제할 권한이 없습니다.";

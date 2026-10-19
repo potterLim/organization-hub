@@ -179,6 +179,16 @@ public sealed class DriveBrowserServiceTests
             return Task.FromResult(calendars);
         }
 
+        public Task<IReadOnlyList<CalendarReference>> GetWritableCalendarsAsync(UserSession userSession, EResourceOperation operation, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyList<CalendarReference>>(new List<CalendarReference>());
+        }
+
+        public Task<bool> CanWriteCalendarAsync(UserSession userSession, CalendarId calendarId, EResourceOperation operation, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
+        }
+
         public Task<IReadOnlyList<CalendarReference>> GetWritableCalendarsAsync(UserSession userSession, CancellationToken cancellationToken)
         {
             IReadOnlyList<CalendarReference> calendars = new List<CalendarReference>();

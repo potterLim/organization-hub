@@ -20,7 +20,8 @@ public partial class Calendar
 
         UserSession currentUserSession = currentUserSessionOrNull;
         CalendarId editorCalendarId = CalendarId.CreateOptional(mEditorCalendarId);
-        CalendarReference? calendarOrNull = mWritableCalendars.FirstOrDefault(calendar => calendar.CalendarId == editorCalendarId);
+        IReadOnlyList<CalendarReference> editorCalendars = mIsEditing ? mWritableCalendars : mCreatableCalendars;
+        CalendarReference? calendarOrNull = editorCalendars.FirstOrDefault(calendar => calendar.CalendarId == editorCalendarId);
         if (calendarOrNull == null)
         {
             mEditorMessage = "저장할 일정 위치를 선택해 주세요.";

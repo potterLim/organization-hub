@@ -96,12 +96,12 @@ public partial class Todos
 
     private bool canShowTaskCreation()
     {
-        return mWritableTaskListIds.Count > 0;
+        return mCreatableTaskListIds.Count > 0;
     }
 
     private bool canCreateTask()
     {
-        return string.IsNullOrWhiteSpace(mSelectedTaskListId) == false && isAggregateSelected() == false && isSelectedTaskListWritable();
+        return string.IsNullOrWhiteSpace(mSelectedTaskListId) == false && isAggregateSelected() == false && mCreatableTaskListIds.Contains(mSelectedTaskListId);
     }
 
     private bool canSubmitNewTask()
@@ -146,12 +146,17 @@ public partial class Todos
 
     private bool canUseManualTaskSort()
     {
-        return isAggregateSelected() == false;
+        return isAggregateSelected() == false && isSelectedTaskListWritable();
     }
 
     private bool isSelectedTaskListWritable()
     {
         return mWritableTaskListIds.Contains(mSelectedTaskListId);
+    }
+
+    private bool canDeleteTask(TodoTaskItem task)
+    {
+        return mDeletableTaskListIds.Contains(task.TaskListId);
     }
 
     private bool canWriteTask(TodoTaskItem task)

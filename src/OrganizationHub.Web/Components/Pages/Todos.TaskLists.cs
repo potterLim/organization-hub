@@ -21,7 +21,9 @@ public partial class Todos
         try
         {
             IReadOnlyList<TodoTaskListReference> taskLists = await TodoService.GetReadableTaskListsAsync(CurrentUserSessionOrNull, CancellationToken.None);
-            IReadOnlyList<TodoTaskListReference> writableTaskLists = await TodoService.GetWritableTaskListsAsync(CurrentUserSessionOrNull, CancellationToken.None);
+            IReadOnlyList<TodoTaskListReference> writableTaskLists = await TodoService.GetWritableTaskListsAsync(CurrentUserSessionOrNull, EResourceOperation.Update, CancellationToken.None);
+            mCreatableTaskListIds = (await TodoService.GetWritableTaskListsAsync(CurrentUserSessionOrNull, EResourceOperation.Create, CancellationToken.None)).Select(taskList => taskList.TaskListId.GetRequiredValue()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            mDeletableTaskListIds = (await TodoService.GetWritableTaskListsAsync(CurrentUserSessionOrNull, EResourceOperation.Delete, CancellationToken.None)).Select(taskList => taskList.TaskListId.GetRequiredValue()).ToHashSet(StringComparer.OrdinalIgnoreCase);
             mTaskLists = taskLists.ToList();
             mWritableTaskListIds = writableTaskLists.Select(taskList => taskList.TaskListId.GetRequiredValue()).ToHashSet(StringComparer.OrdinalIgnoreCase);
             if (mTaskLists.Count > 0)

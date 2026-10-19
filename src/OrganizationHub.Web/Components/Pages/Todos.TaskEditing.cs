@@ -38,7 +38,7 @@ public partial class Todos
 
     private void requestDelete(TodoTaskItem task)
     {
-        if (canWriteTask(task) == false)
+        if (canDeleteTask(task) == false)
         {
             return;
         }
@@ -112,7 +112,7 @@ public partial class Todos
 
     private async Task deleteTaskAsync(TodoTaskItem task)
     {
-        if (CurrentUserSessionOrNull == null || mIsSaving || canWriteTask(task) == false)
+        if (CurrentUserSessionOrNull == null || mIsSaving || canDeleteTask(task) == false)
         {
             return;
         }

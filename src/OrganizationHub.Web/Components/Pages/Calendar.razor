@@ -42,7 +42,7 @@
                 <button type="button" class="@getCalendarViewButtonClass(ECalendarDisplayMode.Month)" @onclick="@(() => setCalendarDisplayModeAsync(ECalendarDisplayMode.Month))">달력</button>
             </div>
             <div class="hub-calendar-inline-actions">
-                @if (mWritableCalendars.Count > 0)
+                @if (mCreatableCalendars.Count > 0)
                 {
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="openCreateEditor" StartIcon="@Icons.Material.Filled.Add">일정 추가</MudButton>
                 }
@@ -78,6 +78,15 @@
 else if (string.IsNullOrWhiteSpace(mErrorMessage) == false)
 {
     <MudAlert Severity="Severity.Warning">@mErrorMessage</MudAlert>
+}
+else if (mCalendars.Any(calendar => calendar.CalendarId.IsAggregate == false) == false)
+{
+    <MudPaper Class="hub-card hub-empty-card pa-5">
+        <AuthorizeView Policy="@OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE">
+            <Authorized><ResourceStateMessage Icon="@Icons.Material.Filled.CalendarMonth" Title="연결된 캘린더가 없습니다." Description="조직이나 팀에서 사용할 캘린더를 연결해 주세요." ActionLabel="캘린더 연결" ActionHref="/admin/settings?section=calendar" /></Authorized>
+            <NotAuthorized><ResourceStateMessage Icon="@Icons.Material.Filled.CalendarMonth" Title="연결된 캘린더가 없습니다." Description="조직 관리자에게 내 팀의 캘린더 연결과 열람 권한을 확인해 달라고 요청해 주세요." ActionLabel="홈으로" ActionHref="/dashboard" /></NotAuthorized>
+        </AuthorizeView>
+    </MudPaper>
 }
 else
 {
@@ -134,7 +143,7 @@ else
                     }
                     <div class="hub-calendar-editor-stack">
                         <MudSelect T="string" Label="저장 위치" Value="mEditorCalendarId" ValueChanged="handleEditorCalendarChangedAsync" Disabled="mIsEditing" Variant="Variant.Outlined" Margin="Margin.Dense">
-                            @foreach (CalendarReference calendar in mWritableCalendars)
+                            @foreach (CalendarReference calendar in (mIsEditing ? mWritableCalendars : mCreatableCalendars))
                             {
                                 <MudSelectItem T="string" Value="@calendar.CalendarId.GetRequiredValue()">@calendar.DisplayName</MudSelectItem>
                             }
@@ -207,11 +216,17 @@ else
                             </div>
                         }
                     </div>
-                    @if (mSelectedEventOrNull.CanEdit)
+                    @if (mSelectedEventOrNull.CanEdit || mSelectedEventOrNull.CanDelete)
                     {
                         <div class="hub-calendar-detail-actions">
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => openEditEditor(mSelectedEventOrNull))" StartIcon="@Icons.Material.Filled.EditCalendar" Class="hub-primary-action-button">수정</MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => requestDelete(mSelectedEventOrNull))" Class="hub-calendar-detail-danger-action">삭제</MudButton>
+                            @if (mSelectedEventOrNull.CanEdit)
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => openEditEditor(mSelectedEventOrNull))" StartIcon="@Icons.Material.Filled.EditCalendar" Class="hub-primary-action-button">수정</MudButton>
+                            }
+                            @if (mSelectedEventOrNull.CanDelete)
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => requestDelete(mSelectedEventOrNull))" Class="hub-calendar-detail-danger-action">삭제</MudButton>
+                            }
                         </div>
                     }
                 }

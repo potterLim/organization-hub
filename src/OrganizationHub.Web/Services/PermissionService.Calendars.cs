@@ -117,6 +117,28 @@ public sealed partial class PermissionService
         return decision.IsAllowed;
     }
 
+    public async Task<IReadOnlyList<CalendarReference>> GetWritableCalendarsAsync(UserSession userSession, EResourceOperation operation, CancellationToken cancellationToken)
+    {
+        PermissionKey permission = ResourceOperationPermission.GetCalendarPermission(operation);
+        IReadOnlyList<CalendarReference> calendars = await GetWritableCalendarsAsync(userSession, cancellationToken);
+        List<CalendarReference> allowedCalendars = new List<CalendarReference>();
+        foreach (CalendarReference calendar in calendars)
+        {
+            if (await mOrganizationPermissionService.HasPermissionAsync(userSession, permission, calendar.TeamIdOrNull, cancellationToken))
+            {
+                allowedCalendars.Add(calendar);
+            }
+        }
+
+        return allowedCalendars;
+    }
+
+    public async Task<bool> CanWriteCalendarAsync(UserSession userSession, CalendarId calendarId, EResourceOperation operation, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<CalendarReference> calendars = await GetWritableCalendarsAsync(userSession, operation, cancellationToken);
+        return calendars.Any(calendar => calendar.CalendarId == calendarId);
+    }
+
     public async Task<PermissionDecision> DecideWriteCalendarAsync(
         UserSession userSession,
         CalendarId calendarId,

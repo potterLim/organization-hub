@@ -14,6 +14,8 @@ public interface IPermissionService
     Task<IReadOnlyList<DriveFolderReference>> GetApprovalDestinationDriveFoldersAsync(UserSession userSession, CancellationToken cancellationToken);
     Task<IReadOnlyList<CalendarReference>> GetReadableCalendarsAsync(UserSession userSession, CancellationToken cancellationToken);
     Task<IReadOnlyList<CalendarReference>> GetWritableCalendarsAsync(UserSession userSession, CancellationToken cancellationToken);
+    Task<IReadOnlyList<CalendarReference>> GetWritableCalendarsAsync(UserSession userSession, EResourceOperation operation, CancellationToken cancellationToken);
+    Task<bool> CanWriteCalendarAsync(UserSession userSession, CalendarId calendarId, EResourceOperation operation, CancellationToken cancellationToken);
     Task<PermissionDecision> DecideReadFileAsync(UserSession userSession, DriveItemId fileId, CancellationToken cancellationToken);
     Task<bool> CanReadFileAsync(UserSession userSession, DriveItemId fileId, CancellationToken cancellationToken);
     Task<PermissionDecision> DecideUploadToFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken);

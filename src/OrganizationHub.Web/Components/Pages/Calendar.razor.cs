@@ -19,6 +19,8 @@ public partial class Calendar
     }
 
     private List<CalendarReference> mCalendars = new List<CalendarReference>();
+    private List<CalendarReference> mCreatableCalendars = new List<CalendarReference>();
+    private HashSet<string> mDeletableCalendarIds = new HashSet<string>();
     private List<CalendarReference> mWritableCalendars = new List<CalendarReference>();
     private List<CalendarEventItem> mWeekEvents = new List<CalendarEventItem>();
     private List<CalendarEventItem> mMonthEvents = new List<CalendarEventItem>();
@@ -64,10 +66,13 @@ public partial class Calendar
 
         GlobalSettingFormModel globalSetting = await GlobalSettingService.GetGlobalSettingAsync(CancellationToken.None);
         IReadOnlyList<CalendarReference> calendars = await PermissionService.GetReadableCalendarsAsync(CurrentUserSessionOrNull, CancellationToken.None);
-        IReadOnlyList<CalendarReference> writableCalendars = await PermissionService.GetWritableCalendarsAsync(CurrentUserSessionOrNull, CancellationToken.None);
+        IReadOnlyList<CalendarReference> writableCalendars = await PermissionService.GetWritableCalendarsAsync(CurrentUserSessionOrNull, EResourceOperation.Update, CancellationToken.None);
         mShouldShowCalendarAuthor = globalSetting.ShouldShowCalendarAuthor;
         mCalendars = calendars.ToList();
         mWritableCalendars = writableCalendars.ToList();
+        mCreatableCalendars = (await PermissionService.GetWritableCalendarsAsync(CurrentUserSessionOrNull, EResourceOperation.Create, CancellationToken.None)).ToList();
+        IReadOnlyList<CalendarReference> deletableCalendars = await PermissionService.GetWritableCalendarsAsync(CurrentUserSessionOrNull, EResourceOperation.Delete, CancellationToken.None);
+        mDeletableCalendarIds = deletableCalendars.Select(calendar => calendar.CalendarId.GetRequiredValue()).ToHashSet();
         if (string.IsNullOrWhiteSpace(CalendarIdOrNull) == false && mCalendars.Any(calendar => calendar.CalendarId == CalendarId.CreateOptional(CalendarIdOrNull)))
         {
             mSelectedCalendarId = CalendarIdOrNull;
@@ -82,6 +87,7 @@ public partial class Calendar
 
     private void applyWritableState(CalendarEventItem calendarEvent)
     {
+        calendarEvent.CanDelete = mDeletableCalendarIds.Contains(calendarEvent.CalendarId);
         calendarEvent.CanEdit = mWritableCalendars.Any(calendar => calendar.CalendarId == CalendarId.CreateOptional(calendarEvent.CalendarId));
     }
 }

@@ -36,6 +36,7 @@ public partial class Calendar
         clonedEvent.End = calendarEvent.End;
         clonedEvent.IsAllDay = calendarEvent.IsAllDay;
         clonedEvent.CanEdit = calendarEvent.CanEdit;
+        clonedEvent.CanDelete = calendarEvent.CanDelete;
         clonedEvent.CreatedByDisplayName = calendarEvent.CreatedByDisplayName;
         clonedEvent.CreatedAt = calendarEvent.CreatedAt;
         return clonedEvent;
@@ -65,6 +66,7 @@ public partial class Calendar
         foreach (CalendarEventItem calendarEvent in events)
         {
             calendarEvent.CanEdit = writableCalendarIds.Contains(calendarEvent.CalendarId);
+            calendarEvent.CanDelete = mDeletableCalendarIds.Contains(calendarEvent.CalendarId);
         }
     }
 

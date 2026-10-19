@@ -10,6 +10,7 @@ public interface ITodoService
 {
     Task<IReadOnlyList<TodoTaskListReference>> GetReadableTaskListsAsync(UserSession userSession, CancellationToken cancellationToken);
     Task<IReadOnlyList<TodoTaskListReference>> GetWritableTaskListsAsync(UserSession userSession, CancellationToken cancellationToken);
+    Task<IReadOnlyList<TodoTaskListReference>> GetWritableTaskListsAsync(UserSession userSession, EResourceOperation operation, CancellationToken cancellationToken);
     Task<IReadOnlyList<TodoTaskItem>> GetTasksAsync(UserSession userSession, TodoTaskListId taskListId, CancellationToken cancellationToken);
     Task<TodoTaskItem> CreateTaskAsync(UserSession userSession, TodoTaskFormModel formModel, CancellationToken cancellationToken);
     Task<TodoTaskItem> UpdateTaskAsync(UserSession userSession, TodoTaskFormModel formModel, CancellationToken cancellationToken);

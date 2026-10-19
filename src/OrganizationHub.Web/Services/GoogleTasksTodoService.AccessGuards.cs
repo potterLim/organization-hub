@@ -10,7 +10,7 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleTasksTodoService
 {
-    private async Task ensureCanWriteTaskListAsync(UserSession userSession, TodoTaskListId taskListId, CancellationToken cancellationToken)
+    private async Task ensureCanWriteTaskListAsync(UserSession userSession, TodoTaskListId taskListId, EResourceOperation operation, CancellationToken cancellationToken)
     {
         if (taskListId.IsAggregate)
         {
@@ -22,7 +22,7 @@ public sealed partial class GoogleTasksTodoService
             throw new InvalidOperationException("할 일 목록을 선택해 주세요.");
         }
 
-        IReadOnlyList<TodoTaskListReference> taskLists = await getTaskListsAsync(userSession, ETodoTaskListAccessMode.Writable, cancellationToken);
+        IReadOnlyList<TodoTaskListReference> taskLists = await GetWritableTaskListsAsync(userSession, operation, cancellationToken);
         bool canUseTaskList = taskLists.Any(taskList => taskList.TaskListId == taskListId);
         if (canUseTaskList == false)
         {

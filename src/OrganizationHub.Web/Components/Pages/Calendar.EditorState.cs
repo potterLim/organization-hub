@@ -26,7 +26,7 @@ public partial class Calendar
         setEditorSchedule(CalendarEditorSchedule.CreateNormalized(nextStart, nextStart.AddHours(1)));
         mIsEditorAllDay = false;
         mEditorMessage = string.Empty;
-        mEditorCalendarId = mWritableCalendars.Count > 0 ? mWritableCalendars[0].CalendarId.GetRequiredValue() : string.Empty;
+        mEditorCalendarId = mCreatableCalendars.Count > 0 ? mCreatableCalendars[0].CalendarId.GetRequiredValue() : string.Empty;
     }
 
     private void openEditEditor(CalendarEventItem calendarEvent)

@@ -30,6 +30,22 @@ public sealed partial class GoogleTasksTodoService
         return taskLists;
     }
 
+    public async Task<IReadOnlyList<TodoTaskListReference>> GetWritableTaskListsAsync(UserSession userSession, EResourceOperation operation, CancellationToken cancellationToken)
+    {
+        PermissionKey permission = ResourceOperationPermission.GetTodoPermission(operation);
+        IReadOnlyList<TodoTaskListReference> taskLists = await GetWritableTaskListsAsync(userSession, cancellationToken);
+        List<TodoTaskListReference> allowedLists = new List<TodoTaskListReference>();
+        foreach (TodoTaskListReference taskList in taskLists)
+        {
+            if (await mOrganizationPermissionService.HasPermissionAsync(userSession, permission, taskList.TeamIdOrNull, cancellationToken))
+            {
+                allowedLists.Add(taskList);
+            }
+        }
+
+        return allowedLists;
+    }
+
     public async Task<IReadOnlyList<TodoTaskItem>> GetTasksAsync(
         UserSession userSession,
         TodoTaskListId taskListId,

@@ -114,7 +114,7 @@ public sealed partial class GoogleCalendarService
     )
     {
         CalendarId calendarId = formModel.CalendarIdValue;
-        await ensureCanWriteCalendarAsync(userSession, calendarId, cancellationToken);
+        await ensureCanWriteCalendarAsync(userSession, calendarId, EResourceOperation.Create, cancellationToken);
         string requiredCalendarId = calendarId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarId)))
         {
@@ -140,7 +140,7 @@ public sealed partial class GoogleCalendarService
     {
         CalendarId calendarId = formModel.CalendarIdValue;
         CalendarEventId eventId = formModel.EventIdValue;
-        await ensureCanWriteCalendarAsync(userSession, calendarId, cancellationToken);
+        await ensureCanWriteCalendarAsync(userSession, calendarId, EResourceOperation.Update, cancellationToken);
         string requiredCalendarId = calendarId.GetRequiredValue();
         string requiredEventId = eventId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarId)))
@@ -157,7 +157,7 @@ public sealed partial class GoogleCalendarService
 
     public async Task DeleteEventAsync(UserSession userSession, CalendarId calendarId, CalendarEventId eventId, CancellationToken cancellationToken)
     {
-        await ensureCanWriteCalendarAsync(userSession, calendarId, cancellationToken);
+        await ensureCanWriteCalendarAsync(userSession, calendarId, EResourceOperation.Delete, cancellationToken);
         string requiredCalendarId = calendarId.GetRequiredValue();
         string requiredEventId = eventId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarId)))
@@ -170,9 +170,9 @@ public sealed partial class GoogleCalendarService
         }
     }
 
-    private async Task ensureCanWriteCalendarAsync(UserSession userSession, CalendarId calendarId, CancellationToken cancellationToken)
+    private async Task ensureCanWriteCalendarAsync(UserSession userSession, CalendarId calendarId, EResourceOperation operation, CancellationToken cancellationToken)
     {
-        bool canWrite = await mPermissionService.CanWriteCalendarAsync(userSession, calendarId, cancellationToken);
+        bool canWrite = await mPermissionService.CanWriteCalendarAsync(userSession, calendarId, operation, cancellationToken);
         if (canWrite == false)
         {
             throw new UnauthorizedAccessException("The current user cannot write to the selected calendar.");

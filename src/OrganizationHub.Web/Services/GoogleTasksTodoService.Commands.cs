@@ -16,7 +16,7 @@ public sealed partial class GoogleTasksTodoService
     {
         validateTaskForm(formModel);
         TodoTaskListId taskListId = formModel.TaskListIdValue;
-        await ensureCanWriteTaskListAsync(userSession, taskListId, cancellationToken);
+        await ensureCanWriteTaskListAsync(userSession, taskListId, EResourceOperation.Create, cancellationToken);
         string requiredTaskListId = taskListId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createTodoChangeKeys(taskListId)))
         {
@@ -41,7 +41,7 @@ public sealed partial class GoogleTasksTodoService
         TodoTaskListId taskListId = formModel.TaskListIdValue;
         TodoTaskId taskId = formModel.TaskIdValue;
         validateTaskId(taskId);
-        await ensureCanWriteTaskListAsync(userSession, taskListId, cancellationToken);
+        await ensureCanWriteTaskListAsync(userSession, taskListId, EResourceOperation.Update, cancellationToken);
         string requiredTaskListId = taskListId.GetRequiredValue();
         string requiredTaskId = taskId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createTodoChangeKeys(taskListId)))
@@ -89,7 +89,7 @@ public sealed partial class GoogleTasksTodoService
         CancellationToken cancellationToken)
     {
         validateTaskId(taskId);
-        await ensureCanWriteTaskListAsync(userSession, taskListId, cancellationToken);
+        await ensureCanWriteTaskListAsync(userSession, taskListId, EResourceOperation.Update, cancellationToken);
         string requiredTaskListId = taskListId.GetRequiredValue();
         string requiredTaskId = taskId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createTodoChangeKeys(taskListId)))
@@ -114,7 +114,7 @@ public sealed partial class GoogleTasksTodoService
     public async Task DeleteTaskAsync(UserSession userSession, TodoTaskListId taskListId, TodoTaskId taskId, CancellationToken cancellationToken)
     {
         validateTaskId(taskId);
-        await ensureCanWriteTaskListAsync(userSession, taskListId, cancellationToken);
+        await ensureCanWriteTaskListAsync(userSession, taskListId, EResourceOperation.Delete, cancellationToken);
         string requiredTaskListId = taskListId.GetRequiredValue();
         string requiredTaskId = taskId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createTodoChangeKeys(taskListId)))
@@ -134,7 +134,7 @@ public sealed partial class GoogleTasksTodoService
         CancellationToken cancellationToken)
     {
         validateTaskId(taskId);
-        await ensureCanWriteTaskListAsync(userSession, taskListId, cancellationToken);
+        await ensureCanWriteTaskListAsync(userSession, taskListId, EResourceOperation.Update, cancellationToken);
         string requiredTaskListId = taskListId.GetRequiredValue();
         string requiredTaskId = taskId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createTodoChangeKeys(taskListId)))
