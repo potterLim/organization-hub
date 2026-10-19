@@ -17,28 +17,6 @@ public partial class CalendarDateTimeField
     [Inject]
     private IJSRuntime JavaScriptRuntime { get; set; } = null!;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        bool isOpen = IsOpen && IsDisabled == false;
-        if (isOpen && mWasRenderedOpen == false)
-        {
-            mKeyboardModuleOrNull ??= await JavaScriptRuntime.InvokeAsync<IJSObjectReference>("import", "/js/organizationHubDateTimePicker.js");
-            mKeyboardReferenceOrNull ??= DotNetObjectReference.Create(this);
-            await mKeyboardModuleOrNull.InvokeVoidAsync("openPicker", mRootElement, mKeyboardReferenceOrNull);
-        }
-        else if (isOpen == false && mWasRenderedOpen && mKeyboardModuleOrNull != null)
-        {
-            await mKeyboardModuleOrNull.InvokeVoidAsync("closePicker", mRootElement);
-        }
-
-        mWasRenderedOpen = isOpen;
-        if (isOpen && mKeyboardFocusDateOrNull is DateTime focusDate && mKeyboardModuleOrNull != null)
-        {
-            mKeyboardFocusDateOrNull = null;
-            await mKeyboardModuleOrNull.InvokeVoidAsync("focusPickerDate", mRootElement, focusDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-        }
-    }
-
     [JSInvokable("ClosePickerFromKeyboard")]
     public Task ClosePickerFromKeyboardAsync()
     {
@@ -94,4 +72,26 @@ public partial class CalendarDateTimeField
             mKeyboardReferenceOrNull?.Dispose();
         }
     }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        bool isOpen = IsOpen && IsDisabled == false;
+        if (isOpen && mWasRenderedOpen == false)
+        {
+            mKeyboardModuleOrNull ??= await JavaScriptRuntime.InvokeAsync<IJSObjectReference>("import", "/js/organizationHubDateTimePicker.js");
+            mKeyboardReferenceOrNull ??= DotNetObjectReference.Create(this);
+            await mKeyboardModuleOrNull.InvokeVoidAsync("openPicker", mRootElement, mKeyboardReferenceOrNull);
+        }
+        else if (isOpen == false && mWasRenderedOpen && mKeyboardModuleOrNull != null)
+        {
+            await mKeyboardModuleOrNull.InvokeVoidAsync("closePicker", mRootElement);
+        }
+
+        mWasRenderedOpen = isOpen;
+        if (isOpen && mKeyboardFocusDateOrNull is DateTime focusDate && mKeyboardModuleOrNull != null)
+        {
+            mKeyboardFocusDateOrNull = null;
+            await mKeyboardModuleOrNull.InvokeVoidAsync("focusPickerDate", mRootElement, focusDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        }
+    }
+
 }

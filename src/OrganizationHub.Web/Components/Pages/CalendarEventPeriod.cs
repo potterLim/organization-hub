@@ -6,9 +6,18 @@ namespace OrganizationHub.Web.Components.Pages;
 
 internal readonly record struct CalendarEventPeriod
 {
-    public DateTime StartLocal { get; }
-    public DateTime EndExclusiveLocal { get; }
-    public bool IsAllDay { get; }
+    public DateTime StartLocal
+    {
+        get;
+    }
+    public DateTime EndExclusiveLocal
+    {
+        get;
+    }
+    public bool IsAllDay
+    {
+        get;
+    }
 
     private CalendarEventPeriod(DateTime startLocal, DateTime endExclusiveLocal, bool isAllDay)
     {

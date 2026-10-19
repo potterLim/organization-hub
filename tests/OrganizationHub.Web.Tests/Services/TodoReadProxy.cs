@@ -9,7 +9,10 @@ namespace OrganizationHub.Web.Tests.Services;
 
 public class TodoReadProxy : DispatchProxy
 {
-    public bool ShouldFail { get; set; }
+    public bool ShouldFail
+    {
+        get; set;
+    }
 
     protected override object? Invoke(MethodInfo? targetMethodOrNull, object?[]? argumentsOrNull)
     {

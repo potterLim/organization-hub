@@ -13,7 +13,7 @@ namespace OrganizationHub.Web.Tests.Fakes;
 
 public sealed class CalendarContractTransport : HttpMessageHandler, IGoogleApiCredentialFactory, IConfigurableHttpClientInitializer
 {
-    private JsonObject mEvent = JsonNode.Parse("{\"id\":\"period\",\"etag\":\"\\\"v1\\\"\",\"summary\":\"종일 행사\",\"start\":{\"date\":\"2026-10-19\"},\"end\":{\"date\":\"2026-10-20\"}}")!.AsObject();
+    private readonly JsonObject mEvent = JsonNode.Parse("{\"id\":\"period\",\"etag\":\"\\\"v1\\\"\",\"summary\":\"종일 행사\",\"start\":{\"date\":\"2026-10-19\"},\"end\":{\"date\":\"2026-10-20\"}}")!.AsObject();
 
     public string ExclusiveEndDate
     {

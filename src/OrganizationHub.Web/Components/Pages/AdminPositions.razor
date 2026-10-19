@@ -53,10 +53,10 @@ else
                 }
 
                 @if (mMessageSeverity == Severity.Error && string.IsNullOrWhiteSpace(mMessage) == false)
-            {
-                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3" role="alert">@mMessage</MudAlert>
-            }
-            <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3" role="alert">@mMessage</MudAlert>
+                }
+                <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-4">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="createPositionAsync" StartIcon="@Icons.Material.Filled.Add" Class="hub-primary-action-button">직책 만들기</MudButton>
                 </MudStack>
             </MudPaper>
@@ -172,7 +172,6 @@ else
                                 </section>
                             }
                         </div>
-
                     }
                     <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered hub-permission-save-bar mt-4">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="savePermissionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">직책 저장</MudButton>

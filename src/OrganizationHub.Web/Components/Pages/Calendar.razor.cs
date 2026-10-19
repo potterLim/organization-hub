@@ -12,12 +12,6 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Calendar
 {
-    [SupplyParameterFromQuery(Name = "calendar")]
-    public string? CalendarIdOrNull
-    {
-        get; set;
-    }
-
     private string mPreviousDraft = string.Empty;
     private List<CalendarReference> mCalendars = new List<CalendarReference>();
     private List<CalendarReference> mCreatableCalendars = new List<CalendarReference>();
@@ -57,6 +51,12 @@ public partial class Calendar
     private bool mShouldShowCalendarAuthor = true;
     private bool mHasExternalChanges;
     private bool mHasAppliedInitialDaySelection;
+
+    [SupplyParameterFromQuery(Name = "calendar")]
+    public string? CalendarIdOrNull
+    {
+        get; set;
+    }
 
     protected override async Task OnInitializedAsync()
     {

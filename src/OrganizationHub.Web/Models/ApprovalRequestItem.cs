@@ -6,8 +6,14 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class ApprovalRequestItem
 {
-    public bool IsPublicationProcessing { get; set; }
-    public bool HasPublicationFailure { get; set; }
+    public bool IsPublicationProcessing
+    {
+        get; set;
+    }
+    public bool HasPublicationFailure
+    {
+        get; set;
+    }
 
     public int RequesterUserId
     {

@@ -11,12 +11,6 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminGoogle
 {
-    [SupplyParameterFromQuery(Name = "message")]
-    public string? MessageOrNull
-    {
-        get; set;
-    }
-
     private GoogleConnectionStatus mStatus = new GoogleConnectionStatus();
     private List<GoogleDriveFolderItem> mFolders = new List<GoogleDriveFolderItem>();
     private List<GoogleCalendarListItem> mCalendars = new List<GoogleCalendarListItem>();
@@ -36,6 +30,12 @@ public partial class AdminGoogle
     private bool mIsEnsuringStandardCalendars;
     private bool mIsApplyingStandardDriveFolderNames;
     private bool mIsEnsuringStandardTaskLists;
+
+    [SupplyParameterFromQuery(Name = "message")]
+    public string? MessageOrNull
+    {
+        get; set;
+    }
 
     protected override async Task OnInitializedAsync()
     {

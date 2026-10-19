@@ -22,7 +22,10 @@ public sealed class DrivePaginationTests
     private sealed class Transport : HttpMessageHandler, IGoogleApiCredentialFactory, IConfigurableHttpClientInitializer
     {
         public List<string> Pages { get; } = new List<string>();
-        public bool HasDuplicateNames { get; set; }
+        public bool HasDuplicateNames
+        {
+            get; set;
+        }
         public bool ShouldFailSecond
         {
             get; set;
