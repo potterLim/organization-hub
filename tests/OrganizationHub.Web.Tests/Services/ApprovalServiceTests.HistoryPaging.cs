@@ -122,6 +122,37 @@ public sealed partial class ApprovalServiceTests
         }
     }
 
+    [Fact]
+    public async Task OwnProgressCountsEveryPageAndExcludesOtherUsersAndClosedRequestsAsync()
+    {
+        using (TestDbContextFactory factory = createApprovalDbContextFactory(EFinalApproverSeedMode.SingleFinalApprover))
+        using (MemoryCache cache = new MemoryCache(new MemoryCacheOptions()))
+        {
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                for (int index = 0; index < 35; index++)
+                {
+                    ApprovalRequest own = createRegressionHistoryRequest(1, 1, DateTime.UtcNow);
+                    own.Status = index < 28 ? EApprovalRequestStatus.Pending : EApprovalRequestStatus.Publishing;
+                    db.ApprovalRequests.Add(own);
+                }
+
+                ApprovalRequest other = createRegressionHistoryRequest(6, 2, DateTime.UtcNow);
+                other.Status = EApprovalRequestStatus.Pending;
+                db.ApprovalRequests.AddRange(other, createRegressionHistoryRequest(1, 1, DateTime.UtcNow));
+                await db.SaveChangesAsync();
+            }
+
+            ApprovalService service = createHistoryPagingService(factory, cache);
+            OwnApprovalProgress progress = await service.GetOwnProgressAsync(createSession(1, "planning.member", "요청자", EStoredCompatibilityRole.TeamUser, 1), CancellationToken.None);
+            Assert.Equal(28, progress.PendingCount);
+            Assert.Equal(7, progress.PublishingCount);
+            OwnApprovalProgress empty = await service.GetOwnProgressAsync(createSession(3, "empty", "없음", EStoredCompatibilityRole.TeamUser, 1), CancellationToken.None);
+            Assert.Equal(0, empty.PendingCount);
+            Assert.Equal(0, empty.PublishingCount);
+        }
+    }
+
     private static ApprovalHistoryQuery createHistoryQuery(int pageNumber)
     {
         return new ApprovalHistoryQuery { PageNumber = pageNumber, Keyword = string.Empty, Filter = EApprovalHistoryFilter.AllRelated };

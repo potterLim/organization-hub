@@ -22,7 +22,7 @@ public partial class Dashboard
     private async Task loadDashboardSectionsAsync()
     {
         Task dashboardSettingsTask = loadDashboardSettingsAsync();
-        Task pendingApprovalsTask = mAccessOrNull != null && mAccessOrNull.CanOpenInbox ? loadPendingApprovalsAsync() : Task.CompletedTask;
+        Task pendingApprovalsTask = mAccessOrNull != null && (mAccessOrNull.CanOpenInbox || mAccessOrNull.CanOpenHistory) ? loadPendingApprovalsAsync() : Task.CompletedTask;
         Task weekEventsTask = mAccessOrNull != null && mAccessOrNull.CanOpenCalendar ? loadWeekEventsAsync() : Task.CompletedTask;
         Task weekTodosTask = mAccessOrNull != null && mAccessOrNull.CanOpenTodos ? loadWeekTodosAsync() : Task.CompletedTask;
         Task recentMaterialsTask = mAccessOrNull != null && mAccessOrNull.CanOpenMaterials ? loadRecentMaterialsAsync() : Task.CompletedTask;
@@ -65,8 +65,15 @@ public partial class Dashboard
         await InvokeAsync(StateHasChanged);
         try
         {
-            IReadOnlyList<ApprovalRequestItem> pendingApprovals = await ApprovalService.GetPendingApprovalsAsync(CurrentUserSessionOrNull, CancellationToken.None);
-            mPendingApprovals = pendingApprovals.Take(DASHBOARD_PENDING_APPROVAL_MAXIMUM_COUNT).ToList();
+            if (mAccessOrNull != null && mAccessOrNull.CanOpenInbox)
+            {
+                IReadOnlyList<ApprovalRequestItem> pendingApprovals = await ApprovalService.GetPendingApprovalsAsync(CurrentUserSessionOrNull, CancellationToken.None);
+                mPendingApprovals = pendingApprovals.Take(DASHBOARD_PENDING_APPROVAL_MAXIMUM_COUNT).ToList();
+            }
+            else
+            {
+                mOwnProgressOrNull = await ApprovalService.GetOwnProgressAsync(CurrentUserSessionOrNull, CancellationToken.None);
+            }
         }
         catch (Exception exception)
         {

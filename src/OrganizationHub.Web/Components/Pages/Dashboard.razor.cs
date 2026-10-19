@@ -24,6 +24,7 @@ public partial class Dashboard
     private bool mShouldShowCalendarAuthor;
     private bool mHasLoadedWorkspaceSetup;
     private DashboardAccess? mAccessOrNull;
+    private OwnApprovalProgress? mOwnProgressOrNull;
     private bool mIsWorkspaceConnected;
     private bool mHasWorkspaceRootFolder;
     private bool mShouldShowTodoAuthor = true;

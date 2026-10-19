@@ -54,6 +54,27 @@ public sealed partial class ApprovalService
         }
     }
 
+    public async Task<OwnApprovalProgress> GetOwnProgressAsync(UserSession userSession, CancellationToken cancellationToken)
+    {
+        await using (OrganizationHubDbContext db = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            int userId = userSession.UserAccountId.GetRequiredValue();
+            IQueryable<ApprovalRequest> ownRequests = db.ApprovalRequests.Where(request => request.RequesterUserId == userId);
+            List<OwnApprovalProgress> summaries = await ownRequests.GroupBy(request => request.RequesterUserId)
+                .Select(group => new OwnApprovalProgress
+                {
+                    PendingCount = group.Count(request => request.Status == EApprovalRequestStatus.Pending),
+                    PublishingCount = group.Count(request => request.Status == EApprovalRequestStatus.Publishing)
+                }).ToListAsync(cancellationToken);
+            if (summaries.Count == 0)
+            {
+                return new OwnApprovalProgress { PendingCount = 0, PublishingCount = 0 };
+            }
+
+            return summaries[0];
+        }
+    }
+
     private static IQueryable<ApprovalRequest> applyHistoryFilter(IQueryable<ApprovalRequest> requests, ApprovalHistoryQuery query, int userId)
     {
         switch (query.Filter)
