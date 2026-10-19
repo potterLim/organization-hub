@@ -117,10 +117,10 @@
                             @if (canManageUser(user))
                             {
                                 <MudTooltip Text="사용자 수정">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" Href="/admin/users#user-editor" OnClick="@(() => editUser(user))" aria-label="사용자 수정" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" Href="/admin/users#user-editor" OnClick="@(() => editUser(user))" aria-label="@(user.DisplayName + " 사용자 수정")" />
                                 </MudTooltip>
                                 <MudTooltip Text="@(user.IsActive ? "사용자 비활성화" : "사용자 활성화")">
-                                    <MudIconButton Icon="@(user.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => toggleUserActiveAsync(user))" aria-label="@(user.IsActive ? "사용자 비활성화" : "사용자 활성화")" />
+                                    <MudIconButton Icon="@(user.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => toggleUserActiveAsync(user))" aria-label="@(user.DisplayName + (user.IsActive ? " 사용자 비활성화" : " 사용자 활성화"))" />
                                 </MudTooltip>
                             }
                         </div>

@@ -270,7 +270,9 @@
     .hub-calendar-day-date { display: flex; flex-direction: column; gap: 3px; margin: 0; }
     .hub-calendar-day-number { font-size: 12px; min-width: 24px; padding: 0; }
     .hub-calendar-day-number::after { content: none; }
-    .hub-calendar-day-count { font-size: 9px; padding: 3px; }
+    .hub-calendar-day-count { font-size: 11px; padding: 3px; }
     .hub-calendar-day-time-list { display: none; }
     .hub-calendar-week-list { max-height: none; overflow: visible; }
 }
+
+.hub-editor-anchor { scroll-margin-top: 110px; }
