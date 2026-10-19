@@ -38,6 +38,7 @@ public partial class Calendar
         clonedEvent.CanEdit = calendarEvent.CanEdit;
         clonedEvent.CanDelete = calendarEvent.CanDelete;
         clonedEvent.CreatedByDisplayName = calendarEvent.CreatedByDisplayName;
+        clonedEvent.CreatedByUserIdOrNull = calendarEvent.CreatedByUserIdOrNull;
         clonedEvent.CreatedAt = calendarEvent.CreatedAt;
         return clonedEvent;
     }
@@ -55,6 +56,8 @@ public partial class Calendar
         calendarEvent.End = createClientDateTimeOffset(formModel.EndLocal);
         calendarEvent.IsAllDay = formModel.IsAllDay;
         calendarEvent.CanEdit = true;
+        calendarEvent.CanDelete = mIsEditing ? mSelectedEventOrNull != null && mSelectedEventOrNull.CanDelete : mDeletableCalendarIds.Contains(calendarEvent.CalendarId);
+        calendarEvent.CreatedByUserIdOrNull = currentUserSession.UserAccountId.GetRequiredValue();
         calendarEvent.CreatedByDisplayName = currentUserSession.DisplayName;
         calendarEvent.CreatedAt = getClientNow();
         return calendarEvent;
@@ -65,8 +68,8 @@ public partial class Calendar
         HashSet<string> writableCalendarIds = new HashSet<string>(mWritableCalendars.Select(calendar => calendar.CalendarId.GetRequiredValue()));
         foreach (CalendarEventItem calendarEvent in events)
         {
-            calendarEvent.CanEdit = writableCalendarIds.Contains(calendarEvent.CalendarId);
-            calendarEvent.CanDelete = mDeletableCalendarIds.Contains(calendarEvent.CalendarId);
+            calendarEvent.CanEdit = calendarEvent.CanEdit && writableCalendarIds.Contains(calendarEvent.CalendarId);
+            calendarEvent.CanDelete = calendarEvent.CanDelete && mDeletableCalendarIds.Contains(calendarEvent.CalendarId);
         }
     }
 

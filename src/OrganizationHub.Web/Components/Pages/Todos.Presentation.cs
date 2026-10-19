@@ -156,12 +156,12 @@ public partial class Todos
 
     private bool canDeleteTask(TodoTaskItem task)
     {
-        return mDeletableTaskListIds.Contains(task.TaskListId);
+        return task.CanDelete && mDeletableTaskListIds.Contains(task.TaskListId);
     }
 
     private bool canWriteTask(TodoTaskItem task)
     {
-        return string.IsNullOrWhiteSpace(task.TaskListId) == false && mWritableTaskListIds.Contains(task.TaskListId);
+        return task.CanEdit && string.IsNullOrWhiteSpace(task.TaskListId) == false && mWritableTaskListIds.Contains(task.TaskListId);
     }
 
     private string getSelectedTaskListDisplayName()

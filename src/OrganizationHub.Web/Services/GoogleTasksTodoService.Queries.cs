@@ -37,7 +37,7 @@ public sealed partial class GoogleTasksTodoService
         List<TodoTaskListReference> allowedLists = new List<TodoTaskListReference>();
         foreach (TodoTaskListReference taskList in taskLists)
         {
-            if (await mOrganizationPermissionService.HasPermissionAsync(userSession, permission, taskList.TeamIdOrNull, cancellationToken))
+            if (await canUseOwnedTaskPermissionAsync(userSession, permission, taskList.TeamIdOrNull, cancellationToken))
             {
                 allowedLists.Add(taskList);
             }
@@ -60,7 +60,7 @@ public sealed partial class GoogleTasksTodoService
         TodoTaskListReference taskList = await getAllowedTaskListAsync(userSession, taskListId, ETodoTaskListAccessMode.Readable, cancellationToken);
         GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken);
         IReadOnlyList<TodoTaskItem> tasks = await getTasksAsync(tasksService, taskList.TaskListId, taskList.DisplayName, cancellationToken);
-        return tasks;
+        return await applyItemPermissionsAsync(userSession, tasks, true, cancellationToken);
     }
 
     private async Task<IReadOnlyList<TodoTaskItem>> getAggregateTasksAsync(UserSession userSession, CancellationToken cancellationToken)
@@ -86,7 +86,7 @@ public sealed partial class GoogleTasksTodoService
         }
 
         List<TodoTaskItem> orderedTasks = mergedTasks.OrderBy(task => task.IsCompleted).ThenBy(task => task.TaskListDisplayName).ThenBy(task => task.Position).ThenBy(task => task.Title).ToList();
-        return orderedTasks;
+        return await applyItemPermissionsAsync(userSession, orderedTasks, true, cancellationToken);
     }
 
     private async Task<IReadOnlyList<TodoTaskItem>> getTasksAsync(

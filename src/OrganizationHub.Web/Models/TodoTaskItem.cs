@@ -4,6 +4,18 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class TodoTaskItem
 {
+    public int? CreatedByUserIdOrNull
+    {
+        get; set;
+    }
+    public bool CanEdit
+    {
+        get; set;
+    }
+    public bool CanDelete
+    {
+        get; set;
+    }
     public string Id { get; set; } = string.Empty;
     public string TaskListId { get; set; } = string.Empty;
     public string TaskListDisplayName { get; set; } = string.Empty;

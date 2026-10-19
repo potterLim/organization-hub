@@ -30,7 +30,10 @@ public sealed class OwnedResourcePermissionTests
 
     private sealed class CredentialProbe : HttpMessageHandler, IGoogleApiCredentialFactory, IConfigurableHttpClientInitializer
     {
-        public bool ShouldReturnItems { get; set; }
+        public bool ShouldReturnItems
+        {
+            get; set;
+        }
 
         public Task<IConfigurableHttpClientInitializer> CreateHttpClientInitializerAsync(string[] scopes, CancellationToken cancellationToken)
         {
@@ -138,6 +141,65 @@ public sealed class OwnedResourcePermissionTests
             {
                 IReadOnlyList<TodoTaskItem> tasks = await createTodoService(factory, credential).GetTasksAsync(OperationPermissionRegressionTests.createSession(), TodoTaskListId.AllTasks, CancellationToken.None);
                 Assert.Equal("owned", Assert.Single(tasks).Id);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReadModelsExposeOnlyOwnedActionsAndReevaluateRevokedGrantsAsync(bool isCalendar)
+    {
+        string updatePermission = isCalendar ? PermissionKeys.CALENDAR_UPDATE : PermissionKeys.TODOS_UPDATE;
+        using (TestDbContextFactory factory = createFactory(updatePermission, 1))
+        using (MemoryCache cache = new MemoryCache(new MemoryCacheOptions()))
+        using (CredentialProbe credential = new CredentialProbe())
+        {
+            credential.ShouldReturnItems = true;
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                PositionPermissionGrant read = new PositionPermissionGrant();
+                read.PositionId = 1;
+                read.PermissionKey = isCalendar ? PermissionKeys.CALENDAR_READ : PermissionKeys.TODOS_READ;
+                read.ScopeType = EPermissionScopeType.Global;
+                read.IsAllowed = true;
+                db.PositionPermissionGrants.Add(read);
+                await db.SaveChangesAsync();
+            }
+
+            UserSession session = OperationPermissionRegressionTests.createSession();
+            GoogleCalendarService calendar = createCalendarService(factory, cache, credential);
+            GoogleTasksTodoService todos = createTodoService(factory, credential);
+            if (isCalendar)
+            {
+                IReadOnlyList<CalendarEventItem> events = await calendar.GetAggregateEventsAsync(session, new CalendarEventDateRange(new DateTime(2026, 10, 1), new DateTime(2026, 11, 1)), CancellationToken.None);
+                Assert.True(events.Single(item => item.Id == "owned").CanEdit);
+                Assert.All(events.Where(item => item.Id != "owned"), item => Assert.False(item.CanEdit));
+                Assert.All(events, item => Assert.False(item.CanDelete));
+            }
+            else
+            {
+                IReadOnlyList<TodoTaskItem> tasks = await todos.GetTasksAsync(session, TodoTaskListId.AllTasks, CancellationToken.None);
+                Assert.True(tasks.Single(item => item.Id == "owned").CanEdit);
+                Assert.All(tasks.Where(item => item.Id != "owned"), item => Assert.False(item.CanEdit));
+                Assert.All(tasks, item => Assert.False(item.CanDelete));
+            }
+
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                db.PositionPermissionGrants.Single(grant => grant.PermissionKey == updatePermission).IsAllowed = false;
+                await db.SaveChangesAsync();
+            }
+
+            if (isCalendar)
+            {
+                IReadOnlyList<CalendarEventItem> cachedEvents = await calendar.GetAggregateEventsAsync(session, new CalendarEventDateRange(new DateTime(2026, 10, 1), new DateTime(2026, 11, 1)), CancellationToken.None);
+                Assert.All(cachedEvents, item => Assert.False(item.CanEdit));
+            }
+            else
+            {
+                IReadOnlyList<TodoTaskItem> tasks = await todos.GetTasksAsync(session, TodoTaskListId.AllTasks, CancellationToken.None);
+                Assert.All(tasks, item => Assert.False(item.CanEdit));
             }
         }
     }

@@ -20,7 +20,7 @@ public sealed partial class PermissionService
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             GlobalSetting? settingOrNull = await dbContext.GlobalSettings.OrderBy(setting => setting.Id).FirstOrDefaultAsync(cancellationToken);
-            bool canReadGlobalCalendars = await canUsePermissionAsync(
+            bool canReadGlobalCalendars = await canUseOwnedCalendarPermissionAsync(
                 userSession,
                 new PermissionKey(PermissionKeys.CALENDAR_READ),
                 null,
@@ -30,7 +30,7 @@ public sealed partial class PermissionService
                 calendars.Add(new CalendarReference(CalendarId.CreateOptional(settingOrNull.OrganizationCalendarId), OrganizationHubWorkspaceDefaults.ORGANIZATION_CALENDAR_NAME, ECalendarViewKind.Organization, null));
             }
 
-            bool canReadResponsibleCalendar = await canUsePermissionAsync(
+            bool canReadResponsibleCalendar = await canUseOwnedCalendarPermissionAsync(
                 userSession,
                 new PermissionKey(PermissionKeys.CALENDAR_READ),
                 null,
@@ -49,7 +49,7 @@ public sealed partial class PermissionService
                     continue;
                 }
 
-                bool canReadTeamCalendar = await canUsePermissionAsync(
+                bool canReadTeamCalendar = await canUseOwnedCalendarPermissionAsync(
                     userSession,
                     new PermissionKey(PermissionKeys.CALENDAR_READ),
                     OrganizationTeamId.CreateExisting(team.Id),
@@ -124,7 +124,8 @@ public sealed partial class PermissionService
         List<CalendarReference> allowedCalendars = new List<CalendarReference>();
         foreach (CalendarReference calendar in calendars)
         {
-            if (await mOrganizationPermissionService.HasPermissionAsync(userSession, permission, calendar.TeamIdOrNull, cancellationToken))
+            PermissionDecision decision = await mOrganizationPermissionService.DecidePermissionAsync(userSession, permission, calendar.TeamIdOrNull, userSession.UserAccountId, cancellationToken);
+            if (decision.IsAllowed)
             {
                 allowedCalendars.Add(calendar);
             }
@@ -137,6 +138,15 @@ public sealed partial class PermissionService
     {
         IReadOnlyList<CalendarReference> calendars = await GetWritableCalendarsAsync(userSession, operation, cancellationToken);
         return calendars.Any(calendar => calendar.CalendarId == calendarId);
+    }
+
+    public async Task<ResourceOperationAccess> GetCalendarOperationAccessAsync(UserSession userSession, CalendarId calendarId, EResourceOperation operation, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<CalendarReference> calendars = operation == EResourceOperation.Read
+            ? await GetReadableCalendarsAsync(userSession, cancellationToken)
+            : await GetWritableCalendarsAsync(userSession, operation, cancellationToken);
+        List<OrganizationTeamId?> targetTeamIds = calendars.Where(calendar => calendar.CalendarId == calendarId).Select(calendar => calendar.TeamIdOrNull).ToList();
+        return await ResourceOperationAccessUtility.ResolveAsync(mOrganizationPermissionService, userSession, ResourceOperationPermission.GetCalendarPermission(operation), targetTeamIds, cancellationToken);
     }
 
     public async Task<PermissionDecision> DecideWriteCalendarAsync(

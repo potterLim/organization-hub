@@ -4,6 +4,10 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class CalendarEventItem
 {
+    public int? CreatedByUserIdOrNull
+    {
+        get; set;
+    }
     public string Id { get; set; } = string.Empty;
     public string CalendarId { get; set; } = string.Empty;
     public string CalendarName { get; set; } = string.Empty;

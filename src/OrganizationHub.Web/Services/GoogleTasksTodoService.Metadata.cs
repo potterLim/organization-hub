@@ -165,6 +165,7 @@ public sealed partial class GoogleTasksTodoService
     private void applyMetadata(TodoTaskItem task, TodoTaskMetadata metadata)
     {
         task.CreatedByDisplayName = metadata.CreatedByDisplayName;
+        task.CreatedByUserIdOrNull = metadata.CreatedByUserId > 0 ? metadata.CreatedByUserId : null;
         task.CreatedAt = metadata.CreatedAt;
         task.DueAt = normalizeStoredDueAtOrNull(metadata.DueAt);
     }

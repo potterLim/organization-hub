@@ -21,18 +21,24 @@ public sealed partial class PermissionService
         OrganizationTeamId? targetTeamIdOrNull,
         CancellationToken cancellationToken)
     {
-        bool canCreate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_CREATE), targetTeamIdOrNull, cancellationToken);
+        bool canCreate = await canUseOwnedCalendarPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_CREATE), targetTeamIdOrNull, cancellationToken);
         if (canCreate)
         {
             return true;
         }
 
-        bool canUpdate = await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_UPDATE), targetTeamIdOrNull, cancellationToken);
+        bool canUpdate = await canUseOwnedCalendarPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_UPDATE), targetTeamIdOrNull, cancellationToken);
         if (canUpdate)
         {
             return true;
         }
 
-        return await mOrganizationPermissionService.HasPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_DELETE), targetTeamIdOrNull, cancellationToken);
+        return await canUseOwnedCalendarPermissionAsync(userSession, new PermissionKey(PermissionKeys.CALENDAR_DELETE), targetTeamIdOrNull, cancellationToken);
+    }
+
+    private async Task<bool> canUseOwnedCalendarPermissionAsync(UserSession userSession, PermissionKey permissionKey, OrganizationTeamId? targetTeamIdOrNull, CancellationToken cancellationToken)
+    {
+        PermissionDecision decision = await mOrganizationPermissionService.DecidePermissionAsync(userSession, permissionKey, targetTeamIdOrNull, userSession.UserAccountId, cancellationToken);
+        return decision.IsAllowed;
     }
 }

@@ -21,7 +21,8 @@ public sealed partial class GoogleCalendarService
         CancellationToken cancellationToken)
     {
         await ensureCanReadCalendarAsync(userSession, calendarId, cancellationToken);
-        return await getEventsByCalendarAsync(calendarId, calendarName, dateRange, cancellationToken);
+        IReadOnlyList<CalendarEventItem> events = await getEventsByCalendarAsync(calendarId, calendarName, dateRange, cancellationToken);
+        return await applyItemPermissionsAsync(userSession, events, true, cancellationToken);
     }
 
     private async Task<IReadOnlyList<CalendarEventItem>> getEventsByCalendarAsync(
@@ -111,7 +112,7 @@ public sealed partial class GoogleCalendarService
         }
 
         List<CalendarEventItem> orderedEvents = mergedEvents.OrderBy(calendarEvent => calendarEvent.Start).ThenBy(calendarEvent => calendarEvent.Summary).ToList();
-        return orderedEvents;
+        return await applyItemPermissionsAsync(userSession, orderedEvents, true, cancellationToken);
     }
 
     public async Task<CalendarEventItem> CreateEventAsync(
@@ -135,6 +136,7 @@ public sealed partial class GoogleCalendarService
             CalendarEventMetadata createdMetadata = await createMetadataAsync(userSession, calendarId, CalendarEventId.CreateOptional(createdItem.Id), cancellationToken);
             applyMetadata(createdItem, createdMetadata);
             expireCalendarEventCache(calendarId);
+            await applyItemPermissionsAsync(userSession, new CalendarEventItem[] { createdItem }, false, cancellationToken);
             return createdItem;
         }
     }
@@ -148,7 +150,7 @@ public sealed partial class GoogleCalendarService
     {
         CalendarId calendarId = formModel.CalendarIdValue;
         CalendarEventId eventId = formModel.EventIdValue;
-        await ensureCanWriteCalendarAsync(userSession, calendarId, EResourceOperation.Update, cancellationToken);
+        await ensureCanModifyEventAsync(userSession, calendarId, CalendarEventId.CreateOptional(formModel.Id), EResourceOperation.Update, cancellationToken);
         string requiredCalendarId = calendarId.GetRequiredValue();
         string requiredEventId = eventId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarId)))
@@ -165,7 +167,7 @@ public sealed partial class GoogleCalendarService
 
     public async Task DeleteEventAsync(UserSession userSession, CalendarId calendarId, CalendarEventId eventId, CancellationToken cancellationToken)
     {
-        await ensureCanWriteCalendarAsync(userSession, calendarId, EResourceOperation.Delete, cancellationToken);
+        await ensureCanModifyEventAsync(userSession, calendarId, eventId, EResourceOperation.Delete, cancellationToken);
         string requiredCalendarId = calendarId.GetRequiredValue();
         string requiredEventId = eventId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createCalendarChangeKeys(calendarId)))

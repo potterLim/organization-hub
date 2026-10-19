@@ -112,6 +112,7 @@ public sealed partial class GoogleCalendarService
     private void applyMetadata(CalendarEventItem calendarEvent, CalendarEventMetadata metadata)
     {
         calendarEvent.CreatedByDisplayName = metadata.CreatedByDisplayName;
+        calendarEvent.CreatedByUserIdOrNull = metadata.CreatedByUserId > 0 ? metadata.CreatedByUserId : null;
         calendarEvent.CreatedAt = metadata.CreatedAt;
     }
 }

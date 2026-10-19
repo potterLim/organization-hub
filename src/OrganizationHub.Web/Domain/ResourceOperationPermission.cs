@@ -6,6 +6,11 @@ public static class ResourceOperationPermission
 {
     public static PermissionKey GetCalendarPermission(EResourceOperation operation)
     {
+        if (operation == EResourceOperation.Read)
+        {
+            return new PermissionKey(PermissionKeys.CALENDAR_READ);
+        }
+
         switch (operation)
         {
             case EResourceOperation.Create:
@@ -21,6 +26,11 @@ public static class ResourceOperationPermission
 
     public static PermissionKey GetTodoPermission(EResourceOperation operation)
     {
+        if (operation == EResourceOperation.Read)
+        {
+            return new PermissionKey(PermissionKeys.TODOS_READ);
+        }
+
         switch (operation)
         {
             case EResourceOperation.Create:

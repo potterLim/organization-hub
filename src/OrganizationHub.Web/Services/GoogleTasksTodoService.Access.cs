@@ -71,14 +71,14 @@ public sealed partial class GoogleTasksTodoService
     {
         if (request.AccessContext.AccessMode != ETodoTaskListAccessMode.Writable)
         {
-            return await mOrganizationPermissionService.HasPermissionAsync(
+            return await canUseOwnedTaskPermissionAsync(
                 request.AccessContext.UserSession,
                 new PermissionKey(PermissionKeys.TODOS_READ),
                 request.TargetTeamIdOrNull,
                 cancellationToken);
         }
 
-        bool canCreate = await mOrganizationPermissionService.HasPermissionAsync(
+        bool canCreate = await canUseOwnedTaskPermissionAsync(
             request.AccessContext.UserSession,
             new PermissionKey(PermissionKeys.TODOS_CREATE),
             request.TargetTeamIdOrNull,
@@ -88,7 +88,7 @@ public sealed partial class GoogleTasksTodoService
             return true;
         }
 
-        bool canUpdate = await mOrganizationPermissionService.HasPermissionAsync(
+        bool canUpdate = await canUseOwnedTaskPermissionAsync(
             request.AccessContext.UserSession,
             new PermissionKey(PermissionKeys.TODOS_UPDATE),
             request.TargetTeamIdOrNull,
@@ -98,7 +98,7 @@ public sealed partial class GoogleTasksTodoService
             return true;
         }
 
-        return await mOrganizationPermissionService.HasPermissionAsync(
+        return await canUseOwnedTaskPermissionAsync(
             request.AccessContext.UserSession,
             new PermissionKey(PermissionKeys.TODOS_DELETE),
             request.TargetTeamIdOrNull,

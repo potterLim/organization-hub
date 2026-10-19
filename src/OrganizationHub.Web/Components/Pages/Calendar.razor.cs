@@ -87,7 +87,7 @@ public partial class Calendar
 
     private void applyWritableState(CalendarEventItem calendarEvent)
     {
-        calendarEvent.CanDelete = mDeletableCalendarIds.Contains(calendarEvent.CalendarId);
-        calendarEvent.CanEdit = mWritableCalendars.Any(calendar => calendar.CalendarId == CalendarId.CreateOptional(calendarEvent.CalendarId));
+        calendarEvent.CanDelete = calendarEvent.CanDelete && mDeletableCalendarIds.Contains(calendarEvent.CalendarId);
+        calendarEvent.CanEdit = calendarEvent.CanEdit && mWritableCalendars.Any(calendar => calendar.CalendarId == CalendarId.CreateOptional(calendarEvent.CalendarId));
     }
 }

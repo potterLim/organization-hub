@@ -55,6 +55,9 @@ public partial class Todos
         clonedTask.Title = task.Title;
         clonedTask.Position = task.Position;
         clonedTask.CreatedByDisplayName = task.CreatedByDisplayName;
+        clonedTask.CreatedByUserIdOrNull = task.CreatedByUserIdOrNull;
+        clonedTask.CanEdit = task.CanEdit;
+        clonedTask.CanDelete = task.CanDelete;
         clonedTask.IsCompleted = task.IsCompleted;
         clonedTask.CreatedAt = task.CreatedAt;
         clonedTask.UpdatedAt = task.UpdatedAt;
@@ -68,6 +71,9 @@ public partial class Todos
         TodoTaskItem optimisticTask = new TodoTaskItem();
         optimisticTask.Id = "optimistic-" + Guid.NewGuid().ToString("N");
         optimisticTask.TaskListId = mSelectedTaskListId;
+        optimisticTask.CanEdit = mWritableTaskListIds.Contains(mSelectedTaskListId);
+        optimisticTask.CanDelete = mDeletableTaskListIds.Contains(mSelectedTaskListId);
+        optimisticTask.CreatedByUserIdOrNull = CurrentUserSessionOrNull == null ? null : CurrentUserSessionOrNull.UserAccountId.GetRequiredValue();
         optimisticTask.TaskListDisplayName = getSelectedTaskListDisplayName();
         optimisticTask.Title = taskTitle;
         optimisticTask.Position = string.Empty;

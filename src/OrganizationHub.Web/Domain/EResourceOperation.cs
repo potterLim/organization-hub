@@ -4,5 +4,6 @@ public enum EResourceOperation
 {
     Create,
     Update,
-    Delete
+    Delete,
+    Read
 }

@@ -134,7 +134,9 @@ public sealed partial class GoogleCalendarService
         clonedEvent.End = calendarEvent.End;
         clonedEvent.IsAllDay = calendarEvent.IsAllDay;
         clonedEvent.CanEdit = calendarEvent.CanEdit;
+        clonedEvent.CanDelete = calendarEvent.CanDelete;
         clonedEvent.CreatedByDisplayName = calendarEvent.CreatedByDisplayName;
+        clonedEvent.CreatedByUserIdOrNull = calendarEvent.CreatedByUserIdOrNull;
         clonedEvent.CreatedAt = calendarEvent.CreatedAt;
         return clonedEvent;
     }

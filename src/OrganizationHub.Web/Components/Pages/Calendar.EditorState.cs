@@ -31,6 +31,11 @@ public partial class Calendar
 
     private void openEditEditor(CalendarEventItem calendarEvent)
     {
+        if (calendarEvent.CanEdit == false)
+        {
+            return;
+        }
+
         mIsEditorOpen = true;
         mIsEditing = true;
         mSelectedEventOrNull = calendarEvent;
