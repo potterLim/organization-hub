@@ -107,6 +107,16 @@ public sealed class TodoDeadlineRecoveryTests
             form.TaskListId = "tasks";
             form.Title = "Updated";
             form.ETag = transport.ETag;
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                PositionPermissionGrant readGrant = new PositionPermissionGrant();
+                readGrant.PositionId = 1;
+                readGrant.PermissionKey = PermissionKeys.TODOS_READ;
+                readGrant.ScopeType = EPermissionScopeType.Global;
+                readGrant.IsAllowed = true;
+                db.PositionPermissionGrants.Add(readGrant);
+                await db.SaveChangesAsync();
+            }
             form.DueAtUtc = new DateTime(2026, 10, 20, 12, 0, 0, DateTimeKind.Utc);
             await createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None);
             if (shouldFailEarlierSave)
@@ -125,6 +135,8 @@ public sealed class TodoDeadlineRecoveryTests
             form.DueAtUtc = new DateTime(2026, 10, 20, 19, 30, 0, DateTimeKind.Utc);
             TodoTaskItem updated = await createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None);
             Assert.Equal(form.DueAtUtc, updated.DueAt);
+            System.Collections.Generic.IReadOnlyList<TodoTaskItem> reloaded = await createService(factory, transport).GetTasksAsync(OperationPermissionRegressionTests.createSession(), TodoTaskListId.CreateRequired("tasks"), CancellationToken.None);
+            Assert.Equal(form.DueAtUtc, Assert.Single(reloaded).DueAt);
             await createService(factory, transport).RecoverDeadlineChangesAsync(CancellationToken.None);
             using (OrganizationHubDbContext db = factory.CreateDbContext())
             {
