@@ -27,7 +27,7 @@
             <div class="hub-calendar-date-time-days">
                 @foreach (CalendarDateTimeDayCell dayCell in mDayCells)
                 {
-                    <button type="button" class="@getDayButtonClass(dayCell)" data-picker-date="@dayCell.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" aria-label="@dayCell.Date.ToString("yyyy년 M월 d일 dddd", KOREAN_CULTURE)" aria-pressed="@(dayCell.IsSelected ? "true" : "false")" tabindex="@(dayCell.IsSelected ? 0 : -1)" disabled="@dayCell.IsDisabled" @onclick="@(() => selectDateAsync(dayCell.Date))">
+                    <button type="button" class="@getDayButtonClass(dayCell)" data-picker-date="@dayCell.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" aria-label="@dayCell.Date.ToString("yyyy년 M월 d일 dddd", KOREAN_CULTURE)" aria-current="@(dayCell.IsToday ? "date" : null)" aria-pressed="@(dayCell.IsSelected ? "true" : "false")" tabindex="@(dayCell.IsSelected ? 0 : -1)" disabled="@dayCell.IsDisabled" @onclick="@(() => selectDateAsync(dayCell.Date))">
                         @dayCell.Date.Day.ToString(CultureInfo.InvariantCulture)
                     </button>
                 }

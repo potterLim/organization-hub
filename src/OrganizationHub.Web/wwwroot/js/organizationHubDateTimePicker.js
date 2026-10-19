@@ -3,7 +3,8 @@ const sessions = new WeakMap();
 function focusDay(root, date) {
     const days = [...root.querySelectorAll('[data-picker-date]:not(:disabled)')];
     const selected = days.find(button => button.dataset.pickerDate === date)
-        ?? days.find(button => button.getAttribute('aria-pressed') === 'true') ?? days[0];
+        ?? days.find(button => button.getAttribute('aria-pressed') === 'true')
+        ?? days.find(button => button.getAttribute('aria-current') === 'date') ?? days[0];
     for (const button of days) button.tabIndex = button === selected ? 0 : -1;
     selected?.focus({ preventScroll: true });
 }

@@ -33,8 +33,10 @@ public sealed class DatePickerRenderTests
             parameters[nameof(CalendarDateTimeField.IsTimeSelectionEnabled)] = includesTime;
             parameters[nameof(CalendarDateTimeField.Value)] = new DateTime(2026, 10, 19, 9, 15, 0);
             parameters[nameof(CalendarDateTimeField.Label)] = "마감 기한";
+            parameters[nameof(CalendarDateTimeField.CurrentDateOrNull)] = new DateTime(2026, 10, 19);
             string html = await renderer.Dispatcher.InvokeAsync(renderAsync);
             Assert.Contains("aria-label=\"2026년 10월 19일 월요일\"", html, StringComparison.Ordinal);
+            Assert.Contains("aria-current=\"date\"", html, StringComparison.Ordinal);
             Assert.Equal(tabStopCount, Regex.Matches(html, "tabindex=\"0\"").Count);
             Assert.Contains("data-picker-date=\"2026-10-19\"", html, StringComparison.Ordinal);
 
