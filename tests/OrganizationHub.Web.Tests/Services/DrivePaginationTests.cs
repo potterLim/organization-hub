@@ -22,9 +22,15 @@ public sealed class DrivePaginationTests
     private sealed class Transport : HttpMessageHandler, IGoogleApiCredentialFactory, IConfigurableHttpClientInitializer
     {
         public List<string> Pages { get; } = new List<string>();
-        public bool ShouldFailSecond { get; set; }
+        public bool ShouldFailSecond
+        {
+            get; set;
+        }
         public Task<IConfigurableHttpClientInitializer> CreateHttpClientInitializerAsync(string[] scopes, CancellationToken cancellationToken) => Task.FromResult<IConfigurableHttpClientInitializer>(this);
-        public void Initialize(ConfigurableHttpClient client) { client.MessageHandler.InnerHandler = this; }
+        public void Initialize(ConfigurableHttpClient client)
+        {
+            client.MessageHandler.InnerHandler = this;
+        }
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Microsoft.Extensions.Primitives.StringValues token;

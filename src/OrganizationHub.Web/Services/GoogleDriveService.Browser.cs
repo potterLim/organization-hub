@@ -60,33 +60,10 @@ public sealed partial class GoogleDriveService
     {
         string requiredFolderId = folderId.GetRequiredValue();
         string requiredKeyword = keyword.GetOptionalValue();
-        DriveService driveService = await createDriveServiceAsync(cancellationToken);
-        FilesResource.ListRequest request = driveService.Files.List();
-        request.Q = "'" + escapeDriveQueryValue(requiredFolderId) + "' in parents and trashed = false and name contains '" + escapeDriveQueryValue(requiredKeyword) + "'";
-        request.Fields = "files(id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size)";
-        request.OrderBy = "modifiedTime desc";
-        request.SupportsAllDrives = true;
-        request.IncludeItemsFromAllDrives = true;
-        DriveFileList fileList = await request.ExecuteAsync(cancellationToken);
-        return createDriveFileItems(fileList, string.Empty);
+        string query = "'" + escapeDriveQueryValue(requiredFolderId) + "' in parents and trashed = false and name contains '" + escapeDriveQueryValue(requiredKeyword) + "'";
+        return await listFolderPagesAsync(query, cancellationToken);
     }
 
-    private async Task<IReadOnlyList<DriveFileItem>> listFilesFromDriveAsync(
-        DriveFolderId folderId,
-        CancellationToken cancellationToken
-    )
-    {
-        string requiredFolderId = folderId.GetRequiredValue();
-        DriveService driveService = await createDriveServiceAsync(cancellationToken);
-        FilesResource.ListRequest request = driveService.Files.List();
-        request.Q = "'" + escapeDriveQueryValue(requiredFolderId) + "' in parents and trashed = false";
-        request.Fields = "files(id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size)";
-        request.OrderBy = "modifiedTime desc";
-        request.SupportsAllDrives = true;
-        request.IncludeItemsFromAllDrives = true;
-        DriveFileList fileList = await request.ExecuteAsync(cancellationToken);
-        return createDriveFileItems(fileList, string.Empty);
-    }
 
     public async Task<DriveFileMetadata?> GetFileOrNullAsync(DriveItemId fileId, CancellationToken cancellationToken)
     {
@@ -172,4 +149,33 @@ public sealed partial class GoogleDriveService
         setAncestorFolderIdsCache(cacheKey, ancestorFolderIds, ANCESTOR_CACHE_DURATION);
         return ancestorFolderIds;
     }
+    private Task<IReadOnlyList<DriveFileItem>> listFilesFromDriveAsync(DriveFolderId folderId, CancellationToken cancellationToken)
+    {
+        string query = "'" + escapeDriveQueryValue(folderId.GetRequiredValue()) + "' in parents and trashed = false";
+        return listFolderPagesAsync(query, cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<DriveFileItem>> listFolderPagesAsync(string query, CancellationToken cancellationToken)
+    {
+        using (DriveService driveService = await createDriveServiceAsync(cancellationToken))
+        {
+            FilesResource.ListRequest request = driveService.Files.List();
+            request.Q = query;
+            request.Fields = "nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size)";
+            request.OrderBy = "modifiedTime desc";
+            request.SupportsAllDrives = true;
+            request.IncludeItemsFromAllDrives = true;
+            List<DriveFileItem> items = new List<DriveFileItem>();
+            do
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                DriveFileList page = await request.ExecuteAsync(cancellationToken);
+                items.AddRange(createDriveFileItems(page, string.Empty));
+                request.PageToken = page.NextPageToken;
+            }
+            while (string.IsNullOrEmpty(request.PageToken) == false);
+            return items;
+        }
+    }
+
 }
