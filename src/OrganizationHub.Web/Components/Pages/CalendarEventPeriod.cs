@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Components.Pages;
@@ -35,6 +36,14 @@ internal readonly record struct CalendarEventPeriod
     {
         DateTime endLocal = IsAllDay && EndExclusiveLocal > StartLocal ? EndExclusiveLocal.AddDays(-1) : EndExclusiveLocal;
         return CalendarEditorSchedule.CreateNormalized(StartLocal, endLocal);
+    }
+
+    internal string formatAllDayText()
+    {
+        CalendarEditorSchedule schedule = createEditorSchedule();
+        string start = schedule.StartLocal.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        string end = schedule.EndLocal.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return start == end ? start + " 종일" : start + " - " + end + " 종일";
     }
 
     internal bool overlaps(DateTime rangeStart, DateTime rangeEndExclusive)

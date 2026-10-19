@@ -111,7 +111,7 @@ public partial class Calendar
 
         if (calendarEvent.IsAllDay)
         {
-            return createClientDateTime(calendarEvent.Start.Value).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 종일";
+            return CalendarEventPeriod.createOrNull(calendarEvent, mClientTimeZoneInfo)!.Value.formatAllDayText();
         }
 
         string startText = createClientDateTime(calendarEvent.Start.Value).ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);

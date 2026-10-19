@@ -167,7 +167,7 @@
 
         if (calendarEvent.IsAllDay)
         {
-            return getClientEventStart(calendarEvent).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 종일";
+            return CalendarEventPeriod.createOrNull(calendarEvent, ClientTimeZoneInfo)!.Value.formatAllDayText();
         }
 
         string startText = getClientEventStart(calendarEvent).ToString("MM-dd HH:mm", CultureInfo.InvariantCulture);
