@@ -115,6 +115,16 @@ internal sealed class TeamManagementService : ITeamManagementService
                 return ServiceResult.Fail("정렬할 팀을 찾을 수 없습니다.");
             }
 
+            foreach (Team item in teams)
+            {
+                int expectedRevision;
+                if (request.ExpectedRevisions.TryGetValue(item.Id, out expectedRevision) == false || item.Revision != expectedRevision)
+                {
+                    return AdministrativeSaveUtility.CreateConflictResult();
+                }
+                dbContext.Entry(item).Property(value => value.Revision).IsModified = true;
+            }
+
             Dictionary<int, Team> teamsById = teams.ToDictionary(team => team.Id);
             int sortOrder = SORT_ORDER_STEP;
             foreach (OrganizationTeamId teamId in request.OrderedTeamIds)

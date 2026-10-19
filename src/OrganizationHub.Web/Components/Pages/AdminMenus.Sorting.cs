@@ -107,7 +107,7 @@ public partial class AdminMenus
         }
 
         IReadOnlyList<NavigationMenuSectionId> orderedSectionIds = reorderedSections.Select(section => NavigationMenuSectionId.CreateExisting(section.Id)).ToList();
-        ServiceResult orderResult = await NavigationMenuService.UpdateMenuSectionOrderAsync(new NavigationMenuSectionOrderUpdateRequest(orderedSectionIds), CancellationToken.None);
+        ServiceResult orderResult = await NavigationMenuService.UpdateMenuSectionOrderAsync(new NavigationMenuSectionOrderUpdateRequest(orderedSectionIds, mSections.ToDictionary(section => section.Id, section => section.Revision)), CancellationToken.None);
         showOperationResult(orderResult, "섹션 순서가 저장되었습니다.");
         await loadDataAsync();
         restoreSelectedMenu();
@@ -130,7 +130,7 @@ public partial class AdminMenus
         }
 
         IReadOnlyList<NavigationMenuItemId> orderedMenuItemIds = reorderedMenuItems.Select(menuItem => NavigationMenuItemId.CreateExisting(menuItem.Id)).ToList();
-        ServiceResult orderResult = await NavigationMenuService.UpdateMenuItemOrderAsync(new NavigationMenuItemOrderUpdateRequest(orderedMenuItemIds), CancellationToken.None);
+        ServiceResult orderResult = await NavigationMenuService.UpdateMenuItemOrderAsync(new NavigationMenuItemOrderUpdateRequest(orderedMenuItemIds, mMenuItems.ToDictionary(item => item.Id, item => item.Revision)), CancellationToken.None);
         showOperationResult(orderResult, "메뉴 순서가 저장되었습니다.");
         await loadDataAsync();
         restoreSelectedMenu();

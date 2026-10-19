@@ -91,7 +91,7 @@ public partial class AdminPositions
 
         OrganizationTeamId teamId = OrganizationTeamId.CreateExisting(reorderedPositions[0].TeamId);
         IReadOnlyList<OrganizationPositionId> orderedPositionIds = reorderedPositions.Select(position => OrganizationPositionId.CreateExisting(position.Id)).ToList();
-        OrganizationPositionOrderUpdateRequest request = new OrganizationPositionOrderUpdateRequest(teamId, orderedPositionIds);
+        OrganizationPositionOrderUpdateRequest request = new OrganizationPositionOrderUpdateRequest(teamId, orderedPositionIds, mPositions.ToDictionary(position => position.Id, position => position.Revision));
         ServiceResult orderResult = await PositionManagementService.UpdatePositionOrderAsync(request, CancellationToken.None);
         showOperationResult(orderResult, "직책 순서가 저장되었습니다.");
 

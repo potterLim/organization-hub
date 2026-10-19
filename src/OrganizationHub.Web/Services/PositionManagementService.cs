@@ -140,6 +140,16 @@ internal sealed class PositionManagementService : IPositionManagementService
                 return ServiceResult.Fail("정렬할 직책을 찾을 수 없습니다.");
             }
 
+            foreach (OrganizationPosition item in positions)
+            {
+                int expectedRevision;
+                if (request.ExpectedRevisions.TryGetValue(item.Id, out expectedRevision) == false || item.Revision != expectedRevision)
+                {
+                    return AdministrativeSaveUtility.CreateConflictResult();
+                }
+                dbContext.Entry(item).Property(value => value.Revision).IsModified = true;
+            }
+
             Dictionary<int, OrganizationPosition> positionsById = positions.ToDictionary(position => position.Id);
             int sortOrder = SORT_ORDER_STEP;
             foreach (OrganizationPositionId positionId in request.OrderedPositionIds)

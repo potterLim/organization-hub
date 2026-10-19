@@ -11,10 +11,13 @@ internal sealed class NavigationMenuItemOrderUpdateRequest
         get;
     }
 
-    public NavigationMenuItemOrderUpdateRequest(IReadOnlyList<NavigationMenuItemId> orderedMenuItemIds)
+    public IReadOnlyDictionary<int, int> ExpectedRevisions { get; }
+
+    public NavigationMenuItemOrderUpdateRequest(IReadOnlyList<NavigationMenuItemId> orderedMenuItemIds, IReadOnlyDictionary<int, int>? expectedRevisionsOrNull = null)
     {
         ArgumentNullException.ThrowIfNull(orderedMenuItemIds);
 
+        ExpectedRevisions = expectedRevisionsOrNull == null ? new Dictionary<int, int>() : new Dictionary<int, int>(expectedRevisionsOrNull);
         OrderedMenuItemIds = orderedMenuItemIds;
     }
 }

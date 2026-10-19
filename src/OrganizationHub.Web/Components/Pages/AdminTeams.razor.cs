@@ -163,7 +163,7 @@ public partial class AdminTeams
         }
 
         IReadOnlyList<OrganizationTeamId> orderedTeamIds = reorderedTeams.Select(team => OrganizationTeamId.CreateExisting(team.Id)).ToList();
-        ServiceResult orderResult = await TeamManagementService.UpdateTeamOrderAsync(new OrganizationTeamOrderUpdateRequest(orderedTeamIds), CancellationToken.None);
+        ServiceResult orderResult = await TeamManagementService.UpdateTeamOrderAsync(new OrganizationTeamOrderUpdateRequest(orderedTeamIds, mTeams.ToDictionary(team => team.Id, team => team.Revision)), CancellationToken.None);
         showOperationResult(orderResult, "팀 순서가 저장되었습니다.");
         await loadDataAsync();
         await InvokeAsync(StateHasChanged);

@@ -109,6 +109,16 @@ internal sealed partial class NavigationMenuService
                 return ServiceResult.Fail("정렬할 메뉴 섹션을 찾을 수 없습니다.");
             }
 
+            foreach (NavigationMenuSection item in sections)
+            {
+                int expectedRevision;
+                if (request.ExpectedRevisions.TryGetValue(item.Id, out expectedRevision) == false || item.Revision != expectedRevision)
+                {
+                    return AdministrativeSaveUtility.CreateConflictResult();
+                }
+                dbContext.Entry(item).Property(value => value.Revision).IsModified = true;
+            }
+
             Dictionary<int, NavigationMenuSection> sectionsById = sections.ToDictionary(section => section.Id);
             int sortOrder = SORT_ORDER_STEP;
             foreach (NavigationMenuSectionId sectionId in request.OrderedSectionIds)
@@ -211,6 +221,16 @@ internal sealed partial class NavigationMenuService
             if (menuItems.Count != orderedMenuItemIdValues.Count)
             {
                 return ServiceResult.Fail("정렬할 메뉴를 찾을 수 없습니다.");
+            }
+
+            foreach (NavigationMenuItem item in menuItems)
+            {
+                int expectedRevision;
+                if (request.ExpectedRevisions.TryGetValue(item.Id, out expectedRevision) == false || item.Revision != expectedRevision)
+                {
+                    return AdministrativeSaveUtility.CreateConflictResult();
+                }
+                dbContext.Entry(item).Property(value => value.Revision).IsModified = true;
             }
 
             Dictionary<int, NavigationMenuItem> menuItemsById = menuItems.ToDictionary(menuItem => menuItem.Id);
