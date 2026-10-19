@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -24,10 +25,24 @@ public sealed partial class ApprovalService
                         step.StepNumber == request.CurrentStepNumber &&
                         step.ApproverUserId == currentUserId &&
                         (step.Status == EApprovalStepStatus.Pending || request.Status == EApprovalRequestStatus.Publishing)))
-                .OrderBy(request => request.RequestedAt)
+                .OrderBy(request => request.Status == EApprovalRequestStatus.Publishing)
+                .ThenBy(request => request.RequestedAt)
                 .ToListAsync(cancellationToken);
             Dictionary<int, UserAccount> actorUsersById = await loadApprovalActorUsersByIdAsync(dbContext, requests, cancellationToken);
-            return createApprovalRequestItems(requests, actorUsersById);
+            IReadOnlyList<ApprovalRequestItem> items = createApprovalRequestItems(requests, actorUsersById);
+            int[] publishingIds = items.Where(item => item.Status == EApprovalRequestStatus.Publishing).Select(item => item.Id).ToArray();
+            Dictionary<int, ApprovalPublication> publicationsByRequestId = await dbContext.ApprovalPublications.AsNoTracking()
+                .Where(publication => publishingIds.Contains(publication.ApprovalRequestId))
+                .ToDictionaryAsync(publication => publication.ApprovalRequestId, cancellationToken);
+            DateTime now = DateTime.UtcNow;
+            foreach (ApprovalRequestItem item in items.Where(item => publicationsByRequestId.ContainsKey(item.Id)))
+            {
+                ApprovalPublication publication = publicationsByRequestId[item.Id];
+                item.IsPublicationProcessing = publication.LeaseExpiresAt > now;
+                item.HasPublicationFailure = string.IsNullOrWhiteSpace(publication.LastError) == false;
+            }
+
+            return items;
         }
     }
 

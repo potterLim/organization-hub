@@ -29,10 +29,10 @@
 <MudGrid Spacing="5" Class="hub-dashboard-grid">
     @if (mAccessOrNull != null && (mAccessOrNull.CanOpenInbox || mAccessOrNull.CanOpenHistory))
     {
-        <MudItem xs="12" lg="6">
+        <MudItem xs="12" lg="6" Class="@(mPendingApprovals.Count == 0 ? "hub-dashboard-empty-approvals" : string.Empty)">
             <MudPaper Class="hub-card hub-dashboard-section-card pa-4">
                 <div class="hub-dashboard-card-head">
-                    <MudText Typo="Typo.h6">@(mAccessOrNull.CanOpenInbox ? "내 결재 대기" : "내 결재 요청")</MudText>
+                    <MudText Typo="Typo.h6">@(mAccessOrNull.CanOpenInbox ? "내 결재 · 저장 상태" : "내 결재 요청")</MudText>
                     <MudButton Href="@(mAccessOrNull.CanOpenInbox ? "/approvals/inbox" : "/approvals/history?view=requested")" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
                 </div>
                 <div class="hub-dashboard-card-body">

@@ -54,6 +54,8 @@ else
                         <span>@getNextStepSummaryText(approvalRequest)</span>
                     </div>
                 }
+                @if (approvalRequest.Status != EApprovalRequestStatus.Publishing)
+                {
                 <MudTextField Value="@getCommentValue(ApprovalRequestId.CreateExisting(approvalRequest.Id))"
                               ValueChanged="@((string comment) => setCommentValue(ApprovalRequestId.CreateExisting(approvalRequest.Id), comment))"
                               Label="코멘트"
@@ -62,6 +64,7 @@ else
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Class="hub-approval-comment-field" />
+                }
                 @if (hasApprovedFileConflict(approvalRequest))
                 {
                     <div class="hub-file-conflict-panel hub-approval-conflict-panel">
@@ -89,8 +92,16 @@ else
                 <MudStack Row="true" Spacing="2" Class="hub-form-actions mt-3">
                     @if (approvalRequest.Status == EApprovalRequestStatus.Publishing)
                     {
-                        <MudText Typo="Typo.body2">승인본을 저장하고 있습니다. 저장 완료 후 목록을 다시 확인해 주세요.</MudText>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => approveRequestAsync(approvalRequest))">저장 다시 시도</MudButton>
+                        @if (approvalRequest.IsPublicationProcessing)
+                        {
+                            <MudText Typo="Typo.body2">승인본을 저장하고 있습니다. 잠시 후 저장 상태를 다시 확인해 주세요.</MudText>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="loadDataAsync">저장 상태 새로고침</MudButton>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2">@(approvalRequest.HasPublicationFailure ? "승인본 저장이 지연되었습니다. 자동으로 재시도되며 지금 다시 시도할 수도 있습니다." : "결재가 완료되어 승인본 저장을 기다리고 있습니다.")</MudText>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => approveRequestAsync(approvalRequest))">저장 다시 시도</MudButton>
+                        }
                     }
                     else if (hasApprovedFileConflict(approvalRequest) == false)
                     {

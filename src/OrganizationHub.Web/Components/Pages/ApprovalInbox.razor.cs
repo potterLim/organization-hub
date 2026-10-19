@@ -36,7 +36,7 @@ public partial class ApprovalInbox
         }
 
         IReadOnlyList<ApprovalRequestItem> pendingApprovals = await ApprovalService.GetPendingApprovalsAsync(CurrentUserSessionOrNull, CancellationToken.None);
-        mPendingApprovals = pendingApprovals.ToList();
+        mPendingApprovals = pendingApprovals.OrderBy(request => request.Status == OrganizationHub.Web.Domain.EApprovalRequestStatus.Publishing).ToList();
         foreach (ApprovalRequestItem approvalRequest in mPendingApprovals)
         {
             ensureLocalStateForApprovalRequest(approvalRequest);

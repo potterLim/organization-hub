@@ -68,7 +68,7 @@ public partial class Dashboard
             if (mAccessOrNull != null && mAccessOrNull.CanOpenInbox)
             {
                 IReadOnlyList<ApprovalRequestItem> pendingApprovals = await ApprovalService.GetPendingApprovalsAsync(CurrentUserSessionOrNull, CancellationToken.None);
-                mPendingApprovals = pendingApprovals.Take(DASHBOARD_PENDING_APPROVAL_MAXIMUM_COUNT).ToList();
+                mPendingApprovals = pendingApprovals.OrderBy(request => request.Status == EApprovalRequestStatus.Publishing).ThenBy(request => request.RequestedAt).Take(DASHBOARD_PENDING_APPROVAL_MAXIMUM_COUNT).ToList();
             }
             else
             {

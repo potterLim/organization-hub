@@ -31,6 +31,9 @@ public sealed partial class ApprovalServiceTests
             Assert.NotNull(item.LastAttemptAt);
             Assert.False(item.IsProcessing);
             Assert.Contains("연결 상태", item.LastError);
+            ApprovalRequestItem inboxItem = Assert.Single(await fixture.CreateService().GetPendingApprovalsAsync(fixture.Manager, CancellationToken.None));
+            Assert.True(inboxItem.HasPublicationFailure);
+            Assert.False(inboxItem.IsPublicationProcessing);
             string targetId;
             using (OrganizationHubDbContext db = fixture.DbContextFactory.CreateDbContext())
             {
@@ -73,6 +76,8 @@ public sealed partial class ApprovalServiceTests
 
             ApprovalPublicationItem item = Assert.Single((await fixture.CreateService().GetPendingPublicationsAsync(fixture.Manager, 1, CancellationToken.None)).Items);
             Assert.True(item.IsProcessing);
+            ApprovalRequestItem inboxItem = Assert.Single(await fixture.CreateService().GetPendingApprovalsAsync(fixture.Manager, CancellationToken.None));
+            Assert.True(inboxItem.IsPublicationProcessing);
             Assert.False((await fixture.CreateService().RetryPublicationAsAdministratorAsync(fixture.Manager, requestId, CancellationToken.None)).IsSuccess);
             Assert.Equal(0, fixture.DriveService.PublicationWriteCount);
             using (OrganizationHubDbContext db = fixture.DbContextFactory.CreateDbContext())

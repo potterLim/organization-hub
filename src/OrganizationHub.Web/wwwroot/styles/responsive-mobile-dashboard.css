@@ -35,7 +35,8 @@
     }
 
     .hub-dashboard-card-body {
-        max-height: 300px;
+        max-height: none;
+        overflow: visible;
     }
 
     .hub-setup-steps {
@@ -163,4 +164,8 @@
         padding: 6px;
         width: 36px;
     }
+}
+
+@media (max-width: 720px) {
+    .hub-dashboard-empty-approvals { order: 4; }
 }
