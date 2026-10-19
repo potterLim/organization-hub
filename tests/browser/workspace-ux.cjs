@@ -56,9 +56,11 @@ async function check(page, width, name, action) {
                         await expect(title).toHaveValue('날짜를 둘러보는 동안 유지할 협업 일정');
                         await page.getByRole('button', { name: '일정 추가', exact: true }).click();
                         await expect(title).toHaveValue('날짜를 둘러보는 동안 유지할 협업 일정');
+                        await title.scrollIntoViewIfNeeded();
                         await page.screenshot({ path: path.join(output, `${width}-calendar-draft-retained.png`) });
                         await page.getByRole('button', { name: '취소', exact: true }).click();
                         await expect(page.getByRole('button', { name: '계속 작성', exact: true })).toBeVisible();
+                        await page.getByRole('button', { name: '계속 작성', exact: true }).scrollIntoViewIfNeeded();
                         await page.screenshot({ path: path.join(output, `${width}-calendar-discard-confirmation.png`) });
                         await page.getByRole('button', { name: '계속 작성', exact: true }).click();
                         await expect(title).toHaveValue('날짜를 둘러보는 동안 유지할 협업 일정');
