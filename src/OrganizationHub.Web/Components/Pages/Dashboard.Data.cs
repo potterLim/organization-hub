@@ -161,15 +161,15 @@ public partial class Dashboard
         await InvokeAsync(StateHasChanged);
         try
         {
-            IReadOnlyList<DriveFileItem>? recentMaterialsOrNull = await tryLoadRecentMaterialsWithTimeoutAsync(currentUserSessionOrNull);
-            if (recentMaterialsOrNull == null)
+            DashboardMaterialsLoadResult result = await loadRecentMaterialsWithTimeoutAsync(currentUserSessionOrNull);
+            if (result.IsTimedOut)
             {
                 mRecentMaterials = new List<DriveFileItem>();
                 mRecentMaterialsErrorMessage = "최근 팀 자료 확인이 지연되고 있습니다. 전체 보기에서 다시 확인해 주세요.";
             }
             else
             {
-                mRecentMaterials = recentMaterialsOrNull.ToList();
+                mRecentMaterials = result.Files.ToList();
             }
         }
         catch (OperationCanceledException)
@@ -189,7 +189,7 @@ public partial class Dashboard
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task<IReadOnlyList<DriveFileItem>?> tryLoadRecentMaterialsWithTimeoutAsync(UserSession currentUserSession)
+    private async Task<DashboardMaterialsLoadResult> loadRecentMaterialsWithTimeoutAsync(UserSession currentUserSession)
     {
         CancellationTokenSource timeoutCancellationTokenSource = new CancellationTokenSource();
         Task<IReadOnlyList<DriveFileItem>> recentMaterialsTask = DriveBrowserService.GetRecentUploadedFilesAsync(
@@ -206,12 +206,12 @@ public partial class Dashboard
                 recentMaterialsTask,
                 timeoutCancellationTokenSource,
                 "Dashboard recent material load failed after timeout fallback.");
-            return null;
+            return new DashboardMaterialsLoadResult { IsTimedOut = true, Files = Array.Empty<DriveFileItem>() };
         }
 
         try
         {
-            return await recentMaterialsTask;
+            return new DashboardMaterialsLoadResult { IsTimedOut = false, Files = await recentMaterialsTask };
         }
         finally
         {
