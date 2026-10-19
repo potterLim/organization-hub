@@ -58,9 +58,11 @@ public sealed partial class GoogleTasksTodoService
         }
 
         TodoTaskListReference taskList = await getAllowedTaskListAsync(userSession, taskListId, ETodoTaskListAccessMode.Readable, cancellationToken);
-        GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken);
-        IReadOnlyList<TodoTaskItem> tasks = await getTasksAsync(tasksService, taskList.TaskListId, taskList.DisplayName, cancellationToken);
-        return await applyItemPermissionsAsync(userSession, tasks, true, cancellationToken);
+        using (GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken))
+        {
+            IReadOnlyList<TodoTaskItem> tasks = await getTasksAsync(tasksService, taskList.TaskListId, taskList.DisplayName, cancellationToken);
+            return await applyItemPermissionsAsync(userSession, tasks, true, cancellationToken);
+        }
     }
 
     private async Task<IReadOnlyList<TodoTaskItem>> getAggregateTasksAsync(UserSession userSession, CancellationToken cancellationToken)
@@ -71,22 +73,24 @@ public sealed partial class GoogleTasksTodoService
             return new List<TodoTaskItem>();
         }
 
-        GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken);
-        List<Task<IReadOnlyList<TodoTaskItem>>> fetchTasks = new List<Task<IReadOnlyList<TodoTaskItem>>>();
-        foreach (TodoTaskListReference taskList in taskLists)
+        using (GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken))
         {
-            fetchTasks.Add(getTasksAsync(tasksService, taskList.TaskListId, taskList.DisplayName, cancellationToken));
-        }
+            List<Task<IReadOnlyList<TodoTaskItem>>> fetchTasks = new List<Task<IReadOnlyList<TodoTaskItem>>>();
+            foreach (TodoTaskListReference taskList in taskLists)
+            {
+                fetchTasks.Add(getTasksAsync(tasksService, taskList.TaskListId, taskList.DisplayName, cancellationToken));
+            }
 
-        IReadOnlyList<TodoTaskItem>[] taskGroups = await Task.WhenAll(fetchTasks);
-        List<TodoTaskItem> mergedTasks = new List<TodoTaskItem>();
-        foreach (IReadOnlyList<TodoTaskItem> taskGroup in taskGroups)
-        {
-            mergedTasks.AddRange(taskGroup);
-        }
+            IReadOnlyList<TodoTaskItem>[] taskGroups = await Task.WhenAll(fetchTasks);
+            List<TodoTaskItem> mergedTasks = new List<TodoTaskItem>();
+            foreach (IReadOnlyList<TodoTaskItem> taskGroup in taskGroups)
+            {
+                mergedTasks.AddRange(taskGroup);
+            }
 
-        List<TodoTaskItem> orderedTasks = mergedTasks.OrderBy(task => task.IsCompleted).ThenBy(task => task.TaskListDisplayName).ThenBy(task => task.Position).ThenBy(task => task.Title).ToList();
-        return await applyItemPermissionsAsync(userSession, orderedTasks, true, cancellationToken);
+            List<TodoTaskItem> orderedTasks = mergedTasks.OrderBy(task => task.IsCompleted).ThenBy(task => task.TaskListDisplayName).ThenBy(task => task.Position).ThenBy(task => task.Title).ToList();
+            return await applyItemPermissionsAsync(userSession, orderedTasks, true, cancellationToken);
+        }
     }
 
     private async Task<IReadOnlyList<TodoTaskItem>> getTasksAsync(

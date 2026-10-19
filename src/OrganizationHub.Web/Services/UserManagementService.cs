@@ -167,6 +167,16 @@ public sealed partial class UserManagementService : IUserManagementService
         return await setUserActivationStateAsync(userSession, userId, EActivationState.Inactive, cancellationToken);
     }
 
+    public async Task<ServiceResult> ResetPasswordAsync(
+        UserSession userSession,
+        UserAccountId userId,
+        PlainPassword newPassword,
+        CancellationToken cancellationToken
+    )
+    {
+        return await resetPasswordAsync(userSession, userId, newPassword, cancellationToken);
+    }
+
     private async Task<ServiceResult> setUserActivationStateAsync(
         UserSession userSession,
         UserAccountId userAccountId,
@@ -193,16 +203,6 @@ public sealed partial class UserManagementService : IUserManagementService
             userAccountOrNull.IsActive = activationState == EActivationState.Active;
             return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
-    }
-
-    public async Task<ServiceResult> ResetPasswordAsync(
-        UserSession userSession,
-        UserAccountId userId,
-        PlainPassword newPassword,
-        CancellationToken cancellationToken
-    )
-    {
-        return await resetPasswordAsync(userSession, userId, newPassword, cancellationToken);
     }
 
     private async Task<ServiceResult> resetPasswordAsync(

@@ -20,19 +20,21 @@ public sealed partial class GoogleTasksTodoService
         string requiredTaskListId = taskListId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createTodoChangeKeys(taskListId)))
         {
-            GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken);
-            DateTime? dueAtUtcOrNull = formModel.DueAtUtcValue.GetOptionalValueOrNull();
-            GoogleTask googleTask = new GoogleTask();
-            googleTask.Title = formModel.Title.Trim();
-            applyTaskDueToGoogleTask(googleTask, dueAtUtcOrNull);
-            Google.Apis.Tasks.v1.TasksResource.InsertRequest request = tasksService.Tasks.Insert(googleTask, requiredTaskListId);
-            request.Fields = TASK_FIELDS;
-            GoogleTask createdTask = await request.ExecuteAsync(cancellationToken);
-            TodoTaskItem createdItem = createTaskItem(taskListId, createdTask);
-            TodoTaskMetadata createdMetadata = await createMetadataAsync(userSession, taskListId, TodoTaskId.CreateOptional(createdItem.Id), dueAtUtcOrNull, cancellationToken);
-            applyMetadata(createdItem, createdMetadata);
-            await applyItemPermissionsAsync(userSession, new TodoTaskItem[] { createdItem }, false, cancellationToken);
-            return createdItem;
+            using (GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken))
+            {
+                DateTime? dueAtUtcOrNull = formModel.DueAtUtcValue.GetOptionalValueOrNull();
+                GoogleTask googleTask = new GoogleTask();
+                googleTask.Title = formModel.Title.Trim();
+                applyTaskDueToGoogleTask(googleTask, dueAtUtcOrNull);
+                Google.Apis.Tasks.v1.TasksResource.InsertRequest request = tasksService.Tasks.Insert(googleTask, requiredTaskListId);
+                request.Fields = TASK_FIELDS;
+                GoogleTask createdTask = await request.ExecuteAsync(cancellationToken);
+                TodoTaskItem createdItem = createTaskItem(taskListId, createdTask);
+                TodoTaskMetadata createdMetadata = await createMetadataAsync(userSession, taskListId, TodoTaskId.CreateOptional(createdItem.Id), dueAtUtcOrNull, cancellationToken);
+                applyMetadata(createdItem, createdMetadata);
+                await applyItemPermissionsAsync(userSession, new TodoTaskItem[] { createdItem }, false, cancellationToken);
+                return createdItem;
+            }
         }
     }
 
@@ -47,19 +49,21 @@ public sealed partial class GoogleTasksTodoService
         string requiredTaskId = taskId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createTodoChangeKeys(taskListId)))
         {
-            GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken);
-            DateTime? dueAtUtcOrNull = formModel.DueAtUtcValue.GetOptionalValueOrNull();
-            GoogleTask googleTask = new GoogleTask();
-            googleTask.Title = formModel.Title.Trim();
-            applyTaskDueToGoogleTask(googleTask, dueAtUtcOrNull);
-            Google.Apis.Tasks.v1.TasksResource.PatchRequest request = tasksService.Tasks.Patch(googleTask, requiredTaskListId, requiredTaskId);
-            request.Fields = TASK_FIELDS;
-            GoogleTask updatedTask = await request.ExecuteAsync(cancellationToken);
-            TodoTaskItem updatedItem = createTaskItem(taskListId, updatedTask);
-            await updateMetadataDueAtAsync(taskListId, taskId, dueAtUtcOrNull, cancellationToken);
-            await applyMetadataAsync(updatedItem, cancellationToken);
-            await applyItemPermissionsAsync(userSession, new TodoTaskItem[] { updatedItem }, false, cancellationToken);
-            return updatedItem;
+            using (GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken))
+            {
+                DateTime? dueAtUtcOrNull = formModel.DueAtUtcValue.GetOptionalValueOrNull();
+                GoogleTask googleTask = new GoogleTask();
+                googleTask.Title = formModel.Title.Trim();
+                applyTaskDueToGoogleTask(googleTask, dueAtUtcOrNull);
+                Google.Apis.Tasks.v1.TasksResource.PatchRequest request = tasksService.Tasks.Patch(googleTask, requiredTaskListId, requiredTaskId);
+                request.Fields = TASK_FIELDS;
+                GoogleTask updatedTask = await request.ExecuteAsync(cancellationToken);
+                TodoTaskItem updatedItem = createTaskItem(taskListId, updatedTask);
+                await updateMetadataDueAtAsync(taskListId, taskId, dueAtUtcOrNull, cancellationToken);
+                await applyMetadataAsync(updatedItem, cancellationToken);
+                await applyItemPermissionsAsync(userSession, new TodoTaskItem[] { updatedItem }, false, cancellationToken);
+                return updatedItem;
+            }
         }
     }
 
@@ -83,37 +87,6 @@ public sealed partial class GoogleTasksTodoService
         return await setTaskCompletionStateAsync(userSession, taskListId, taskId, ETodoTaskCompletionState.NeedsAction, cancellationToken);
     }
 
-    private async Task<TodoTaskItem> setTaskCompletionStateAsync(
-        UserSession userSession,
-        TodoTaskListId taskListId,
-        TodoTaskId taskId,
-        ETodoTaskCompletionState completionState,
-        CancellationToken cancellationToken)
-    {
-        validateTaskId(taskId);
-        await ensureCanModifyTaskAsync(userSession, taskListId, taskId, EResourceOperation.Update, cancellationToken);
-        string requiredTaskListId = taskListId.GetRequiredValue();
-        string requiredTaskId = taskId.GetRequiredValue();
-        using (mChangeVersionService.BeginChange(createTodoChangeKeys(taskListId)))
-        {
-            GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken);
-            GoogleTask googleTask = new GoogleTask();
-            googleTask.Status = getGoogleTaskStatus(completionState);
-            Google.Apis.Tasks.v1.TasksResource.PatchRequest request = tasksService.Tasks.Patch(googleTask, requiredTaskListId, requiredTaskId);
-            request.Fields = TASK_FIELDS;
-            GoogleTask updatedTask = await request.ExecuteAsync(cancellationToken);
-            TodoTaskItem updatedItem = createTaskItem(taskListId, updatedTask);
-            if (getCompletionState(updatedItem) != completionState)
-            {
-                updatedItem = await getTaskAfterCompletionSettlesAsync(tasksService, taskListId, taskId, completionState, cancellationToken);
-            }
-
-            await applyMetadataAsync(updatedItem, cancellationToken);
-            await applyItemPermissionsAsync(userSession, new TodoTaskItem[] { updatedItem }, false, cancellationToken);
-            return updatedItem;
-        }
-    }
-
     public async Task DeleteTaskAsync(UserSession userSession, TodoTaskListId taskListId, TodoTaskId taskId, CancellationToken cancellationToken)
     {
         validateTaskId(taskId);
@@ -122,10 +95,12 @@ public sealed partial class GoogleTasksTodoService
         string requiredTaskId = taskId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createTodoChangeKeys(taskListId)))
         {
-            GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken);
-            Google.Apis.Tasks.v1.TasksResource.DeleteRequest request = tasksService.Tasks.Delete(requiredTaskListId, requiredTaskId);
-            await request.ExecuteAsync(cancellationToken);
-            await deleteMetadataAsync(taskListId, taskId, cancellationToken);
+            using (GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken))
+            {
+                Google.Apis.Tasks.v1.TasksResource.DeleteRequest request = tasksService.Tasks.Delete(requiredTaskListId, requiredTaskId);
+                await request.ExecuteAsync(cancellationToken);
+                await deleteMetadataAsync(taskListId, taskId, cancellationToken);
+            }
         }
     }
 
@@ -142,18 +117,53 @@ public sealed partial class GoogleTasksTodoService
         string requiredTaskId = taskId.GetRequiredValue();
         using (mChangeVersionService.BeginChange(createTodoChangeKeys(taskListId)))
         {
-            GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken);
-            Google.Apis.Tasks.v1.TasksResource.MoveRequest request = tasksService.Tasks.Move(requiredTaskListId, requiredTaskId);
-            request.Previous = previousTaskId.HasValue ? previousTaskId.GetRequiredValue() : null;
-            request.Fields = TASK_FIELDS;
-            GoogleTask movedTask = await request.ExecuteAsync(cancellationToken);
-            TodoTaskItem movedItem = createTaskItem(taskListId, movedTask);
-            await applyMetadataAsync(movedItem, cancellationToken);
-            await applyItemPermissionsAsync(userSession, new TodoTaskItem[] { movedItem }, false, cancellationToken);
-            return movedItem;
+            using (GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken))
+            {
+                Google.Apis.Tasks.v1.TasksResource.MoveRequest request = tasksService.Tasks.Move(requiredTaskListId, requiredTaskId);
+                request.Previous = previousTaskId.HasValue ? previousTaskId.GetRequiredValue() : null;
+                request.Fields = TASK_FIELDS;
+                GoogleTask movedTask = await request.ExecuteAsync(cancellationToken);
+                TodoTaskItem movedItem = createTaskItem(taskListId, movedTask);
+                await applyMetadataAsync(movedItem, cancellationToken);
+                await applyItemPermissionsAsync(userSession, new TodoTaskItem[] { movedItem }, false, cancellationToken);
+                return movedItem;
+            }
         }
     }
 
+
+    private async Task<TodoTaskItem> setTaskCompletionStateAsync(
+        UserSession userSession,
+        TodoTaskListId taskListId,
+        TodoTaskId taskId,
+        ETodoTaskCompletionState completionState,
+        CancellationToken cancellationToken)
+    {
+        validateTaskId(taskId);
+        await ensureCanModifyTaskAsync(userSession, taskListId, taskId, EResourceOperation.Update, cancellationToken);
+        string requiredTaskListId = taskListId.GetRequiredValue();
+        string requiredTaskId = taskId.GetRequiredValue();
+        using (mChangeVersionService.BeginChange(createTodoChangeKeys(taskListId)))
+        {
+            using (GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken))
+            {
+                GoogleTask googleTask = new GoogleTask();
+                googleTask.Status = getGoogleTaskStatus(completionState);
+                Google.Apis.Tasks.v1.TasksResource.PatchRequest request = tasksService.Tasks.Patch(googleTask, requiredTaskListId, requiredTaskId);
+                request.Fields = TASK_FIELDS;
+                GoogleTask updatedTask = await request.ExecuteAsync(cancellationToken);
+                TodoTaskItem updatedItem = createTaskItem(taskListId, updatedTask);
+                if (getCompletionState(updatedItem) != completionState)
+                {
+                    updatedItem = await getTaskAfterCompletionSettlesAsync(tasksService, taskListId, taskId, completionState, cancellationToken);
+                }
+
+                await applyMetadataAsync(updatedItem, cancellationToken);
+                await applyItemPermissionsAsync(userSession, new TodoTaskItem[] { updatedItem }, false, cancellationToken);
+                return updatedItem;
+            }
+        }
+    }
     private static IReadOnlyList<ChangeVersionKey> createTodoChangeKeys(TodoTaskListId taskListId)
     {
         List<ChangeVersionKey> changeVersionKeys = new List<ChangeVersionKey>();
