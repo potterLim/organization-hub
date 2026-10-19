@@ -4,6 +4,7 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class TodoTaskItem
 {
+    public string ETag { get; set; } = string.Empty;
     public int? CreatedByUserIdOrNull
     {
         get; set;

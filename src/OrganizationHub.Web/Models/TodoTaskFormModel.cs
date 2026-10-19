@@ -5,6 +5,7 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class TodoTaskFormModel
 {
+    public string ETag { get; set; } = string.Empty;
     public string TaskListId { get; set; } = string.Empty;
     public TodoTaskListId TaskListIdValue
     {

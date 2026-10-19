@@ -5,6 +5,7 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class CalendarEventFormModel
 {
+    public string ETag { get; set; } = string.Empty;
     public string Id { get; set; } = string.Empty;
     public CalendarEventId EventIdValue
     {
