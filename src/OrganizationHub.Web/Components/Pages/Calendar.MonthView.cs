@@ -88,6 +88,11 @@ public partial class Calendar
 
     private void selectDay(CalendarDayCell dayCell)
     {
+        if (mIsEditorOpen)
+        {
+            return;
+        }
+
         mSelectedDayOrNull = dayCell.Date.Date;
         mSelectedEventOrNull = null;
         mIsEditorOpen = false;
@@ -96,6 +101,11 @@ public partial class Calendar
 
     private void clearSelectedDay()
     {
+        if (mIsEditorOpen)
+        {
+            return;
+        }
+
         mSelectedDayOrNull = null;
         mSelectedEventOrNull = null;
         mIsEditorOpen = false;

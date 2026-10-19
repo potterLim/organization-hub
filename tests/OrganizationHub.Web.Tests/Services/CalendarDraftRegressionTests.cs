@@ -40,6 +40,22 @@ public sealed class CalendarDraftRegressionTests
         Assert.Equal("original", get<CalendarEventItem>(page, "mSelectedEventOrNull").Id);
     }
 
+    [Fact]
+    public void CancelRequiresExplicitDiscardAndKeepWritingPreservesChanges()
+    {
+        Calendar page = createDraft(false);
+        invoke(page, "requestCloseEditor");
+        assertDraft(page);
+        Assert.True(get<bool>(page, "mIsDiscardConfirmationOpen"));
+        invoke(page, "keepEditorDraft");
+        assertDraft(page);
+        Assert.False(get<bool>(page, "mIsDiscardConfirmationOpen"));
+        invoke(page, "requestCloseEditor");
+        invoke(page, "closeEditor");
+        Assert.False(get<bool>(page, "mIsEditorOpen"));
+        Assert.False(get<bool>(page, "mIsDiscardConfirmationOpen"));
+    }
+
     private static Calendar createDraft(bool isEditing)
     {
         Calendar page = new Calendar();

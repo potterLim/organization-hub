@@ -9,6 +9,11 @@ public partial class Calendar
 {
     private void openCreateEditor()
     {
+        if (mIsEditorOpen)
+        {
+            return;
+        }
+
         DateTime clientNow = getClientNow();
         DateTime nextStart = clientNow.Date.AddHours(clientNow.Hour + 1);
         if (nextStart <= clientNow)
@@ -29,11 +34,12 @@ public partial class Calendar
         mEditorMessage = string.Empty;
         mHasEditConflict = false;
         mEditorCalendarId = mCreatableCalendars.Count > 0 ? mCreatableCalendars[0].CalendarId.GetRequiredValue() : string.Empty;
+        rememberEditorDraft();
     }
 
     private void openEditEditor(CalendarEventItem calendarEvent)
     {
-        if (calendarEvent.CanEdit == false)
+        if (mIsEditorOpen || calendarEvent.CanEdit == false)
         {
             return;
         }
@@ -54,10 +60,12 @@ public partial class Calendar
         CalendarEventPeriod? periodOrNull = CalendarEventPeriod.createOrNull(calendarEvent, mClientTimeZoneInfo);
         setEditorSchedule(periodOrNull?.createEditorSchedule() ?? CalendarEditorSchedule.CreateNormalized(clientNow, clientNow.AddHours(1)));
         mEditorMessage = string.Empty;
+        rememberEditorDraft();
     }
 
     private void closeEditor()
     {
+        mIsDiscardConfirmationOpen = false;
         mIsEditorOpen = false;
         mOpenEditorDateTimeFieldOrNull = null;
         mEditorMessage = string.Empty;
@@ -81,6 +89,11 @@ public partial class Calendar
 
     private void selectEvent(CalendarEventItem calendarEvent)
     {
+        if (mIsEditorOpen)
+        {
+            return;
+        }
+
         mSelectedEventOrNull = calendarEvent;
         mSelectedDayOrNull = getEventLocalDateOrNull(calendarEvent);
         mIsEditorOpen = false;
@@ -90,6 +103,11 @@ public partial class Calendar
 
     private void clearSelectedEvent()
     {
+        if (mIsEditorOpen)
+        {
+            return;
+        }
+
         mSelectedEventOrNull = null;
         mIsEditorOpen = false;
         mOpenEditorDateTimeFieldOrNull = null;
