@@ -6,6 +6,6 @@ public static class OrganizationHubProduct
 
     public static string FormatPageTitle(string pageName)
     {
-        return NAME;
+        return string.IsNullOrWhiteSpace(pageName) ? NAME : pageName.Trim() + " · " + NAME;
     }
 }
