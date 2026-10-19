@@ -84,12 +84,12 @@ else
                             <div>
                                 <strong>@getApprovedFileConflictTitle(approvalRequest)</strong>
                                 <span>새 파일로 추가할 이름: @getApprovedFileSuggestedFileName(approvalRequest)</span>
+                                @if (getApprovedFileConflictOrNull(approvalRequest)?.CanReplaceExistingFile != true)
+                                {
+                                    <span>같은 이름의 파일이 여러 개여서 교체할 수 없습니다. 새 파일로 추가하거나 자료실에서 기존 파일을 정리해 주세요.</span>
+                                }
                             </div>
                         </div>
-                        @if (getApprovedFileConflictOrNull(approvalRequest)?.CanReplaceExistingFile != true)
-                        {
-                            <span>같은 이름의 파일이 여러 개여서 교체할 수 없습니다. 새 파일로 추가하거나 자료실에서 기존 파일을 정리해 주세요.</span>
-                        }
                         <div class="hub-file-conflict-actions">
                             <MudButton Disabled="@(mProcessingApprovalIds.Contains(approvalRequest.Id) || getApprovedFileConflictOrNull(approvalRequest)?.CanReplaceExistingFile != true)" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="@(() => approveRequestWithConflictResolutionAsync(approvalRequest, EDriveFileNameConflictResolution.ReplaceExistingFile))">기존 파일 교체</MudButton>
                             <MudButton Disabled="@mProcessingApprovalIds.Contains(approvalRequest.Id)" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(() => approveRequestWithConflictResolutionAsync(approvalRequest, EDriveFileNameConflictResolution.AddNewFile))">새 파일로 추가</MudButton>

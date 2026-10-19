@@ -198,12 +198,12 @@
                             <div>
                                 <strong>@getUploadConflictTitle()</strong>
                                 <span>새 파일로 추가할 이름: @getUploadSuggestedFileName()</span>
+                                @if (mUploadConflictOrNull.CanReplaceExistingFile == false)
+                                {
+                                    <span>같은 이름의 파일이 여러 개여서 교체할 수 없습니다. 새 파일로 추가하거나 자료실에서 기존 파일을 정리해 주세요.</span>
+                                }
                             </div>
                         </div>
-                        @if (mUploadConflictOrNull.CanReplaceExistingFile == false)
-                        {
-                            <span>같은 이름의 파일이 여러 개여서 교체할 수 없습니다. 새 파일로 추가하거나 자료실에서 기존 파일을 정리해 주세요.</span>
-                        }
                         <div class="hub-file-conflict-actions">
                             <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Disabled="@(!mUploadConflictOrNull.CanReplaceExistingFile)" OnClick="@(() => uploadFileWithConflictResolutionAsync(EDriveFileNameConflictResolution.ReplaceExistingFile))">기존 파일 교체</MudButton>
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(() => uploadFileWithConflictResolutionAsync(EDriveFileNameConflictResolution.AddNewFile))">새 파일로 추가</MudButton>
