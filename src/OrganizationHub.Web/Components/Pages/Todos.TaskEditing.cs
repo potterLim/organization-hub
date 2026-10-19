@@ -1,11 +1,11 @@
 using System;
-using OrganizationHub.Web.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;
 
@@ -113,9 +113,11 @@ public partial class Todos
     private async Task reloadConflictedTaskAsync()
     {
         string taskId = mEditingTaskId;
+        TodoTaskItem? editingTaskOrNull = mTasks.FirstOrDefault(item => item.Id == taskId);
+        string taskListId = editingTaskOrNull == null ? string.Empty : editingTaskOrNull.TaskListId;
         cancelEdit();
         await loadTasksAsync();
-        TodoTaskItem? latestOrNull = mTasks.FirstOrDefault(item => item.Id == taskId);
+        TodoTaskItem? latestOrNull = mTasks.FirstOrDefault(item => item.Id == taskId && item.TaskListId == taskListId);
         if (latestOrNull != null)
         {
             beginEdit(latestOrNull);

@@ -138,7 +138,7 @@ public sealed partial class GoogleTasksTodoService
     {
         task.CreatedByDisplayName = metadata.CreatedByDisplayName;
         task.CreatedByUserIdOrNull = metadata.CreatedByUserId > 0 ? metadata.CreatedByUserId : null;
-        task.CreatedAt = metadata.CreatedAt;
+        task.CreatedAt = metadata.CreatedAt == default ? null : metadata.CreatedAt;
         bool hasMatchingVersion = string.IsNullOrEmpty(metadata.GoogleETag) == false && metadata.GoogleETag == task.ETag;
         bool hasMatchingDate = task.DueAt?.Date == metadata.DueAt?.Date;
         if (hasMatchingVersion || hasMatchingDate)

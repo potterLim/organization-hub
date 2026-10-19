@@ -5,9 +5,9 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using OrganizationHub.Web.Configuration;
-using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Data;
 using OrganizationHub.Web.Data.Entities;
+using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 using OrganizationHub.Web.Services;
 using OrganizationHub.Web.Tests.Fakes;
@@ -72,9 +72,18 @@ public sealed class ResourceEditConcurrencyTests
                 }
             }
             await updateAsync("First writer", originalETag);
-            await Assert.ThrowsAnyAsync<Exception>(() => updateAsync("Original", originalETag));
+            await Assert.ThrowsAsync<ResourceEditConflictException>(() => updateAsync("Original", originalETag));
             Assert.Equal("First writer", transport.Title);
             Assert.Equal(1, transport.Writes);
+            if (isCalendar == false)
+            {
+                await todos.RecoverDeadlineChangesAsync(CancellationToken.None);
+                using (OrganizationHubDbContext db = factory.CreateDbContext())
+                {
+                    Assert.Empty(db.TodoDeadlineChanges);
+                }
+                Assert.Equal(1, transport.Writes);
+            }
             await updateAsync("Reloaded edit", transport.ETag);
             Assert.Equal("Reloaded edit", transport.Title);
         }
