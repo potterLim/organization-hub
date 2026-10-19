@@ -5,7 +5,7 @@
             <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
         </span>
     }
-    <MudCheckBox T="bool" Value="@Task.IsCompleted" ValueChanged="CompletionChanged" Color="Color.Primary" Class="hub-todo-check" Disabled="@(CanWrite == false)" />
+    <MudCheckBox T="bool" Value="@Task.IsCompleted" ValueChanged="CompletionChanged" Color="Color.Primary" aria-label="@(Task.Title + (Task.IsCompleted ? " 미완료로 변경" : " 완료로 변경"))" Class="hub-todo-check" Disabled="@(CanWrite == false)" />
     <div class="hub-todo-row-main">
         @if (IsEditing)
         {

@@ -139,3 +139,10 @@
 }
 
 .hub-order-controls { display: inline-flex; flex-direction: column; flex-shrink: 0; }
+
+@media (max-width: 600px) {
+    .hub-sortable-row { display: grid; grid-template-columns: 28px minmax(0, 1fr); }
+    .hub-sortable-title { white-space: normal; overflow-wrap: anywhere; overflow: visible; }
+    .hub-sortable-actions { grid-column: 1 / -1; justify-content: flex-end; flex-wrap: wrap; }
+    .hub-sortable-actions .mud-icon-button-root { min-width: 36px; min-height: 36px; }
+}

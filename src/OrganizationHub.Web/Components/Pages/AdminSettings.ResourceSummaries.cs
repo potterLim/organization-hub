@@ -115,7 +115,7 @@ public partial class AdminSettings
             case ESettingResourceSummaryKind.TaskList:
                 return getTaskListName(request.ResourceId);
             default:
-                return "연결됨";
+                return "위치 지정됨";
         }
     }
 
@@ -162,7 +162,7 @@ public partial class AdminSettings
             return nameOrNull;
         }
 
-        return "연결됨";
+        return "위치 지정됨";
     }
 
     private string getCalendarName(string calendarId)
@@ -175,7 +175,7 @@ public partial class AdminSettings
         GoogleCalendarListItem? calendarOrNull = mCalendars.FirstOrDefault(calendar => calendar.Id == calendarId);
         if (calendarOrNull == null)
         {
-            return "연결됨";
+            return "위치 지정됨";
         }
 
         return calendarOrNull.Summary;
@@ -191,7 +191,7 @@ public partial class AdminSettings
         GoogleTaskListItem? taskListOrNull = mTaskLists.FirstOrDefault(taskList => taskList.Id == taskListId);
         if (taskListOrNull == null)
         {
-            return "연결됨";
+            return "위치 지정됨";
         }
 
         return taskListOrNull.Title;
