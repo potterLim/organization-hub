@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
@@ -90,4 +89,3 @@ public sealed class VersionedGoogleTransport : HttpMessageHandler, IGoogleApiCre
         return response;
     }
 }
-

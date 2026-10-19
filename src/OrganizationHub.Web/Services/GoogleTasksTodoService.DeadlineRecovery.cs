@@ -10,8 +10,8 @@ using OrganizationHub.Web.Data;
 using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
-using GoogleTasksApi = Google.Apis.Tasks.v1.TasksService;
 using GoogleTask = Google.Apis.Tasks.v1.Data.Task;
+using GoogleTasksApi = Google.Apis.Tasks.v1.TasksService;
 
 namespace OrganizationHub.Web.Services;
 

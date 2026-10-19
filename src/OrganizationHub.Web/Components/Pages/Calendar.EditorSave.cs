@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
-
 using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;

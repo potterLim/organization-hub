@@ -11,7 +11,10 @@ internal sealed class ApprovalWorkflowOrderUpdateRequest
         get;
     }
 
-    public IReadOnlyDictionary<int, int> ExpectedRevisions { get; }
+    public IReadOnlyDictionary<int, int> ExpectedRevisions
+    {
+        get;
+    }
 
     public ApprovalWorkflowOrderUpdateRequest(IReadOnlyList<ApprovalWorkflowId> orderedWorkflowIds, IReadOnlyDictionary<int, int>? expectedRevisionsOrNull = null)
     {

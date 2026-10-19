@@ -69,7 +69,8 @@ public sealed class TodoDuePatchTests
         {
             Transport transport = new Transport();
             GoogleTasksTodoService service = new GoogleTasksTodoService(factory, transport, NullLogger<GoogleTasksTodoService>.Instance, Options.Create(new GoogleApiOptions()), new ChangeVersionService(), new OrganizationPermissionService(factory));
-            TodoTaskFormModel form = new TodoTaskFormModel(); form.ETag = "\"baseline\"";
+            TodoTaskFormModel form = new TodoTaskFormModel();
+            form.ETag = "\"baseline\"";
             form.TaskListId = "tasks";
             form.TaskId = "task";
             form.Title = "Updated";

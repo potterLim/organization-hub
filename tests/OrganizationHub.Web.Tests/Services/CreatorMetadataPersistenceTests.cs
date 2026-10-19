@@ -104,7 +104,8 @@ public sealed class CreatorMetadataPersistenceTests
                 {
                     PermissionService permissions = new PermissionService(factory, new FakeDriveService(), cache, new OrganizationPermissionService(factory));
                     GoogleCalendarService calendar = new GoogleCalendarService(transport, Options.Create(new GoogleApiOptions()), factory, cache, NullLogger<GoogleCalendarService>.Instance, new ChangeVersionService(), permissions);
-                    CalendarEventFormModel form = new CalendarEventFormModel(); form.ETag = "\"baseline\"";
+                    CalendarEventFormModel form = new CalendarEventFormModel();
+                    form.ETag = "\"baseline\"";
                     form.CalendarId = "calendar";
                     form.Summary = "Created";
                     form.StartLocal = new DateTime(2026, 10, 19, 9, 0, 0);
@@ -114,7 +115,8 @@ public sealed class CreatorMetadataPersistenceTests
                 else
                 {
                     GoogleTasksTodoService todos = new GoogleTasksTodoService(factory, transport, NullLogger<GoogleTasksTodoService>.Instance, Options.Create(new GoogleApiOptions()), new ChangeVersionService(), new OrganizationPermissionService(factory));
-                    TodoTaskFormModel form = new TodoTaskFormModel(); form.ETag = "\"baseline\"";
+                    TodoTaskFormModel form = new TodoTaskFormModel();
+                    form.ETag = "\"baseline\"";
                     form.TaskListId = "tasks";
                     form.Title = "Created";
                     await todos.CreateTaskAsync(session, form, CancellationToken.None);
