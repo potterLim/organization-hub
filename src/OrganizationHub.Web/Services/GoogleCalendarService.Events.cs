@@ -56,8 +56,16 @@ public sealed partial class GoogleCalendarService
         listRequest.SingleEvents = true;
         listRequest.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
         listRequest.Fields = "items(" + EVENT_FIELDS + "),nextPageToken";
-        Events events = await listRequest.ExecuteAsync(cancellationToken);
-        List<CalendarEventItem> calendarEvents = createCalendarEventItems(events, request.CalendarId, request.CalendarName).ToList();
+        List<CalendarEventItem> calendarEvents = new List<CalendarEventItem>();
+        do
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Events events = await listRequest.ExecuteAsync(cancellationToken);
+            calendarEvents.AddRange(createCalendarEventItems(events, request.CalendarId, request.CalendarName));
+            listRequest.PageToken = events.NextPageToken;
+        }
+        while (string.IsNullOrEmpty(listRequest.PageToken) == false);
+
         await applyEventMetadataAsync(request.CalendarId, calendarEvents, cancellationToken);
         setCalendarEventsCache(cacheKey, calendarEvents);
         return cloneCalendarEvents(calendarEvents);
