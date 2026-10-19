@@ -26,7 +26,10 @@ public sealed class TodoDuePatchTests
         public string Body { get; private set; } = string.Empty;
         public string? StoredDueOrNull { get; private set; } = "2026-10-20T00:00:00Z";
         public Task<IConfigurableHttpClientInitializer> CreateHttpClientInitializerAsync(string[] scopes, CancellationToken cancellationToken) => Task.FromResult<IConfigurableHttpClientInitializer>(this);
-        public void Initialize(ConfigurableHttpClient client) { client.MessageHandler.InnerHandler = this; }
+        public void Initialize(ConfigurableHttpClient client)
+        {
+            client.MessageHandler.InnerHandler = this;
+        }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             byte[] bytes = await request.Content!.ReadAsByteArrayAsync(cancellationToken);
@@ -38,7 +41,10 @@ public sealed class TodoDuePatchTests
                     Body = await reader.ReadToEndAsync(cancellationToken);
                 }
             }
-            else { Body = Encoding.UTF8.GetString(bytes); }
+            else
+            {
+                Body = Encoding.UTF8.GetString(bytes);
+            }
             using (JsonDocument json = JsonDocument.Parse(Body))
             {
                 JsonElement due;

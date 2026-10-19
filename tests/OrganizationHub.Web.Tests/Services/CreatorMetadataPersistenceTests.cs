@@ -39,14 +39,29 @@ public sealed class CreatorMetadataPersistenceTests
 
     private sealed class Transport : HttpMessageHandler, IGoogleApiCredentialFactory, IConfigurableHttpClientInitializer
     {
-        public int Creates { get; private set; }
-        public int Deletes { get; private set; }
-        public bool ShouldFailRollback { get; set; }
+        public int Creates
+        {
+            get; private set;
+        }
+        public int Deletes
+        {
+            get; private set;
+        }
+        public bool ShouldFailRollback
+        {
+            get; set;
+        }
         public Task<IConfigurableHttpClientInitializer> CreateHttpClientInitializerAsync(string[] scopes, CancellationToken cancellationToken) => Task.FromResult<IConfigurableHttpClientInitializer>(this);
-        public void Initialize(ConfigurableHttpClient client) { client.MessageHandler.InnerHandler = this; }
+        public void Initialize(ConfigurableHttpClient client)
+        {
+            client.MessageHandler.InnerHandler = this;
+        }
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (request.Method == HttpMethod.Post) { Creates++; }
+            if (request.Method == HttpMethod.Post)
+            {
+                Creates++;
+            }
             if (request.Method == HttpMethod.Delete)
             {
                 Deletes++;
