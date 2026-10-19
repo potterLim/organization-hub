@@ -6,8 +6,14 @@ namespace OrganizationHub.Web.Services;
 
 internal sealed class FileUploadCompletion
 {
-    public DriveFileItem File { get; }
-    public bool IsAuditRecorded { get; }
+    public DriveFileItem File
+    {
+        get;
+    }
+    public bool IsAuditRecorded
+    {
+        get;
+    }
 
     private FileUploadCompletion(DriveFileItem file, bool isAuditRecorded)
     {

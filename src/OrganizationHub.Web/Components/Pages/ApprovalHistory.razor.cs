@@ -28,7 +28,10 @@ public partial class ApprovalHistory
     private DateRange? mRequestedDateRangeOrNull;
 
     [SupplyParameterFromQuery(Name = "view")]
-    public string? ViewOrNull { get; set; }
+    public string? ViewOrNull
+    {
+        get; set;
+    }
 
     protected override async Task OnInitializedAsync()
     {
