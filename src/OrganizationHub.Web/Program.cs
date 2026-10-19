@@ -72,6 +72,10 @@ public class Program
         builder.Services.AddControllersWithViews();
         builder.Services.AddRazorComponents().AddInteractiveServerComponents();
         builder.Services.AddCascadingAuthenticationState();
+        builder.Services.AddScoped<UserSessionAccessService>();
+        builder.Services.AddScoped<UserSessionCookieEvents>();
+        builder.Services.AddScoped<SessionAccessCircuitHandler>();
+        builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.Circuits.CircuitHandler>(getSessionAccessHandler);
         builder.Services.AddMudServices();
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton<IChangeVersionService, ChangeVersionService>();
@@ -88,17 +92,7 @@ public class Program
             options.LoginPath = "/login";
             options.AccessDeniedPath = "/access-denied";
             options.SlidingExpiration = true;
-            options.Events = new CookieAuthenticationEvents();
-            options.Events.OnRedirectToLogin = context =>
-            {
-                context.Response.Redirect("/login");
-                return System.Threading.Tasks.Task.CompletedTask;
-            };
-            options.Events.OnRedirectToAccessDenied = context =>
-            {
-                context.Response.Redirect("/access-denied");
-                return System.Threading.Tasks.Task.CompletedTask;
-            };
+            options.EventsType = typeof(UserSessionCookieEvents);
         });
         builder.Services.AddAuthorization(options =>
         {
@@ -144,6 +138,11 @@ public class Program
         builder.Services.AddScoped<IApprovalWorkflowManagementService, ApprovalWorkflowManagementService>();
         builder.Services.AddScoped<IWorkGuidelineService, WorkGuidelineService>();
         builder.Services.AddScoped<OrganizationHubDataSeeder>();
+    }
+
+    private static Microsoft.AspNetCore.Components.Server.Circuits.CircuitHandler getSessionAccessHandler(IServiceProvider serviceProvider)
+    {
+        return serviceProvider.GetRequiredService<SessionAccessCircuitHandler>();
     }
 
     private static void addPermissionPolicy(

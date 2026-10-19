@@ -1,0 +1,56 @@
+@implements IAsyncDisposable
+@inject SessionAccessCircuitHandler AccessHandler
+@inject Microsoft.Extensions.Logging.ILogger<SessionAccessMonitor> Logger
+
+@code
+{
+    private static readonly TimeSpan ACCESS_CHECK_INTERVAL = TimeSpan.FromSeconds(2);
+    private readonly CancellationTokenSource mCancellation = new CancellationTokenSource();
+    private Task mMonitorTask = Task.CompletedTask;
+
+    public async ValueTask DisposeAsync()
+    {
+        await mCancellation.CancelAsync();
+        await mMonitorTask;
+        mCancellation.Dispose();
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            mMonitorTask = monitorAsync(mCancellation.Token);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task monitorAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            using (PeriodicTimer timer = new PeriodicTimer(ACCESS_CHECK_INTERVAL))
+            {
+                do
+                {
+                    try
+                    {
+                        await InvokeAsync(() => AccessHandler.CheckAccessAsync(cancellationToken));
+                    }
+                    catch (Exception exception) when (exception is not OperationCanceledException)
+                    {
+                        Microsoft.Extensions.Logging.LoggerExtensions.LogWarning(Logger, exception, "Session access check will be retried.");
+                    }
+                }
+                while (await timer.WaitForNextTickAsync(cancellationToken));
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            Microsoft.Extensions.Logging.LoggerExtensions.LogWarning(Logger, exception, "Session access monitoring stopped.");
+        }
+    }
+}

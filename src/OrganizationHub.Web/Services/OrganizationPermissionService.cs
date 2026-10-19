@@ -109,8 +109,9 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
     {
         int currentUserId = userSession.UserAccountId.GetRequiredValue();
         UserAccount? userAccountOrNull = await dbContext.UserAccounts
+            .Include(userAccount => userAccount.Team)
             .Include(userAccount => userAccount.Position)
-            .FirstOrDefaultAsync(userAccount => userAccount.Id == currentUserId && userAccount.IsActive, cancellationToken);
+            .FirstOrDefaultAsync(userAccount => userAccount.Id == currentUserId && userAccount.IsActive && (userAccount.TeamId == null || (userAccount.Team != null && userAccount.Team.IsActive)), cancellationToken);
         if (userAccountOrNull == null || userAccountOrNull.PositionId.HasValue == false)
         {
             return userAccountOrNull;
