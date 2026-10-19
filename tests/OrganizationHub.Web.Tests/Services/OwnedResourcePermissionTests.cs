@@ -204,6 +204,38 @@ public sealed class OwnedResourcePermissionTests
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OwnCreatedReadersCanOpenTheirFilteredResourcePageAsync(bool isCalendar)
+    {
+        string permission = isCalendar ? PermissionKeys.CALENDAR_READ : PermissionKeys.TODOS_READ;
+        using (TestDbContextFactory factory = createFactory(permission, 1))
+        {
+            string path = isCalendar ? "/calendar" : "/todos";
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                NavigationMenuSection section = new NavigationMenuSection();
+                section.SectionKey = "operations";
+                section.DisplayName = "운영";
+                NavigationMenuItem menu = new NavigationMenuItem();
+                menu.MenuKey = isCalendar ? NavigationMenuKey.CALENDAR : NavigationMenuKey.TODOS;
+                menu.DisplayName = "본인 항목";
+                menu.Href = path;
+                menu.IsActive = true;
+                menu.IsVisibleToAllTeams = true;
+                menu.AccessLevel = EMenuAccessLevel.Authenticated;
+                menu.RequiredPermissionKeys = permission;
+                menu.Section = section;
+                db.NavigationMenuItems.Add(menu);
+                await db.SaveChangesAsync();
+            }
+
+            NavigationMenuService navigation = new NavigationMenuService(factory, new OrganizationPermissionService(factory));
+            Assert.True(await navigation.CanAccessPathAsync(OperationPermissionRegressionTests.createSession(), NavigationPath.CreateOptional(path), CancellationToken.None));
+        }
+    }
+
     private static TestDbContextFactory createFactory(string permission, int owner)
     {
         TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(permission);
