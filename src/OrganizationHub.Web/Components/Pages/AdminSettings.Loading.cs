@@ -173,7 +173,12 @@ public partial class AdminSettings
 
     private async Task saveSettingAsync()
     {
-        ServiceResult saveResult = await GlobalSettingService.UpdateGlobalSettingAsync(mFormModel, CancellationToken.None);
+        if (await tryLoadUserSessionAsync() == false || CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        ServiceResult saveResult = await GlobalSettingService.UpdateDisplayOptionsAsync(CurrentUserSessionOrNull, mFormModel, CancellationToken.None);
         showOperationResult(saveResult, "시스템 설정이 저장되었습니다.");
         if (saveResult.IsSuccess)
         {

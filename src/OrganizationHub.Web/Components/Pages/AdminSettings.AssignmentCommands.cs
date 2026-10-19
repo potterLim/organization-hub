@@ -31,16 +31,18 @@ public partial class AdminSettings
             return;
         }
 
-        if (mSelectedFileAssignmentTarget == ESettingFileAssignmentTarget.NoticeFile)
+        if (await tryLoadUserSessionAsync() == false || CurrentUserSessionOrNull == null)
         {
-            mFormModel.FileResources.NoticeFileId = file.Id;
-        }
-        else
-        {
-            mFormModel.FileResources.WorkGuidelineFileId = file.Id;
+            return;
         }
 
-        ServiceResult fileAssignmentResult = await GlobalSettingService.UpdateGlobalSettingAsync(mFormModel, CancellationToken.None);
+        SettingFileAssignmentCommand command = new SettingFileAssignmentCommand
+        {
+            Target = mSelectedFileAssignmentTarget,
+            FileId = DriveItemId.CreateRequired(file.Id),
+            ExpectedRevision = mFormModel.FileResourcesRevision
+        };
+        ServiceResult fileAssignmentResult = await GlobalSettingService.AssignFileAsync(CurrentUserSessionOrNull, command, CancellationToken.None);
         showOperationResult(fileAssignmentResult, fileAssignmentResult.IsSuccess ? file.Name + " 파일을 연결했습니다." : string.Empty);
         if (fileAssignmentResult.IsSuccess)
         {

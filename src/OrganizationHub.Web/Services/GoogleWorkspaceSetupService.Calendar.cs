@@ -140,8 +140,15 @@ public sealed partial class GoogleWorkspaceSetupService
                 teamOrNull.CalendarId = requiredCalendarId;
             }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return ServiceResult.Succeed();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return ServiceResult.Fail("다른 관리자가 설정을 변경했습니다. 최신 설정을 불러온 뒤 다시 적용해 주세요.");
+            }
         }
     }
 

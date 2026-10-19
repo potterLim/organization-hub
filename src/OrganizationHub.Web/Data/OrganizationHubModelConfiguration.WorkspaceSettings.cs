@@ -16,6 +16,7 @@ internal static partial class OrganizationHubModelConfiguration
     {
         EntityTypeBuilder<GlobalSetting> settingBuilder = modelBuilder.Entity<GlobalSetting>();
         settingBuilder.HasKey(setting => setting.Id);
+        settingBuilder.Property(setting => setting.Revision).IsConcurrencyToken();
         settingBuilder.Property(setting => setting.OfficialRootFolderId).HasMaxLength(256);
         settingBuilder.Property(setting => setting.PublicFolderId).HasMaxLength(256);
         settingBuilder.Property(setting => setting.CommonFolderId).HasMaxLength(256);

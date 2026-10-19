@@ -2,6 +2,14 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class GlobalSettingFormModel
 {
+    public int DisplayOptionsRevision
+    {
+        get; set;
+    }
+    public int FileResourcesRevision
+    {
+        get; set;
+    }
     public int Id
     {
         get; set;

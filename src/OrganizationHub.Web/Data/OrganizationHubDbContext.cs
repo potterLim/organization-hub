@@ -1,4 +1,7 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using OrganizationHub.Web.Data.Entities;
 
 namespace OrganizationHub.Web.Data;
@@ -115,8 +118,43 @@ public sealed class OrganizationHubDbContext : DbContext
         WorkGuidelineSections = Set<WorkGuidelineSection>();
     }
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        prepareSettingRevisions();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        prepareSettingRevisions();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.applyOrganizationHubModelConfiguration();
+    }
+
+    private void prepareSettingRevisions()
+    {
+        ChangeTracker.DetectChanges();
+        foreach (EntityEntry<GlobalSetting> entry in ChangeTracker.Entries<GlobalSetting>())
+        {
+            if (entry.State != EntityState.Modified)
+            {
+                continue;
+            }
+
+            entry.Entity.Revision = entry.Property(setting => setting.Revision).OriginalValue + 1;
+            if (entry.Property(setting => setting.ShouldShowTodoAuthor).IsModified || entry.Property(setting => setting.ShouldShowCalendarAuthor).IsModified)
+            {
+                entry.Entity.DisplayOptionsRevision = entry.Property(setting => setting.DisplayOptionsRevision).OriginalValue + 1;
+            }
+
+            if (entry.Property(setting => setting.NoticeFileId).IsModified || entry.Property(setting => setting.WorkGuidelineFileId).IsModified)
+            {
+                entry.Entity.FileResourcesRevision = entry.Property(setting => setting.FileResourcesRevision).OriginalValue + 1;
+            }
+        }
     }
 }

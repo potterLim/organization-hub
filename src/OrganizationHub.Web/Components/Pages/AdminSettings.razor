@@ -12,9 +12,18 @@
 
 <h1 class="hub-sr-only">시스템 설정</h1>
 
+@if (mHasLoadedConfiguration)
+{
+    <WorkspaceSetupGuide IsConnected="mStatus.IsConnected" HasRootFolder="mFormModel.DriveResources.OfficialRootFolderIdValue.HasValue" />
+}
+
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
     <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
+    @if (mMessageSeverity == Severity.Error)
+    {
+        <MudButton OnClick="loadConfigurationAsync" Color="Color.Primary" Variant="Variant.Outlined" Class="mb-4">최신 설정 불러오기</MudButton>
+    }
 }
 
 <div class="hub-settings-layout">
@@ -24,7 +33,7 @@
     </div>
 
     <div class="hub-settings-main">
-        <MudTabs Elevation="0" Class="hub-settings-tabs">
+        <MudTabs Elevation="0" Class="hub-settings-tabs" @bind-ActivePanelIndex="mSelectedSettingsTabIndex">
             <MudTabPanel Text="요약">
                 <AdminSettingsSummaryPanel ResourceSummaries="getPrimaryResourceSummaries()" IsRefreshing="mIsRefreshing" RefreshRequested="refreshAllAsync" />
             </MudTabPanel>

@@ -2,6 +2,18 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class GlobalSetting
 {
+    public int Revision
+    {
+        get; set;
+    }
+    public int DisplayOptionsRevision
+    {
+        get; set;
+    }
+    public int FileResourcesRevision
+    {
+        get; set;
+    }
     public int Id
     {
         get; set;

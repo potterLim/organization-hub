@@ -30,11 +30,13 @@ public partial class AdminSettings
     private Severity mMessageSeverity = Severity.Info;
     private bool mIsLoadingDriveItems;
     private bool mIsRefreshing;
+    private bool mHasLoadedConfiguration;
 
     protected override async Task OnInitializedAsync()
     {
         await loadConfigurationAsync();
         await loadConnectionStatusAsync();
+        mHasLoadedConfiguration = true;
         await loadAssignmentOptionsAsync();
         resetDrivePathToOfficialRoot();
         if (mStatus.IsConnected)
