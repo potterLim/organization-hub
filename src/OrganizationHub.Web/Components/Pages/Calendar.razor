@@ -75,7 +75,7 @@
 {
     <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
 }
-else if (string.IsNullOrWhiteSpace(mErrorMessage) == false)
+else if (string.IsNullOrWhiteSpace(mErrorMessage) == false && mIsEditorOpen == false)
 {
     <MudAlert Severity="Severity.Warning">@mErrorMessage</MudAlert>
 }
