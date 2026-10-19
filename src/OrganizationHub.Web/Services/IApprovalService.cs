@@ -13,6 +13,7 @@ public interface IApprovalService
     Task<ServiceResult> SubmitRequestAsync(UserSession userSession, ApprovalRequestCommand command, CancellationToken cancellationToken);
     Task<IReadOnlyList<ApprovalRequestItem>> GetPendingApprovalsAsync(UserSession userSession, CancellationToken cancellationToken);
     Task<IReadOnlyList<ApprovalRequestItem>> GetRelatedHistoryAsync(UserSession userSession, CancellationToken cancellationToken);
+    Task<ApprovalHistoryPage> GetHistoryPageAsync(UserSession userSession, ApprovalHistoryQuery query, CancellationToken cancellationToken);
     Task<IReadOnlyList<ApprovalRequestItem>> GetApprovedRequestsAsync(UserSession userSession, CancellationToken cancellationToken);
     Task<ServiceResult> ApproveRequestAsync(
         UserSession userSession,

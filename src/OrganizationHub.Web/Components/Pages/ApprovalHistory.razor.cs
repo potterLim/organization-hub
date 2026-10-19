@@ -4,6 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.Logging;
+using MudBlazor;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 using OrganizationHub.Web.Services;
@@ -15,26 +18,28 @@ public partial class ApprovalHistory
     private List<ApprovalRequestItem> mApprovalHistory = new List<ApprovalRequestItem>();
     private bool mIsLoading = true;
     private bool mShowRequestedOnly;
+    private int mMyOngoingCount;
+    private int mPageNumber = 1;
+    private int mTotalPages = 1;
+    private int mTotalCount;
+    private string mSearchKeyword = string.Empty;
+    private string mErrorMessage = string.Empty;
+    private EApprovalHistoryFilter mHistoryFilter = EApprovalHistoryFilter.AllRelated;
+    private DateRange? mRequestedDateRangeOrNull;
 
     [SupplyParameterFromQuery(Name = "view")]
-    public string? ViewOrNull
-    {
-        get; set;
-    }
-
-    protected override void OnParametersSet()
-    {
-        mShowRequestedOnly = ViewOrNull == "requested";
-    }
+    public string? ViewOrNull { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        bool hasSession = await tryLoadUserSessionAsync();
-        if (hasSession == false || CurrentUserSessionOrNull == null)
-        {
-            return;
-        }
+        await tryLoadUserSessionAsync();
+    }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        mShowRequestedOnly = ViewOrNull == "requested";
+        mHistoryFilter = mShowRequestedOnly ? EApprovalHistoryFilter.MyOngoing : EApprovalHistoryFilter.AllRelated;
+        mPageNumber = 1;
         await reloadAsync();
     }
 
@@ -46,10 +51,30 @@ public partial class ApprovalHistory
         }
 
         mIsLoading = true;
+        mErrorMessage = string.Empty;
         try
         {
-            IReadOnlyList<ApprovalRequestItem> approvalHistory = await ApprovalService.GetRelatedHistoryAsync(CurrentUserSessionOrNull, CancellationToken.None);
-            mApprovalHistory = approvalHistory.ToList();
+            DateTime? fromUtcOrNull = mRequestedDateRangeOrNull?.Start == null ? null : TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(mRequestedDateRangeOrNull.Start.Value.Date, DateTimeKind.Unspecified), ClientTimeZoneInfo);
+            DateTime? toUtcOrNull = mRequestedDateRangeOrNull?.End == null ? null : TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(mRequestedDateRangeOrNull.End.Value.Date.AddDays(1), DateTimeKind.Unspecified), ClientTimeZoneInfo);
+            ApprovalHistoryQuery query = new ApprovalHistoryQuery
+            {
+                PageNumber = mPageNumber,
+                Keyword = mSearchKeyword,
+                Filter = mHistoryFilter,
+                RequestedFromUtcOrNull = fromUtcOrNull,
+                RequestedToUtcExclusiveOrNull = toUtcOrNull
+            };
+            ApprovalHistoryPage page = await ApprovalService.GetHistoryPageAsync(CurrentUserSessionOrNull, query, CancellationToken.None);
+            mApprovalHistory = page.Items.ToList();
+            mPageNumber = page.PageNumber;
+            mTotalPages = page.TotalPages;
+            mTotalCount = page.TotalCount;
+            mMyOngoingCount = page.MyOngoingCount;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "Approval history load failed.");
+            mErrorMessage = "결재 기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
         }
         finally
         {
@@ -57,16 +82,37 @@ public partial class ApprovalHistory
         }
     }
 
-    private bool isOwnOngoingRequest(ApprovalRequestItem request)
+    private async Task searchAsync()
     {
-        return CurrentUserSessionOrNull != null &&
-            request.RequesterUserId == CurrentUserSessionOrNull.UserAccountId.GetRequiredValue() &&
-            (request.Status == EApprovalRequestStatus.Pending || request.Status == EApprovalRequestStatus.Publishing);
+        mPageNumber = 1;
+        await reloadAsync();
     }
 
-    private IEnumerable<ApprovalRequestItem> getVisibleRequests()
+    private async Task handleSearchKeyDownAsync(KeyboardEventArgs args)
     {
-        return mShowRequestedOnly ? mApprovalHistory.Where(isOwnOngoingRequest) : mApprovalHistory;
+        if (args.Key == "Enter")
+        {
+            await searchAsync();
+        }
+    }
+
+    private async Task handleFilterChangedAsync(EApprovalHistoryFilter filter)
+    {
+        mHistoryFilter = filter;
+        mShowRequestedOnly = filter == EApprovalHistoryFilter.MyOngoing;
+        await searchAsync();
+    }
+
+    private async Task previousPageAsync()
+    {
+        mPageNumber = Math.Max(1, mPageNumber - 1);
+        await reloadAsync();
+    }
+
+    private async Task nextPageAsync()
+    {
+        mPageNumber = Math.Min(mTotalPages, mPageNumber + 1);
+        await reloadAsync();
     }
 
     private static string getProgressText(ApprovalRequestItem request)

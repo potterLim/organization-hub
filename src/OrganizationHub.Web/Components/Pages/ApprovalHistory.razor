@@ -2,32 +2,62 @@
 @attribute [Authorize]
 @inherits TimeZoneAwareOrganizationHubComponentBase
 @inject IApprovalService ApprovalService
+@inject Microsoft.Extensions.Logging.ILogger<ApprovalHistory> Logger
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("결재 기록")</PageTitle>
 
 <h1 class="hub-sr-only">결재 기록</h1>
 
 <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" Class="mb-4">
-    <MudButton Href="/approvals/history?view=requested" Variant="@(mShowRequestedOnly ? Variant.Filled : Variant.Outlined)" Color="Color.Primary">내 진행 중 요청 (@mApprovalHistory.Count(isOwnOngoingRequest))</MudButton>
+    <MudButton Href="/approvals/history?view=requested" Variant="@(mShowRequestedOnly ? Variant.Filled : Variant.Outlined)" Color="Color.Primary">내 진행 중 요청 (@mMyOngoingCount)</MudButton>
     <MudButton Href="/approvals/history" Variant="@(mShowRequestedOnly ? Variant.Outlined : Variant.Filled)" Color="Color.Primary">전체 기록</MudButton>
     <MudButton OnClick="reloadAsync" Disabled="mIsLoading" StartIcon="@Icons.Material.Filled.Refresh">새로고침</MudButton>
+</MudStack>
+
+<MudGrid Spacing="2" Class="mb-3">
+    <MudItem xs="12" md="4">
+        <MudTextField @bind-Value="mSearchKeyword" Immediate="true" Label="제목 또는 파일명 검색" MaxLength="120" Variant="Variant.Outlined" Margin="Margin.Dense" OnKeyDown="handleSearchKeyDownAsync" />
+    </MudItem>
+    <MudItem xs="8" md="2">
+        <MudSelect T="EApprovalHistoryFilter" Label="상태" Value="mHistoryFilter" ValueChanged="handleFilterChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudSelectItem T="EApprovalHistoryFilter" Value="EApprovalHistoryFilter.AllRelated">전체 기록</MudSelectItem>
+            <MudSelectItem T="EApprovalHistoryFilter" Value="EApprovalHistoryFilter.MyOngoing">내 진행 중 요청</MudSelectItem>
+            <MudSelectItem T="EApprovalHistoryFilter" Value="EApprovalHistoryFilter.Approved">완료</MudSelectItem>
+            <MudSelectItem T="EApprovalHistoryFilter" Value="EApprovalHistoryFilter.Rejected">반려</MudSelectItem>
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudDateRangePicker @bind-DateRange="mRequestedDateRangeOrNull" Label="요청 기간" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem xs="4" md="2">
+        <MudButton OnClick="searchAsync" Disabled="mIsLoading" Variant="Variant.Outlined" Color="Color.Primary" Class="mt-2">검색</MudButton>
+    </MudItem>
+</MudGrid>
+<MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+    <MudText Typo="Typo.body2">총 @mTotalCount 건 · @mPageNumber / @mTotalPages 페이지</MudText>
+    <MudButton OnClick="previousPageAsync" Disabled="@(mIsLoading || mPageNumber <= 1)" aria-label="이전 페이지">이전</MudButton>
+    <MudButton OnClick="nextPageAsync" Disabled="@(mIsLoading || mPageNumber >= mTotalPages)" aria-label="다음 페이지">다음</MudButton>
 </MudStack>
 
 @if (mIsLoading)
 {
     <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
 }
-else if (getVisibleRequests().Any() == false)
+else if (string.IsNullOrWhiteSpace(mErrorMessage) == false)
+{
+    <MudAlert Severity="Severity.Error">@mErrorMessage</MudAlert>
+}
+else if (mApprovalHistory.Count == 0)
 {
     <div class="hub-empty hub-empty-state">
         <MudIcon Icon="@Icons.Material.Filled.HistoryEdu" Size="Size.Medium" />
-        <span>@(mShowRequestedOnly ? "내가 요청한 진행 중 결재가 없습니다. 완료·반려된 요청은 전체 기록에서 확인할 수 있습니다." : "표시할 결재 기록이 없습니다.")</span>
+        <span>@(mShowRequestedOnly && mMyOngoingCount == 0 ? "내가 요청한 진행 중 결재가 없습니다. 완료·반려된 요청은 전체 기록에서 확인할 수 있습니다." : "조건에 맞는 결재 기록이 없습니다. 검색어나 기간, 상태를 변경해 보세요.")</span>
     </div>
 }
 else
 {
     <div class="hub-approval-list">
-        @foreach (ApprovalRequestItem approvalRequest in getVisibleRequests())
+        @foreach (ApprovalRequestItem approvalRequest in mApprovalHistory)
         {
             <MudPaper Class="hub-card hub-approval-card pa-4">
                 <div class="hub-approval-card-head">
@@ -80,4 +110,13 @@ else
             </MudPaper>
         }
     </div>
+}
+
+@if (mIsLoading == false && mTotalPages > 1)
+{
+    <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center" Class="mt-4">
+        <MudButton OnClick="previousPageAsync" Disabled="@(mPageNumber <= 1)" aria-label="아래 이전 페이지">이전</MudButton>
+        <MudText Typo="Typo.body2">@mPageNumber / @mTotalPages 페이지</MudText>
+        <MudButton OnClick="nextPageAsync" Disabled="@(mPageNumber >= mTotalPages)" aria-label="아래 다음 페이지">다음</MudButton>
+    </MudStack>
 }
