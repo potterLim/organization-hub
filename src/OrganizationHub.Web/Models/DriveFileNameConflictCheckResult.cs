@@ -29,6 +29,14 @@ public sealed class DriveFileNameConflictCheckResult
         }
     }
 
+    public bool CanReplaceExistingFile
+    {
+        get
+        {
+            return ExistingFiles.Count == 1;
+        }
+    }
+
     public DriveFileNameConflictCheckResult(
         DriveItemName requestedFileName,
         DriveItemName suggestedNewFileName,
@@ -44,11 +52,11 @@ public sealed class DriveFileNameConflictCheckResult
         ExistingFiles = existingFiles;
     }
 
-    public DriveItemId GetFirstExistingFileId()
+    public DriveItemId GetSingleExistingFileId()
     {
-        if (HasConflict == false)
+        if (CanReplaceExistingFile == false)
         {
-            throw new InvalidOperationException("File name conflict result does not contain an existing file.");
+            throw new InvalidOperationException("같은 이름의 파일이 여러 개이거나 대상이 바뀌었습니다. 새 파일로 추가하거나 자료실에서 교체할 파일을 확인해 주세요.");
         }
 
         return DriveItemId.CreateRequired(ExistingFiles[0].Id);

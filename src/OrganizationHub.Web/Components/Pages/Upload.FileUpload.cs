@@ -161,7 +161,7 @@ public partial class Upload
     {
         if (conflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile && conflictCheckResult.HasConflict)
         {
-            return conflictCheckResult.GetFirstExistingFileId();
+            return conflictCheckResult.GetSingleExistingFileId();
         }
 
         return DriveItemId.Empty;

@@ -22,6 +22,7 @@ public sealed class DrivePaginationTests
     private sealed class Transport : HttpMessageHandler, IGoogleApiCredentialFactory, IConfigurableHttpClientInitializer
     {
         public List<string> Pages { get; } = new List<string>();
+        public bool HasDuplicateNames { get; set; }
         public bool ShouldFailSecond
         {
             get; set;
@@ -44,6 +45,10 @@ public sealed class DrivePaginationTests
             string json = page == string.Empty
                 ? "{\"files\":[{\"id\":\"recent\",\"name\":\"archived-recent.pdf\",\"mimeType\":\"application/pdf\"}],\"nextPageToken\":\"second\"}"
                 : page == "second" ? "{\"files\":[],\"nextPageToken\":\"third\"}" : "{\"files\":[{\"id\":\"old\",\"name\":\"archived.pdf\",\"mimeType\":\"application/pdf\"}]}";
+            if (HasDuplicateNames)
+            {
+                json = json.Replace("archived-recent.pdf", "archived.pdf", System.StringComparison.Ordinal);
+            }
             HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
             response.Content = new StringContent(json, Encoding.UTF8, "application/json");
             return Task.FromResult(response);
@@ -65,7 +70,7 @@ public sealed class DrivePaginationTests
             {
                 DriveFileNameConflictCheckResult conflict = await service.CheckFileNameConflictAsync(folder, DriveItemName.CreateRequired("archived.pdf"), CancellationToken.None);
                 Assert.True(conflict.HasConflict);
-                Assert.Equal("old", conflict.GetFirstExistingFileId().GetRequiredValue());
+                Assert.Equal("old", conflict.GetSingleExistingFileId().GetRequiredValue());
             }
             else
             {
@@ -93,4 +98,19 @@ public sealed class DrivePaginationTests
             Assert.Equal(new string[] { "", "second", "", "second", "third" }, transport.Pages);
         }
     }
+    [Fact]
+    public async Task DuplicateNamesAcrossGooglePagesCannotSelectReplacementAsync()
+    {
+        using (MemoryCache cache = new MemoryCache(new MemoryCacheOptions()))
+        using (Transport transport = new Transport())
+        {
+            transport.HasDuplicateNames = true;
+            GoogleDriveService service = new GoogleDriveService(transport, Options.Create(new GoogleApiOptions()), cache, new ChangeVersionService());
+            DriveFileNameConflictCheckResult conflict = await service.CheckFileNameConflictAsync(DriveFolderId.CreateRequired("folder"), DriveItemName.CreateRequired("archived.pdf"), CancellationToken.None);
+            Assert.Equal(2, conflict.ExistingFiles.Count);
+            Assert.False(conflict.CanReplaceExistingFile);
+            Assert.Throws<System.InvalidOperationException>(() => conflict.GetSingleExistingFileId());
+        }
+    }
+
 }

@@ -117,7 +117,7 @@ public sealed partial class ApprovalService
             DriveItemName fileName = DriveItemName.CreateRequired(request.FileName);
             DriveFileNameConflictCheckResult conflict = await mDriveService.CheckFileNameConflictAsync(folderId, fileName, cancellationToken);
             bool isReplacement = conflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile && conflict.HasConflict;
-            DriveItemId targetFileId = isReplacement ? conflict.GetFirstExistingFileId() : await mDriveService.GenerateFileIdAsync(cancellationToken);
+            DriveItemId targetFileId = isReplacement ? conflict.GetSingleExistingFileId() : await mDriveService.GenerateFileIdAsync(cancellationToken);
             if (isReplacement == false && conflict.HasConflict)
             {
                 fileName = conflict.SuggestedNewFileName;

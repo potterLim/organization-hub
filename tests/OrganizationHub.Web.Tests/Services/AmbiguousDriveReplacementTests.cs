@@ -15,6 +15,6 @@ public sealed class AmbiguousDriveReplacementTests
         DriveFileItem second = new DriveFileItem();
         second.Id = "second";
         DriveFileNameConflictCheckResult conflict = new DriveFileNameConflictCheckResult(DriveItemName.CreateRequired("document.pdf"), DriveItemName.CreateRequired("document (2).pdf"), new DriveFileItem[] { first, second });
-        Assert.Throws<InvalidOperationException>(() => conflict.GetFirstExistingFileId());
+        Assert.Throws<InvalidOperationException>(() => conflict.GetSingleExistingFileId());
     }
 }
