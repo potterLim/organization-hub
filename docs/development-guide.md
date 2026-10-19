@@ -60,6 +60,8 @@ Markdown 문서는 문장 호흡을 위해 의도적으로 두 칸 공백 줄바
 3. 권한을 변경한 뒤 새로고침 없이 메뉴와 접근 가능 여부가 갱신되는지 확인한다.
 4. 파일·일정·할 일·결재 요청처럼 서버 요청이 발생하는 작업을 직접 실행한다.
 
+브라우저 회귀 테스트 `tests/browser/approval-history-filters.cjs`는 격리된 테스트 서버와 계정에서 실행합니다. `HUB_TEST_URL`, `HUB_TEST_USERNAME`, `HUB_TEST_PASSWORD`를 설정한 뒤 Node로 실행합니다. Playwright가 프로젝트 외부에 있으면 `PLAYWRIGHT_MODULE`, 별도 Chromium 실행 파일을 쓰면 `PLAYWRIGHT_EXECUTABLE`을 지정합니다. 화면 내부 메뉴 이동에 따른 문서 제목, 상세 필터, 빠른 필터와 URL, 모바일 가로 넘침 및 브라우저 오류를 검사합니다.
+
 ## 데이터베이스 마이그레이션
 
 ```powershell
