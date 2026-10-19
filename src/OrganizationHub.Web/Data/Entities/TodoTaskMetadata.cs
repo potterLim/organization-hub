@@ -4,6 +4,7 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class TodoTaskMetadata
 {
+    public string GoogleETag { get; set; } = string.Empty;
     public int Id
     {
         get; set;

@@ -8,6 +8,7 @@ namespace OrganizationHub.Web.Data;
 
 public sealed partial class OrganizationHubDbContext : DbContext
 {
+    public DbSet<TodoDeadlineChange> TodoDeadlineChanges { get { return Set<TodoDeadlineChange>(); } }
     public DbSet<RevokedLoginSession> RevokedLoginSessions
     {
         get
