@@ -16,6 +16,7 @@ internal static partial class OrganizationHubModelConfiguration
     {
         EntityTypeBuilder<ApprovalWorkflow> approvalWorkflowBuilder = modelBuilder.Entity<ApprovalWorkflow>();
         approvalWorkflowBuilder.HasKey(approvalWorkflow => approvalWorkflow.Id);
+        approvalWorkflowBuilder.Property(workflow => workflow.Revision).IsConcurrencyToken();
         approvalWorkflowBuilder.HasIndex(approvalWorkflow => new { approvalWorkflow.AppliesToTeamId, approvalWorkflow.AppliesToPositionId, approvalWorkflow.Priority });
         approvalWorkflowBuilder.Property(approvalWorkflow => approvalWorkflow.Name).HasMaxLength(120).IsRequired();
         approvalWorkflowBuilder.Property(approvalWorkflow => approvalWorkflow.Description).HasMaxLength(500).IsRequired();

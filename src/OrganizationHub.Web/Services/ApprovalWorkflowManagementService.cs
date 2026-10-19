@@ -75,8 +75,7 @@ internal sealed partial class ApprovalWorkflowManagementService : IApprovalWorkf
             applyWorkflowForm(workflow, formModel);
             dbContext.ApprovalWorkflows.Add(workflow);
             addWorkflowSteps(dbContext, workflow, formModel);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -100,11 +99,14 @@ internal sealed partial class ApprovalWorkflowManagementService : IApprovalWorkf
                 return ServiceResult.Fail("결재 경로를 찾을 수 없습니다.");
             }
 
+            if (workflowOrNull.Revision != formModel.Revision)
+            {
+                return AdministrativeSaveUtility.CreateConflictResult();
+            }
             applyWorkflowForm(workflowOrNull, formModel);
             dbContext.ApprovalWorkflowSteps.RemoveRange(workflowOrNull.Steps);
             addWorkflowSteps(dbContext, workflowOrNull, formModel);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -138,8 +140,7 @@ internal sealed partial class ApprovalWorkflowManagementService : IApprovalWorkf
                 priority += PRIORITY_STEP;
             }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -169,8 +170,7 @@ internal sealed partial class ApprovalWorkflowManagementService : IApprovalWorkf
             }
 
             workflowOrNull.IsActive = activationState == EActivationState.Active;
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 

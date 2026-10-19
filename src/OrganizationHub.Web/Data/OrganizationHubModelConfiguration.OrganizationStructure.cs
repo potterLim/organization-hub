@@ -17,6 +17,7 @@ internal static partial class OrganizationHubModelConfiguration
     {
         EntityTypeBuilder<Team> teamBuilder = modelBuilder.Entity<Team>();
         teamBuilder.HasKey(team => team.Id);
+        teamBuilder.Property(team => team.Revision).IsConcurrencyToken();
         teamBuilder.HasIndex(team => team.TeamKey).IsUnique();
         teamBuilder.Property(team => team.TeamKey).HasMaxLength(64).IsRequired();
         teamBuilder.Property(team => team.DisplayName).HasMaxLength(120).IsRequired();

@@ -4,6 +4,10 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class Team
 {
+    public int Revision
+    {
+        get; set;
+    }
     public int Id
     {
         get; set;

@@ -55,8 +55,7 @@ internal sealed class TeamManagementService : ITeamManagementService
             Team team = new Team();
             applyTeamForm(team, formModel);
             dbContext.Teams.Add(team);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -86,9 +85,12 @@ internal sealed class TeamManagementService : ITeamManagementService
                 return ServiceResult.Fail("이미 사용 중인 팀 키입니다.");
             }
 
+            if (teamOrNull.Revision != formModel.Revision)
+            {
+                return AdministrativeSaveUtility.CreateConflictResult();
+            }
             applyTeamForm(teamOrNull, formModel);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -122,8 +124,7 @@ internal sealed class TeamManagementService : ITeamManagementService
                 sortOrder += SORT_ORDER_STEP;
             }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -153,8 +154,7 @@ internal sealed class TeamManagementService : ITeamManagementService
             }
 
             teamOrNull.IsActive = activationState == EActivationState.Active;
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 

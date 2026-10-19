@@ -20,6 +20,7 @@ public partial class AdminApprovalWorkflows
             saveResult = await ApprovalWorkflowManagementService.UpdateWorkflowAsync(mFormModel, CancellationToken.None);
         }
 
+        mHasSaveConflict = saveResult.IsConcurrencyConflict;
         showOperationResult(saveResult, "결재 경로 설정이 저장되었습니다.");
         if (saveResult.IsSuccess)
         {

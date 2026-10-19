@@ -11,6 +11,7 @@ public partial class AdminApprovalWorkflows
     {
         mFormModel = new ApprovalWorkflowFormModel();
         mFormModel.Id = workflow.Id;
+        mFormModel.Revision = workflow.Revision;
         mFormModel.Name = workflow.Name;
         mFormModel.Description = workflow.Description;
         mFormModel.AppliesToTeamId = workflow.AppliesToTeamId;

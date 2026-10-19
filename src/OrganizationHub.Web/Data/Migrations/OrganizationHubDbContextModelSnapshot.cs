@@ -383,6 +383,10 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<int>("Priority")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AppliesToPositionId");
@@ -925,6 +929,10 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.Property<string>("MaterialsFolderId")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("SortOrder")
                         .HasColumnType("INTEGER");

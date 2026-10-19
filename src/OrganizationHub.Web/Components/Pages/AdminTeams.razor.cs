@@ -24,6 +24,7 @@ public partial class AdminTeams
     private IJSObjectReference? mSortableModuleOrNull;
     private DotNetObjectReference<AdminTeams>? mDotNetReferenceOrNull;
     private bool mShouldInitializeSortable = true;
+    private bool mHasSaveConflict;
     private string mFormTitle = "새 팀";
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
@@ -100,6 +101,7 @@ public partial class AdminTeams
     private async Task saveTeamAsync()
     {
         ServiceResult saveResult = mFormModel.Id == 0 ? await TeamManagementService.CreateTeamAsync(mFormModel, CancellationToken.None) : await TeamManagementService.UpdateTeamAsync(mFormModel, CancellationToken.None);
+        mHasSaveConflict = saveResult.IsConcurrencyConflict;
         showOperationResult(saveResult, "팀 정보가 저장되었습니다.");
         if (saveResult.IsSuccess)
         {
@@ -112,6 +114,7 @@ public partial class AdminTeams
     {
         mFormModel = new TeamFormModel();
         mFormModel.Id = team.Id;
+        mFormModel.Revision = team.Revision;
         mFormModel.TeamKey = team.TeamKey;
         mFormModel.DisplayName = team.DisplayName;
         mFormModel.IsActive = team.IsActive;

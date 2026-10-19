@@ -11,6 +11,7 @@ public sealed partial class OrganizationHubDbContext
     private void prepareAdministrativeRevisions()
     {
         ChangeTracker.DetectChanges();
+        prepareTeamAndWorkflowRevisions();
         HashSet<int> changedPositionIds = new HashSet<int>();
         foreach (EntityEntry<PositionPermissionGrant> grantEntry in ChangeTracker.Entries<PositionPermissionGrant>().ToList())
         {

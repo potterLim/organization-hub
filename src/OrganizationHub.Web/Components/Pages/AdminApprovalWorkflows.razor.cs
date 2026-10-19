@@ -23,6 +23,7 @@ public partial class AdminApprovalWorkflows
     private bool mShouldInitializeSortable = true;
     private string mFormTitle = "새 결재 경로";
     private string mMessage = string.Empty;
+    private bool mHasSaveConflict;
     private Severity mMessageSeverity = Severity.Info;
 
     protected override async Task OnInitializedAsync()
