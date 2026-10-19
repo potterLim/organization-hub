@@ -52,7 +52,9 @@ internal sealed class SessionAccessCircuitHandler : CircuitHandler
 
         AuthenticationState authentication = await mAuthenticationStateProvider.GetAuthenticationStateAsync();
         Uri uri = mNavigationManager.ToAbsoluteUri(mNavigationManager.Uri);
-        SessionAccessResult result = await mAccessService.ValidateAsync(authentication.User, NavigationPath.CreateOptional(uri.AbsolutePath), cancellationToken);
+        NavigationPath currentPath = NavigationPath.CreateOptional(uri.AbsolutePath);
+        NavigationPath validationPath = ComponentRouteMatcher.IsKnownPath(currentPath) ? currentPath : NavigationPath.CreateOptional("/not-found");
+        SessionAccessResult result = await mAccessService.ValidateAsync(authentication.User, validationPath, cancellationToken);
         if (mIsConnected == false)
         {
             return false;

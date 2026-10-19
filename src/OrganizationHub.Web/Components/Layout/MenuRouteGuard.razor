@@ -35,7 +35,7 @@ else
             return;
         }
 
-        if (string.Equals(currentUri.AbsolutePath, "/access-denied", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(currentUri.AbsolutePath, "/access-denied", StringComparison.OrdinalIgnoreCase) || ComponentRouteMatcher.IsKnownPath(NavigationPath.CreateOptional(currentPath)) == false)
         {
             mLastCheckedPath = currentPath;
             mCanRenderContent = true;
