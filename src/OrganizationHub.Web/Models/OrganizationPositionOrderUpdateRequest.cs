@@ -16,7 +16,10 @@ internal sealed class OrganizationPositionOrderUpdateRequest
         get;
     }
 
-    public IReadOnlyDictionary<int, int> ExpectedRevisions { get; }
+    public IReadOnlyDictionary<int, int> ExpectedRevisions
+    {
+        get;
+    }
 
     public OrganizationPositionOrderUpdateRequest(
         OrganizationTeamId teamId,

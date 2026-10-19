@@ -4,7 +4,10 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class TodoTaskMetadata
 {
-    public int LastDeadlineChangeId { get; set; }
+    public int LastDeadlineChangeId
+    {
+        get; set;
+    }
     public string GoogleETag { get; set; } = string.Empty;
     public int Id
     {

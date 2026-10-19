@@ -21,8 +21,14 @@ public sealed class WorkspacePickerPaginationTests
     private sealed class Transport : HttpMessageHandler, IGoogleApiCredentialFactory, IConfigurableHttpClientInitializer
     {
         public List<string> Pages { get; } = new List<string>();
-        public bool ShouldFailSecond { get; set; }
-        public int Disposals { get; private set; }
+        public bool ShouldFailSecond
+        {
+            get; set;
+        }
+        public int Disposals
+        {
+            get; private set;
+        }
         public Task<IConfigurableHttpClientInitializer> CreateHttpClientInitializerAsync(string[] scopes, CancellationToken cancellationToken) => Task.FromResult<IConfigurableHttpClientInitializer>(this);
         public void Initialize(ConfigurableHttpClient client)
         {

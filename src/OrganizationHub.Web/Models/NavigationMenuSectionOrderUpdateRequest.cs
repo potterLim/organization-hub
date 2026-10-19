@@ -11,7 +11,10 @@ internal sealed class NavigationMenuSectionOrderUpdateRequest
         get;
     }
 
-    public IReadOnlyDictionary<int, int> ExpectedRevisions { get; }
+    public IReadOnlyDictionary<int, int> ExpectedRevisions
+    {
+        get;
+    }
 
     public NavigationMenuSectionOrderUpdateRequest(IReadOnlyList<NavigationMenuSectionId> orderedSectionIds, IReadOnlyDictionary<int, int>? expectedRevisionsOrNull = null)
     {
