@@ -9,11 +9,12 @@ namespace OrganizationHub.Web.Tests.Services;
 public sealed class UserDirectoryFilterTests
 {
     [Theory]
-    [InlineData("ALICE", null, "all", 1)]
-    [InlineData("", 2, "active", 1)]
-    [InlineData("", 2, "inactive", 1)]
-    [InlineData("없는 사용자", null, "all", 0)]
-    public void UserSearchCombinesKeywordTeamAndActivation(string keyword, int? teamIdOrNull, string status, int expectedCount)
+    [InlineData("ALICE", null, EUserActivationFilter.All, 1)]
+    [InlineData("", 2, EUserActivationFilter.Active, 1)]
+    [InlineData("", 2, EUserActivationFilter.Inactive, 1)]
+    [InlineData(null, null, EUserActivationFilter.All, 2)]
+    [InlineData("없는 사용자", null, EUserActivationFilter.All, 0)]
+    public void UserSearchCombinesKeywordTeamAndActivation(string? keywordOrNull, int? teamIdOrNull, EUserActivationFilter status, int expectedCount)
     {
         AdminUsers page = new AdminUsers();
         UserAccount first = new UserAccount();
@@ -27,7 +28,7 @@ public sealed class UserDirectoryFilterTests
         second.TeamId = 2;
         second.IsActive = false;
         setField(page, "mUsers", new List<UserAccount> { first, second });
-        setField(page, "mUserSearch", keyword);
+        setField(page, "mUserSearchOrNull", keywordOrNull);
         setField(page, "mFilterTeamIdOrNull", teamIdOrNull);
         setField(page, "mFilterStatus", status);
         IReadOnlyList<UserAccount> users = (IReadOnlyList<UserAccount>)typeof(AdminUsers).GetMethod("getFilteredUsers", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(page, null)!;

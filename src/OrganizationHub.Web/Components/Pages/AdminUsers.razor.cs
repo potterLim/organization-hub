@@ -14,9 +14,9 @@ public partial class AdminUsers
     private List<OrganizationPosition> mPositions = new List<OrganizationPosition>();
     private UserAccountFormModel mFormModel = new UserAccountFormModel();
     private string mFormTitle = "새 사용자";
-    private string mUserSearch = string.Empty;
+    private string? mUserSearchOrNull = string.Empty;
     private int? mFilterTeamIdOrNull;
-    private string mFilterStatus = "all";
+    private EUserActivationFilter mFilterStatus = EUserActivationFilter.All;
     private string mResetPassword = string.Empty;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;

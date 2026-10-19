@@ -37,8 +37,7 @@ public partial class Upload
 
     private static string formatUploadLimit(long maximumUploadBytes)
     {
-        const decimal BYTES_PER_MEGABYTE = 1_048_576m;
-        return (maximumUploadBytes / BYTES_PER_MEGABYTE).ToString("0.#", CultureInfo.InvariantCulture) + " MB";
+        return (maximumUploadBytes / (decimal)OrganizationHubFileLimits.BYTES_PER_MEGABYTE).ToString("0.#", CultureInfo.InvariantCulture) + " MB";
     }
 
     private void showMessage(string message, Severity severity)
