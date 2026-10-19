@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 using OrganizationHub.Web.Services;
@@ -13,6 +14,18 @@ public partial class ApprovalHistory
 {
     private List<ApprovalRequestItem> mApprovalHistory = new List<ApprovalRequestItem>();
     private bool mIsLoading = true;
+    private bool mShowRequestedOnly;
+
+    [SupplyParameterFromQuery(Name = "view")]
+    public string? ViewOrNull
+    {
+        get; set;
+    }
+
+    protected override void OnParametersSet()
+    {
+        mShowRequestedOnly = ViewOrNull == "requested";
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -22,13 +35,69 @@ public partial class ApprovalHistory
             return;
         }
 
-        IReadOnlyList<ApprovalRequestItem> approvalHistory = await ApprovalService.GetRelatedHistoryAsync(CurrentUserSessionOrNull, CancellationToken.None);
-        mApprovalHistory = approvalHistory.ToList();
-        mIsLoading = false;
+        await reloadAsync();
+    }
+
+    private async Task reloadAsync()
+    {
+        if (CurrentUserSessionOrNull == null)
+        {
+            return;
+        }
+
+        mIsLoading = true;
+        try
+        {
+            IReadOnlyList<ApprovalRequestItem> approvalHistory = await ApprovalService.GetRelatedHistoryAsync(CurrentUserSessionOrNull, CancellationToken.None);
+            mApprovalHistory = approvalHistory.ToList();
+        }
+        finally
+        {
+            mIsLoading = false;
+        }
+    }
+
+    private bool isOwnOngoingRequest(ApprovalRequestItem request)
+    {
+        return CurrentUserSessionOrNull != null &&
+            request.RequesterUserId == CurrentUserSessionOrNull.UserAccountId.GetRequiredValue() &&
+            (request.Status == EApprovalRequestStatus.Pending || request.Status == EApprovalRequestStatus.Publishing);
+    }
+
+    private IEnumerable<ApprovalRequestItem> getVisibleRequests()
+    {
+        return mShowRequestedOnly ? mApprovalHistory.Where(isOwnOngoingRequest) : mApprovalHistory;
+    }
+
+    private static string getProgressText(ApprovalRequestItem request)
+    {
+        if (request.Status == EApprovalRequestStatus.Publishing)
+        {
+            return "모든 결재가 끝났습니다. 승인본 저장이 완료되면 완료 기록으로 이동합니다.";
+        }
+
+        ApprovalStepItem? currentStepOrNull = request.Steps.FirstOrDefault(step => step.StepNumber == request.CurrentStepNumber);
+        if (currentStepOrNull == null)
+        {
+            return "결재 진행 중 · 현재 담당자 정보를 확인해 주세요.";
+        }
+
+        return request.CurrentStepNumber + "/" + request.StepCount + "단계 · " +
+            currentStepOrNull.ApproverDisplayName + " (" + currentStepOrNull.GetApproverAffiliationText() + ") 승인 대기";
     }
 
     private static string getStatusText(ApprovalRequestItem approvalRequest)
     {
+        if (approvalRequest.Status == EApprovalRequestStatus.Pending)
+        {
+            return "결재 진행 중";
+        }
+
+        if (approvalRequest.Status == EApprovalRequestStatus.Publishing)
+        {
+            return "승인본 저장 중";
+        }
+
         if (approvalRequest.Status == EApprovalRequestStatus.Approved)
         {
             return "완료";
@@ -39,6 +108,11 @@ public partial class ApprovalHistory
 
     private static string getStatusClass(ApprovalRequestItem approvalRequest)
     {
+        if (approvalRequest.Status == EApprovalRequestStatus.Publishing || approvalRequest.Status == EApprovalRequestStatus.Pending)
+        {
+            return "hub-status-pill";
+        }
+
         if (approvalRequest.Status == EApprovalRequestStatus.Approved)
         {
             return "hub-status-pill hub-status-active";

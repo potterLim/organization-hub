@@ -50,7 +50,7 @@ public sealed partial class ApprovalServiceTests
                 ApprovalRequest storedRequest;
                 using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
                 {
-                    approvedUploadAuditLog = dbContext.UploadAuditLogs.Single(auditLog => auditLog.FileId == "copied-planning-file");
+                    approvedUploadAuditLog = dbContext.UploadAuditLogs.Single();
                     storedRequest = dbContext.ApprovalRequests
                         .Include(approvalRequest => approvalRequest.Steps)
                         .Include(approvalRequest => approvalRequest.AuditLogs)
@@ -65,7 +65,8 @@ public sealed partial class ApprovalServiceTests
                 Assert.Single(finalApproverApprovals);
                 Assert.True(finalApprovalResult.IsSuccess);
                 Assert.Single(approvedRequests);
-                Assert.Equal("copied-planning-file", approvedRequests[0].ApprovedFileId);
+                Assert.Equal(approvedUploadAuditLog.FileId, approvedRequests[0].ApprovedFileId);
+                Assert.False(string.IsNullOrWhiteSpace(approvedRequests[0].ApprovedFileId));
                 Assert.Equal("기획팀 결재 완료 자료", approvedRequests[0].ApprovedFolderDisplayName);
                 Assert.Equal("기획팀원", approvedUploadAuditLog.UploaderDisplayName);
                 Assert.Equal("기획팀", approvedUploadAuditLog.UploaderTeamName);

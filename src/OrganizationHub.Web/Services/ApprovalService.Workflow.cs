@@ -12,7 +12,7 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class ApprovalService
 {
-    private async Task<ConfiguredApprovalLine?> createConfiguredApprovalLineOrNullAsync(
+    private async Task<ApprovalWorkflow?> findMatchingApprovalWorkflowOrNullAsync(
         OrganizationHubDbContext dbContext,
         IReadOnlyList<UserAccount> users,
         UserSession userSession,
@@ -29,19 +29,21 @@ public sealed partial class ApprovalService
                 (workflow.AppliesToTeamId == null || workflow.AppliesToTeamId == userTeamIdValueOrNull) &&
                 (workflow.AppliesToPositionId == null || workflow.AppliesToPositionId == userPositionIdValueOrNull))
             .ToListAsync(cancellationToken);
-        ApprovalWorkflow? workflowOrNull = candidateWorkflows
+        return candidateWorkflows
             .OrderBy(workflow => getWorkflowMatchOrder(workflow, userTeamIdValueOrNull, userPositionIdValueOrNull))
             .ThenBy(workflow => workflow.Priority)
             .FirstOrDefault();
-        if (workflowOrNull == null)
-        {
-            return null;
-        }
+    }
 
-        List<ApprovalWorkflowStep> steps = workflowOrNull.Steps.OrderBy(step => step.StepOrder).ToList();
+    private ServiceResultOfT<ConfiguredApprovalLine> createConfiguredApprovalLine(
+        ApprovalWorkflow workflow,
+        IReadOnlyList<UserAccount> users,
+        UserSession userSession)
+    {
+        List<ApprovalWorkflowStep> steps = workflow.Steps.OrderBy(step => step.StepOrder).ToList();
         if (ApprovalStepCount.IsSupportedValue(steps.Count) == false)
         {
-            return null;
+            return ServiceResultOfT<ConfiguredApprovalLine>.Fail("결재 경로의 단계 설정을 확인해 주세요. 관리자에게 문의해 주세요.");
         }
 
         List<ApprovalUserOption> selectedApprovers = new List<ApprovalUserOption>();
@@ -54,7 +56,7 @@ public sealed partial class ApprovalService
             {
                 if (step.IsRequired)
                 {
-                    return null;
+                    return ServiceResultOfT<ConfiguredApprovalLine>.Fail("필수 결재자를 찾을 수 없습니다. 관리자에게 결재 경로 설정을 확인해 달라고 요청해 주세요.");
                 }
 
                 continue;
@@ -66,7 +68,7 @@ public sealed partial class ApprovalService
 
         if (selectedApprovers.Count <= 0)
         {
-            return null;
+            return ServiceResultOfT<ConfiguredApprovalLine>.Fail("결재 경로에 사용할 수 있는 결재자가 없습니다. 관리자에게 문의해 주세요.");
         }
 
         ApprovalUserOption finalApprover = selectedApprovers[selectedApprovers.Count - 1];
@@ -85,7 +87,8 @@ public sealed partial class ApprovalService
             defaultLine.SecondApproverUserIdValue = ApprovalUserId.CreateExisting(selectedApprovers[1].UserId);
         }
 
-        return new ConfiguredApprovalLine(selectedStepCount, intermediateApprovers, new List<ApprovalUserOption> { finalApprover }, defaultLine);
+        ConfiguredApprovalLine configuredLine = new ConfiguredApprovalLine(selectedStepCount, intermediateApprovers, new List<ApprovalUserOption> { finalApprover }, defaultLine);
+        return ServiceResultOfT<ConfiguredApprovalLine>.Succeed(configuredLine);
     }
 
     private OrganizationPositionId? createUserPositionIdOrNull(

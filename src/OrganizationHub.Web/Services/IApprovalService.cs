@@ -8,6 +8,7 @@ namespace OrganizationHub.Web.Services;
 
 public interface IApprovalService
 {
+    Task<FileDownloadResult?> GetDocumentSnapshotOrNullAsync(UserSession userSession, ApprovalRequestId requestId, CancellationToken cancellationToken);
     Task<ApprovalCreateContext> GetCreateContextAsync(UserSession userSession, CancellationToken cancellationToken);
     Task<ServiceResult> SubmitRequestAsync(UserSession userSession, ApprovalRequestCommand command, CancellationToken cancellationToken);
     Task<IReadOnlyList<ApprovalRequestItem>> GetPendingApprovalsAsync(UserSession userSession, CancellationToken cancellationToken);

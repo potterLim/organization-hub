@@ -40,9 +40,13 @@ else
                     <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" />
                     <span>@approvalRequest.FileName</span>
                     <MudTooltip Text="다운로드">
-                        <MudIconButton Href="@("/files/" + approvalRequest.FileId + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
+                        <MudIconButton Href="@(approvalRequest.HasDocumentSnapshot ? "/approvals/" + approvalRequest.Id + "/document" : "/files/" + approvalRequest.FileId + "/download")" download="@approvalRequest.FileName" data-enhance-nav="false" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
                     </MudTooltip>
                 </div>
+                @if (approvalRequest.HasDocumentSnapshot)
+                {
+                    <MudText Typo="Typo.body2" Class="hub-list-meta">제출 시점에 보존한 문서입니다.</MudText>
+                }
                 @if (shouldShowNextStepSummary(approvalRequest))
                 {
                     <div class="hub-approval-next-step">
@@ -53,6 +57,7 @@ else
                 <MudTextField Value="@getCommentValue(ApprovalRequestId.CreateExisting(approvalRequest.Id))"
                               ValueChanged="@((string comment) => setCommentValue(ApprovalRequestId.CreateExisting(approvalRequest.Id), comment))"
                               Label="코멘트"
+                              ReadOnly="@(approvalRequest.Status == EApprovalRequestStatus.Publishing)"
                               Lines="3"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
@@ -82,11 +87,19 @@ else
                     }
                 </div>
                 <MudStack Row="true" Spacing="2" Class="hub-form-actions mt-3">
-                    @if (hasApprovedFileConflict(approvalRequest) == false)
+                    @if (approvalRequest.Status == EApprovalRequestStatus.Publishing)
+                    {
+                        <MudText Typo="Typo.body2">승인본을 저장하고 있습니다. 저장 완료 후 목록을 다시 확인해 주세요.</MudText>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => approveRequestAsync(approvalRequest))">저장 다시 시도</MudButton>
+                    }
+                    else if (hasApprovedFileConflict(approvalRequest) == false)
                     {
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="@(() => approveRequestAsync(approvalRequest))">승인</MudButton>
                     }
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Cancel" OnClick="@(() => rejectRequestAsync(approvalRequest))">반려</MudButton>
+                    @if (approvalRequest.Status != EApprovalRequestStatus.Publishing)
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Cancel" OnClick="@(() => rejectRequestAsync(approvalRequest))">반려</MudButton>
+                    }
                 </MudStack>
             </MudPaper>
         }

@@ -5,6 +5,14 @@ namespace OrganizationHub.Web.Data;
 
 public sealed class OrganizationHubDbContext : DbContext
 {
+    public DbSet<ApprovalDocument> ApprovalDocuments
+    {
+        get; set;
+    }
+    public DbSet<ApprovalPublication> ApprovalPublications
+    {
+        get; set;
+    }
     public DbSet<UserAccount> UserAccounts
     {
         get; set;
@@ -84,6 +92,8 @@ public sealed class OrganizationHubDbContext : DbContext
 
     public OrganizationHubDbContext(DbContextOptions<OrganizationHubDbContext> options) : base(options)
     {
+        ApprovalDocuments = Set<ApprovalDocument>();
+        ApprovalPublications = Set<ApprovalPublication>();
         UserAccounts = Set<UserAccount>();
         Teams = Set<Team>();
         Positions = Set<OrganizationPosition>();

@@ -10,7 +10,7 @@ using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Tests.Fakes;
 
-public sealed class FakeDriveService : IDriveService
+public sealed partial class FakeDriveService : IDriveService
 {
     private readonly Dictionary<string, DriveFileMetadata> mMetadataByFileId = new Dictionary<string, DriveFileMetadata>();
     private readonly Dictionary<string, IReadOnlySet<string>> mAncestorFolderIdsByItemId = new Dictionary<string, IReadOnlySet<string>>();

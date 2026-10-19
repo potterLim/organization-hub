@@ -10,6 +10,8 @@
 
 <h1 class="hub-sr-only">결재 요청</h1>
 
+<MudButton Href="/approvals/history?view=requested" StartIcon="@Icons.Material.Filled.TrackChanges" Color="Color.Primary" Class="mb-4">내 요청 진행 상황</MudButton>
+
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
     <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>

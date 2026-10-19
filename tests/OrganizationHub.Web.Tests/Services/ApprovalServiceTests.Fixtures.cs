@@ -118,9 +118,9 @@ public sealed partial class ApprovalServiceTests
         position.PermissionGrants.Add(permissionGrant);
     }
 
-    private static TestDbContextFactory createApprovalDbContextFactory(EFinalApproverSeedMode finalApproverSeedMode)
+    private static TestDbContextFactory createApprovalDbContextFactory(EFinalApproverSeedMode finalApproverSeedMode, TestDbContextFactory? dbContextFactoryOrNull = null)
     {
-        TestDbContextFactory dbContextFactory = new TestDbContextFactory();
+        TestDbContextFactory dbContextFactory = dbContextFactoryOrNull == null ? new TestDbContextFactory() : dbContextFactoryOrNull;
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
         {
             GlobalSetting setting = new GlobalSetting();

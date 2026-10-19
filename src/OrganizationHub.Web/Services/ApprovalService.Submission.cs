@@ -57,6 +57,12 @@ public sealed partial class ApprovalService
             return ServiceResult.Fail("선택한 파일을 결재 요청 위치에서 찾을 수 없습니다.");
         }
 
+        ServiceResultOfT<ApprovalDocument> documentResult = await captureDocumentAsync(fileId, cancellationToken);
+        if (documentResult.IsSuccess == false || documentResult.ValueOrNull == null)
+        {
+            return ServiceResult.Fail(documentResult.ErrorMessage);
+        }
+
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             UserAccount? requesterUserOrNull = await loadUserAccountWithAffiliationOrNullAsync(
@@ -74,7 +80,13 @@ public sealed partial class ApprovalService
                 DestinationFolderMetadata = destinationFolderMetadataOrNull
             };
             ApprovalRequest request = createPendingApprovalRequest(submission);
+            ApprovalDocument document = documentResult.ValueOrNull;
+            request.FileName = document.FileName;
+            request.MimeType = document.ContentType;
+            request.DocumentHash = calculateDocumentHash(document.Content);
+            document.ApprovalRequest = request;
             dbContext.ApprovalRequests.Add(request);
+            dbContext.ApprovalDocuments.Add(document);
             await dbContext.SaveChangesAsync(cancellationToken);
             bumpApprovalVersion();
             return ServiceResult.Succeed();

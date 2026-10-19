@@ -6,6 +6,14 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class ApprovalRequestItem
 {
+    public int RequesterUserId
+    {
+        get; set;
+    }
+    public bool HasDocumentSnapshot
+    {
+        get; set;
+    }
     public int Id
     {
         get; set;

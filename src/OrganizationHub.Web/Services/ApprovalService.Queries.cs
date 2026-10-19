@@ -19,11 +19,11 @@ public sealed partial class ApprovalService
             int currentUserId = userSession.UserAccountId.GetRequiredValue();
             List<ApprovalRequest> requests = await createApprovalRequestDisplayQuery(dbContext)
                 .Where(request =>
-                    request.Status == EApprovalRequestStatus.Pending &&
+                    (request.Status == EApprovalRequestStatus.Pending || request.Status == EApprovalRequestStatus.Publishing) &&
                     request.Steps.Any(step =>
                         step.StepNumber == request.CurrentStepNumber &&
                         step.ApproverUserId == currentUserId &&
-                        step.Status == EApprovalStepStatus.Pending))
+                        (step.Status == EApprovalStepStatus.Pending || request.Status == EApprovalRequestStatus.Publishing)))
                 .OrderBy(request => request.RequestedAt)
                 .ToListAsync(cancellationToken);
             Dictionary<int, UserAccount> actorUsersById = await loadApprovalActorUsersByIdAsync(dbContext, requests, cancellationToken);
@@ -35,24 +35,31 @@ public sealed partial class ApprovalService
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
-            IQueryable<ApprovalRequest> query = createApprovalRequestDisplayQuery(dbContext)
-                .Where(request => request.Status != EApprovalRequestStatus.Pending);
-
-            List<ApprovalRequest> requests = await query
-                .OrderByDescending(request => request.RequestedAt)
-                .Take(RELATED_HISTORY_CANDIDATE_COUNT)
+            int currentUserId = userSession.UserAccountId.GetRequiredValue();
+            List<ApprovalRequest> ongoingRequests = await createApprovalRequestDisplayQuery(dbContext)
+                .Where(request => request.RequesterUserId == currentUserId)
+                .Where(request => request.Status == EApprovalRequestStatus.Pending || request.Status == EApprovalRequestStatus.Publishing)
+                .OrderBy(request => request.RequestedAt)
+                .ThenBy(request => request.Id)
                 .ToListAsync(cancellationToken);
-            List<ApprovalRequest> readableRequests = new List<ApprovalRequest>();
-            foreach (ApprovalRequest request in requests)
-            {
-                if (await canReadApprovalHistoryAsync(userSession, request, cancellationToken))
-                {
-                    readableRequests.Add(request);
-                }
-            }
+            IQueryable<ApprovalRequest> query = createApprovalRequestDisplayQuery(dbContext)
+                .Where(request => request.Status != EApprovalRequestStatus.Pending)
+                .Where(request => request.Status != EApprovalRequestStatus.Publishing || request.RequesterUserId != currentUserId);
+            IReadOnlyList<int?> readableTeamIds = await getReadableHistoryTeamIdsAsync(userSession, query, cancellationToken);
+            List<ApprovalRequest> readableRequests = await query
+                .Where(request =>
+                    request.RequesterUserId == currentUserId ||
+                    request.Steps.Any(step => step.ApproverUserId == currentUserId && step.Status != EApprovalStepStatus.Pending) ||
+                    readableTeamIds.Contains(request.TeamId))
+                .OrderByDescending(request => request.RequestedAt)
+                .ThenByDescending(request => request.Id)
+                .Take(RELATED_HISTORY_MAXIMUM_COUNT)
+                .ToListAsync(cancellationToken);
 
-            Dictionary<int, UserAccount> actorUsersById = await loadApprovalActorUsersByIdAsync(dbContext, readableRequests, cancellationToken);
-            return createApprovalRequestItems(readableRequests, actorUsersById);
+            HashSet<int> ongoingRequestIds = ongoingRequests.Select(request => request.Id).ToHashSet();
+            ongoingRequests.AddRange(readableRequests.Where(request => ongoingRequestIds.Contains(request.Id) == false));
+            Dictionary<int, UserAccount> actorUsersById = await loadApprovalActorUsersByIdAsync(dbContext, ongoingRequests, cancellationToken);
+            return createApprovalRequestItems(ongoingRequests, actorUsersById);
         }
     }
 
@@ -114,30 +121,27 @@ public sealed partial class ApprovalService
         return actorUsers.ToDictionary(user => user.Id);
     }
 
-    private async Task<bool> canReadApprovalHistoryAsync(
+    private async Task<IReadOnlyList<int?>> getReadableHistoryTeamIdsAsync(
         UserSession userSession,
-        ApprovalRequest request,
+        IQueryable<ApprovalRequest> query,
         CancellationToken cancellationToken)
     {
-        int currentUserId = userSession.UserAccountId.GetRequiredValue();
-        if (request.RequesterUserId == currentUserId)
+        List<int?> teamIds = await query.Select(request => request.TeamId).Distinct().ToListAsync(cancellationToken);
+        List<int?> readableTeamIds = new List<int?>();
+        foreach (int? teamIdOrNull in teamIds)
         {
-            return true;
+            OrganizationTeamId? targetTeamIdOrNull = OrganizationTeamId.CreateExistingOrNull(teamIdOrNull);
+            bool canReadHistory = await mOrganizationPermissionService.HasPermissionAsync(
+                userSession,
+                new PermissionKey(PermissionKeys.APPROVAL_HISTORY_READ),
+                targetTeamIdOrNull,
+                cancellationToken);
+            if (canReadHistory)
+            {
+                readableTeamIds.Add(teamIdOrNull);
+            }
         }
 
-        bool isActionedApprover = request.Steps.Any(step =>
-            step.ApproverUserId == currentUserId &&
-            step.Status != EApprovalStepStatus.Pending);
-        if (isActionedApprover)
-        {
-            return true;
-        }
-
-        OrganizationTeamId? targetTeamIdOrNull = OrganizationTeamId.CreateExistingOrNull(request.TeamId);
-        return await mOrganizationPermissionService.HasPermissionAsync(
-            userSession,
-            new PermissionKey(PermissionKeys.APPROVAL_HISTORY_READ),
-            targetTeamIdOrNull,
-            cancellationToken);
+        return readableTeamIds;
     }
 }

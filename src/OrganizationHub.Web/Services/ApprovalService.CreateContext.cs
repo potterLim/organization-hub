@@ -35,10 +35,17 @@ public sealed partial class ApprovalService
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             List<UserAccount> users = await loadActiveApprovalUsersAsync(dbContext, cancellationToken);
-            ConfiguredApprovalLine? configuredLineOrNull = await createConfiguredApprovalLineOrNullAsync(dbContext, users, userSession, cancellationToken);
-            if (configuredLineOrNull != null)
+            ApprovalWorkflow? workflowOrNull = await findMatchingApprovalWorkflowOrNullAsync(dbContext, users, userSession, cancellationToken);
+            if (workflowOrNull != null)
             {
-                applyConfiguredApprovalLine(context, sourceFolders, configuredLineOrNull);
+                ServiceResultOfT<ConfiguredApprovalLine> lineResult = createConfiguredApprovalLine(workflowOrNull, users, userSession);
+                if (lineResult.IsSuccess == false || lineResult.ValueOrNull == null)
+                {
+                    context.BlockReason = lineResult.ErrorMessage;
+                    return context;
+                }
+
+                applyConfiguredApprovalLine(context, sourceFolders, lineResult.ValueOrNull);
                 return context;
             }
 

@@ -1,6 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OrganizationHub.Web.Data;
 using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
@@ -50,8 +52,23 @@ public sealed partial class ApprovalService
                 return ServiceResult.Fail("결재 요청을 찾을 수 없습니다.");
             }
 
+            if (requestOrNull.Status == EApprovalRequestStatus.Publishing && requestOrNull.Steps.Exists(step => step.StepNumber == requestOrNull.StepCount && step.ApproverUserId == userSession.UserAccountId.GetRequiredValue()))
+            {
+                return await PublishApprovedFileAsync(approvalRequestId, cancellationToken);
+            }
+
+            if (string.IsNullOrWhiteSpace(requestOrNull.DocumentHash))
+            {
+                return ServiceResult.Fail("제출 당시 문서가 보존되지 않은 기존 요청입니다. 문서를 확인한 뒤 새로 상신해 주세요.");
+            }
+
             ApprovalStep? currentStepOrNull = getCurrentStepOrNull(requestOrNull, userSession);
             if (currentStepOrNull == null)
+            {
+                return ServiceResult.Fail("결재할 권한이 없습니다.");
+            }
+
+            if (await canActionApprovalStepAsync(userSession, requestOrNull, currentStepOrNull, cancellationToken) == false)
             {
                 return ServiceResult.Fail("결재할 권한이 없습니다.");
             }
@@ -77,7 +94,7 @@ public sealed partial class ApprovalService
 
             if (currentStepOrNull.StepNumber == requestOrNull.StepCount)
             {
-                ServiceResult copyResult = await copyApprovedFileIfConfiguredAsync(dbContext, requestOrNull, approvedFileConflictResolution, cancellationToken);
+                ServiceResult copyResult = await preparePublicationAsync(dbContext, requestOrNull, approvedFileConflictResolution, cancellationToken);
                 if (copyResult.IsSuccess == false)
                 {
                     return copyResult;
@@ -86,8 +103,25 @@ public sealed partial class ApprovalService
 
             ApprovalComment approvalComment = getApprovalCommentOrDefault(requestOrNull, currentStepOrNull, comment);
             approveCurrentStep(userSession, actorUserOrNull, requestOrNull, currentStepOrNull, approvalComment);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            bool isFinalStep = currentStepOrNull.StepNumber == requestOrNull.StepCount;
+            if (isFinalStep)
+            {
+                requestOrNull.Status = EApprovalRequestStatus.Publishing;
+                requestOrNull.CompletedAt = null;
+            }
+
+            ServiceResult saveResult = await saveDecisionAsync(dbContext, requestOrNull, cancellationToken);
+            if (saveResult.IsSuccess == false)
+            {
+                return saveResult;
+            }
+
             bumpApprovalVersion();
+            if (isFinalStep)
+            {
+                return await PublishApprovedFileAsync(approvalRequestId, cancellationToken);
+            }
+
             return ServiceResult.Succeed();
         }
     }
@@ -124,15 +158,59 @@ public sealed partial class ApprovalService
                 return ServiceResult.Fail("반려할 권한이 없습니다.");
             }
 
+            if (await canActionApprovalStepAsync(userSession, requestOrNull, currentStepOrNull, cancellationToken) == false)
+            {
+                return ServiceResult.Fail("반려할 권한이 없습니다.");
+            }
+
             UserAccount? actorUserOrNull = await loadUserAccountWithAffiliationOrNullAsync(
                 dbContext,
                 userSession.UserAccountId,
                 cancellationToken);
             rejectCurrentStep(userSession, actorUserOrNull, requestOrNull, currentStepOrNull, comment);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            ServiceResult saveResult = await saveDecisionAsync(dbContext, requestOrNull, cancellationToken);
+            if (saveResult.IsSuccess == false)
+            {
+                return saveResult;
+            }
+
             bumpApprovalVersion();
             return ServiceResult.Succeed();
         }
+    }
+
+    private async Task<ServiceResult> saveDecisionAsync(OrganizationHubDbContext dbContext, ApprovalRequest request, CancellationToken cancellationToken)
+    {
+        request.Revision++;
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return ServiceResult.Succeed();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return ServiceResult.Fail("다른 요청에서 이미 처리한 결재입니다. 목록을 새로 확인해 주세요.");
+        }
+        catch (DbUpdateException exception)
+        {
+            mLogger.LogWarning(exception, "Approval decision could not be saved.");
+            return ServiceResult.Fail("결재를 저장하지 못했습니다. 다른 승인본 저장 작업이 진행 중인지 확인한 뒤 다시 시도해 주세요.");
+        }
+    }
+
+    private async Task<bool> canActionApprovalStepAsync(
+        UserSession userSession,
+        ApprovalRequest request,
+        ApprovalStep step,
+        CancellationToken cancellationToken)
+    {
+        string requiredPermissionKey = step.StepNumber == request.StepCount ? PermissionKeys.APPROVAL_FINAL_APPROVE : PermissionKeys.APPROVAL_APPROVE;
+        OrganizationTeamId? targetTeamIdOrNull = OrganizationTeamId.CreateExistingOrNull(request.TeamId);
+        return await mOrganizationPermissionService.HasPermissionAsync(
+            userSession,
+            new PermissionKey(requiredPermissionKey),
+            targetTeamIdOrNull,
+            cancellationToken);
     }
 
     private void approveCurrentStep(

@@ -14,6 +14,11 @@ public class ApprovalRequest
     public string FileId { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
     public string MimeType { get; set; } = string.Empty;
+    public string DocumentHash { get; set; } = string.Empty;
+    public int Revision
+    {
+        get; set;
+    }
     public string SourceFolderId { get; set; } = string.Empty;
     public EDriveFolderKind SourceFolderKind
     {

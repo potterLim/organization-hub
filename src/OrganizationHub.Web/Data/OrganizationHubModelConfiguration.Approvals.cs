@@ -11,6 +11,13 @@ internal static partial class OrganizationHubModelConfiguration
         configureApprovalRequests(modelBuilder);
         configureApprovalSteps(modelBuilder);
         configureApprovalAuditLogs(modelBuilder);
+        modelBuilder.Entity<ApprovalDocument>().HasKey(document => document.ApprovalRequestId);
+        modelBuilder.Entity<ApprovalDocument>().HasOne(document => document.ApprovalRequest).WithOne().HasForeignKey<ApprovalDocument>(document => document.ApprovalRequestId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<ApprovalPublication>().HasKey(publication => publication.ApprovalRequestId);
+        modelBuilder.Entity<ApprovalPublication>().HasOne(publication => publication.ApprovalRequest).WithOne().HasForeignKey<ApprovalPublication>(publication => publication.ApprovalRequestId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<ApprovalPublication>().HasIndex(publication => publication.TargetFileId).IsUnique().HasFilter("\"IsCompleted\" = 0");
+        modelBuilder.Entity<ApprovalPublication>().HasIndex(publication => publication.OperationKey).IsUnique();
+        modelBuilder.Entity<ApprovalPublication>().Property(publication => publication.LeaseToken).IsConcurrencyToken();
     }
 
     private static void configureApprovalRequests(ModelBuilder modelBuilder)
@@ -26,6 +33,8 @@ internal static partial class OrganizationHubModelConfiguration
         approvalRequestBuilder.Property(request => request.FileId).HasMaxLength(256).IsRequired();
         approvalRequestBuilder.Property(request => request.FileName).HasMaxLength(512).IsRequired();
         approvalRequestBuilder.Property(request => request.MimeType).HasMaxLength(160).IsRequired();
+        approvalRequestBuilder.Property(request => request.DocumentHash).HasMaxLength(64).IsRequired();
+        approvalRequestBuilder.Property(request => request.Revision).IsConcurrencyToken();
         approvalRequestBuilder.Property(request => request.SourceFolderId).HasMaxLength(256).IsRequired();
         approvalRequestBuilder.Property(request => request.SourceFolderKind).HasConversion<string>().HasMaxLength(32).IsRequired();
         approvalRequestBuilder.Property(request => request.TeamName).HasMaxLength(120).IsRequired();

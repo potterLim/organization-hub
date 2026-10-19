@@ -4,5 +4,6 @@ public enum EApprovalRequestStatus
 {
     Pending,
     Approved,
-    Rejected
+    Rejected,
+    Publishing
 }

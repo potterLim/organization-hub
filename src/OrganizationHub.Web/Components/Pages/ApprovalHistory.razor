@@ -7,21 +7,27 @@
 
 <h1 class="hub-sr-only">결재 기록</h1>
 
+<MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" Class="mb-4">
+    <MudButton Href="/approvals/history?view=requested" Variant="@(mShowRequestedOnly ? Variant.Filled : Variant.Outlined)" Color="Color.Primary">내 진행 중 요청 (@mApprovalHistory.Count(isOwnOngoingRequest))</MudButton>
+    <MudButton Href="/approvals/history" Variant="@(mShowRequestedOnly ? Variant.Outlined : Variant.Filled)" Color="Color.Primary">전체 기록</MudButton>
+    <MudButton OnClick="reloadAsync" Disabled="mIsLoading" StartIcon="@Icons.Material.Filled.Refresh">새로고침</MudButton>
+</MudStack>
+
 @if (mIsLoading)
 {
     <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
 }
-else if (mApprovalHistory.Count == 0)
+else if (getVisibleRequests().Any() == false)
 {
     <div class="hub-empty hub-empty-state">
         <MudIcon Icon="@Icons.Material.Filled.HistoryEdu" Size="Size.Medium" />
-        <span>표시할 결재 기록이 없습니다.</span>
+        <span>@(mShowRequestedOnly ? "내가 요청한 진행 중 결재가 없습니다. 완료·반려된 요청은 전체 기록에서 확인할 수 있습니다." : "표시할 결재 기록이 없습니다.")</span>
     </div>
 }
 else
 {
     <div class="hub-approval-list">
-        @foreach (ApprovalRequestItem approvalRequest in mApprovalHistory)
+        @foreach (ApprovalRequestItem approvalRequest in getVisibleRequests())
         {
             <MudPaper Class="hub-card hub-approval-card pa-4">
                 <div class="hub-approval-card-head">
@@ -31,13 +37,21 @@ else
                     </div>
                     <span class="@getStatusClass(approvalRequest)">@getStatusText(approvalRequest)</span>
                 </div>
+                @if (approvalRequest.Status == EApprovalRequestStatus.Pending || approvalRequest.Status == EApprovalRequestStatus.Publishing)
+                {
+                    <MudText Typo="Typo.body2" Class="my-3">@getProgressText(approvalRequest)</MudText>
+                }
                 <div class="hub-approval-file-row">
                     <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" />
                     <span>@approvalRequest.FileName</span>
                     <MudTooltip Text="다운로드">
-                        <MudIconButton Href="@("/files/" + approvalRequest.GetDownloadFileId() + "/download")" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
+                        <MudIconButton Href="@(approvalRequest.HasDocumentSnapshot ? "/approvals/" + approvalRequest.Id + "/document" : "/files/" + approvalRequest.GetDownloadFileId() + "/download")" download="@approvalRequest.FileName" data-enhance-nav="false" Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small" aria-label="다운로드" />
                     </MudTooltip>
                 </div>
+                @if (approvalRequest.HasDocumentSnapshot)
+                {
+                    <MudText Typo="Typo.body2" Class="hub-list-meta">제출 시점에 보존한 문서입니다.</MudText>
+                }
                 <div class="hub-approval-steps">
                     @foreach (ApprovalStepItem step in approvalRequest.Steps)
                     {

@@ -89,6 +89,74 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.ToTable("ApprovalAuditLogs");
                 });
 
+            modelBuilder.Entity("OrganizationHub.Web.Data.Entities.ApprovalDocument", b =>
+                {
+                    b.Property<int>("ApprovalRequestId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ApprovalRequestId");
+
+                    b.ToTable("ApprovalDocuments");
+                });
+
+            modelBuilder.Entity("OrganizationHub.Web.Data.Entities.ApprovalPublication", b =>
+                {
+                    b.Property<int>("ApprovalRequestId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsReplacement")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LeaseExpiresAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LeaseToken")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("NextAttemptAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OperationKey")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TargetFileId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ApprovalRequestId");
+
+                    b.HasIndex("OperationKey")
+                        .IsUnique();
+
+                    b.HasIndex("TargetFileId")
+                        .IsUnique()
+                        .HasFilter("\"IsCompleted\" = 0");
+
+                    b.ToTable("ApprovalPublications");
+                });
+
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.ApprovalRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -115,6 +183,11 @@ namespace OrganizationHub.Web.Data.Migrations
 
                     b.Property<int>("CurrentStepNumber")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("DocumentHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("FileId")
                         .IsRequired()
@@ -159,6 +232,10 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int>("RequesterUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("SourceFolderId")
@@ -1039,6 +1116,28 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.HasOne("OrganizationHub.Web.Data.Entities.ApprovalRequest", "ApprovalRequest")
                         .WithMany("AuditLogs")
                         .HasForeignKey("ApprovalRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApprovalRequest");
+                });
+
+            modelBuilder.Entity("OrganizationHub.Web.Data.Entities.ApprovalDocument", b =>
+                {
+                    b.HasOne("OrganizationHub.Web.Data.Entities.ApprovalRequest", "ApprovalRequest")
+                        .WithOne()
+                        .HasForeignKey("OrganizationHub.Web.Data.Entities.ApprovalDocument", "ApprovalRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApprovalRequest");
+                });
+
+            modelBuilder.Entity("OrganizationHub.Web.Data.Entities.ApprovalPublication", b =>
+                {
+                    b.HasOne("OrganizationHub.Web.Data.Entities.ApprovalRequest", "ApprovalRequest")
+                        .WithOne()
+                        .HasForeignKey("OrganizationHub.Web.Data.Entities.ApprovalPublication", "ApprovalRequestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

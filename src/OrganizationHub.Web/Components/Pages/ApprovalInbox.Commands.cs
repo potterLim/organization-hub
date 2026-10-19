@@ -29,7 +29,7 @@ public partial class ApprovalInbox
         }
 
         ApprovalRequestId approvalRequestId = ApprovalRequestId.CreateExisting(approvalRequest.Id);
-        if (conflictResolutionOrNull.HasValue == false)
+        if (conflictResolutionOrNull.HasValue == false && approvalRequest.Status != EApprovalRequestStatus.Publishing)
         {
             bool shouldStopForConflict = await tryShowApprovedFileConflictAsync(approvalRequest);
             if (shouldStopForConflict)
@@ -56,8 +56,9 @@ public partial class ApprovalInbox
         if (approvalResult.IsSuccess)
         {
             mApprovedFileConflictsByApprovalId.Remove(approvalRequest.Id);
-            await loadDataAsync();
         }
+
+        await loadDataAsync();
     }
 
     private async Task<bool> tryShowApprovedFileConflictAsync(ApprovalRequestItem approvalRequest)

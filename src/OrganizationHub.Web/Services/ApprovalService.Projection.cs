@@ -62,6 +62,8 @@ public sealed partial class ApprovalService
     {
         ApprovalRequestItem item = new ApprovalRequestItem();
         item.Id = request.Id;
+        item.RequesterUserId = request.RequesterUserId;
+        item.HasDocumentSnapshot = string.IsNullOrWhiteSpace(request.DocumentHash) == false;
         item.Title = request.Title;
         item.FileId = request.FileId;
         item.FileName = request.FileName;
