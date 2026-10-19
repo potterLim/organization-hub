@@ -77,6 +77,30 @@ public sealed class WorkGuidelineServiceTests
         }
     }
 
+    [Fact]
+    public async Task StaleWholeDocumentSaveDoesNotDeleteAnotherEditorsNewCardAsync()
+    {
+        using (TestDbContextFactory factory = new TestDbContextFactory())
+        {
+            await seedSectionsAsync(factory);
+            WorkGuidelineService service = new WorkGuidelineService(factory);
+            List<WorkGuidelineSectionFormModel> stale = new List<WorkGuidelineSectionFormModel>
+            {
+                createSectionFormModel(1, "보고", "보고 기준"),
+                createSectionFormModel(2, "자료", "자료 기준")
+            };
+            List<WorkGuidelineSectionFormModel> first = new List<WorkGuidelineSectionFormModel>(stale);
+            first.Add(createSectionFormModel(0, "새 기준", "다른 관리자가 추가"));
+            Assert.True((await service.SaveSectionsAsync(first, CancellationToken.None)).IsSuccess);
+            ServiceResult result = await service.SaveSectionsAsync(stale, CancellationToken.None);
+            Assert.False(result.IsSuccess);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                Assert.Equal(3, db.WorkGuidelineSections.Count());
+            }
+        }
+    }
+
     [Theory]
     [InlineData(0, EWorkGuidelineGridLayout.Empty)]
     [InlineData(1, EWorkGuidelineGridLayout.TwoColumns)]
