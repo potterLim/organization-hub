@@ -21,6 +21,9 @@ public partial class Dashboard
     private bool mIsLoadingWeekTodos = true;
     private bool mIsLoadingRecentMaterials = true;
     private bool mShouldShowCalendarAuthor;
+    private bool mHasLoadedWorkspaceSetup;
+    private bool mIsWorkspaceConnected;
+    private bool mHasWorkspaceRootFolder;
     private bool mShouldShowTodoAuthor = true;
     private Task? mDashboardSectionsObservationTaskOrNull;
     private Task? mRecentMaterialsObservationTaskOrNull;

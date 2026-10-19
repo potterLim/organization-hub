@@ -7,6 +7,7 @@
 @inject ITodoService TodoService
 @inject IApprovalService ApprovalService
 @inject IGlobalSettingService GlobalSettingService
+@inject IGoogleConnectionService GoogleConnectionService
 @inject IClientTimeZoneService ClientTimeZoneService
 @inject Microsoft.Extensions.Logging.ILogger<Dashboard> Logger
 
@@ -14,59 +15,48 @@
 
 <h1 class="hub-sr-only">홈</h1>
 
+@if (mHasLoadedWorkspaceSetup)
+{
+    <WorkspaceSetupGuide IsConnected="mIsWorkspaceConnected" HasRootFolder="mHasWorkspaceRootFolder" />
+}
+
 <MudGrid Spacing="5" Class="hub-dashboard-grid">
     <MudItem xs="12" lg="6">
         <MudPaper Class="hub-card hub-dashboard-section-card pa-4">
             <div class="hub-dashboard-card-head">
-                <MudText Typo="Typo.h6">이번 주 일정</MudText>
-                <MudButton Href="/calendar" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
+                <MudText Typo="Typo.h6">내 결재 대기</MudText>
+                <MudButton Href="/approvals/inbox" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
             </div>
             <div class="hub-dashboard-card-body">
-                @if (mIsLoadingWeekEvents)
+                @if (mIsLoadingPendingApprovals)
                 {
-                    <DashboardSkeletonList RowCount="4" />
+                    <DashboardSkeletonList RowCount="3" />
                 }
-                else if (string.IsNullOrWhiteSpace(mWeekEventsErrorMessage) == false)
+                else if (string.IsNullOrWhiteSpace(mPendingApprovalsErrorMessage) == false)
                 {
                     <div class="hub-dashboard-card-error">
                         <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
-                        <span>@mWeekEventsErrorMessage</span>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadWeekEventsAsync">다시 시도</MudButton>
+                        <span>@mPendingApprovalsErrorMessage</span>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadPendingApprovalsAsync">다시 시도</MudButton>
                     </div>
                 }
-                else if (mWeekEvents.Count == 0)
+                else if (mPendingApprovals.Count == 0)
                 {
-                    <div class="hub-empty hub-empty-state">이번 주 일정이 없습니다.</div>
+                    <ResourceStateMessage Icon="@Icons.Material.Filled.FactCheck" Title="대기 중인 결재가 없습니다." Description="요청하거나 처리한 문서는 결재 기록에서 확인할 수 있습니다." ActionLabel="결재 기록 보기" ActionHref="/approvals/history" />
                 }
                 else
                 {
-                    <div class="hub-dashboard-event-list">
-                        @foreach (CalendarEventItem calendarEvent in mWeekEvents)
+                    <div class="hub-dashboard-approval-list">
+                        @foreach (ApprovalRequestItem approvalRequest in mPendingApprovals)
                         {
-                            string eventMeta = formatDashboardEventMeta(calendarEvent);
-                            string eventLocation = formatDashboardEventLocation(calendarEvent);
-                            <div class="hub-dashboard-event-row">
-                                <div class="hub-dashboard-row-main">
-                                    <MudText Typo="Typo.body2" Class="hub-list-title hub-dashboard-row-title">@calendarEvent.Summary</MudText>
-                                    <span class="hub-list-side hub-dashboard-row-side hub-dashboard-event-time">@formatEventTime(calendarEvent)</span>
-                                </div>
-                                @if (string.IsNullOrWhiteSpace(eventMeta) == false || string.IsNullOrWhiteSpace(eventLocation) == false)
-                                {
-                                    <div class="hub-dashboard-event-meta-row">
-                                        @if (string.IsNullOrWhiteSpace(eventMeta) == false)
-                                        {
-                                            <span class="hub-list-meta hub-dashboard-row-meta">@eventMeta</span>
-                                        }
-                                        else
-                                        {
-                                            <span></span>
-                                        }
-                                        @if (string.IsNullOrWhiteSpace(eventLocation) == false)
-                                        {
-                                            <span class="hub-list-meta hub-dashboard-event-location">@eventLocation</span>
-                                        }
+                            <div class="hub-dashboard-approval-row">
+                                <div class="hub-dashboard-approval-content">
+                                    <div class="hub-dashboard-row-main">
+                                        <MudText Typo="Typo.body2" Class="hub-list-title hub-dashboard-approval-title hub-dashboard-row-title">@approvalRequest.Title</MudText>
+                                        <span class="hub-status-pill hub-status-active hub-dashboard-approval-step">@getCurrentApprovalStepLabel(approvalRequest)</span>
                                     </div>
-                                }
+                                    <MudText Typo="Typo.caption" Class="hub-list-meta hub-dashboard-row-meta">@formatDashboardApprovalRequesterMeta(approvalRequest)</MudText>
+                                </div>
                             </div>
                         }
                     </div>
@@ -95,7 +85,7 @@
                 }
                 else if (mWeekTodos.Count == 0)
                 {
-                    <div class="hub-empty hub-empty-state">이번 주까지 마감인 할 일이 없습니다.</div>
+                    <ResourceStateMessage Icon="@Icons.Material.Filled.TaskAlt" Title="이번 주까지 마감인 할 일이 없습니다." Description="기한이 없는 할 일과 다음 주 할 일도 목록에서 확인할 수 있습니다." ActionLabel="할 일 열기" ActionHref="/todos" />
                 }
                 else
                 {
@@ -133,39 +123,55 @@
     <MudItem xs="12" lg="6">
         <MudPaper Class="hub-card hub-dashboard-section-card pa-4">
             <div class="hub-dashboard-card-head">
-                <MudText Typo="Typo.h6">내 결재 대기</MudText>
-                <MudButton Href="/approvals/inbox" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
+                <MudText Typo="Typo.h6">이번 주 일정</MudText>
+                <MudButton Href="/calendar" Variant="Variant.Text" Color="Color.Primary" EndIcon="@Icons.Material.Filled.ArrowForward" Class="hub-dashboard-card-action">전체 보기</MudButton>
             </div>
             <div class="hub-dashboard-card-body">
-                @if (mIsLoadingPendingApprovals)
+                @if (mIsLoadingWeekEvents)
                 {
-                    <DashboardSkeletonList RowCount="3" />
+                    <DashboardSkeletonList RowCount="4" />
                 }
-                else if (string.IsNullOrWhiteSpace(mPendingApprovalsErrorMessage) == false)
+                else if (string.IsNullOrWhiteSpace(mWeekEventsErrorMessage) == false)
                 {
                     <div class="hub-dashboard-card-error">
                         <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Small" />
-                        <span>@mPendingApprovalsErrorMessage</span>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadPendingApprovalsAsync">다시 시도</MudButton>
+                        <span>@mWeekEventsErrorMessage</span>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="loadWeekEventsAsync">다시 시도</MudButton>
                     </div>
                 }
-                else if (mPendingApprovals.Count == 0)
+                else if (mWeekEvents.Count == 0)
                 {
-                    <div class="hub-empty hub-empty-state">대기 중인 결재가 없습니다.</div>
+                    <ResourceStateMessage Icon="@Icons.Material.Filled.EventAvailable" Title="이번 주 일정이 없습니다." Description="다른 날짜의 일정을 확인하거나 새 일정을 등록해 보세요." ActionLabel="일정 열기" ActionHref="/calendar" />
                 }
                 else
                 {
-                    <div class="hub-dashboard-approval-list">
-                        @foreach (ApprovalRequestItem approvalRequest in mPendingApprovals)
+                    <div class="hub-dashboard-event-list">
+                        @foreach (CalendarEventItem calendarEvent in mWeekEvents)
                         {
-                            <div class="hub-dashboard-approval-row">
-                                <div class="hub-dashboard-approval-content">
-                                    <div class="hub-dashboard-row-main">
-                                        <MudText Typo="Typo.body2" Class="hub-list-title hub-dashboard-approval-title hub-dashboard-row-title">@approvalRequest.Title</MudText>
-                                        <span class="hub-status-pill hub-status-active hub-dashboard-approval-step">@getCurrentApprovalStepLabel(approvalRequest)</span>
-                                    </div>
-                                    <MudText Typo="Typo.caption" Class="hub-list-meta hub-dashboard-row-meta">@formatDashboardApprovalRequesterMeta(approvalRequest)</MudText>
+                            string eventMeta = formatDashboardEventMeta(calendarEvent);
+                            string eventLocation = formatDashboardEventLocation(calendarEvent);
+                            <div class="hub-dashboard-event-row">
+                                <div class="hub-dashboard-row-main">
+                                    <MudText Typo="Typo.body2" Class="hub-list-title hub-dashboard-row-title">@calendarEvent.Summary</MudText>
+                                    <span class="hub-list-side hub-dashboard-row-side hub-dashboard-event-time">@formatEventTime(calendarEvent)</span>
                                 </div>
+                                @if (string.IsNullOrWhiteSpace(eventMeta) == false || string.IsNullOrWhiteSpace(eventLocation) == false)
+                                {
+                                    <div class="hub-dashboard-event-meta-row">
+                                        @if (string.IsNullOrWhiteSpace(eventMeta) == false)
+                                        {
+                                            <span class="hub-list-meta hub-dashboard-row-meta">@eventMeta</span>
+                                        }
+                                        else
+                                        {
+                                            <span></span>
+                                        }
+                                        @if (string.IsNullOrWhiteSpace(eventLocation) == false)
+                                        {
+                                            <span class="hub-list-meta hub-dashboard-event-location">@eventLocation</span>
+                                        }
+                                    </div>
+                                }
                             </div>
                         }
                     </div>

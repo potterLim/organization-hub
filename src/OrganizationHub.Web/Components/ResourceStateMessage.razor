@@ -7,7 +7,11 @@
             <div class="hub-empty-description">@Description</div>
         }
     </div>
-    @if (string.IsNullOrWhiteSpace(ActionLabel) == false && Action.HasDelegate)
+    @if (string.IsNullOrWhiteSpace(ActionLabel) == false && string.IsNullOrWhiteSpace(ActionHref) == false)
+    {
+        <MudButton Href="@ActionHref" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">@ActionLabel</MudButton>
+    }
+    else if (string.IsNullOrWhiteSpace(ActionLabel) == false && Action.HasDelegate)
     {
         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" StartIcon="@ActionIcon" OnClick="Action">@ActionLabel</MudButton>
     }
@@ -26,6 +30,9 @@
 
     [Parameter]
     public string ActionLabel { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ActionHref { get; set; } = string.Empty;
 
     [Parameter]
     public string ActionIcon { get; set; } = Icons.Material.Filled.Refresh;

@@ -154,6 +154,11 @@ public partial class Dashboard
 
     private string getCurrentApprovalStepLabel(ApprovalRequestItem approvalRequest)
     {
+        if (approvalRequest.Status == EApprovalRequestStatus.Publishing)
+        {
+            return "승인본 저장 중";
+        }
+
         ApprovalStepCount stepCount = new ApprovalStepCount(approvalRequest.StepCount);
         return ApprovalStepLabelUtility.GetStepLabel(stepCount, new ApprovalStepNumber(approvalRequest.CurrentStepNumber));
     }

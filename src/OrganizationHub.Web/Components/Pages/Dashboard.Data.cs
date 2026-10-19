@@ -36,6 +36,10 @@ public partial class Dashboard
             GlobalSettingFormModel globalSetting = await GlobalSettingService.GetGlobalSettingAsync(CancellationToken.None);
             mShouldShowCalendarAuthor = globalSetting.ShouldShowCalendarAuthor;
             mShouldShowTodoAuthor = globalSetting.ShouldShowTodoAuthor;
+            GoogleConnectionStatus connectionStatus = await GoogleConnectionService.GetStatusAsync(CancellationToken.None);
+            mIsWorkspaceConnected = connectionStatus.IsConnected;
+            mHasWorkspaceRootFolder = globalSetting.DriveResources.OfficialRootFolderIdValue.HasValue;
+            mHasLoadedWorkspaceSetup = true;
         }
         catch (Exception exception)
         {

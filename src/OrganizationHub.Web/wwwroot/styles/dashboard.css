@@ -8,6 +8,28 @@
     --hub-dashboard-list-row-height: 74.8px;
 }
 
+.hub-setup-guide-copy {
+    display: grid;
+    gap: 6px;
+    max-width: 760px;
+}
+
+.hub-setup-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 28px;
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+}
+
+.hub-setup-steps li {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
 .hub-dashboard-grid .hub-card,
 .hub-calendar-grid .hub-card {
     height: 100%;

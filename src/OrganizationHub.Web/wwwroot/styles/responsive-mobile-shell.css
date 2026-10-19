@@ -9,8 +9,27 @@
     }
 
     .hub-topbar-shell {
+        gap: 8px;
         height: 58px;
         padding: 6px 10px;
+        width: 100%;
+    }
+
+    .hub-brand-lockup {
+        flex: 1 1 auto;
+        gap: 8px;
+    }
+
+    .hub-brand-lockup > div:last-child {
+        min-width: 0;
+    }
+
+    .hub-topbar-shell .mud-spacer {
+        display: none;
+    }
+
+    .hub-topbar-shell form {
+        flex: 0 0 auto;
     }
 
     .hub-session-pill {
@@ -27,6 +46,8 @@
 
     .hub-brand-title {
         font-size: 15px;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .hub-brand-mark {

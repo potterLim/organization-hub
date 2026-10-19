@@ -1,10 +1,7 @@
 <div class="hub-dashboard-material-list">
     @if (Files.Count == 0)
     {
-        <div class="hub-empty hub-empty-state">
-            <MudIcon Icon="@Icons.Material.Filled.FolderOff" Size="Size.Medium" />
-            <span>최근 팀 자료가 없습니다.</span>
-        </div>
+        <ResourceStateMessage Icon="@Icons.Material.Filled.FolderOpen" Title="최근 팀 자료가 없습니다." Description="팀을 선택해 자료를 찾아보세요. 자료 등록은 업로드 메뉴에서 할 수 있습니다." ActionLabel="팀 자료 열기" ActionHref="/materials" />
     }
     else
     {

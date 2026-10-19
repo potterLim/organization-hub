@@ -3,6 +3,14 @@
         <MudText Typo="Typo.h6">연결 상태</MudText>
         <span>@(Status.IsConnected ? "설정 가능" : "연결 필요")</span>
     </div>
+    @if (Status.IsConnected == false)
+    {
+        <MudText Typo="Typo.body2" Class="hub-muted mt-3">자료·일정·할 일을 사용하려면 먼저 조직의 Google 계정을 연결해 주세요.</MudText>
+        <AuthorizeView Policy="@OrganizationHubPolicies.GOOGLE_CONNECTION_MANAGE">
+            <Authorized><MudButton Href="/admin/google" Variant="Variant.Outlined" Color="Color.Primary" Class="mt-3">Google 연결 설정</MudButton></Authorized>
+            <NotAuthorized><MudText Typo="Typo.body2" Class="hub-muted mt-3">Google 연결 권한이 있는 관리자에게 요청해 주세요.</MudText></NotAuthorized>
+        </AuthorizeView>
+    }
     <div class="hub-google-status">
         <span class="@(Status.IsConnected ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(Status.IsConnected ? "연결됨" : "미연결")</span>
         <div>
