@@ -30,6 +30,13 @@ public static class UserSessionFactory
         }
 
         string teamIdText = getClaimValue(principal, OrganizationHubClaimTypes.TEAM_ID);
+        string authenticationVersionText = getClaimValue(principal, OrganizationHubClaimTypes.AUTHENTICATION_VERSION);
+        int authenticationVersion = 0;
+        if (authenticationVersionText.Length > 0 && (int.TryParse(authenticationVersionText, out authenticationVersion) == false || authenticationVersion < 0))
+        {
+            return null;
+        }
+
         string username = getClaimValue(principal, OrganizationHubClaimTypes.USERNAME);
         string displayName = getClaimValue(principal, OrganizationHubClaimTypes.DISPLAY_NAME);
         string teamKey = getClaimValue(principal, OrganizationHubClaimTypes.TEAM_KEY);
@@ -39,6 +46,7 @@ public static class UserSessionFactory
         UserSessionCreateRequest request = new UserSessionCreateRequest
         {
             UserAccountId = userAccountId,
+            AuthenticationVersion = authenticationVersion,
             Username = Username.CreateOptional(username),
             DisplayName = DisplayName.CreateOptional(displayName),
             StoredCompatibilityRole = storedCompatibilityRole,

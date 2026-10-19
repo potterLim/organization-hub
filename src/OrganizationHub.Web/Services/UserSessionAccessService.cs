@@ -74,10 +74,11 @@ internal sealed class UserSessionAccessService
         }
 
         int userId = sessionOrNull.UserAccountId.GetRequiredValue();
+        int authenticationVersion = sessionOrNull.AuthenticationVersion;
         await using (OrganizationHubDbContext db = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
             return await db.UserAccounts.AsNoTracking().Include(user => user.Team).Include(user => user.Position).ThenInclude(position => position!.PermissionGrants)
-                .FirstOrDefaultAsync(user => user.Id == userId && user.IsActive && user.Position != null && user.Position.IsActive &&
+                .FirstOrDefaultAsync(user => user.Id == userId && user.AuthenticationVersion == authenticationVersion && user.IsActive && user.Position != null && user.Position.IsActive &&
                     (user.TeamId == null || (user.Team != null && user.Team.IsActive)), cancellationToken);
         }
     }

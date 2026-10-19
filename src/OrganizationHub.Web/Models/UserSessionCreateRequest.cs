@@ -4,6 +4,10 @@ namespace OrganizationHub.Web.Models;
 
 internal sealed class UserSessionCreateRequest
 {
+    public int AuthenticationVersion
+    {
+        get; init;
+    }
     public required Username Username
     {
         get; init;

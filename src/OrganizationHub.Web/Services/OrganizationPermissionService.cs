@@ -108,9 +108,11 @@ public sealed class OrganizationPermissionService : IOrganizationPermissionServi
     )
     {
         int currentUserId = userSession.UserAccountId.GetRequiredValue();
+        int authenticationVersion = userSession.AuthenticationVersion;
         UserAccount? userAccountOrNull = await dbContext.UserAccounts
             .Include(userAccount => userAccount.Team)
             .Include(userAccount => userAccount.Position)
+            .Where(userAccount => userAccount.AuthenticationVersion == authenticationVersion)
             .FirstOrDefaultAsync(userAccount => userAccount.Id == currentUserId && userAccount.IsActive && (userAccount.TeamId == null || (userAccount.Team != null && userAccount.Team.IsActive)), cancellationToken);
         if (userAccountOrNull == null || userAccountOrNull.PositionId.HasValue == false)
         {

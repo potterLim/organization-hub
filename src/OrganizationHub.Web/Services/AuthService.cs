@@ -84,6 +84,7 @@ public sealed class AuthService : IAuthService
         claims.Add(new Claim(ClaimTypes.NameIdentifier, userAccount.Id.ToString()));
         claims.Add(new Claim(ClaimTypes.Name, userAccount.Username));
         claims.Add(new Claim(OrganizationHubClaimTypes.USER_ID, userAccount.Id.ToString()));
+        claims.Add(new Claim(OrganizationHubClaimTypes.AUTHENTICATION_VERSION, userAccount.AuthenticationVersion.ToString()));
         claims.Add(new Claim(OrganizationHubClaimTypes.USERNAME, userAccount.Username));
         claims.Add(new Claim(OrganizationHubClaimTypes.DISPLAY_NAME, userAccount.DisplayName));
         claims.Add(new Claim(OrganizationHubClaimTypes.ROLE, StoredCompatibilityRoleUtility.GetClaimRoleName(userAccount.StoredCompatibilityRole)));

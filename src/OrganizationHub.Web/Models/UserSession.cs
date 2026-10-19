@@ -14,6 +14,11 @@ public sealed class UserSession
         get; private init;
     }
 
+    public int AuthenticationVersion
+    {
+        get; private init;
+    }
+
     public string Username
     {
         get
@@ -75,6 +80,7 @@ public sealed class UserSession
         ArgumentNullException.ThrowIfNull(request);
 
         UserAccountId = request.UserAccountId;
+        AuthenticationVersion = request.AuthenticationVersion;
         mUsername = request.Username;
         mDisplayName = request.DisplayName;
         StoredCompatibilityRole = request.StoredCompatibilityRole;

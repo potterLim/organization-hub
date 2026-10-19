@@ -195,6 +195,7 @@ public sealed partial class UserManagementService
                 .FirstOrDefaultAsync(
                     userAccount =>
                         userAccount.Id == currentUserId &&
+                        userAccount.AuthenticationVersion == userSession.AuthenticationVersion &&
                         userAccount.IsActive,
                     cancellationToken);
             return userAccountOrNull?.Position != null &&

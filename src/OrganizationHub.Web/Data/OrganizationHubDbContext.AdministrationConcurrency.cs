@@ -43,6 +43,11 @@ public sealed partial class OrganizationHubDbContext
 
         foreach (EntityEntry<UserAccount> userEntry in ChangeTracker.Entries<UserAccount>())
         {
+            if (userEntry.State == EntityState.Modified && userEntry.Property(user => user.PasswordHash).IsModified)
+            {
+                userEntry.Entity.AuthenticationVersion = userEntry.Property(user => user.AuthenticationVersion).OriginalValue + 1;
+            }
+
             if (userEntry.State == EntityState.Modified && userEntry.Properties.Any(isAdministrativeUserChange))
             {
                 userEntry.Entity.Revision = userEntry.Property(user => user.Revision).OriginalValue + 1;
