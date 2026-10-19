@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,9 +17,37 @@ public sealed class ApprovalPreflightRegressionTests
 {
     private sealed class FailedConflictService : IDriveFileNameConflictService
     {
+        public bool ShouldFail { get; set; } = true;
+
         public Task<DriveFileNameConflictCheckResult> CheckFileNameConflictAsync(DriveFolderId folderId, DriveItemName fileName, CancellationToken cancellationToken)
         {
-            throw new IOException("Drive unavailable");
+            if (ShouldFail)
+            {
+                throw new IOException("Drive unavailable");
+            }
+
+            return Task.FromResult(new DriveFileNameConflictCheckResult(fileName, fileName, Array.Empty<DriveFileItem>()));
+        }
+    }
+
+    public class ApprovalSpy : DispatchProxy
+    {
+        public int ApprovalCalls { get; private set; }
+
+        protected override object? Invoke(MethodInfo? targetMethodOrNull, object?[]? argsOrNull)
+        {
+            if (targetMethodOrNull?.Name == nameof(IApprovalService.ApproveRequestAsync))
+            {
+                ApprovalCalls++;
+                return Task.FromResult(ServiceResult.Succeed());
+            }
+
+            if (targetMethodOrNull?.Name == nameof(IApprovalService.GetPendingApprovalsAsync))
+            {
+                return Task.FromResult<IReadOnlyList<ApprovalRequestItem>>(Array.Empty<ApprovalRequestItem>());
+            }
+
+            throw new InvalidOperationException("Unexpected approval operation.");
         }
     }
 
@@ -29,7 +58,10 @@ public sealed class ApprovalPreflightRegressionTests
         typeof(ApprovalInbox).GetProperty("Logger", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(page, Microsoft.Extensions.Logging.Abstractions.NullLogger<ApprovalInbox>.Instance);
         BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
         typeof(OrganizationHubComponentBase).GetProperty("CurrentUserSessionOrNull", flags)!.SetValue(page, OperationPermissionRegressionTests.createSession());
-        typeof(ApprovalInbox).GetProperty("DriveFileNameConflictService", flags)!.SetValue(page, new FailedConflictService());
+        FailedConflictService conflicts = new FailedConflictService();
+        IApprovalService approvalService = DispatchProxy.Create<IApprovalService, ApprovalSpy>();
+        typeof(ApprovalInbox).GetProperty("DriveFileNameConflictService", flags)!.SetValue(page, conflicts);
+        typeof(ApprovalInbox).GetProperty("ApprovalService", flags)!.SetValue(page, approvalService);
         typeof(ApprovalInbox).GetMethod("setCommentValue", flags)!.Invoke(page, new object[] { ApprovalRequestId.CreateExisting(1), "검토 의견 유지" });
         ApprovalRequestItem request = new ApprovalRequestItem();
         request.Id = 1;
@@ -41,5 +73,12 @@ public sealed class ApprovalPreflightRegressionTests
         await (Task)approve.Invoke(page, new object[] { request })!;
         Assert.Contains("다시", (string)typeof(ApprovalInbox).GetField("mMessage", flags)!.GetValue(page)!);
         Assert.Equal("검토 의견 유지", typeof(ApprovalInbox).GetMethod("getCommentValue", flags)!.Invoke(page, new object[] { ApprovalRequestId.CreateExisting(1) }));
+        Assert.Equal(0, ((ApprovalSpy)approvalService).ApprovalCalls);
+        Assert.Empty((HashSet<int>)typeof(ApprovalInbox).GetField("mProcessingApprovalIds", flags)!.GetValue(page)!);
+        conflicts.ShouldFail = false;
+        await (Task)approve.Invoke(page, new object[] { request })!;
+        Assert.Equal(1, ((ApprovalSpy)approvalService).ApprovalCalls);
+        Assert.Empty((Dictionary<int, string>)typeof(ApprovalInbox).GetField("mErrorsByApprovalId", flags)!.GetValue(page)!);
+
     }
 }
