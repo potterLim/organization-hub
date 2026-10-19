@@ -129,7 +129,7 @@ public sealed partial class GoogleTasksTodoService
 
         Dictionary<string, TodoTaskMetadata> metadataByTaskId = await getMetadataByTaskIdAsync(taskListId, tasks, cancellationToken);
         applyMetadata(tasks, metadataByTaskId);
-        await applyPendingDeadlinesAsync(taskListId, tasks, cancellationToken);
+        await applyPendingDeadlinesAsync(taskListId, tasks, metadataByTaskId, cancellationToken);
         List<TodoTaskItem> orderedTasks = tasks.OrderBy(task => task.IsCompleted).ThenBy(task => task.Position).ThenBy(task => task.Title).ToList();
         return orderedTasks;
     }

@@ -109,7 +109,7 @@ public sealed partial class GoogleTasksTodoService
         mChangeVersionService.Bump(ChangeVersionKeys.TASKS);
     }
 
-    private async Task applyPendingDeadlinesAsync(TodoTaskListId listId, List<TodoTaskItem> tasks, CancellationToken cancellationToken)
+    private async Task applyPendingDeadlinesAsync(TodoTaskListId listId, List<TodoTaskItem> tasks, IReadOnlyDictionary<string, TodoTaskMetadata> metadataByTaskId, CancellationToken cancellationToken)
     {
         string requiredListId = listId.GetRequiredValue();
         await using (OrganizationHubDbContext db = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
@@ -117,7 +117,9 @@ public sealed partial class GoogleTasksTodoService
             List<TodoDeadlineChange> changes = await db.TodoDeadlineChanges.AsNoTracking().Where(change => change.TaskListId == requiredListId).OrderByDescending(change => change.Id).ToListAsync(cancellationToken);
             foreach (TodoTaskItem task in tasks)
             {
-                TodoDeadlineChange? changeOrNull = changes.FirstOrDefault(change => change.TaskId == task.Id && matchesDeadlineChange(change, task));
+                TodoTaskMetadata? metadataOrNull;
+                int appliedChangeId = metadataByTaskId.TryGetValue(task.Id, out metadataOrNull) ? metadataOrNull.LastDeadlineChangeId : 0;
+                TodoDeadlineChange? changeOrNull = changes.FirstOrDefault(change => change.Id > appliedChangeId && change.TaskId == task.Id && matchesDeadlineChange(change, task));
                 if (changeOrNull != null)
                 {
                     task.DueAt = changeOrNull.DueAt;
