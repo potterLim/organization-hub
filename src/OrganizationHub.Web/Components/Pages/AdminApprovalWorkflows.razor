@@ -182,7 +182,7 @@
                             </div>
                         </div>
                         <div class="hub-sortable-actions">
-                            <SortableOrderControls ItemId="workflow.Id" Label="workflow.Name" OrderedIds="@(mWorkflows.Select(item => item.Id).ToArray())" MoveRequested="moveWorkflowAsync" />
+                            <SortableOrderControls ItemId="workflow.Id" Label="@workflow.Name" OrderedIds="@(mWorkflows.Select(item => item.Id).ToArray())" MoveRequested="moveWorkflowAsync" />
                             <span class="hub-sortable-status @(workflow.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(workflow.IsActive ? "사용 중" : "비활성")</span>
                             <MudTooltip Text="결재 경로 수정">
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editWorkflow(workflow))" aria-label="결재 경로 수정" />
