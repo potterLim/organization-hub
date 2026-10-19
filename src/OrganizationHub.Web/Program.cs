@@ -133,6 +133,7 @@ public class Program
         builder.Services.AddScoped<IUploadAuditLogService, UploadAuditLogService>();
         builder.Services.AddScoped<ICalendarEventDeletionAuditLogService, CalendarEventDeletionAuditLogService>();
         builder.Services.AddScoped<IApprovalService, ApprovalService>();
+        builder.Services.AddScoped<DashboardAccessService>();
         builder.Services.AddScoped<IApprovalPublicationService, ApprovalService>();
         builder.Services.AddHostedService<ApprovalPublicationWorker>();
         builder.Services.AddScoped<IApprovalWorkflowManagementService, ApprovalWorkflowManagementService>();

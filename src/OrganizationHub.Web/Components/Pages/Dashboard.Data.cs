@@ -22,10 +22,10 @@ public partial class Dashboard
     private async Task loadDashboardSectionsAsync()
     {
         Task dashboardSettingsTask = loadDashboardSettingsAsync();
-        Task pendingApprovalsTask = loadPendingApprovalsAsync();
-        Task weekEventsTask = loadWeekEventsAsync();
-        Task weekTodosTask = loadWeekTodosAsync();
-        Task recentMaterialsTask = loadRecentMaterialsAsync();
+        Task pendingApprovalsTask = mAccessOrNull != null && mAccessOrNull.CanOpenInbox ? loadPendingApprovalsAsync() : Task.CompletedTask;
+        Task weekEventsTask = mAccessOrNull != null && mAccessOrNull.CanOpenCalendar ? loadWeekEventsAsync() : Task.CompletedTask;
+        Task weekTodosTask = mAccessOrNull != null && mAccessOrNull.CanOpenTodos ? loadWeekTodosAsync() : Task.CompletedTask;
+        Task recentMaterialsTask = mAccessOrNull != null && mAccessOrNull.CanOpenMaterials ? loadRecentMaterialsAsync() : Task.CompletedTask;
         await Task.WhenAll(dashboardSettingsTask, pendingApprovalsTask, weekEventsTask, weekTodosTask, recentMaterialsTask);
     }
 

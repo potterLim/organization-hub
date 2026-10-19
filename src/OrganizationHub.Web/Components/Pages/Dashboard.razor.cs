@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Models;
 
@@ -22,6 +23,7 @@ public partial class Dashboard
     private bool mIsLoadingRecentMaterials = true;
     private bool mShouldShowCalendarAuthor;
     private bool mHasLoadedWorkspaceSetup;
+    private DashboardAccess? mAccessOrNull;
     private bool mIsWorkspaceConnected;
     private bool mHasWorkspaceRootFolder;
     private bool mShouldShowTodoAuthor = true;
@@ -36,6 +38,7 @@ public partial class Dashboard
             return;
         }
 
+        mAccessOrNull = await DashboardAccessService.GetAccessAsync(CurrentUserSessionOrNull, CancellationToken.None);
         Task dashboardSectionsTask = loadDashboardSectionsAsync();
         mDashboardSectionsObservationTaskOrNull = observeFaultedTaskAsync(
             dashboardSectionsTask,
