@@ -97,6 +97,8 @@
 }
 
 .hub-calendar-date-time-panel {
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
     background: #ffffff;
     border: 1px solid rgba(78, 104, 145, .18);
     border-radius: 20px;

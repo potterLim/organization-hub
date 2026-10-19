@@ -73,6 +73,8 @@ async function inspectPopup(page) {
         if (document.documentElement.scrollWidth > width + 1) violations.push('document overflows client viewport');
         if (rect.left < 0 || rect.right > width + 1) violations.push('popup leaves viewport');
         if (rect.top < 0 || rect.bottom > innerHeight + 1) violations.push('popup leaves vertical viewport');
+        const headerBottom = document.querySelector('.hub-appbar')?.getBoundingClientRect().bottom || 0;
+        if (rect.top < headerBottom) violations.push('popup is covered by fixed header');
         for (const button of panel.querySelectorAll('button')) {
             const bounds = button.getBoundingClientRect();
             if (bounds.left < rect.left - 1 || bounds.right > rect.right + 1) violations.push('popup control leaves panel');
