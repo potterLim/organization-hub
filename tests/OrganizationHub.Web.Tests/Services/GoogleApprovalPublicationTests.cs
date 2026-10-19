@@ -45,6 +45,14 @@ public sealed partial class GoogleApprovalPublicationTests
         private long mVersion = 1;
 
         public byte[] Content { get; set; } = Encoding.UTF8.GetBytes("original document");
+        public long? ReportedSizeOrNull
+        {
+            get; set;
+        }
+        public int DownloadCount
+        {
+            get; private set;
+        }
         public bool HasFile
         {
             get; set;
@@ -91,6 +99,7 @@ public sealed partial class GoogleApprovalPublicationTests
 
             if (request.Method == HttpMethod.Get && request.RequestUri.Query.Contains("alt=media", StringComparison.Ordinal))
             {
+                DownloadCount++;
                 HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
                 response.Content = new ByteArrayContent(Content);
                 if (ShouldChangeDuringDownload)
@@ -175,6 +184,7 @@ public sealed partial class GoogleApprovalPublicationTests
                 id = "reserved-file",
                 name = mFileName,
                 mimeType = MimeType,
+                size = ReportedSizeOrNull,
                 parents = new string[] { "approved-folder" },
                 version = mVersion.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 md5Checksum = MimeType.StartsWith("application/vnd.google-apps.", StringComparison.Ordinal) ? string.Empty : Convert.ToHexString(MD5.HashData(Content)).ToLowerInvariant(),

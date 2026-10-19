@@ -21,6 +21,7 @@ public interface IDriveService
     Task DeleteDriveItemAsync(DriveItemId itemId, CancellationToken cancellationToken);
     Task<FileDownloadResult> DownloadFileAsync(DriveItemId fileId, CancellationToken cancellationToken);
     Task<FileDownloadResult> DownloadFileSnapshotAsync(DriveItemId fileId, CancellationToken cancellationToken);
+    Task<FileDownloadResult> DownloadFileSnapshotAsync(DriveItemId fileId, FileByteLimit maximumBytes, CancellationToken cancellationToken);
     Task<DriveItemId> GenerateFileIdAsync(CancellationToken cancellationToken);
     Task<DriveFileItem> PublishApprovalFileAsync(ApprovalFilePublishRequest request, CancellationToken cancellationToken);
 }

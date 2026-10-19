@@ -32,15 +32,25 @@ public sealed partial class GoogleDriveService
         }
     }
 
-    public async Task<FileDownloadResult> DownloadFileSnapshotAsync(DriveItemId fileId, CancellationToken cancellationToken)
+    public Task<FileDownloadResult> DownloadFileSnapshotAsync(DriveItemId fileId, CancellationToken cancellationToken)
+    {
+        return DownloadFileSnapshotAsync(fileId, new FileByteLimit(OrganizationHubFileLimits.DEFAULT_MAXIMUM_UPLOAD_BYTES), cancellationToken);
+    }
+
+    public async Task<FileDownloadResult> DownloadFileSnapshotAsync(DriveItemId fileId, FileByteLimit maximumBytes, CancellationToken cancellationToken)
     {
         using (DriveService driveService = await createDriveServiceAsync(cancellationToken))
         {
             FilesResource.GetRequest metadataRequest = driveService.Files.Get(fileId.GetRequiredValue());
-            metadataRequest.Fields = "id,name,mimeType,version,md5Checksum";
+            metadataRequest.Fields = "id,name,mimeType,version,md5Checksum,size";
             metadataRequest.SupportsAllDrives = true;
             DriveDataFile metadata = await metadataRequest.ExecuteAsync(cancellationToken);
-            MemoryStream contentStream = new MemoryStream();
+            if (metadata.Size.HasValue && metadata.Size.Value > maximumBytes.GetRequiredValue())
+            {
+                throw new FileSizeLimitExceededException();
+            }
+
+            MemoryStream contentStream = new SizeLimitedMemoryStream(maximumBytes);
             try
             {
                 IDownloadProgress progress = await downloadSnapshotContentAsync(driveService, metadata, contentStream, cancellationToken);
@@ -54,6 +64,11 @@ public sealed partial class GoogleDriveService
 
                 if (progress.Status != DownloadStatus.Completed)
                 {
+                    if (progress.Exception is FileSizeLimitExceededException sizeException)
+                    {
+                        throw sizeException;
+                    }
+
                     throw new IOException("Approval document download failed.", progress.Exception);
                 }
 

@@ -56,7 +56,7 @@ public sealed partial class ApprovalService
     {
         try
         {
-            FileDownloadResult downloadedFile = await mDriveService.DownloadFileSnapshotAsync(fileId, cancellationToken);
+            FileDownloadResult downloadedFile = await mDriveService.DownloadFileSnapshotAsync(fileId, new FileByteLimit(mMaximumSnapshotBytes), cancellationToken);
             using (Stream sourceStream = downloadedFile.ContentStream)
             using (MemoryStream snapshotStream = new MemoryStream())
             {
@@ -79,6 +79,10 @@ public sealed partial class ApprovalService
                 document.ContentType = downloadedFile.ContentType;
                 return ServiceResultOfT<ApprovalDocument>.Succeed(document);
             }
+        }
+        catch (FileSizeLimitExceededException)
+        {
+            return ServiceResultOfT<ApprovalDocument>.Fail("결재 문서가 허용된 파일 크기를 초과합니다.");
         }
         catch (OperationCanceledException)
         {

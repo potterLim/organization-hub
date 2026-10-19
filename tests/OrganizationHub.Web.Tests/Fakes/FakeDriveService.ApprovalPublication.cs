@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Tests.Fakes;
 
@@ -52,12 +53,22 @@ public sealed partial class FakeDriveService
 
     public Task<FileDownloadResult> DownloadFileSnapshotAsync(DriveItemId fileId, CancellationToken cancellationToken)
     {
+        return DownloadFileSnapshotAsync(fileId, new FileByteLimit(OrganizationHubFileLimits.DEFAULT_MAXIMUM_UPLOAD_BYTES), cancellationToken);
+    }
+
+    public Task<FileDownloadResult> DownloadFileSnapshotAsync(DriveItemId fileId, FileByteLimit maximumBytes, CancellationToken cancellationToken)
+    {
         string requiredFileId = fileId.GetRequiredValue();
         DriveFileMetadata metadata = mMetadataByFileId[requiredFileId];
         byte[]? contentOrNull;
         if (mContentsById.TryGetValue(requiredFileId, out contentOrNull) == false)
         {
             contentOrNull = Array.Empty<byte>();
+        }
+
+        if (contentOrNull.Length > maximumBytes.GetRequiredValue())
+        {
+            throw new FileSizeLimitExceededException();
         }
 
         FileDownloadResult download = new FileDownloadResult(new MemoryStream(contentOrNull, false), DriveItemName.CreateRequired(metadata.Name), FileContentType.CreateOptional(metadata.MimeType));
