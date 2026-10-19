@@ -1,6 +1,7 @@
 @page "/approvals/inbox"
 @attribute [Authorize]
 @inherits TimeZoneAwareOrganizationHubComponentBase
+@inject Microsoft.Extensions.Logging.ILogger<ApprovalInbox> Logger
 @inject IApprovalService ApprovalService
 @inject IDriveFileNameConflictService DriveFileNameConflictService
 
@@ -36,6 +37,14 @@ else
                     </div>
                     <span class="hub-status-pill hub-status-active">@getCurrentStepLabel(approvalRequest)</span>
                 </div>
+                @if (mErrorsByApprovalId.TryGetValue(approvalRequest.Id, out string? operationErrorOrNull))
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" role="alert">@operationErrorOrNull</MudAlert>
+                }
+                @if (mProcessingApprovalIds.Contains(approvalRequest.Id))
+                {
+                    <MudProgressLinear Indeterminate="true" aria-label="결재 처리 중" />
+                }
                 <div class="hub-approval-file-row">
                     <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile" Size="Size.Small" />
                     <span>@approvalRequest.FileName</span>
@@ -78,8 +87,8 @@ else
                             </div>
                         </div>
                         <div class="hub-file-conflict-actions">
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="@(() => approveRequestWithConflictResolutionAsync(approvalRequest, EDriveFileNameConflictResolution.ReplaceExistingFile))">기존 파일 교체</MudButton>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(() => approveRequestWithConflictResolutionAsync(approvalRequest, EDriveFileNameConflictResolution.AddNewFile))">새 파일로 추가</MudButton>
+                            <MudButton Disabled="@mProcessingApprovalIds.Contains(approvalRequest.Id)" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="@(() => approveRequestWithConflictResolutionAsync(approvalRequest, EDriveFileNameConflictResolution.ReplaceExistingFile))">기존 파일 교체</MudButton>
+                            <MudButton Disabled="@mProcessingApprovalIds.Contains(approvalRequest.Id)" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(() => approveRequestWithConflictResolutionAsync(approvalRequest, EDriveFileNameConflictResolution.AddNewFile))">새 파일로 추가</MudButton>
                         </div>
                     </div>
                 }
@@ -95,21 +104,21 @@ else
                         @if (approvalRequest.IsPublicationProcessing)
                         {
                             <MudText Typo="Typo.body2">승인본을 저장하고 있습니다. 잠시 후 저장 상태를 다시 확인해 주세요.</MudText>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="loadDataAsync">저장 상태 새로고침</MudButton>
+                            <MudButton Disabled="@mProcessingApprovalIds.Contains(approvalRequest.Id)" Variant="Variant.Outlined" Color="Color.Primary" OnClick="loadDataAsync">저장 상태 새로고침</MudButton>
                         }
                         else
                         {
                             <MudText Typo="Typo.body2">@(approvalRequest.HasPublicationFailure ? "승인본 저장이 지연되었습니다. 자동으로 재시도되며 지금 다시 시도할 수도 있습니다." : "결재가 완료되어 승인본 저장을 기다리고 있습니다.")</MudText>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => approveRequestAsync(approvalRequest))">저장 다시 시도</MudButton>
+                            <MudButton Disabled="@mProcessingApprovalIds.Contains(approvalRequest.Id)" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => approveRequestAsync(approvalRequest))">저장 다시 시도</MudButton>
                         }
                     }
                     else if (hasApprovedFileConflict(approvalRequest) == false)
                     {
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="@(() => approveRequestAsync(approvalRequest))">승인</MudButton>
+                        <MudButton Disabled="@mProcessingApprovalIds.Contains(approvalRequest.Id)" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="@(() => approveRequestAsync(approvalRequest))">승인</MudButton>
                     }
                     @if (approvalRequest.Status != EApprovalRequestStatus.Publishing)
                     {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Cancel" OnClick="@(() => rejectRequestAsync(approvalRequest))">반려</MudButton>
+                        <MudButton Disabled="@mProcessingApprovalIds.Contains(approvalRequest.Id)" Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Cancel" OnClick="@(() => rejectRequestAsync(approvalRequest))">반려</MudButton>
                     }
                 </MudStack>
             </MudPaper>

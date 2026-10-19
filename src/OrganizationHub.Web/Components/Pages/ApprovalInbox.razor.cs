@@ -12,6 +12,8 @@ public partial class ApprovalInbox
     private List<ApprovalRequestItem> mPendingApprovals = new List<ApprovalRequestItem>();
     private readonly Dictionary<int, string> mCommentsByApprovalId = new Dictionary<int, string>();
     private readonly Dictionary<int, DriveFileNameConflictCheckResult> mApprovedFileConflictsByApprovalId = new Dictionary<int, DriveFileNameConflictCheckResult>();
+    private readonly HashSet<int> mProcessingApprovalIds = new HashSet<int>();
+    private readonly Dictionary<int, string> mErrorsByApprovalId = new Dictionary<int, string>();
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
     private bool mIsLoading = true;

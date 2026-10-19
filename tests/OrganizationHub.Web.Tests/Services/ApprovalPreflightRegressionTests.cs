@@ -26,6 +26,7 @@ public sealed class ApprovalPreflightRegressionTests
     public async Task DriveFailureBeforeApprovalKeepsCircuitAndCommentAsync()
     {
         ApprovalInbox page = new ApprovalInbox();
+        typeof(ApprovalInbox).GetProperty("Logger", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(page, Microsoft.Extensions.Logging.Abstractions.NullLogger<ApprovalInbox>.Instance);
         BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
         typeof(OrganizationHubComponentBase).GetProperty("CurrentUserSessionOrNull", flags)!.SetValue(page, OperationPermissionRegressionTests.createSession());
         typeof(ApprovalInbox).GetProperty("DriveFileNameConflictService", flags)!.SetValue(page, new FailedConflictService());

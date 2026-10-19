@@ -1,5 +1,7 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
@@ -19,9 +21,37 @@ public partial class ApprovalInbox
         await approveRequestAsync(approvalRequest, conflictResolution);
     }
 
-    private async Task approveRequestAsync(
-        ApprovalRequestItem approvalRequest,
-        EDriveFileNameConflictResolution? conflictResolutionOrNull)
+    private Task approveRequestAsync(ApprovalRequestItem approvalRequest, EDriveFileNameConflictResolution? conflictResolutionOrNull)
+    {
+        return runApprovalOperationAsync(approvalRequest, () => executeApprovalAsync(approvalRequest, conflictResolutionOrNull));
+    }
+
+    private async Task runApprovalOperationAsync(ApprovalRequestItem approvalRequest, Func<Task> operation)
+    {
+        if (mProcessingApprovalIds.Add(approvalRequest.Id) == false)
+        {
+            return;
+        }
+
+        mErrorsByApprovalId.Remove(approvalRequest.Id);
+        try
+        {
+            await operation();
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "Approval operation failed for {ApprovalId}.", approvalRequest.Id);
+            mMessage = "결재 처리를 확인하지 못했습니다. 입력한 의견은 유지됩니다. 잠시 후 다시 시도해 주세요.";
+            mMessageSeverity = MudBlazor.Severity.Error;
+            mErrorsByApprovalId[approvalRequest.Id] = mMessage;
+        }
+        finally
+        {
+            mProcessingApprovalIds.Remove(approvalRequest.Id);
+        }
+    }
+
+    private async Task executeApprovalAsync(ApprovalRequestItem approvalRequest, EDriveFileNameConflictResolution? conflictResolutionOrNull)
     {
         if (CurrentUserSessionOrNull == null)
         {
@@ -82,7 +112,12 @@ public partial class ApprovalInbox
         return true;
     }
 
-    private async Task rejectRequestAsync(ApprovalRequestItem approvalRequest)
+    private Task rejectRequestAsync(ApprovalRequestItem approvalRequest)
+    {
+        return runApprovalOperationAsync(approvalRequest, () => executeRejectionAsync(approvalRequest));
+    }
+
+    private async Task executeRejectionAsync(ApprovalRequestItem approvalRequest)
     {
         if (CurrentUserSessionOrNull == null)
         {
