@@ -4,6 +4,10 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class UserAccountFormModel
 {
+    public int Revision
+    {
+        get; set;
+    }
     public int Id
     {
         get; set;

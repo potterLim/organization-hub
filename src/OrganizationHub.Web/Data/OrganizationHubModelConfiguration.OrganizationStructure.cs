@@ -30,6 +30,7 @@ internal static partial class OrganizationHubModelConfiguration
     {
         EntityTypeBuilder<OrganizationPosition> positionBuilder = modelBuilder.Entity<OrganizationPosition>();
         positionBuilder.HasKey(position => position.Id);
+        positionBuilder.Property(position => position.Revision).IsConcurrencyToken();
         positionBuilder.HasIndex(position => new { position.TeamId, position.Name }).IsUnique();
         positionBuilder.Property(position => position.Name).HasMaxLength(120).IsRequired();
         positionBuilder.Property(position => position.Description).HasMaxLength(500).IsRequired();

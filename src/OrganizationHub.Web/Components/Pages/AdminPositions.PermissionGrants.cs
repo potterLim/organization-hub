@@ -32,6 +32,7 @@ public partial class AdminPositions
     {
         PositionFormModel formModel = createEmptyFormModel(position.TeamId);
         formModel.Id = position.Id;
+        formModel.Revision = position.Revision;
         formModel.TeamId = position.TeamId;
         formModel.Name = position.Name;
         formModel.Description = position.Description;

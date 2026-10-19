@@ -65,7 +65,14 @@ public sealed class AuthService : IAuthService
             }
 
             userAccountOrNull.LastLoginAt = DateTime.UtcNow;
-            await dbContext.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return LoginResult.Fail("계정 정보가 변경되었습니다. 다시 로그인해 주세요.");
+            }
             ClaimsPrincipal principal = CreateClaimsPrincipal(userAccountOrNull);
             return LoginResult.Succeed(principal);
         }

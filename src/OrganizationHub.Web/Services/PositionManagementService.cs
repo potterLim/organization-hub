@@ -68,8 +68,7 @@ internal sealed class PositionManagementService : IPositionManagementService
             applyPositionForm(position, formModel);
             dbContext.Positions.Add(position);
             addPermissionGrants(dbContext, position, formModel);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -95,6 +94,11 @@ internal sealed class PositionManagementService : IPositionManagementService
                 return ServiceResult.Fail("직책을 찾을 수 없습니다.");
             }
 
+            if (positionOrNull.Revision != formModel.Revision)
+            {
+                return AdministrativeSaveUtility.CreateConflictResult();
+            }
+
             bool hasDuplicateName = await dbContext.Positions.AnyAsync(
                 position => position.Id != requiredPositionId &&
                     position.TeamId == requiredTeamId &&
@@ -108,8 +112,7 @@ internal sealed class PositionManagementService : IPositionManagementService
             applyPositionForm(positionOrNull, formModel);
             dbContext.PositionPermissionGrants.RemoveRange(positionOrNull.PermissionGrants);
             addPermissionGrants(dbContext, positionOrNull, formModel);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -146,8 +149,7 @@ internal sealed class PositionManagementService : IPositionManagementService
                 sortOrder += SORT_ORDER_STEP;
             }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -181,8 +183,7 @@ internal sealed class PositionManagementService : IPositionManagementService
             }
 
             positionOrNull.IsActive = activationState == EActivationState.Active;
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 

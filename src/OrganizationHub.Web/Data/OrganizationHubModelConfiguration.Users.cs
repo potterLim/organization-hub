@@ -10,6 +10,7 @@ internal static partial class OrganizationHubModelConfiguration
     {
         EntityTypeBuilder<UserAccount> userBuilder = modelBuilder.Entity<UserAccount>();
         userBuilder.HasKey(user => user.Id);
+        userBuilder.Property(user => user.Revision).IsConcurrencyToken();
         userBuilder.HasIndex(user => user.Username).IsUnique();
         userBuilder.Property(user => user.Username).HasMaxLength(64).IsRequired();
         userBuilder.Property(user => user.DisplayName).HasMaxLength(120).IsRequired();

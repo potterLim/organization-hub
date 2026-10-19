@@ -2,6 +2,10 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class ServiceResult
 {
+    public bool IsConcurrencyConflict
+    {
+        get; private init;
+    }
     public bool IsSuccess
     {
         get; private init;
@@ -27,6 +31,11 @@ public sealed class ServiceResult
             IsSuccess = false,
             ErrorMessage = errorMessage
         };
+    }
+
+    public static ServiceResult Conflict(string errorMessage)
+    {
+        return new ServiceResult { IsSuccess = false, IsConcurrencyConflict = true, ErrorMessage = errorMessage };
     }
 }
 

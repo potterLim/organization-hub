@@ -6,7 +6,7 @@ using OrganizationHub.Web.Data.Entities;
 
 namespace OrganizationHub.Web.Data;
 
-public sealed class OrganizationHubDbContext : DbContext
+public sealed partial class OrganizationHubDbContext : DbContext
 {
     public DbSet<ApprovalDocument> ApprovalDocuments
     {
@@ -121,12 +121,14 @@ public sealed class OrganizationHubDbContext : DbContext
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         prepareSettingRevisions();
+        prepareAdministrativeRevisions();
         return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         prepareSettingRevisions();
+        prepareAdministrativeRevisions();
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
 

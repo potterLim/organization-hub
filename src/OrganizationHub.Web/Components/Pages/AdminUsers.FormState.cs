@@ -17,7 +17,9 @@ public partial class AdminUsers
         }
 
         mFormModel = new UserAccountFormModel();
+        mHasSaveConflict = false;
         mFormModel.Id = userAccount.Id;
+        mFormModel.Revision = userAccount.Revision;
         mFormModel.Username = userAccount.Username;
         mFormModel.DisplayName = userAccount.DisplayName;
         mFormModel.TeamId = userAccount.TeamId;
@@ -32,6 +34,7 @@ public partial class AdminUsers
 
     private void clearForm()
     {
+        mHasSaveConflict = false;
         mFormModel = new UserAccountFormModel();
         mFormModel.AccountKind = EUserAccountKind.OrganizationMember;
         mFormModel.IsActive = true;

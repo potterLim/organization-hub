@@ -12,6 +12,10 @@
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
     <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
+    @if (mHasSaveConflict)
+    {
+        <MudButton OnClick="reloadUserAsync" Color="Color.Primary" Variant="Variant.Outlined" Class="mb-4">최신 사용자 정보 불러오기</MudButton>
+    }
 }
 
 <MudGrid Spacing="6" Class="hub-management-grid hub-admin-page-grid">

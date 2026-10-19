@@ -89,8 +89,7 @@ public sealed partial class UserManagementService : IUserManagementService
             userAccount.IsActive = formModel.IsActive;
             userAccount.CreatedAt = DateTime.UtcNow;
             dbContext.UserAccounts.Add(userAccount);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -118,6 +117,11 @@ public sealed partial class UserManagementService : IUserManagementService
             if (userAccountOrNull == null)
             {
                 return ServiceResult.Fail("사용자를 찾을 수 없습니다.");
+            }
+
+            if (userAccountOrNull.Revision != formModel.Revision)
+            {
+                return AdministrativeSaveUtility.CreateConflictResult();
             }
 
             ServiceResult existingAdministratorValidationResult = await validateSystemAdministratorAccountChangeAsync(userSession, userAccountOrNull, cancellationToken);
@@ -149,8 +153,7 @@ public sealed partial class UserManagementService : IUserManagementService
             userAccountOrNull.TeamId = OrganizationTeamId.GetValueOrNull(teamIdOrNull);
             applyUserPosition(userAccountOrNull, positionOrNull);
             userAccountOrNull.IsActive = formModel.IsActive;
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -188,8 +191,7 @@ public sealed partial class UserManagementService : IUserManagementService
             }
 
             userAccountOrNull.IsActive = activationState == EActivationState.Active;
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -234,8 +236,7 @@ public sealed partial class UserManagementService : IUserManagementService
 
             PasswordHash passwordHash = mPasswordHashService.HashPassword(newPassword);
             userAccountOrNull.PasswordHash = passwordHash.GetRequiredValue();
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 }

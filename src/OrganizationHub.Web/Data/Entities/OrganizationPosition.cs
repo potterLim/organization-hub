@@ -4,6 +4,10 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class OrganizationPosition
 {
+    public int Revision
+    {
+        get; set;
+    }
     public int Id
     {
         get; set;

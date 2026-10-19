@@ -90,6 +90,55 @@ public sealed class AdministrationConcurrencyRegressionTests
         }
     }
 
+    [Fact]
+    public async Task ReloadedUserFormCanSaveWithoutRestoringOldPositionAsync()
+    {
+        using (TestDbContextFactory factory = createFactory())
+        {
+            UserManagementService service = new UserManagementService(factory, new Pbkdf2PasswordHashService());
+            UserSession administrator = createAdministratorSession(factory);
+            UserAccountFormModel first = createUserForm();
+            first.PositionId = 2;
+            Assert.True((await service.UpdateUserAsync(administrator, first, CancellationToken.None)).IsSuccess);
+            UserAccountFormModel latest = createUserForm();
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                UserAccount user = db.UserAccounts.Single(account => account.Id == 1);
+                latest.Revision = user.Revision;
+                latest.PositionId = user.PositionId;
+            }
+
+            latest.DisplayName = "최신 정보를 불러온 변경";
+            Assert.True((await service.UpdateUserAsync(administrator, latest, CancellationToken.None)).IsSuccess);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                Assert.Equal(2, db.UserAccounts.Single(account => account.Id == 1).PositionId);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ReloadedPositionFormCanSaveWithoutRestoringRevokedGrantAsync()
+    {
+        using (TestDbContextFactory factory = createFactory())
+        {
+            PositionManagementService service = new PositionManagementService(factory);
+            Assert.True((await service.UpdatePositionAsync(createPositionForm(false), CancellationToken.None)).IsSuccess);
+            PositionFormModel latest = createPositionForm(false);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                latest.Revision = db.Positions.Single(position => position.Id == 1).Revision;
+            }
+
+            latest.Description = "최신 권한을 유지한 설명 변경";
+            Assert.True((await service.UpdatePositionAsync(latest, CancellationToken.None)).IsSuccess);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                Assert.DoesNotContain(db.PositionPermissionGrants, grant => grant.PositionId == 1 && grant.IsAllowed);
+            }
+        }
+    }
+
     internal static TestDbContextFactory createFactory()
     {
         TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(PermissionKeys.CALENDAR_UPDATE);

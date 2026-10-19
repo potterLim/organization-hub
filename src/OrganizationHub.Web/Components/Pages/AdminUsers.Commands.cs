@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Data.Entities;
@@ -27,6 +28,7 @@ public partial class AdminUsers
         }
 
         showOperationResult(saveResult, "사용자 정보가 저장되었습니다.");
+        mHasSaveConflict = saveResult.IsConcurrencyConflict;
         if (saveResult.IsSuccess)
         {
             clearForm();
@@ -54,6 +56,23 @@ public partial class AdminUsers
 
         showOperationResult(activationResult, "사용자 상태가 변경되었습니다.");
         await loadDataAsync();
+    }
+
+    private async Task reloadUserAsync()
+    {
+        int selectedUserId = mFormModel.Id;
+        await loadDataAsync();
+        UserAccount? selectedUserOrNull = mUsers.FirstOrDefault(user => user.Id == selectedUserId);
+        if (selectedUserOrNull == null)
+        {
+            clearForm();
+        }
+        else
+        {
+            editUser(selectedUserOrNull);
+        }
+
+        mMessage = string.Empty;
     }
 
     private async Task resetPasswordAsync()

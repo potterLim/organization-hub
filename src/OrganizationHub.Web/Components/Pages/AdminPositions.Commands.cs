@@ -42,6 +42,7 @@ public partial class AdminPositions
         int selectedPositionId = mSelectedPositionIdOrNull.Value;
         ServiceResult permissionSaveResult = await PositionManagementService.UpdatePositionAsync(mPermissionFormModel, CancellationToken.None);
         showOperationResult(permissionSaveResult, "직책 권한이 저장되었습니다.");
+        mHasSaveConflict = permissionSaveResult.IsConcurrencyConflict;
         if (permissionSaveResult.IsSuccess == false)
         {
             return;
@@ -72,6 +73,16 @@ public partial class AdminPositions
         {
             loadSelectedPositionForm();
         }
+    }
+
+    private async Task reloadPositionAsync()
+    {
+        await loadDataAsync();
+        ensurePermissionTeamSelection();
+        ensurePositionSelectionForSelectedTeam();
+        loadSelectedPositionForm();
+        mHasSaveConflict = false;
+        mMessage = string.Empty;
     }
 
     private void showOperationResult(ServiceResult operationResult, string successMessage)

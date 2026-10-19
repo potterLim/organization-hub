@@ -26,6 +26,7 @@ public partial class AdminPositions
     private string mSelectedPermissionCategory = string.Empty;
     private bool mShouldShowOnlyAllowedPermissions;
     private bool mShouldInitializeSortable = true;
+    private bool mHasSaveConflict;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
 

@@ -818,6 +818,10 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("INTEGER");
 
@@ -1064,6 +1068,10 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("PositionId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("StoredCompatibilityRole")

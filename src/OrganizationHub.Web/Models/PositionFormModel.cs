@@ -5,6 +5,10 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class PositionFormModel
 {
+    public int Revision
+    {
+        get; set;
+    }
     public int Id
     {
         get; set;

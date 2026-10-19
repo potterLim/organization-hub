@@ -5,6 +5,10 @@ namespace OrganizationHub.Web.Data.Entities;
 
 public class UserAccount
 {
+    public int Revision
+    {
+        get; set;
+    }
     public int Id
     {
         get; set;

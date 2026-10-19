@@ -19,6 +19,7 @@ public partial class AdminUsers
     private Severity mMessageSeverity = Severity.Info;
     private bool mIsSystemAdministratorSelected;
     private bool mCanManageSystemAdmins;
+    private bool mHasSaveConflict;
 
     protected override async Task OnInitializedAsync()
     {
