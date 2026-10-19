@@ -287,13 +287,3 @@
 }
 
 #blazor-error-ui {
-
-.hub-file-conflict-copy > div { min-width: 0; }
-.hub-file-conflict-copy strong,
-.hub-file-conflict-copy span { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
-@media (max-width: 700px) {
-    .hub-file-conflict-panel { flex-direction: column; align-items: stretch; }
-    .hub-file-conflict-copy { width: 100%; min-width: 0; flex: auto; }
-    .hub-file-conflict-actions { width: 100%; flex-wrap: wrap; }
-    .hub-file-conflict-actions .mud-button-root { flex: 1 1 160px; }
-}

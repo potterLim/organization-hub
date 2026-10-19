@@ -120,7 +120,7 @@
     font-feature-settings: "tnum";
     font-size: 13px;
     font-variant-numeric: tabular-nums;
-    font-weight: 750 !important;
+    font-weight: 500 !important;
 }
 
 .hub-file-table .hub-action-cell {

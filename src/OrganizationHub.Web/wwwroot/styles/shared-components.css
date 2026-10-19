@@ -187,9 +187,10 @@
     font-weight: 760;
     line-height: 1.35;
     margin-top: 3px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .hub-file-conflict-icon {
@@ -386,4 +387,11 @@
     border-bottom-color: rgba(78, 104, 145, .11) !important;
     color: var(--hub-text);
     font-weight: 650;
+}
+
+.hub-file-conflict-copy > div { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+    .hub-file-conflict-panel { grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+    .hub-file-conflict-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+    .hub-file-conflict-actions .mud-button-root { min-width: 0 !important; padding: 8px !important; white-space: normal; }
 }
