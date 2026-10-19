@@ -18,6 +18,7 @@ public partial class Todos
         }
 
         mIsLoadingLists = true;
+        mHasTaskListLoadError = false;
         try
         {
             IReadOnlyList<TodoTaskListReference> taskLists = await TodoService.GetReadableTaskListsAsync(CurrentUserSessionOrNull, CancellationToken.None);
@@ -34,6 +35,7 @@ public partial class Todos
         }
         catch (Exception exception)
         {
+            mHasTaskListLoadError = true;
             showError(createTodoErrorMessage(exception));
         }
 
@@ -60,6 +62,7 @@ public partial class Todos
         }
 
         mIsLoadingTasks = true;
+        mHasTaskLoadError = false;
         mShouldInitializeSortable = false;
         bool shouldInitializeSortable = false;
         try
@@ -78,6 +81,7 @@ public partial class Todos
         }
         catch (Exception exception)
         {
+            mHasTaskLoadError = true;
             showError(createTodoErrorMessage(exception));
         }
 

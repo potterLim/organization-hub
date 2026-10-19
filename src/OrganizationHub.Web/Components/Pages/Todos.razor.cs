@@ -37,6 +37,8 @@ public partial class Todos
     private ETodoTaskSortMode mTaskSortMode = ETodoTaskSortMode.DueDateAscending;
     private bool mIsLoadingLists = true;
     private bool mIsLoadingTasks;
+    private bool mHasTaskLoadError;
+    private bool mHasTaskListLoadError;
     private bool mIsSaving;
     private bool mHasEditConflict;
     private bool mShouldInitializeSortable;
