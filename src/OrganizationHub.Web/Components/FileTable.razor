@@ -1,6 +1,6 @@
 @if (Files.Count == 0)
 {
-    <ResourceStateMessage Icon="@Icons.Material.Filled.FolderOff" Title="@EmptyMessage" Description="@EmptyDescription" Class="hub-file-empty-state" />
+    <ResourceStateMessage Icon="@Icons.Material.Filled.FolderOff" Title="@EmptyMessage" Description="@EmptyDescription" ActionLabel="@EmptyActionLabel" ActionHref="@EmptyActionHref" Class="hub-file-empty-state" />
 }
 else if (IsCompact)
 {
@@ -118,6 +118,12 @@ else
 
     [Parameter]
     public string EmptyMessage { get; set; } = "표시할 파일이 없습니다.";
+
+    [Parameter]
+    public string EmptyActionLabel { get; set; } = string.Empty;
+
+    [Parameter]
+    public string EmptyActionHref { get; set; } = string.Empty;
 
     [Parameter]
     public string EmptyDescription { get; set; } = string.Empty;

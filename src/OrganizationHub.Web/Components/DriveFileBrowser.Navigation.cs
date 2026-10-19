@@ -47,6 +47,7 @@ public partial class DriveFileBrowser
         int loadVersion = ++mFileLoadVersion;
         DriveFolderReference? currentRootFolderOrNull = getCurrentRootFolderOrNull();
         mIsLoadingFiles = true;
+        mCanUploadFiles = false;
         mFileErrorMessage = string.Empty;
         try
         {
@@ -73,11 +74,13 @@ public partial class DriveFileBrowser
                 canDeleteFiles = deleteDecision.IsAllowed;
             }
 
+            bool canUploadFiles = await PermissionService.CanUploadToFolderAsync(CurrentUserSessionOrNull, DriveFolderId.CreateOptional(getCurrentFolderId()), CancellationToken.None);
             if (loadVersion != mFileLoadVersion)
             {
                 return;
             }
             mFiles = readResult.Value.ToList();
+            mCanUploadFiles = canUploadFiles;
             mCanDeleteFiles = canDeleteFiles;
             mDeleteCandidateOrNull = null;
             recordLoadedChangeSnapshot(readResult.Snapshot);

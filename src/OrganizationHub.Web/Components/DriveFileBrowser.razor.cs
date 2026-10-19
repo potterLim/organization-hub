@@ -79,6 +79,7 @@ public partial class DriveFileBrowser
     private bool mIsLoadingFiles;
     private int mFileLoadVersion;
     private bool mCanDeleteFiles;
+    private bool mCanUploadFiles;
     private bool mIsDeleting;
 
     protected override async Task OnInitializedAsync()

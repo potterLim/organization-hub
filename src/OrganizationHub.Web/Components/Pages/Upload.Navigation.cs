@@ -131,6 +131,12 @@ public partial class Upload
 
     private DriveFolderReference getDefaultUploadRootFolder()
     {
+        DriveFolderReference? requestedFolderOrNull = mUploadRootFolders.FirstOrDefault(folder => folder.FolderId.GetRequiredValue() == RootFolderIdOrNull);
+        if (requestedFolderOrNull != null)
+        {
+            return requestedFolderOrNull;
+        }
+
         if (CurrentUserSessionOrNull != null && CurrentUserSessionOrNull.TeamKey.IsManagementTeamKey)
         {
             DriveFolderReference? managementFolderOrNull = mUploadRootFolders.FirstOrDefault(folder => folder.FolderKind == EDriveFolderKind.TeamMaterials && folder.IsManagementTeam);

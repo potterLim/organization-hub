@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Linq;
 using OrganizationHub.Web.Models;
@@ -6,6 +7,15 @@ namespace OrganizationHub.Web.Components;
 
 public partial class DriveFileBrowser
 {
+    private string getEmptyUploadHref()
+    {
+        if (mCanUploadFiles == false || string.IsNullOrWhiteSpace(mKeyword) == false)
+        {
+            return string.Empty;
+        }
+        return "/upload?root=" + Uri.EscapeDataString(mSelectedRootFolderId);
+    }
+
     private string getSelectedRootDisplayName()
     {
         DriveFolderReference? rootFolderOrNull = mRootFolders.FirstOrDefault(folder => folder.FolderId.GetRequiredValue() == mSelectedRootFolderId);

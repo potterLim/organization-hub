@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using OrganizationHub.Web.Domain;
@@ -38,6 +39,12 @@ public partial class Upload
     private bool mIsCreatingFolder;
     private bool mIsUploading;
     private bool mIsFolderCreateOpen;
+
+    [SupplyParameterFromQuery(Name = "root")]
+    public string? RootFolderIdOrNull
+    {
+        get; set;
+    }
 
     protected override async Task OnInitializedAsync()
     {
