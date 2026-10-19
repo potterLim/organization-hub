@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Data.Entities;
@@ -60,6 +63,11 @@ public sealed partial class GoogleTasksTodoService
                 applyTaskDueToGoogleTask(googleTask, dueAtUtcOrNull);
                 Google.Apis.Tasks.v1.TasksResource.PatchRequest request = tasksService.Tasks.Patch(googleTask, requiredTaskListId, requiredTaskId);
                 request.Fields = TASK_FIELDS;
+                if (dueAtUtcOrNull.HasValue == false)
+                {
+                    // The SDK omits null properties; PATCH needs an explicit null to remove a due date.
+                    request.ModifyRequest = message => applyClearedDueContent(message, googleTask.Title);
+                }
                 GoogleTask updatedTask = await request.ExecuteAsync(cancellationToken);
                 TodoTaskItem updatedItem = createTaskItem(taskListId, updatedTask);
                 await updateMetadataDueAtAsync(taskListId, taskId, dueAtUtcOrNull, cancellationToken);
@@ -184,5 +192,14 @@ public sealed partial class GoogleTasksTodoService
         }
 
         googleTask.Due = googleDueOrNull;
+    }
+
+    private static void applyClearedDueContent(HttpRequestMessage message, string title)
+    {
+        JsonObject content = new JsonObject();
+        content["title"] = title;
+        content["due"] = null;
+        message.Content?.Dispose();
+        message.Content = new StringContent(content.ToJsonString(), Encoding.UTF8, "application/json");
     }
 }
