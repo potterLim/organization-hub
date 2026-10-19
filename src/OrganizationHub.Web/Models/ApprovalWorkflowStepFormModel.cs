@@ -4,6 +4,8 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class ApprovalWorkflowStepFormModel
 {
+    private string mStepName = string.Empty;
+    private bool mHasCustomStepName;
     public int Id
     {
         get; set;
@@ -12,7 +14,18 @@ public sealed class ApprovalWorkflowStepFormModel
     {
         get; set;
     }
-    public string StepName { get; set; } = string.Empty;
+    public string StepName
+    {
+        get
+        {
+            return mStepName;
+        }
+        set
+        {
+            mStepName = value;
+            mHasCustomStepName = string.IsNullOrWhiteSpace(value) == false;
+        }
+    }
     public EApproverSelectionType ApproverSelectionType { get; set; } = EApproverSelectionType.PositionInRequesterTeam;
     public int? ApproverUserId
     {
@@ -50,4 +63,11 @@ public sealed class ApprovalWorkflowStepFormModel
     public string RequiredPermissionKey { get; set; } = string.Empty;
     public EPermissionScopeType ScopeType { get; set; } = EPermissionScopeType.OwnTeam;
     public bool IsRequired { get; set; } = true;
+    public void ApplyDefaultName(string name)
+    {
+        if (mHasCustomStepName == false)
+        {
+            mStepName = name;
+        }
+    }
 }

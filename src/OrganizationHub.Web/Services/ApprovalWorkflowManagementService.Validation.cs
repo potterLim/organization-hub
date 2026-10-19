@@ -18,9 +18,9 @@ internal sealed partial class ApprovalWorkflowManagementService
             return ServiceResult.Fail("결재 경로 이름을 입력해 주세요.");
         }
 
-        if (formModel.Steps.Count == 0)
+        if (ApprovalStepCount.IsSupportedValue(formModel.Steps.Count) == false)
         {
-            return ServiceResult.Fail("결재 단계가 하나 이상 필요합니다.");
+            return ServiceResult.Fail("결재 단계는 1개부터 " + ApprovalStepCount.MAXIMUM_VALUE + "개까지 설정할 수 있습니다.");
         }
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))

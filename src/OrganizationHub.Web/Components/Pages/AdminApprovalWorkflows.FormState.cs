@@ -48,6 +48,10 @@ public partial class AdminApprovalWorkflows
 
     private void addStep()
     {
+        if (mFormModel.Steps.Count >= ApprovalStepCount.MAXIMUM_VALUE)
+        {
+            return;
+        }
         int stepOrder = mFormModel.Steps.Count + 1;
         ApprovalWorkflowStepFormModel step = new ApprovalWorkflowStepFormModel();
         step.StepOrder = stepOrder;
@@ -74,7 +78,7 @@ public partial class AdminApprovalWorkflows
         foreach (ApprovalWorkflowStepFormModel step in mFormModel.Steps.OrderBy(step => step.StepOrder))
         {
             step.StepOrder = stepOrder;
-            step.StepName = ApprovalStepLabelUtility.GetStepLabel(stepCount, new ApprovalStepNumber(stepOrder));
+            step.ApplyDefaultName(ApprovalStepLabelUtility.GetStepLabel(stepCount, new ApprovalStepNumber(stepOrder)));
             stepOrder++;
         }
     }

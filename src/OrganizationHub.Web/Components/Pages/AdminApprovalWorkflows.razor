@@ -51,8 +51,9 @@
 
             <div class="hub-google-panel-heading">
                 <MudText Typo="Typo.h6">결재 단계</MudText>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="addStep" StartIcon="@Icons.Material.Filled.Add">단계 추가</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="addStep" Disabled="@(mFormModel.Steps.Count >= ApprovalStepCount.MAXIMUM_VALUE)" StartIcon="@Icons.Material.Filled.Add">단계 추가</MudButton>
             </div>
+            <MudText Typo="Typo.body2" Class="mb-2">최대 @ApprovalStepCount.MAXIMUM_VALUE 단계까지 설정할 수 있습니다.</MudText>
 
             <div class="hub-workflow-step-list">
                 @foreach (ApprovalWorkflowStepFormModel step in mFormModel.Steps.OrderBy(step => step.StepOrder))
