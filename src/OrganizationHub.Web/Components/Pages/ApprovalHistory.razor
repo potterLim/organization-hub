@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @inherits TimeZoneAwareOrganizationHubComponentBase
 @inject IApprovalService ApprovalService
+@inject NavigationManager NavigationManager
 @inject Microsoft.Extensions.Logging.ILogger<ApprovalHistory> Logger
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("결재 기록")</PageTitle>
@@ -9,8 +10,8 @@
 <h1 class="hub-sr-only">결재 기록</h1>
 
 <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" Class="mb-4">
-    <MudButton Href="/approvals/history?view=requested" Variant="@(mShowRequestedOnly ? Variant.Filled : Variant.Outlined)" Color="Color.Primary">내 진행 중 요청 (@mMyOngoingCount)</MudButton>
-    <MudButton Href="/approvals/history" Variant="@(mShowRequestedOnly ? Variant.Outlined : Variant.Filled)" Color="Color.Primary">전체 기록</MudButton>
+    <MudButton OnClick="@(() => showHistoryAsync(true))" Disabled="mIsLoading" Variant="@(mShowRequestedOnly ? Variant.Filled : Variant.Outlined)" Color="Color.Primary">내 진행 중 요청 (@mMyOngoingCount)</MudButton>
+    <MudButton OnClick="@(() => showHistoryAsync(false))" Disabled="mIsLoading" Variant="@(mShowRequestedOnly ? Variant.Outlined : Variant.Filled)" Color="Color.Primary">전체 기록</MudButton>
     <MudButton OnClick="reloadAsync" Disabled="mIsLoading" StartIcon="@Icons.Material.Filled.Refresh">새로고침</MudButton>
 </MudStack>
 
@@ -19,7 +20,7 @@
         <MudTextField @bind-Value="mSearchKeyword" Immediate="true" Label="제목 또는 파일명 검색" MaxLength="120" Variant="Variant.Outlined" Margin="Margin.Dense" OnKeyDown="handleSearchKeyDownAsync" />
     </MudItem>
     <MudItem xs="8" md="2">
-        <MudSelect T="EApprovalHistoryFilter" Label="상태" Value="mHistoryFilter" ValueChanged="handleFilterChangedAsync" Variant="Variant.Outlined" Margin="Margin.Dense">
+        <MudSelect T="EApprovalHistoryFilter" Label="상태" Value="mHistoryFilter" ValueChanged="handleFilterChangedAsync" Disabled="mIsLoading" Variant="Variant.Outlined" Margin="Margin.Dense">
             <MudSelectItem T="EApprovalHistoryFilter" Value="EApprovalHistoryFilter.AllRelated">전체 기록</MudSelectItem>
             <MudSelectItem T="EApprovalHistoryFilter" Value="EApprovalHistoryFilter.MyOngoing">내 진행 중 요청</MudSelectItem>
             <MudSelectItem T="EApprovalHistoryFilter" Value="EApprovalHistoryFilter.Approved">완료</MudSelectItem>

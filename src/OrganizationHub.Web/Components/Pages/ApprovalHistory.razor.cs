@@ -91,6 +91,18 @@ public partial class ApprovalHistory
         await reloadAsync();
     }
 
+    private Task showHistoryAsync(bool shouldShowRequestedOnly)
+    {
+        string uri = NavigationManager.GetUriWithQueryParameter("view", shouldShowRequestedOnly ? "requested" : null);
+        if (uri != NavigationManager.Uri)
+        {
+            NavigationManager.NavigateTo(uri);
+            return Task.CompletedTask;
+        }
+
+        return handleFilterChangedAsync(shouldShowRequestedOnly ? EApprovalHistoryFilter.MyOngoing : EApprovalHistoryFilter.AllRelated);
+    }
+
     private async Task handleSearchKeyDownAsync(KeyboardEventArgs args)
     {
         if (args.Key == "Enter")
