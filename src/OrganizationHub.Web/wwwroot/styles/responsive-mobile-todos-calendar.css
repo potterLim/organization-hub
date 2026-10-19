@@ -19,6 +19,11 @@
 }
 
 @media (max-width: 720px) {
+    /* A backdrop filter would anchor the fixed popup to its card instead of the viewport. */
+    .hub-card:has(.hub-calendar-date-time-panel) {
+        backdrop-filter: none;
+    }
+
     .hub-calendar-date-time-panel {
         position: fixed;
         top: 100px;

@@ -17,6 +17,9 @@ async function navigate(page, route) {
 }
 
 async function check(page, width, name, action, inspect) {
+    const area = process.env.HUB_LAYOUT_AREA;
+    const isConflict = name.includes('conflict');
+    if ((area === 'popup' && isConflict) || (area === 'conflict' && !isConflict)) return;
     try {
         await action();
         await page.waitForTimeout(250);
