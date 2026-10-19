@@ -55,8 +55,9 @@ public sealed class CalendarListPermissionRenderTests
 
             async Task<string> renderAsync()
             {
+                await renderer.RenderComponentAsync<MudBlazor.MudPopoverProvider>(ParameterView.Empty);
                 Microsoft.AspNetCore.Components.Web.HtmlRendering.HtmlRootComponent component = await renderer.RenderComponentAsync<CalendarEventListPanel>(ParameterView.FromDictionary(parameters));
-                return component.ToHtmlString();
+                return System.Net.WebUtility.HtmlDecode(component.ToHtmlString());
             }
         }
     }
