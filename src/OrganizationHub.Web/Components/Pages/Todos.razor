@@ -20,6 +20,17 @@
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("할 일")</PageTitle>
 
+@if (mPendingTaskListIdOrNull != null)
+{
+    <MudAlert Severity="Severity.Warning" Class="mb-4" role="alert">
+        저장하지 않은 입력이 있습니다. 목록을 바꾸기 전에 저장하거나 입력을 버릴지 선택해 주세요.
+        <div class="hub-form-actions">
+            <MudButton OnClick="keepCurrentTaskList" Disabled="mIsSaving">계속 작성</MudButton>
+            <MudButton OnClick="discardDraftAndSwitchTaskListAsync" Disabled="mIsSaving" Color="Color.Warning">입력 버리고 목록 이동</MudButton>
+        </div>
+    </MudAlert>
+}
+
 <div @ref="mRefreshScopeElement">
     <h1 class="hub-sr-only">할 일</h1>
 </div>

@@ -18,6 +18,7 @@ public partial class Todos
     private HashSet<string> mDeletableTaskListIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> mWritableTaskListIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     private List<TodoTaskItem> mTasks = new List<TodoTaskItem>();
+    private string? mPendingTaskListIdOrNull;
     private string mSelectedTaskListId = string.Empty;
     private string mNewTaskTitle = string.Empty;
     private string mEditingTaskId = string.Empty;

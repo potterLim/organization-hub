@@ -44,6 +44,41 @@ public partial class Todos
 
     private async Task handleTaskListChangedAsync(string taskListId)
     {
+        if (mIsSaving || taskListId == mSelectedTaskListId)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(mEditingTaskId) == false || string.IsNullOrWhiteSpace(mNewTaskTitle) == false || mNewTaskDueAt.HasValue)
+        {
+            mPendingTaskListIdOrNull = taskListId;
+            return;
+        }
+
+        await switchTaskListAsync(taskListId);
+    }
+
+    private void keepCurrentTaskList()
+    {
+        mPendingTaskListIdOrNull = null;
+    }
+
+    private async Task discardDraftAndSwitchTaskListAsync()
+    {
+        if (mPendingTaskListIdOrNull == null || mIsSaving)
+        {
+            return;
+        }
+
+        string taskListId = mPendingTaskListIdOrNull;
+        mPendingTaskListIdOrNull = null;
+        mNewTaskTitle = string.Empty;
+        mNewTaskDueAt = null;
+        await switchTaskListAsync(taskListId);
+    }
+
+    private async Task switchTaskListAsync(string taskListId)
+    {
         mSelectedTaskListId = taskListId;
         await ensureAvailableTaskSortModeAsync();
         mEditingTaskId = string.Empty;
