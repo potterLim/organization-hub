@@ -61,7 +61,7 @@ else
                 </MudStack>
             </MudPaper>
         </MudItem>
-        <MudItem xs="12" lg="7" xl="8">
+        <MudItem xs="12" lg="7" xl="8" id="position-editor" tabindex="-1" Class="hub-editor-anchor">
             <MudPaper Class="hub-card hub-list-card hub-permission-workspace pa-4">
                 <div class="hub-admin-section-heading">
                     <div>
@@ -108,6 +108,8 @@ else
                         </div>
                         <span class="@(selectedPosition.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(selectedPosition.IsActive ? "사용 중" : "비활성")</span>
                     </div>
+                    <MudTextField @bind-Value="mPermissionFormModel.Name" Label="직책 이름 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                    <MudTextField @bind-Value="mPermissionFormModel.Description" Label="직책 설명 (선택)" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" Immediate="true" />
                     @if (selectedPosition.IsSystemAdministrator)
                     {
                         <MudAlert Severity="Severity.Info" Class="my-3">시스템 관리자 직책은 모든 업무와 모든 팀에 접근할 수 있습니다. 개별 권한으로 제한할 수 없습니다. 접근 범위를 제한하려면 일반 직책을 사용하세요.</MudAlert>
@@ -170,10 +172,11 @@ else
                                 </section>
                             }
                         </div>
-                        <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered hub-permission-save-bar mt-4">
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="savePermissionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">권한 저장</MudButton>
-                        </MudStack>
+
                     }
+                    <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered hub-permission-save-bar mt-4">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="savePermissionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">직책 저장</MudButton>
+                    </MudStack>
                 }
             </MudPaper>
         </MudItem>
@@ -224,7 +227,7 @@ else
                                                 <SortableOrderControls ItemId="position.Id" Label="@position.Name" OrderedIds="@teamPositions.Select(item => item.Id).ToArray()" MoveRequested="movePositionAsync" />
                                                 <span class="hub-sortable-status @(position.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(position.IsActive ? "사용 중" : "비활성")</span>
                                                 <MudTooltip Text="이 직책 권한 설정">
-                                                    <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" Size="Size.Small" OnClick="@(() => selectPositionForPermissions(position))" aria-label="이 직책 권한 설정" />
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Tune" Color="Color.Primary" Size="Size.Small" Href="/admin/positions#position-editor" OnClick="@(() => selectPositionForPermissions(position))" aria-label="@(position.Name + " 직책 정보와 권한 설정")" />
                                                 </MudTooltip>
                                                 <MudTooltip Text="@(position.IsActive ? "직책 비활성화" : "직책 활성화")">
                                                     <MudIconButton Icon="@(position.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => togglePositionActiveAsync(position))" aria-label="@(position.IsActive ? "직책 비활성화" : "직책 활성화")" Disabled="@position.IsSystemAdministrator" />

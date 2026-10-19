@@ -29,7 +29,7 @@
 }
 
 <MudGrid Spacing="6" Class="hub-management-grid hub-admin-page-grid">
-    <MudItem xs="12" lg="5" xl="4" Class="hub-admin-sticky-column">
+    <MudItem xs="12" lg="5" xl="4" Class="hub-admin-sticky-column hub-editor-anchor" id="menu-editor" tabindex="-1">
         <MudPaper Class="hub-card hub-form-card hub-menu-editor-card pa-4">
             @if (mSelectedMenuItemOrNull == null)
             {
@@ -199,7 +199,7 @@
                                         <span class="hub-sortable-status @(menuItem.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(menuItem.IsActive ? "사용 중" : "숨김")</span>
                                         <SortableOrderControls ItemId="menuItem.Id" ItemKeyPrefix="menu:" Label="@menuItem.DisplayName" OrderedIds="@(sectionMenuItems.Select(item => item.Id).ToArray())" MoveRequested="moveMenuItemAsync" />
                                         <MudTooltip Text="메뉴 수정">
-                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editMenu(menuItem))" aria-label="메뉴 수정" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" Href="/admin/menus#menu-editor" OnClick="@(() => editMenu(menuItem))" aria-label="@(menuItem.DisplayName + " 메뉴 수정")" />
                                         </MudTooltip>
                                     </div>
                                 </div>

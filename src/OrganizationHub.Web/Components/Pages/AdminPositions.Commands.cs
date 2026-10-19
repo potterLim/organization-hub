@@ -15,7 +15,7 @@ public partial class AdminPositions
         int createdTeamId = mNewPositionFormModel.TeamId;
         string createdPositionName = mNewPositionFormModel.Name.Trim();
         ServiceResult creationResult = await PositionManagementService.CreatePositionAsync(mNewPositionFormModel, CancellationToken.None);
-        showOperationResult(creationResult, "직책이 만들어졌습니다. 오른쪽에서 권한을 설정할 수 있습니다.");
+        showOperationResult(creationResult, "직책이 만들어졌습니다. 권한 설정에서 필요한 업무 권한을 선택해 주세요.");
         if (creationResult.IsSuccess == false)
         {
             return;
@@ -32,7 +32,7 @@ public partial class AdminPositions
 
     private async Task savePermissionAsync()
     {
-        if (mSelectedPositionIdOrNull.HasValue == false || getSelectedPositionOrNull()?.IsSystemAdministrator == true)
+        if (mSelectedPositionIdOrNull.HasValue == false)
         {
             mMessage = "권한을 설정할 직책을 선택해 주세요.";
             mMessageSeverity = Severity.Warning;
@@ -41,7 +41,7 @@ public partial class AdminPositions
 
         int selectedPositionId = mSelectedPositionIdOrNull.Value;
         ServiceResult permissionSaveResult = await PositionManagementService.UpdatePositionAsync(mPermissionFormModel, CancellationToken.None);
-        showOperationResult(permissionSaveResult, "직책 권한이 저장되었습니다.");
+        showOperationResult(permissionSaveResult, "직책 정보와 권한이 저장되었습니다.");
         mHasSaveConflict = permissionSaveResult.IsConcurrencyConflict;
         if (permissionSaveResult.IsSuccess == false)
         {

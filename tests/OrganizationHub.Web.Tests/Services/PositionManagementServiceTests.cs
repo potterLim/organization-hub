@@ -100,6 +100,42 @@ public sealed class PositionManagementServiceTests
         }
     }
 
+    [Fact]
+    public async Task EditingPositionDetailsKeepsPermissionsAndRejectsStaleFormAsync()
+    {
+        using (TestDbContextFactory factory = new TestDbContextFactory())
+        {
+            await seedTeamsAsync(factory);
+            await seedPositionsAsync(factory);
+            PositionManagementService service = new PositionManagementService(factory);
+            PositionFormModel form = new PositionFormModel();
+            form.Id = 1;
+            form.TeamId = 1;
+            form.Name = "운영 문서 담당";
+            form.Description = "변경된 직책 설명";
+            form.IsActive = true;
+            PositionPermissionGrantFormModel grant = new PositionPermissionGrantFormModel();
+            grant.PermissionKey = PermissionKeys.FILES_READ;
+            grant.IsAllowed = true;
+            grant.ScopeType = EPermissionScopeType.OwnTeam;
+            form.PermissionGrants.Add(grant);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                form.Revision = db.Positions.Single(position => position.Id == 1).Revision;
+            }
+
+            Assert.True((await service.UpdatePositionAsync(form, CancellationToken.None)).IsSuccess);
+            form.Name = "오래된 화면에서 다시 저장";
+            Assert.True((await service.UpdatePositionAsync(form, CancellationToken.None)).IsConcurrencyConflict);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                Assert.Equal("운영 문서 담당", db.Positions.Single(position => position.Id == 1).Name);
+                Assert.Equal("변경된 직책 설명", db.Positions.Single(position => position.Id == 1).Description);
+                Assert.Equal(PermissionKeys.FILES_READ, db.PositionPermissionGrants.Single().PermissionKey);
+            }
+        }
+    }
+
     private static async Task seedTeamsAsync(TestDbContextFactory dbContextFactory)
     {
         using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
