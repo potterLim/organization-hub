@@ -20,7 +20,7 @@ using Xunit;
 
 namespace OrganizationHub.Web.Tests.Services;
 
-public sealed class GoogleApprovalPublicationTests
+public sealed partial class GoogleApprovalPublicationTests
 {
     private sealed class DriveTransport : IGoogleApiCredentialFactory, IConfigurableHttpClientInitializer
     {
