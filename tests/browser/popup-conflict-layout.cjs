@@ -16,6 +16,14 @@ async function navigate(page, route) {
     await page.evaluate(() => document.fonts.ready);
 }
 
+async function login(page, username) {
+    await navigate(page, '/login');
+    await page.getByLabel('아이디', { exact: true }).fill(username);
+    await page.getByLabel('비밀번호', { exact: true }).fill(process.env.HUB_TEST_PASSWORD);
+    await page.getByRole('button', { name: '로그인', exact: true }).click();
+    await page.waitForURL('**/dashboard');
+}
+
 async function check(page, width, name, action, inspect) {
     const area = process.env.HUB_LAYOUT_AREA;
     const isConflict = name.includes('conflict');
@@ -30,10 +38,30 @@ async function check(page, width, name, action, inspect) {
         assert((await page.title()).includes('Organization Hub'));
         assert((await page.locator('body').innerText()).trim().length > 40);
         assert.equal(geometry.violations.length, 0, JSON.stringify(geometry));
+        if (!isConflict) await verifyPickerInteraction(page);
         results.push({ width, name, status: 'pass', url: page.url(), geometry, screenshot });
     } catch (error) {
         results.push({ width, name, status: 'fail', error: error.message });
     }
+}
+
+async function verifyPickerInteraction(page) {
+    const dialog = page.getByRole('dialog');
+    const fieldIndex = await dialog.evaluate(element => [...document.querySelectorAll('.hub-calendar-date-time-field')].indexOf(element.parentElement));
+    const field = page.locator('.hub-calendar-date-time-field').nth(fieldIndex);
+    const selected = dialog.locator('[data-picker-date][aria-pressed="true"]:not(:disabled)');
+    const day = await selected.count() ? selected : dialog.locator('[data-picker-date]:not(:disabled)').first();
+    const date = await day.getAttribute('data-picker-date');
+    await day.click();
+    await dialog.getByRole('button', { name: '완료', exact: true }).click();
+    await dialog.waitFor({ state: 'hidden' });
+    await page.waitForFunction(([index, expected]) => document.querySelectorAll('.hub-calendar-date-time-field')[index].textContent.includes(expected), [fieldIndex, date]);
+    assert.notEqual(await field.evaluate(element => getComputedStyle(element.closest('.hub-card')).backdropFilter), 'none');
+    await field.locator('.hub-calendar-date-time-field-button').click();
+    await page.waitForFunction(() => document.activeElement?.matches('[data-picker-date]'));
+    await page.keyboard.press('Escape');
+    await dialog.waitFor({ state: 'hidden' });
+    await page.waitForFunction(() => document.activeElement?.matches('.hub-calendar-date-time-field-button'));
 }
 
 async function inspectPopup(page) {
@@ -77,17 +105,14 @@ async function inspectConflict(panel) {
     const browser = await chromium.launch({ executablePath: process.env.HUB_BROWSER_EXECUTABLE });
     try {
         for (const [width, height] of [[1440, 1000], [1920, 1080], [480, 1040], [360, 800]]) {
-            const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: width <= 480 ? 3 : 1, isMobile: width <= 480, hasTouch: width <= 480, locale: 'ko-KR', timezoneId: 'Asia/Seoul' });
+            const contextOptions = { viewport: { width, height }, deviceScaleFactor: width <= 480 ? 3 : 1, isMobile: width <= 480, hasTouch: width <= 480, locale: 'ko-KR', timezoneId: 'Asia/Seoul' };
+            const context = await browser.newContext(contextOptions);
             try {
                 const page = await context.newPage();
                 page.setDefaultTimeout(10000);
                 page.on('pageerror', error => errors.push({ width, message: error.message }));
                 page.on('console', message => { if (message.type() === 'error') errors.push({ width, message: message.text() }); });
-                await navigate(page, '/login');
-                await page.getByLabel('아이디', { exact: true }).fill(process.env.HUB_TEST_USER);
-                await page.getByLabel('비밀번호', { exact: true }).fill(process.env.HUB_TEST_PASSWORD);
-                await page.getByRole('button', { name: '로그인', exact: true }).click();
-                await page.waitForURL('**/dashboard');
+                await login(page, process.env.HUB_TEST_USER);
 
                 for (const label of ['시작', '종료']) {
                     await check(page, width, `calendar-${label}`, async () => {
@@ -130,6 +155,32 @@ async function inspectConflict(panel) {
                 }
             } finally {
                 await context.close();
+            }
+            if (process.env.HUB_APPROVER_USER && process.env.HUB_LAYOUT_AREA !== 'popup') {
+                const approvalContext = await browser.newContext(contextOptions);
+                try {
+                    const page = await approvalContext.newPage();
+                    page.setDefaultTimeout(10000);
+                    page.on('pageerror', error => errors.push({ width, message: error.message }));
+                    page.on('console', message => { if (message.type() === 'error') errors.push({ width, message: message.text() }); });
+                    await login(page, process.env.HUB_APPROVER_USER);
+                    for (const mode of ['normal', 'approval-multiple']) {
+                        const panel = page.locator('.hub-approval-card').filter({ hasText: '신규 고객 온보딩 프로세스 개선안' }).locator('.hub-file-conflict-panel');
+                        await check(page, width, `approval-${mode}-conflict`, async () => {
+                            assert((await page.request.post(baseUrl + '/fixture/state/' + mode)).ok());
+                            await navigate(page, '/approvals/inbox');
+                            const card = page.locator('.hub-approval-card').filter({ hasText: '신규 고객 온보딩 프로세스 개선안' });
+                            await card.getByRole('button', { name: '승인', exact: true }).click();
+                            await panel.waitFor();
+                            assert.equal(await panel.getByRole('button', { name: '기존 파일 교체', exact: true }).isEnabled(), mode === 'normal');
+                            assert(await panel.getByRole('button', { name: '새 파일로 추가', exact: true }).isEnabled());
+                            await panel.evaluate(element => scrollBy(0, element.getBoundingClientRect().top - 100));
+                        }, () => inspectConflict(panel));
+                    }
+                    assert((await page.request.post(baseUrl + '/fixture/state/normal')).ok());
+                } finally {
+                    await approvalContext.close();
+                }
             }
         }
     } finally {
