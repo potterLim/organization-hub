@@ -90,7 +90,7 @@ else
                 <div class="hub-form-actions">
                     @foreach (TodoTaskListReference taskList in mTaskLists.Where(taskList => mCreatableTaskListIds.Contains(taskList.TaskListId.GetRequiredValue())))
                     {
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => handleTaskListChangedAsync(taskList.TaskListId.GetRequiredValue()))">@taskList.DisplayName 에 추가</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => handleTaskListChangedAsync(taskList.TaskListId.GetRequiredValue()))">@(taskList.DisplayName + "에 추가")</MudButton>
                     }
                 </div>
             }

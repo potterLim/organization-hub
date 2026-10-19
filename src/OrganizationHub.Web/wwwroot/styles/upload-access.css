@@ -208,7 +208,7 @@
 .hub-location-file-content small {
     color: var(--hub-text-muted);
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 500;
     line-height: 1.25;
     overflow: hidden;
     text-overflow: ellipsis;

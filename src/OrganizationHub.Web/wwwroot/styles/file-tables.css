@@ -159,3 +159,8 @@
 }
 
 .hub-file-date-text, .hub-file-compact-meta, .hub-uploaded-by { font-weight: 500; color: var(--hub-text-muted); }
+.hub-file-table,
+.hub-file-mobile-list,
+.hub-upload-log-list {
+    --hub-list-meta-font-weight: 500;
+}
