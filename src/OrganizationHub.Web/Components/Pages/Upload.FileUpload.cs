@@ -3,9 +3,11 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components.Pages;
 
@@ -73,6 +75,7 @@ public partial class Upload
         }
 
         mIsUploading = true;
+        bool isFileStored = false;
         try
         {
             DriveItemName selectedFileName = DriveItemName.CreateRequired(mSelectedFileOrNull.Name);
@@ -104,21 +107,36 @@ public partial class Upload
                     contentType,
                     conflictResolution,
                     replacementFileId);
-                DriveFileItem uploadedFile = await DriveService.UploadFileAsync(request, CancellationToken.None);
                 DriveFolderOwnerContext ownerContext = new DriveFolderOwnerContext(rootFolderOrNull.TeamIdOrNull, rootFolderOrNull.TeamKey, rootFolderOrNull.TeamName);
                 DriveFolderReferenceCreationRequest referenceRequest = new DriveFolderReferenceCreationRequest(uploadFolderId, getCurrentFolderDisplayName(), rootFolderOrNull.FolderKind, EDriveFolderUploadAccess.UploadAllowed, ownerContext);
                 DriveFolderReference targetFolder = new DriveFolderReference(referenceRequest);
-                await UploadAuditLogService.RecordUploadAsync(CurrentUserSessionOrNull, targetFolder, uploadedFile, CancellationToken.None);
+                FileUploadCompletion completion = await FileUploadCompletion.ExecuteAsync(
+                    () => DriveService.UploadFileAsync(request, CancellationToken.None),
+                    file => UploadAuditLogService.RecordUploadAsync(CurrentUserSessionOrNull, targetFolder, file, CancellationToken.None),
+                    exception => Logger.LogWarning(exception, "Upload succeeded but its audit record could not be saved."));
+                isFileStored = true;
+                mSelectedFileOrNull = null;
+                mUploadConflictOrNull = null;
                 DriveBrowserService.InvalidateRecentFiles(uploadFolderId);
                 await loadFoldersAsync();
                 await loadRecentUploadsAsync();
                 mUploadConflictOrNull = null;
-                showMessage(getUploadSuccessMessage(conflictResolution, uploadedFile.Name), Severity.Success);
+                if (completion.IsAuditRecorded)
+                {
+                    showMessage(getUploadSuccessMessage(conflictResolution, completion.File.Name), Severity.Success);
+                }
+                else
+                {
+                    showMessage("파일은 저장되었습니다. 업로드 기록을 남기지 못했으므로 관리자에게 알려 주세요. 같은 파일을 다시 올릴 필요는 없습니다.", Severity.Warning);
+                }
             }
         }
-        catch
+        catch (Exception exception)
         {
-            showMessage("파일을 올리지 못했습니다. 파일은 저장되지 않았습니다. 잠시 후 다시 시도해 주세요.", Severity.Error);
+            Logger.LogWarning(exception, "File upload or folder refresh failed. Confirmed stored: {IsFileStored}", isFileStored);
+            showMessage(isFileStored
+                ? "파일은 저장되었습니다. 목록을 불러오지 못했으므로 현재 위치를 새로고침해 확인해 주세요."
+                : "파일의 저장 결과를 확인하지 못했습니다. 중복 업로드를 피하려면 현재 위치를 새로고침해 확인한 후 다시 시도해 주세요.", Severity.Warning);
         }
 
         mIsUploading = false;

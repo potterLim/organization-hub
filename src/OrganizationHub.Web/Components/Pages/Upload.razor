@@ -7,6 +7,7 @@
 @inject IDriveFileNameConflictService DriveFileNameConflictService
 @inject IFilePolicyService FilePolicyService
 @inject IUploadAuditLogService UploadAuditLogService
+@inject Microsoft.Extensions.Logging.ILogger<Upload> Logger
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("파일 올리기")</PageTitle>
 
