@@ -281,7 +281,8 @@ else
                         @if (mDestinationFilesInCurrentFolder.Count > 0)
                         {
                             <section class="hub-location-section">
-                                <div class="hub-location-section-heading">현재 위치의 파일</div>
+                                <details class="hub-destination-existing-files">
+                                <summary>현재 위치의 파일 (@mDestinationFilesInCurrentFolder.Count) · 펼쳐 보기</summary>
                                 <div class="hub-location-file-list">
                                     @foreach (DriveFileItem file in mDestinationFilesInCurrentFolder)
                                     {
@@ -296,6 +297,7 @@ else
                                         </div>
                                     }
                                 </div>
+                            </details>
                             </section>
                         }
                     </div>
