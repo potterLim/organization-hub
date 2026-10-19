@@ -9,7 +9,7 @@ namespace OrganizationHub.Web.Services;
 
 public sealed partial class GoogleDriveService : IDriveService
 {
-    private const int MAX_CACHED_DOWNLOAD_BYTES = OrganizationHubFileLimits.DEFAULT_MAXIMUM_UPLOAD_BYTES;
+    private const int MAX_CACHED_DOWNLOAD_BYTES = 4 * 1024 * 1024;
     private const int MAX_ANCESTOR_FOLDER_INSPECTION_COUNT = 40;
 
     private static readonly string[] DRIVE_SCOPES = new string[] { DriveService.Scope.Drive };

@@ -187,24 +187,33 @@ public sealed partial class GoogleDriveService
             DriveDataFile metadata = await metadataRequest.ExecuteAsync(cancellationToken);
             FilesResource.GetRequest downloadRequest = driveService.Files.Get(requiredFileId);
             downloadRequest.SupportsAllDrives = true;
-            MemoryStream memoryStream = new MemoryStream();
-            IDownloadProgress downloadProgress = await downloadRequest.DownloadAsync(memoryStream, cancellationToken);
-            if (downloadProgress.Status == DownloadStatus.Failed)
+            string temporaryPath = Path.Combine(Path.GetTempPath(), "organization-hub-download-" + Guid.NewGuid().ToString("N") + ".tmp");
+            FileStream contentStream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None, 65536, FileOptions.Asynchronous | FileOptions.DeleteOnClose);
+            try
             {
-                throw new InvalidOperationException("Google Drive download failed.", downloadProgress.Exception);
+                IDownloadProgress downloadProgress = await downloadRequest.DownloadAsync(contentStream, cancellationToken);
+                if (downloadProgress.Status != DownloadStatus.Completed)
+                {
+                    throw new InvalidOperationException("Google Drive download failed.", downloadProgress.Exception);
+                }
+
+                contentStream.Position = 0;
+                DriveItemName downloadedFileName = DriveItemName.CreateRequired(metadata.Name);
+                FileContentType contentType = FileContentType.CreateOptional(metadata.MimeType);
+                if (shouldCacheDownload(contentType, contentStream.Length))
+                {
+                    byte[] cachedBytes = new byte[(int)contentStream.Length];
+                    await contentStream.ReadExactlyAsync(cachedBytes, cancellationToken);
+                    setFileDownloadCache(fileId, cachedBytes, downloadedFileName, contentType);
+                    contentStream.Position = 0;
+                }
+                return new FileDownloadResult(contentStream, downloadedFileName, contentType);
             }
-
-            memoryStream.Position = 0;
-            DriveItemName downloadedFileName = DriveItemName.CreateRequired(metadata.Name);
-            FileContentType contentType = FileContentType.CreateOptional(metadata.MimeType);
-
-            if (shouldCacheDownload(contentType, memoryStream.Length))
+            catch
             {
-                setFileDownloadCache(fileId, memoryStream.ToArray(), downloadedFileName, contentType);
-                memoryStream.Position = 0;
+                await contentStream.DisposeAsync();
+                throw;
             }
-
-            return new FileDownloadResult(memoryStream, downloadedFileName, contentType);
         }
     }
 
