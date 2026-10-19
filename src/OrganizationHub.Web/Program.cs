@@ -40,6 +40,43 @@ public class Program
         app.Run();
     }
 
+    private static void configureForwardedHeaders(ForwardedHeadersOptions options)
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+        options.ForwardLimit = FORWARDED_HEADER_FORWARD_LIMIT;
+        options.KnownProxies.Add(IPAddress.Parse(LOOPBACK_IPV4_ADDRESS));
+        options.KnownProxies.Add(IPAddress.IPv6Loopback);
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(PRIVATE_CLASS_A_NETWORK_CIDR));
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(PRIVATE_CLASS_B_NETWORK_CIDR));
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(PRIVATE_CLASS_C_NETWORK_CIDR));
+    }
+
+    private static void configureAuthenticationCookie(CookieAuthenticationOptions options, CookieSecurePolicy securePolicy)
+    {
+        options.Cookie.Name = "OrganizationHub.Auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = securePolicy;
+        options.LoginPath = "/login";
+        options.AccessDeniedPath = "/access-denied";
+        options.SlidingExpiration = true;
+        options.EventsType = typeof(UserSessionCookieEvents);
+    }
+
+    private static void configureAuthorization(AuthorizationOptions options)
+    {
+        addPermissionPolicy(options, OrganizationHubPolicies.MANAGEMENT_ACCESS, createPermissionKeys(PermissionKeys.FILES_READ));
+        addPermissionPolicy(options, OrganizationHubPolicies.LEADER_ACCESS, createPermissionKeys(PermissionKeys.FILES_READ), EPermissionAuthorizationTarget.UserTeam);
+        addPermissionPolicy(options, OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE, createPermissionKeys(PermissionKeys.SYSTEM_SETTINGS_MANAGE));
+        addPermissionPolicy(options, OrganizationHubPolicies.ORGANIZATION_MANAGE, createPermissionKeys(PermissionKeys.ORGANIZATION_MANAGE));
+        addPermissionPolicy(options, OrganizationHubPolicies.POSITIONS_MANAGE, createPermissionKeys(PermissionKeys.POSITIONS_MANAGE, PermissionKeys.PERMISSIONS_MANAGE));
+        addPermissionPolicy(options, OrganizationHubPolicies.USERS_MANAGE, createPermissionKeys(PermissionKeys.USERS_MANAGE));
+        addPermissionPolicy(options, OrganizationHubPolicies.GOOGLE_CONNECTION_MANAGE, createPermissionKeys(PermissionKeys.GOOGLE_CONNECTION_MANAGE));
+        addPermissionPolicy(options, OrganizationHubPolicies.MENUS_MANAGE, createPermissionKeys(PermissionKeys.MENUS_MANAGE));
+        addPermissionPolicy(options, OrganizationHubPolicies.CALENDAR_AUDIT_READ, createPermissionKeys(PermissionKeys.CALENDAR_AUDIT_READ));
+        addPermissionPolicy(options, OrganizationHubPolicies.APPROVAL_WORKFLOWS_MANAGE, createPermissionKeys(PermissionKeys.APPROVAL_WORKFLOWS_MANAGE));
+    }
+
     private static void configureServices(WebApplicationBuilder builder)
     {
         string dataDirectory = Path.Combine(builder.Environment.ContentRootPath, "Data");
@@ -47,16 +84,7 @@ public class Program
 
         builder.Services.Configure<OrganizationHubOptions>(builder.Configuration.GetSection("OrganizationHub"));
         builder.Services.Configure<GoogleApiOptions>(builder.Configuration.GetSection("GoogleApi"));
-        builder.Services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
-            options.ForwardLimit = FORWARDED_HEADER_FORWARD_LIMIT;
-            options.KnownProxies.Add(IPAddress.Parse(LOOPBACK_IPV4_ADDRESS));
-            options.KnownProxies.Add(IPAddress.IPv6Loopback);
-            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(PRIVATE_CLASS_A_NETWORK_CIDR));
-            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(PRIVATE_CLASS_B_NETWORK_CIDR));
-            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(PRIVATE_CLASS_C_NETWORK_CIDR));
-        });
+        builder.Services.Configure<ForwardedHeadersOptions>(configureForwardedHeaders);
 
         string? connectionStringOrNull = builder.Configuration.GetConnectionString("OrganizationHub");
         if (string.IsNullOrWhiteSpace(connectionStringOrNull))
@@ -83,30 +111,9 @@ public class Program
         builder.Services.AddSingleton<IRecentUploadedFileCacheRefreshQueue>(serviceProvider => serviceProvider.GetRequiredService<RecentUploadedFileCacheRefreshQueue>());
         builder.Services.AddSingleton<IRecentUploadedFileCacheRefreshWorkQueue>(serviceProvider => serviceProvider.GetRequiredService<RecentUploadedFileCacheRefreshQueue>());
         builder.Services.AddHostedService<RecentUploadedFileCacheRefreshWorker>();
-        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
-        {
-            options.Cookie.Name = "OrganizationHub.Auth";
-            options.Cookie.HttpOnly = true;
-            options.Cookie.SameSite = SameSiteMode.Lax;
-            options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
-            options.LoginPath = "/login";
-            options.AccessDeniedPath = "/access-denied";
-            options.SlidingExpiration = true;
-            options.EventsType = typeof(UserSessionCookieEvents);
-        });
-        builder.Services.AddAuthorization(options =>
-        {
-            addPermissionPolicy(options, OrganizationHubPolicies.MANAGEMENT_ACCESS, createPermissionKeys(PermissionKeys.FILES_READ));
-            addPermissionPolicy(options, OrganizationHubPolicies.LEADER_ACCESS, createPermissionKeys(PermissionKeys.FILES_READ), EPermissionAuthorizationTarget.UserTeam);
-            addPermissionPolicy(options, OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE, createPermissionKeys(PermissionKeys.SYSTEM_SETTINGS_MANAGE));
-            addPermissionPolicy(options, OrganizationHubPolicies.ORGANIZATION_MANAGE, createPermissionKeys(PermissionKeys.ORGANIZATION_MANAGE));
-            addPermissionPolicy(options, OrganizationHubPolicies.POSITIONS_MANAGE, createPermissionKeys(PermissionKeys.POSITIONS_MANAGE, PermissionKeys.PERMISSIONS_MANAGE));
-            addPermissionPolicy(options, OrganizationHubPolicies.USERS_MANAGE, createPermissionKeys(PermissionKeys.USERS_MANAGE));
-            addPermissionPolicy(options, OrganizationHubPolicies.GOOGLE_CONNECTION_MANAGE, createPermissionKeys(PermissionKeys.GOOGLE_CONNECTION_MANAGE));
-            addPermissionPolicy(options, OrganizationHubPolicies.MENUS_MANAGE, createPermissionKeys(PermissionKeys.MENUS_MANAGE));
-            addPermissionPolicy(options, OrganizationHubPolicies.CALENDAR_AUDIT_READ, createPermissionKeys(PermissionKeys.CALENDAR_AUDIT_READ));
-            addPermissionPolicy(options, OrganizationHubPolicies.APPROVAL_WORKFLOWS_MANAGE, createPermissionKeys(PermissionKeys.APPROVAL_WORKFLOWS_MANAGE));
-        });
+        CookieSecurePolicy cookieSecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+        builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => configureAuthenticationCookie(options, cookieSecurePolicy));
+        builder.Services.AddAuthorization(configureAuthorization);
 
         builder.Services.AddScoped<IPasswordHashService, Pbkdf2PasswordHashService>();
         builder.Services.AddScoped<IAuthService, AuthService>();

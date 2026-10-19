@@ -133,7 +133,8 @@ internal sealed partial class ApprovalWorkflowManagementService : IApprovalWorkf
 
             foreach (ApprovalWorkflow workflow in workflows)
             {
-                if (request.ExpectedRevisions.TryGetValue(workflow.Id, out int expectedRevision) == false || workflow.Revision != expectedRevision)
+                int expectedRevision;
+                if (request.ExpectedRevisions.TryGetValue(workflow.Id, out expectedRevision) == false || workflow.Revision != expectedRevision)
                 {
                     return AdministrativeSaveUtility.CreateConflictResult();
                 }

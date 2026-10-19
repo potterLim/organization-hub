@@ -58,7 +58,8 @@ public partial class Calendar
         mIsEditorAllDay = calendarEvent.IsAllDay;
         DateTime clientNow = getClientNow();
         CalendarEventPeriod? periodOrNull = CalendarEventPeriod.createOrNull(calendarEvent, mClientTimeZoneInfo);
-        setEditorSchedule(periodOrNull?.createEditorSchedule() ?? CalendarEditorSchedule.CreateNormalized(clientNow, clientNow.AddHours(1)));
+        CalendarEditorSchedule schedule = periodOrNull.HasValue ? periodOrNull.Value.createEditorSchedule() : CalendarEditorSchedule.CreateNormalized(clientNow, clientNow.AddHours(1));
+        setEditorSchedule(schedule);
         mEditorMessage = string.Empty;
         rememberEditorDraft();
     }

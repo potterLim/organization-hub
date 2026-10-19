@@ -12,7 +12,7 @@ public partial class AdminUsers
 {
     private IReadOnlyList<UserAccount> getFilteredUsers()
     {
-        string keyword = mUserSearchOrNull?.Trim() ?? string.Empty;
+        string keyword = mUserSearchOrNull == null ? string.Empty : mUserSearchOrNull.Trim();
         return mUsers.Where(user => (keyword.Length == 0 || user.Username.Contains(keyword, StringComparison.OrdinalIgnoreCase) || user.DisplayName.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
             .Where(user => mFilterTeamIdOrNull.HasValue == false || user.TeamId == mFilterTeamIdOrNull)
             .Where(user => mFilterStatus == EUserActivationFilter.All || user.IsActive == (mFilterStatus == EUserActivationFilter.Active))

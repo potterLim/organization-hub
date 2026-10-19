@@ -26,7 +26,8 @@ public partial class CalendarDateTimeField
     [JSInvokable("MovePickerDateFromKeyboard")]
     public Task MovePickerDateFromKeyboardAsync(string dateText, string key)
     {
-        if (IsOpen == false || IsDisabled || DateTime.TryParseExact(dateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime date) == false)
+        DateTime date;
+        if (IsOpen == false || IsDisabled || DateTime.TryParseExact(dateText, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date) == false)
         {
             return Task.CompletedTask;
         }
@@ -77,8 +78,14 @@ public partial class CalendarDateTimeField
         bool isOpen = IsOpen && IsDisabled == false;
         if (isOpen && mWasRenderedOpen == false)
         {
-            mKeyboardModuleOrNull ??= await JavaScriptRuntime.InvokeAsync<IJSObjectReference>("import", "/js/organizationHubDateTimePicker.js");
-            mKeyboardReferenceOrNull ??= DotNetObjectReference.Create(this);
+            if (mKeyboardModuleOrNull == null)
+            {
+                mKeyboardModuleOrNull = await JavaScriptRuntime.InvokeAsync<IJSObjectReference>("import", "/js/organizationHubDateTimePicker.js");
+            }
+            if (mKeyboardReferenceOrNull == null)
+            {
+                mKeyboardReferenceOrNull = DotNetObjectReference.Create(this);
+            }
             await mKeyboardModuleOrNull.InvokeVoidAsync("openPicker", mRootElement, mKeyboardReferenceOrNull);
         }
         else if (isOpen == false && mWasRenderedOpen && mKeyboardModuleOrNull != null)

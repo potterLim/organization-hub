@@ -125,7 +125,8 @@ public sealed partial class GoogleCalendarService
                 expireCalendarEventCache(calendarId);
                 CalendarEventItem updatedItem = createCalendarEventItem(updatedEvent, calendarId, calendarName);
                 Dictionary<string, CalendarEventMetadata> metadataById = await getMetadataByEventIdAsync(calendarId, new List<CalendarEventItem> { updatedItem }, cancellationToken);
-                if (metadataById.TryGetValue(updatedItem.Id, out CalendarEventMetadata? metadataOrNull))
+                CalendarEventMetadata? metadataOrNull;
+                if (metadataById.TryGetValue(updatedItem.Id, out metadataOrNull))
                 {
                     applyMetadata(updatedItem, metadataOrNull);
                 }

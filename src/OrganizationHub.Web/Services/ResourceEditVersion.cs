@@ -16,7 +16,8 @@ internal static class ResourceEditVersion
 
     public static void Validate(string etag)
     {
-        if (EntityTagHeaderValue.TryParse(etag, out EntityTagHeaderValue? parsedOrNull) == false || parsedOrNull.Tag == "*" || parsedOrNull.IsWeak)
+        EntityTagHeaderValue? parsedOrNull;
+        if (EntityTagHeaderValue.TryParse(etag, out parsedOrNull) == false || parsedOrNull.Tag == "*" || parsedOrNull.IsWeak)
         {
             throw new ResourceEditConflictException();
         }
