@@ -34,6 +34,7 @@ public partial class ApprovalInbox
         }
 
         mErrorsByApprovalId.Remove(approvalRequest.Id);
+        mMessage = string.Empty;
         try
         {
             await operation();
@@ -41,9 +42,7 @@ public partial class ApprovalInbox
         catch (Exception exception)
         {
             Logger.LogWarning(exception, "Approval operation failed for {ApprovalId}.", approvalRequest.Id);
-            mMessage = "결재 처리를 확인하지 못했습니다. 입력한 의견은 유지됩니다. 잠시 후 다시 시도해 주세요.";
-            mMessageSeverity = MudBlazor.Severity.Error;
-            mErrorsByApprovalId[approvalRequest.Id] = mMessage;
+            mErrorsByApprovalId[approvalRequest.Id] = "결재 처리를 확인하지 못했습니다. 입력한 의견은 유지됩니다. 잠시 후 다시 시도해 주세요.";
         }
         finally
         {

@@ -74,7 +74,9 @@ public sealed class ApprovalPreflightRegressionTests
         request.FileName = "document.pdf";
         MethodInfo approve = typeof(ApprovalInbox).GetMethod("approveRequestAsync", flags, null, new Type[] { typeof(ApprovalRequestItem) }, null)!;
         await (Task)approve.Invoke(page, new object[] { request })!;
-        Assert.Contains("다시", (string)typeof(ApprovalInbox).GetField("mMessage", flags)!.GetValue(page)!);
+        Dictionary<int, string> errors = (Dictionary<int, string>)typeof(ApprovalInbox).GetField("mErrorsByApprovalId", flags)!.GetValue(page)!;
+        Assert.Contains("다시", errors[1]);
+        Assert.Equal(string.Empty, typeof(ApprovalInbox).GetField("mMessage", flags)!.GetValue(page));
         Assert.Equal("검토 의견 유지", typeof(ApprovalInbox).GetMethod("getCommentValue", flags)!.Invoke(page, new object[] { ApprovalRequestId.CreateExisting(1) }));
         Assert.Equal(0, ((ApprovalSpy)approvalService).ApprovalCalls);
         Assert.Empty((HashSet<int>)typeof(ApprovalInbox).GetField("mProcessingApprovalIds", flags)!.GetValue(page)!);
