@@ -18,6 +18,7 @@ public partial class Calendar
         get; set;
     }
 
+    private string mPreviousDraft = string.Empty;
     private List<CalendarReference> mCalendars = new List<CalendarReference>();
     private List<CalendarReference> mCreatableCalendars = new List<CalendarReference>();
     private HashSet<string> mDeletableCalendarIds = new HashSet<string>();

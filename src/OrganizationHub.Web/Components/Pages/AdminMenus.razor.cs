@@ -13,6 +13,7 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class AdminMenus
 {
+    private string mPreviousDraft = string.Empty;
     private List<NavigationMenuSection> mSections = new List<NavigationMenuSection>();
     private List<NavigationMenuItem> mMenuItems = new List<NavigationMenuItem>();
     private List<Team> mTeams = new List<Team>();
@@ -39,6 +40,11 @@ public partial class AdminMenus
 
     private async Task reloadMenusAsync()
     {
+        mPreviousDraft = "메뉴: " + mFormModel.DisplayName + " · 섹션: " + (mSections.FirstOrDefault(section => section.Id == mFormModel.SectionId)?.DisplayName ?? "없음")
+            + " · 표시 대상: " + MenuAccessLevelUtility.GetShortDisplayName(mFormModel.AccessLevel)
+            + " · 사용: " + (mFormModel.IsActive ? "켜짐" : "꺼짐")
+            + " · 팀: " + (mFormModel.IsVisibleToAllTeams ? "모든 팀" : string.Join(", ", mTeams.Where(team => mFormModel.TeamIds.Contains(team.Id)).Select(team => team.DisplayName)))
+            + " · 필요 권한: " + getRequiredPermissionText() + " · 섹션 편집: " + mSectionFormModel.DisplayName;
         await loadDataAsync();
         restoreSelectedMenu();
         clearSectionForm();

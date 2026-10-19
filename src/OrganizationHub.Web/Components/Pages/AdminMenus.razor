@@ -5,6 +5,15 @@
 @inject ITeamManagementService TeamManagementService
 @inject IJSRuntime JavaScriptRuntime
 
+@if (string.IsNullOrWhiteSpace(mPreviousDraft) == false)
+{
+    <MudAlert Severity="Severity.Info" Class="mb-3">
+        <strong>다시 불러오기 전 내 입력</strong>
+        <div class="hub-draft-copy">@mPreviousDraft</div>
+        <span>현재의 최신 내용과 비교한 뒤 필요한 변경을 다시 입력해 주세요.</span>
+    </MudAlert>
+}
+
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("메뉴 보이기 설정")</PageTitle>
 
 <h1 class="hub-sr-only">메뉴 보이기 설정</h1>
@@ -114,6 +123,10 @@
                     <span>섹션 순서에서 드래그하거나 위·아래 버튼으로 위치를 바꿀 수 있습니다.</span>
                 </div>
             <MudTextField @bind-Value="mSectionFormModel.DisplayName" Label="섹션 이름" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+            @if (mMessageSeverity == Severity.Error && string.IsNullOrWhiteSpace(mMessage) == false)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3" role="alert">@mMessage</MudAlert>
+            }
             <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveSectionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
                 @if (mSectionFormModel.Id != 0)

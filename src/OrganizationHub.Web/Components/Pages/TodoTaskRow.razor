@@ -45,15 +45,15 @@
         {
             <span class="hub-todo-delete-confirm">삭제할까요?</span>
             <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="DeleteCanceled" Class="hub-todo-inline-button">취소</MudButton>
-            <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" OnClick="DeleteConfirmed" Class="hub-todo-inline-button">삭제</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Error" Size="Size.Small" OnClick="DeleteConfirmed" Class="hub-todo-inline-button">삭제</MudButton>
         }
         else if (IsEditing && CanWrite)
         {
             <MudTooltip Text="저장">
-                <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Primary" Size="Size.Small" OnClick="EditSaved" aria-label="저장" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="EditSaved">저장</MudButton>
             </MudTooltip>
             <MudTooltip Text="취소">
-                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" Size="Size.Small" OnClick="EditCanceled" aria-label="취소" />
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small" OnClick="EditCanceled">취소</MudButton>
             </MudTooltip>
         }
         else
@@ -67,7 +67,7 @@
             @if (CanDelete)
             {
                 <MudTooltip Text="삭제">
-                    <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Warning" Size="Size.Small" OnClick="DeleteRequested" aria-label="삭제" />
+                    <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="DeleteRequested" aria-label="삭제" />
                 </MudTooltip>
             }
         }

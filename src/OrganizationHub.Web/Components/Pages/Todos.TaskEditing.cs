@@ -112,6 +112,7 @@ public partial class Todos
 
     private async Task reloadConflictedTaskAsync()
     {
+        mPreviousDraft = mEditingTitle + " · 마감: " + (mEditingDueAt.HasValue ? mEditingDueAt.Value.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) : "없음");
         string taskId = mEditingTaskId;
         TodoTaskItem? editingTaskOrNull = mTasks.FirstOrDefault(item => item.Id == taskId);
         string taskListId = editingTaskOrNull == null ? string.Empty : editingTaskOrNull.TaskListId;

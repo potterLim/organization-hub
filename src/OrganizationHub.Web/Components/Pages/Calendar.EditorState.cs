@@ -67,6 +67,7 @@ public partial class Calendar
 
     private async Task reloadConflictedEventAsync()
     {
+        mPreviousDraft = mEditorSummary + " · 위치: " + mEditorLocation + " · 설명: " + mEditorDescription + " · 시작: " + mEditorStartLocalOrNull?.ToString("yyyy-MM-dd HH:mm") + " · 종료: " + mEditorEndLocalOrNull?.ToString("yyyy-MM-dd HH:mm");
         string eventId = mEditorEventId;
         string calendarId = mEditorCalendarId;
         closeEditor();

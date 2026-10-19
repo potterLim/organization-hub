@@ -8,6 +8,15 @@
 @inject IClientTimeZoneService ClientTimeZoneService
 @inject IJSRuntime JavaScriptRuntime
 
+@if (string.IsNullOrWhiteSpace(mPreviousDraft) == false)
+{
+    <MudAlert Severity="Severity.Info" Class="mb-3">
+        <strong>다시 불러오기 전 내 입력</strong>
+        <div class="hub-draft-copy">@mPreviousDraft</div>
+        <span>현재의 최신 내용과 비교한 뒤 필요한 변경을 다시 입력해 주세요.</span>
+    </MudAlert>
+}
+
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("할 일")</PageTitle>
 
 <div @ref="mRefreshScopeElement">
@@ -74,7 +83,17 @@ else
                     </MudTooltip>
                 </div>
             </div>
-            @if (canShowTaskCreation())
+            @if (canShowTaskCreation() && isAggregateSelected())
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">새 할 일을 추가할 목록을 선택하세요.</MudAlert>
+                <div class="hub-form-actions">
+                    @foreach (TodoTaskListReference taskList in mTaskLists.Where(taskList => mCreatableTaskListIds.Contains(taskList.TaskListId.GetRequiredValue())))
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => handleTaskListChangedAsync(taskList.TaskListId.GetRequiredValue()))">@taskList.DisplayName 에 추가</MudButton>
+                    }
+                </div>
+            }
+            @if (canShowTaskCreation() && isAggregateSelected() == false)
             {
                 <div class="hub-todo-create">
                     <div class="hub-todo-create-bar">
