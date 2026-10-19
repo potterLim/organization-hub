@@ -130,7 +130,17 @@
         padding: 14px;
     }
 
+    .hub-file-compact-row:not(.hub-file-compact-folder) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .hub-file-compact-row:not(.hub-file-compact-folder) .hub-file-compact-actions {
+        justify-self: end;
+    }
+
     .hub-file-compact-name {
+        overflow-wrap: anywhere;
+        word-break: keep-all;
         line-height: 1.38 !important;
         white-space: normal;
     }

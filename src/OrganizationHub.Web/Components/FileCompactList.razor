@@ -1,7 +1,7 @@
 <div class="hub-file-compact-list">
     @foreach (DriveFileItem file in Files)
     {
-        <div class="hub-file-compact-row">
+        <div class="@(file.IsFolder ? "hub-file-compact-row hub-file-compact-folder" : "hub-file-compact-row")">
             <div class="hub-file-compact-main">
                 @if (canOpenFolder(file))
                 {
