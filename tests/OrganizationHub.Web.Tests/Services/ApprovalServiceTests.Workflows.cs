@@ -17,6 +17,40 @@ namespace OrganizationHub.Web.Tests.Services;
 
 public sealed partial class ApprovalServiceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BlockedWorkflowExplainsSelfApprovalOrInactiveApproverAsync(bool isApproverInactive)
+    {
+        using (TestDbContextFactory factory = createApprovalDbContextFactory(EFinalApproverSeedMode.SingleFinalApprover))
+        {
+            await seedConfiguredApprovalWorkflowAsync(factory);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                ApprovalWorkflowStep step = db.ApprovalWorkflowSteps.OrderBy(item => item.StepOrder).First();
+                step.ApproverSelectionType = EApproverSelectionType.SpecificUser;
+                step.ApproverUserId = isApproverInactive ? 2 : 1;
+                if (isApproverInactive)
+                {
+                    db.UserAccounts.Single(user => user.Id == 2).IsActive = false;
+                }
+                await db.SaveChangesAsync();
+            }
+            using (MemoryCache cache = new MemoryCache(new MemoryCacheOptions()))
+            {
+                FakeDriveService drive = createApprovalDriveService();
+                OrganizationPermissionService permissions = new OrganizationPermissionService(factory);
+                PermissionService folders = new PermissionService(factory, drive, cache, permissions);
+                ApprovalService service = new ApprovalService(factory, folders, drive, permissions);
+                UserSession session = createSession(1, "planning.member", "기획팀원", EStoredCompatibilityRole.TeamUser, 1);
+                ApprovalCreateContext context = await service.GetCreateContextAsync(session, CancellationToken.None);
+                Assert.False(context.CanCreateRequest);
+                Assert.Equal(EApprovalSetupArea.Workflow, context.SetupArea);
+                Assert.Contains(isApproverInactive ? "활성 사용자" : "자신의 결재자", context.BlockReason);
+            }
+        }
+    }
+
     [Fact]
     public async Task ConfiguredWorkflowBuildsApprovalLineFromRequesterTeamPositionAsync()
     {

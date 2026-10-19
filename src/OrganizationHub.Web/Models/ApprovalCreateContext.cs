@@ -16,5 +16,9 @@ public sealed class ApprovalCreateContext
     {
         get; set;
     }
+    public EApprovalSetupArea SetupArea
+    {
+        get; set;
+    }
     public string BlockReason { get; set; } = string.Empty;
 }

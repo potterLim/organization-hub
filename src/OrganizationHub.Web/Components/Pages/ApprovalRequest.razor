@@ -23,7 +23,32 @@
 }
 else if (mCreateContext.CanCreateRequest == false)
 {
-    <ResourceStateMessage Icon="@Icons.Material.Filled.Lock" Title="@mCreateContext.BlockReason" />
+    @if (mCreateContext.SetupArea == EApprovalSetupArea.Workflow)
+    {
+        <AuthorizeView Policy="@OrganizationHubPolicies.APPROVAL_WORKFLOWS_MANAGE">
+            <Authorized>
+                <ResourceStateMessage Icon="@Icons.Material.Filled.Lock" Title="@mCreateContext.BlockReason" Description="결재 경로를 수정한 뒤 돌아와 다시 확인해 주세요." ActionLabel="결재 경로 설정" ActionHref="/admin/approval-workflows" />
+            </Authorized>
+            <NotAuthorized>
+                <ResourceStateMessage Icon="@Icons.Material.Filled.Lock" Title="@mCreateContext.BlockReason" Description="결재 경로 관리자에게 이 안내를 전달해 주세요." />
+            </NotAuthorized>
+        </AuthorizeView>
+    }
+    else if (mCreateContext.SetupArea == EApprovalSetupArea.Resources)
+    {
+        <AuthorizeView Policy="@OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE">
+            <Authorized>
+                <ResourceStateMessage Icon="@Icons.Material.Filled.Lock" Title="@mCreateContext.BlockReason" ActionLabel="자료 위치 설정" ActionHref="/admin/settings" />
+            </Authorized>
+            <NotAuthorized>
+                <ResourceStateMessage Icon="@Icons.Material.Filled.Lock" Title="@mCreateContext.BlockReason" Description="시스템 관리자에게 자료 위치 연결을 요청해 주세요." />
+            </NotAuthorized>
+        </AuthorizeView>
+    }
+    else
+    {
+        <ResourceStateMessage Icon="@Icons.Material.Filled.Lock" Title="@mCreateContext.BlockReason" />
+    }
 }
 else
 {

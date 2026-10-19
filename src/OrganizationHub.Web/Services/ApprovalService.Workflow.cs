@@ -56,7 +56,7 @@ public sealed partial class ApprovalService
             {
                 if (step.IsRequired)
                 {
-                    return ServiceResultOfT<ConfiguredApprovalLine>.Fail("필수 결재자를 찾을 수 없습니다. 관리자에게 결재 경로 설정을 확인해 달라고 요청해 주세요.");
+                    return ServiceResultOfT<ConfiguredApprovalLine>.Fail(getMissingApproverReason(users, userSession, step, usedUserIds, stepRole));
                 }
 
                 continue;
@@ -89,6 +89,24 @@ public sealed partial class ApprovalService
 
         ConfiguredApprovalLine configuredLine = new ConfiguredApprovalLine(selectedStepCount, intermediateApprovers, new List<ApprovalUserOption> { finalApprover }, defaultLine);
         return ServiceResultOfT<ConfiguredApprovalLine>.Succeed(configuredLine);
+    }
+
+    private string getMissingApproverReason(IReadOnlyList<UserAccount> users, UserSession userSession, ApprovalWorkflowStep step, IReadOnlySet<int> usedUserIds, EApprovalWorkflowStepRole stepRole)
+    {
+        List<UserAccount> candidates = getWorkflowStepCandidates(users, userSession, step, stepRole);
+        if (candidates.Count == 0)
+        {
+            return "필수 결재자로 지정한 활성 사용자를 찾을 수 없습니다. 결재 경로의 사용자·팀·직책 설정을 확인해 주세요.";
+        }
+        if (candidates.All(user => user.Id == userSession.UserAccountId.GetRequiredValue()))
+        {
+            return "요청자는 자신의 결재자가 될 수 없습니다. 결재 경로에 다른 결재자를 지정해 주세요.";
+        }
+        if (candidates.All(user => user.Id == userSession.UserAccountId.GetRequiredValue() || usedUserIds.Contains(user.Id)))
+        {
+            return "같은 사용자가 여러 결재 단계를 맡을 수 없습니다. 각 단계에 다른 결재자를 지정해 주세요.";
+        }
+        return "지정한 결재자에게 이 단계의 결재 권한이 없습니다. 결재 경로와 직책 권한을 확인해 주세요.";
     }
 
     private OrganizationPositionId? createUserPositionIdOrNull(

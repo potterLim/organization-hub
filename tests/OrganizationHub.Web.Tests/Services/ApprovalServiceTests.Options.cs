@@ -94,7 +94,8 @@ public sealed partial class ApprovalServiceTests
                 ApprovalCreateContext createContext = await approvalService.GetCreateContextAsync(adminSession, CancellationToken.None);
 
                 Assert.False(createContext.CanCreateRequest);
-                Assert.Equal("결재 요청을 만들 수 없습니다.", createContext.BlockReason);
+                Assert.Equal("결재할 자료 위치가 연결되어 있지 않습니다.", createContext.BlockReason);
+                Assert.Equal(EApprovalSetupArea.Resources, createContext.SetupArea);
                 Assert.Contains(createContext.ApproverOptions, option => option.UserId == 4);
                 Assert.Contains(createContext.FinalApproverOptions, option => option.UserId == 3);
             }

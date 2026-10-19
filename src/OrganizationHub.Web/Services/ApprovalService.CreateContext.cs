@@ -42,6 +42,7 @@ public sealed partial class ApprovalService
                 if (lineResult.IsSuccess == false || lineResult.ValueOrNull == null)
                 {
                     context.BlockReason = lineResult.ErrorMessage;
+                    context.SetupArea = EApprovalSetupArea.Workflow;
                     return context;
                 }
 
@@ -59,7 +60,7 @@ public sealed partial class ApprovalService
         context.CanCreateRequest = sourceFolders.Count > 0 && context.DestinationFolders.Count > 0 && context.FinalApproverOptions.Count > 0 && context.AvailableStepCounts.Count > 0;
         if (context.CanCreateRequest == false)
         {
-            context.BlockReason = "결재 요청을 만들 수 없습니다.";
+            applyBlockedSetup(context);
         }
 
         return context;
@@ -78,8 +79,26 @@ public sealed partial class ApprovalService
         context.CanCreateRequest = sourceFolders.Count > 0 && context.DestinationFolders.Count > 0 && context.FinalApproverOptions.Count > 0;
         if (context.CanCreateRequest == false)
         {
-            context.BlockReason = "결재 요청을 만들 수 없습니다.";
+            applyBlockedSetup(context);
         }
+    }
+
+    private static void applyBlockedSetup(ApprovalCreateContext context)
+    {
+        if (context.SourceFolders.Count == 0)
+        {
+            context.BlockReason = "결재할 자료 위치가 연결되어 있지 않습니다.";
+            context.SetupArea = EApprovalSetupArea.Resources;
+            return;
+        }
+        if (context.DestinationFolders.Count == 0)
+        {
+            context.BlockReason = "승인본을 저장할 위치가 연결되어 있지 않습니다.";
+            context.SetupArea = EApprovalSetupArea.Resources;
+            return;
+        }
+        context.BlockReason = "사용 가능한 최종 결재자가 없습니다. 요청자 외에 최종 결재 권한을 가진 사용자가 필요합니다.";
+        context.SetupArea = EApprovalSetupArea.Workflow;
     }
 
     private static async Task<List<UserAccount>> loadActiveApprovalUsersAsync(OrganizationHubDbContext dbContext, CancellationToken cancellationToken)
