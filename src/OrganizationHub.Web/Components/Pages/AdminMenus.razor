@@ -12,6 +12,10 @@
 @if (string.IsNullOrWhiteSpace(mMessage) == false)
 {
     <MudAlert Severity="@mMessageSeverity" Class="mb-4">@mMessage</MudAlert>
+    @if (mHasSaveConflict)
+    {
+        <MudButton OnClick="reloadMenusAsync" Variant="Variant.Outlined" Color="Color.Primary" Class="mb-4">최신 메뉴 설정 불러오기</MudButton>
+    }
 }
 
 <MudGrid Spacing="6" Class="hub-management-grid hub-admin-page-grid">
@@ -124,7 +128,7 @@
             <div class="hub-admin-section-heading">
                 <div>
                     <MudText Typo="Typo.h6">메뉴 구조</MudText>
-                    <div class="hub-muted">섹션 순서와 메뉴 순서를 드래그해 조정합니다.</div>
+                    <div class="hub-muted">섹션 순서와 메뉴 순서를 드래그하거나 위·아래 버튼으로 조정합니다.</div>
                 </div>
             </div>
             <div class="hub-menu-structure" @ref="mSortableRootElement">
@@ -134,7 +138,7 @@
                         @foreach (NavigationMenuSection menuSection in mSections)
                         {
                             <div class="hub-sortable-row hub-menu-section-row" data-sortable-item-id="@getSectionSortableItemId(menuSection)" draggable="true">
-                                <span class="hub-sortable-handle" role="button" aria-label="섹션 순서 변경">
+                                <span class="hub-sortable-handle" aria-hidden="true">
                                     <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
                                 </span>
                                 <div class="hub-sortable-main">
@@ -142,6 +146,7 @@
                                     <div class="hub-sortable-meta">@getSectionMenuCountText(menuSection)</div>
                                 </div>
                                 <div class="hub-sortable-actions">
+                                    <SortableOrderControls ItemId="menuSection.Id" ItemKeyPrefix="section:" Label="@menuSection.DisplayName" OrderedIds="@(mSections.Select(item => item.Id).ToArray())" MoveRequested="moveSectionAsync" />
                                     <MudTooltip Text="섹션 수정">
                                         <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editSection(menuSection))" aria-label="섹션 수정" />
                                     </MudTooltip>
@@ -165,7 +170,7 @@
                             @foreach (NavigationMenuItem menuItem in sectionMenuItems)
                             {
                                 <div class="@getMenuSortableRowClass(menuItem)" data-sortable-item-id="@getMenuSortableItemId(menuItem)" draggable="true">
-                                    <span class="hub-sortable-handle" role="button" aria-label="메뉴 순서 변경">
+                                    <span class="hub-sortable-handle" aria-hidden="true">
                                         <MudIcon Icon="@Icons.Material.Filled.DragIndicator" Size="Size.Small" />
                                     </span>
                                     <div class="hub-sortable-main">
@@ -178,6 +183,7 @@
                                     </div>
                                     <div class="hub-sortable-actions">
                                         <span class="hub-sortable-status @(menuItem.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(menuItem.IsActive ? "사용 중" : "숨김")</span>
+                                        <SortableOrderControls ItemId="menuItem.Id" ItemKeyPrefix="menu:" Label="@menuItem.DisplayName" OrderedIds="@(sectionMenuItems.Select(item => item.Id).ToArray())" MoveRequested="moveMenuItemAsync" />
                                         <MudTooltip Text="메뉴 수정">
                                             <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editMenu(menuItem))" aria-label="메뉴 수정" />
                                         </MudTooltip>

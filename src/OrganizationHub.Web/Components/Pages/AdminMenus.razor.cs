@@ -24,6 +24,7 @@ public partial class AdminMenus
     private IJSObjectReference? mSortableModuleOrNull;
     private DotNetObjectReference<AdminMenus>? mDotNetReferenceOrNull;
     private bool mShouldInitializeSortable = true;
+    private bool mHasSaveConflict;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
 
@@ -34,6 +35,15 @@ public partial class AdminMenus
         {
             editMenu(mMenuItems[0]);
         }
+    }
+
+    private async Task reloadMenusAsync()
+    {
+        await loadDataAsync();
+        restoreSelectedMenu();
+        clearSectionForm();
+        mHasSaveConflict = false;
+        mMessage = string.Empty;
     }
 
     private async Task loadDataAsync()

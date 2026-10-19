@@ -138,6 +138,7 @@ public partial class AdminMenus
 
     private void showOperationResult(ServiceResult operationResult, string successMessage)
     {
+        mHasSaveConflict = operationResult.IsConcurrencyConflict;
         if (operationResult.IsSuccess)
         {
             mMessage = successMessage;

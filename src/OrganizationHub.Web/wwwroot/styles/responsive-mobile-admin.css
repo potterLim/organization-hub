@@ -154,3 +154,22 @@
     }
 
 }
+
+#workflow-editor,
+#position-create {
+    scroll-margin-top: 100px;
+}
+
+@media (max-width: 1279.98px) {
+    .hub-admin-page-grid > .hub-mobile-editor-last {
+        order: 1;
+    }
+
+    .hub-admin-page-grid > .hub-mobile-create-last {
+        order: 2;
+    }
+
+    .hub-admin-page-grid > .hub-mobile-list-middle {
+        order: 1;
+    }
+}

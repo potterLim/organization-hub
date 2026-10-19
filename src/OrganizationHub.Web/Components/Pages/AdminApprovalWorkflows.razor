@@ -20,7 +20,7 @@
 }
 
 <MudGrid Spacing="6" Class="hub-management-grid hub-admin-page-grid">
-    <MudItem xs="12" lg="5" xl="4">
+    <MudItem xs="12" lg="5" xl="4" Class="hub-mobile-editor-last" id="workflow-editor">
         <MudPaper Class="hub-card hub-form-card hub-workflow-designer-card pa-4">
             <div class="hub-admin-form-heading">
                 <MudText Typo="Typo.h6">@mFormTitle</MudText>
@@ -164,6 +164,7 @@
             <div class="hub-admin-section-heading">
                 <div>
                     <MudText Typo="Typo.h6">저장된 결재 경로</MudText>
+                    <MudButton Href="#workflow-editor" OnClick="clearForm" Color="Color.Primary" Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add">새 결재 경로</MudButton>
                     <div class="hub-muted">위쪽 경로부터 요청 조건에 맞는지 확인합니다.</div>
                 </div>
             </div>
@@ -185,7 +186,7 @@
                             <SortableOrderControls ItemId="workflow.Id" Label="@workflow.Name" OrderedIds="@(mWorkflows.Select(item => item.Id).ToArray())" MoveRequested="moveWorkflowAsync" />
                             <span class="hub-sortable-status @(workflow.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(workflow.IsActive ? "사용 중" : "비활성")</span>
                             <MudTooltip Text="결재 경로 수정">
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => editWorkflow(workflow))" aria-label="결재 경로 수정" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" Href="#workflow-editor" OnClick="@(() => editWorkflow(workflow))" aria-label="결재 경로 수정" />
                             </MudTooltip>
                             <MudTooltip Text="@(workflow.IsActive ? "결재 경로 비활성화" : "결재 경로 활성화")">
                                 <MudIconButton Icon="@(workflow.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => toggleWorkflowActiveAsync(workflow))" aria-label="@(workflow.IsActive ? "결재 경로 비활성화" : "결재 경로 활성화")" />
