@@ -19,7 +19,7 @@
 }
 
 <MudGrid Spacing="6" Class="hub-management-grid hub-admin-page-grid">
-    <MudItem xs="12" lg="5" xl="4">
+    <MudItem xs="12" lg="12" xl="4" Class="hub-mobile-create-last" id="user-editor">
         <MudPaper Class="hub-card hub-form-card pa-4">
             <div class="hub-admin-form-heading">
                 <MudText Typo="Typo.h6">@mFormTitle</MudText>
@@ -72,7 +72,7 @@
             }
         </MudPaper>
     </MudItem>
-    <MudItem xs="12" lg="7" xl="8">
+    <MudItem xs="12" lg="12" xl="8">
         <MudPaper Class="hub-card hub-list-card pa-4">
             <MudText Typo="Typo.h6">사용자 목록</MudText>
             <MudTable Items="mUsers" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">

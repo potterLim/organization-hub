@@ -104,6 +104,12 @@ else
                         </div>
                         <span class="@(selectedPosition.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(selectedPosition.IsActive ? "사용 중" : "비활성")</span>
                     </div>
+                    @if (selectedPosition.IsSystemAdministrator)
+                    {
+                        <MudAlert Severity="Severity.Info" Class="my-3">시스템 관리자 직책은 모든 업무와 모든 팀에 접근할 수 있습니다. 개별 권한으로 제한할 수 없습니다. 접근 범위를 제한하려면 일반 직책을 사용하세요.</MudAlert>
+                    }
+                    else
+                    {
                     <div class="hub-permission-toolbar">
                         <MudSelect T="string" Label="업무 영역" @bind-Value="mSelectedPermissionCategory" Variant="Variant.Outlined" Margin="Margin.Dense">
                             <MudSelectItem T="string" Value="@ALL_PERMISSION_CATEGORY">전체</MudSelectItem>
@@ -163,6 +169,7 @@ else
                     <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered hub-permission-save-bar mt-4">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="savePermissionAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">권한 저장</MudButton>
                     </MudStack>
+                    }
                 }
             </MudPaper>
         </MudItem>

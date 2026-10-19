@@ -32,7 +32,7 @@ public partial class AdminPositions
 
     private async Task savePermissionAsync()
     {
-        if (mSelectedPositionIdOrNull.HasValue == false)
+        if (mSelectedPositionIdOrNull.HasValue == false || getSelectedPositionOrNull()?.IsSystemAdministrator == true)
         {
             mMessage = "권한을 설정할 직책을 선택해 주세요.";
             mMessageSeverity = Severity.Warning;
