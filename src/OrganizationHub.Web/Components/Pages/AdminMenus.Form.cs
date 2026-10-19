@@ -15,6 +15,7 @@ public partial class AdminMenus
         mSelectedMenuItemOrNull = menuItem;
         mFormModel = new NavigationMenuItemFormModel();
         mFormModel.Id = menuItem.Id;
+        mFormModel.Revision = menuItem.Revision;
         mFormModel.SectionId = menuItem.SectionId;
         mFormModel.DisplayName = menuItem.DisplayName;
         mFormModel.SortOrder = menuItem.SortOrder;
@@ -47,6 +48,7 @@ public partial class AdminMenus
     {
         mSectionFormModel = new NavigationMenuSectionFormModel();
         mSectionFormModel.Id = section.Id;
+        mSectionFormModel.Revision = section.Revision;
         mSectionFormModel.DisplayName = section.DisplayName;
     }
 

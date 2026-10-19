@@ -5,6 +5,7 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class NavigationMenuItemFormModel
 {
+    public int Revision { get; set; }
     public int Id
     {
         get; set;

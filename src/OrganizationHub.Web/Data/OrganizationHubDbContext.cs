@@ -136,6 +136,7 @@ public sealed partial class OrganizationHubDbContext : DbContext
     {
         prepareSettingRevisions();
         prepareAdministrativeRevisions();
+        prepareMenuRevisions();
         return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
@@ -143,6 +144,7 @@ public sealed partial class OrganizationHubDbContext : DbContext
     {
         prepareSettingRevisions();
         prepareAdministrativeRevisions();
+        prepareMenuRevisions();
         return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
 
@@ -153,6 +155,8 @@ public sealed partial class OrganizationHubDbContext : DbContext
         modelBuilder.Entity<RevokedLoginSession>().HasOne<UserAccount>().WithMany().HasForeignKey(session => session.UserAccountId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<WorkGuidelineState>().Property(state => state.Revision).IsConcurrencyToken();
         modelBuilder.Entity<WorkGuidelineState>().HasData(new WorkGuidelineState { Id = 1, Revision = 0 });
+        modelBuilder.Entity<NavigationMenuItem>().Property(item => item.Revision).IsConcurrencyToken();
+        modelBuilder.Entity<NavigationMenuSection>().Property(section => section.Revision).IsConcurrencyToken();
         modelBuilder.applyOrganizationHubModelConfiguration();
     }
 

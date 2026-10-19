@@ -69,9 +69,12 @@ internal sealed partial class NavigationMenuService
                     return ServiceResult.Fail("메뉴 섹션을 찾을 수 없습니다.");
                 }
 
+                if (sectionOrNull.Revision != formModel.Revision)
+                {
+                    return AdministrativeSaveUtility.CreateConflictResult();
+                }
                 sectionOrNull.DisplayName = displayName;
-                await dbContext.SaveChangesAsync(cancellationToken);
-                return ServiceResult.Succeed();
+                return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
             }
 
             NavigationMenuSection newSection = new NavigationMenuSection();
@@ -79,8 +82,7 @@ internal sealed partial class NavigationMenuService
             newSection.DisplayName = displayName;
             newSection.SortOrder = await getNextSectionSortOrderAsync(dbContext, cancellationToken);
             dbContext.NavigationMenuSections.Add(newSection);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -116,8 +118,7 @@ internal sealed partial class NavigationMenuService
                 sortOrder += SORT_ORDER_STEP;
             }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -157,6 +158,10 @@ internal sealed partial class NavigationMenuService
                 return ServiceResult.Fail("메뉴 섹션을 찾을 수 없습니다.");
             }
 
+            if (menuItemOrNull.Revision != formModel.Revision)
+            {
+                return AdministrativeSaveUtility.CreateConflictResult();
+            }
             menuItemOrNull.DisplayName = formModel.DisplayName.Trim();
             menuItemOrNull.SectionId = requiredSectionId;
             menuItemOrNull.SortOrder = formModel.SortOrder;
@@ -181,8 +186,7 @@ internal sealed partial class NavigationMenuService
                 }
             }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 
@@ -218,8 +222,7 @@ internal sealed partial class NavigationMenuService
                 sortOrder += SORT_ORDER_STEP;
             }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 

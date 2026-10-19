@@ -752,6 +752,10 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("SectionId")
                         .HasColumnType("INTEGER");
 
@@ -778,6 +782,10 @@ namespace OrganizationHub.Web.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("SectionKey")
                         .IsRequired()
