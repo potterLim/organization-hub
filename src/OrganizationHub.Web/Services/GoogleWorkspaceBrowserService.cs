@@ -50,12 +50,18 @@ public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrow
         {
             FilesResource.ListRequest request = driveService.Files.List();
             request.Q = "'" + escapeDriveQueryValue(effectiveParentFolderId.GetRequiredValue()) + "' in parents and mimeType = '" + GoogleMimeTypes.DRIVE_FOLDER + "' and trashed = false";
-            request.Fields = "files(id,name,modifiedTime)";
+            request.Fields = "nextPageToken,files(id,name,modifiedTime)";
             request.OrderBy = "name";
             request.SupportsAllDrives = true;
             request.IncludeItemsFromAllDrives = true;
-            DriveFileList fileList = await request.ExecuteAsync(cancellationToken);
-            IReadOnlyList<GoogleDriveFolderItem> folders = createFolderItems(fileList);
+            List<GoogleDriveFolderItem> folders = new List<GoogleDriveFolderItem>();
+            do
+            {
+                DriveFileList fileList = await request.ExecuteAsync(cancellationToken);
+                folders.AddRange(createFolderItems(fileList));
+                request.PageToken = fileList.NextPageToken;
+            }
+            while (string.IsNullOrEmpty(request.PageToken) == false);
             setDriveFolderCache(cacheKey, folders);
             return cloneDriveFolders(folders);
         }
@@ -69,13 +75,21 @@ public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrow
             return cachedCalendarsOrNull;
         }
 
-        CalendarService calendarService = await createCalendarServiceAsync(cancellationToken);
-        CalendarListResource.ListRequest request = calendarService.CalendarList.List();
-        request.Fields = "items(id,summary,accessRole,primary)";
-        CalendarListData calendarList = await request.ExecuteAsync(cancellationToken);
-        IReadOnlyList<GoogleCalendarListItem> calendars = createCalendarItems(calendarList);
-        setCalendarCache(calendars);
-        return cloneCalendars(calendars);
+        using (CalendarService calendarService = await createCalendarServiceAsync(cancellationToken))
+        {
+            CalendarListResource.ListRequest request = calendarService.CalendarList.List();
+            request.Fields = "nextPageToken,items(id,summary,accessRole,primary)";
+            List<GoogleCalendarListItem> calendars = new List<GoogleCalendarListItem>();
+            do
+            {
+                CalendarListData calendarList = await request.ExecuteAsync(cancellationToken);
+                calendars.AddRange(createCalendarItems(calendarList));
+                request.PageToken = calendarList.NextPageToken;
+            }
+            while (string.IsNullOrEmpty(request.PageToken) == false);
+            setCalendarCache(calendars);
+            return cloneCalendars(calendars);
+        }
     }
 
     public async Task<IReadOnlyList<GoogleTaskListItem>> ListTaskListsAsync(CancellationToken cancellationToken)
@@ -86,13 +100,21 @@ public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrow
             return cachedTaskListsOrNull;
         }
 
-        GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken);
-        Google.Apis.Tasks.v1.TasklistsResource.ListRequest request = tasksService.Tasklists.List();
-        request.Fields = "items(id,title)";
-        TaskListsData taskLists = await request.ExecuteAsync(cancellationToken);
-        IReadOnlyList<GoogleTaskListItem> listItems = createTaskListItems(taskLists);
-        setTaskListCache(listItems);
-        return cloneTaskLists(listItems);
+        using (GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken))
+        {
+            Google.Apis.Tasks.v1.TasklistsResource.ListRequest request = tasksService.Tasklists.List();
+            request.Fields = "nextPageToken,items(id,title)";
+            List<GoogleTaskListItem> listItems = new List<GoogleTaskListItem>();
+            do
+            {
+                TaskListsData taskLists = await request.ExecuteAsync(cancellationToken);
+                listItems.AddRange(createTaskListItems(taskLists));
+                request.PageToken = taskLists.NextPageToken;
+            }
+            while (string.IsNullOrEmpty(request.PageToken) == false);
+            setTaskListCache(listItems);
+            return cloneTaskLists(listItems);
+        }
     }
 
     private DriveFolderId getEffectiveParentFolderId(DriveFolderId parentFolderId)
