@@ -11,6 +11,16 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JavaScriptRuntime
 
+@if (string.IsNullOrWhiteSpace(mPreviousDraft) == false)
+{
+    <MudAlert Severity="Severity.Info" Class="mb-3">
+        <strong>다시 불러오기 전 내 입력</strong>
+        <div class="hub-draft-copy">@mPreviousDraft</div>
+        <span>현재의 최신 내용과 비교한 뒤 필요한 변경을 다시 입력해 주세요.</span>
+        <MudButton Variant="Variant.Text" OnClick="@(() => mPreviousDraft = string.Empty)">비교 마침</MudButton>
+    </MudAlert>
+}
+
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("일정")</PageTitle>
 
 <div @ref="mRefreshScopeElement">
@@ -154,7 +164,7 @@ else
                                 <MudSelectItem T="string" Value="@calendar.CalendarId.GetRequiredValue()">@calendar.DisplayName</MudSelectItem>
                             }
                         </MudSelect>
-                        <MudTextField @bind-Value="mEditorSummary" Label="일정 제목" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                        <MudTextField @bind-Value="mEditorSummary" Label="일정 제목 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                         <div class="hub-calendar-date-time-grid">
                             <CalendarDateTimeField Label="시작"
                                                    Value="mEditorStartLocalOrNull"
@@ -173,8 +183,8 @@ else
                                                    IsOpenChanged="@((bool isOpen) => handleEditorDateTimeFieldOpenChangedAsync(ECalendarEditorDateTimeField.End, isOpen))" />
                         </div>
                         <MudSwitch T="bool" @bind-Value="mIsEditorAllDay" Label="종일 일정" Color="Color.Primary" />
-                        <MudTextField @bind-Value="mEditorLocation" Label="위치" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-                        <MudTextField @bind-Value="mEditorDescription" Label="설명" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" Immediate="true" />
+                        <MudTextField @bind-Value="mEditorLocation" Label="위치 (선택)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                        <MudTextField @bind-Value="mEditorDescription" Label="설명 (선택)" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" Immediate="true" />
                     </div>
                     <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveEventAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
@@ -294,7 +304,7 @@ else
                 }
             </MudPaper>
         </MudItem>
-        <MudItem xs="12" lg="8">
+        <MudItem xs="12" lg="8" Class="hub-calendar-month-column">
             <CalendarMonthPanel MonthEvents="mMonthEvents"
                                 DayCells="mCalendarDayCells"
                                 WeekdayLabels="mCalendarWeekdayLabels"

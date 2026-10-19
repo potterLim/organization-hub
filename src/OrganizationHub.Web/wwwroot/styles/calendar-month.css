@@ -153,3 +153,6 @@
 .hub-calendar-row-button:hover {
     color: var(--hub-brand-deep);
 }
+
+.hub-calendar-day-time-line { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.hub-calendar-chip-title { color: var(--hub-text-strong); }

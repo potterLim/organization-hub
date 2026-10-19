@@ -20,10 +20,14 @@
 
 @media (max-width: 720px) {
     .hub-calendar-date-time-panel {
-        left: 50%;
+        position: fixed;
+        top: 100px;
+        left: 16px;
+        max-height: calc(100dvh - 120px);
+        overflow-y: auto;
         max-width: calc(100vw - 32px);
-        right: auto;
-        transform: translateX(-50%);
+        right: 16px;
+        transform: none;
         width: calc(100vw - 32px);
     }
 
@@ -251,4 +255,22 @@
         border-radius: 28px;
         padding: 28px;
     }
+}
+
+@media (max-width: 1279.98px) {
+    .hub-calendar-month-column { order: -1; }
+    .hub-calendar-sidebar { display: flex; flex-direction: column; }
+}
+@media (max-width: 720px) {
+    .hub-calendar-month-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+    .hub-calendar-weekday { display: block; font-size: 12px; padding: 6px 0; }
+    .hub-calendar-day,
+    .hub-calendar-day:not(.hub-calendar-day-has-events),
+    .hub-calendar-day-muted { display: flex; flex-direction: column; align-items: center; padding: 5px 1px; min-height: 60px; border-radius: 8px; }
+    .hub-calendar-day-date { display: flex; flex-direction: column; gap: 3px; margin: 0; }
+    .hub-calendar-day-number { font-size: 12px; min-width: 24px; padding: 0; }
+    .hub-calendar-day-number::after { content: none; }
+    .hub-calendar-day-count { font-size: 9px; padding: 3px; }
+    .hub-calendar-day-time-list { display: none; }
+    .hub-calendar-week-list { max-height: none; overflow: visible; }
 }

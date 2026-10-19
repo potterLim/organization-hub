@@ -20,7 +20,7 @@
                 <div class="hub-calendar-day-time-list">
                     @foreach (CalendarEventItem calendarEvent in getDayTimeEvents(dayCell))
                     {
-                        <span class="hub-calendar-day-time-line">@formatCalendarChipTime(calendarEvent)</span>
+                        <span class="hub-calendar-day-time-line" title="@calendarEvent.Summary">@formatCalendarChipTime(calendarEvent) <span class="hub-calendar-chip-title">@calendarEvent.Summary</span></span>
                     }
                 </div>
             }

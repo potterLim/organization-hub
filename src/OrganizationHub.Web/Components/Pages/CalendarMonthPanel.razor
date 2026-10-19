@@ -1,15 +1,19 @@
 <MudPaper Class="hub-card pa-4">
     <MudText Typo="Typo.h6">월간 일정</MudText>
-    @if (MonthEvents.Count == 0)
+    @if (IsMonthView)
+    {
+        <MudText Typo="Typo.caption" Class="hub-muted">날짜를 선택하면 해당 날짜의 일정 제목과 상세 내용을 확인할 수 있습니다.</MudText>
+    }
+    @if (IsMonthView)
+    {
+        <CalendarMonthGridPanel DayCells="DayCells" WeekdayLabels="WeekdayLabels" SelectedDayOrNull="SelectedDayOrNull" ClientTimeZoneInfo="ClientTimeZoneInfo" DaySelected="DaySelected" />
+    }
+    else if (MonthEvents.Count == 0)
     {
         <div class="hub-empty hub-empty-state">
             <MudIcon Icon="@Icons.Material.Filled.EventBusy" Size="Size.Medium" />
             <span>이번 달 일정이 없습니다.</span>
         </div>
-    }
-    else if (IsMonthView)
-    {
-        <CalendarMonthGridPanel DayCells="DayCells" WeekdayLabels="WeekdayLabels" SelectedDayOrNull="SelectedDayOrNull" ClientTimeZoneInfo="ClientTimeZoneInfo" DaySelected="DaySelected" />
     }
     else
     {
