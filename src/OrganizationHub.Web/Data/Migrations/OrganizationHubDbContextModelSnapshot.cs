@@ -1216,6 +1216,28 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.ToTable("WorkGuidelineSections");
                 });
 
+            modelBuilder.Entity("OrganizationHub.Web.Data.Entities.WorkGuidelineState", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("WorkGuidelineState");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Revision = 0
+                        });
+                });
+
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.ApprovalAuditLog", b =>
                 {
                     b.HasOne("OrganizationHub.Web.Data.Entities.ApprovalRequest", "ApprovalRequest")

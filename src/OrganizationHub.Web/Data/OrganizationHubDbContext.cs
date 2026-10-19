@@ -151,6 +151,8 @@ public sealed partial class OrganizationHubDbContext : DbContext
         modelBuilder.Entity<RevokedLoginSession>().HasKey(session => session.SessionId);
         modelBuilder.Entity<RevokedLoginSession>().Property(session => session.SessionId).HasMaxLength(32);
         modelBuilder.Entity<RevokedLoginSession>().HasOne<UserAccount>().WithMany().HasForeignKey(session => session.UserAccountId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<WorkGuidelineState>().Property(state => state.Revision).IsConcurrencyToken();
+        modelBuilder.Entity<WorkGuidelineState>().HasData(new WorkGuidelineState { Id = 1, Revision = 0 });
         modelBuilder.applyOrganizationHubModelConfiguration();
     }
 

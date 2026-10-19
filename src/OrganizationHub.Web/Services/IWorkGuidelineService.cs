@@ -8,6 +8,6 @@ namespace OrganizationHub.Web.Services;
 
 public interface IWorkGuidelineService
 {
-    Task<IReadOnlyList<WorkGuidelineSection>> GetSectionsAsync(CancellationToken cancellationToken);
-    Task<ServiceResult> SaveSectionsAsync(IReadOnlyList<WorkGuidelineSectionFormModel> formModels, CancellationToken cancellationToken);
+    Task<WorkGuidelineSnapshot> GetSnapshotAsync(CancellationToken cancellationToken);
+    Task<ServiceResult> SaveSectionsAsync(IReadOnlyList<WorkGuidelineSectionFormModel> formModels, int expectedRevision, CancellationToken cancellationToken);
 }

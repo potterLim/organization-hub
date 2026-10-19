@@ -20,19 +20,24 @@ public sealed class WorkGuidelineService : IWorkGuidelineService
         mDbContextFactory = dbContextFactory;
     }
 
-    public async Task<IReadOnlyList<WorkGuidelineSection>> GetSectionsAsync(CancellationToken cancellationToken)
+    public async Task<WorkGuidelineSnapshot> GetSnapshotAsync(CancellationToken cancellationToken)
     {
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
+            await using (Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken))
+            {
+            WorkGuidelineState state = await dbContext.Set<WorkGuidelineState>().SingleAsync(cancellationToken);
             List<WorkGuidelineSection> sections = await dbContext.WorkGuidelineSections
                 .OrderBy(section => section.SortOrder)
                 .ThenBy(section => section.Title)
                 .ToListAsync(cancellationToken);
-            return sections;
+            await transaction.CommitAsync(cancellationToken);
+            return new WorkGuidelineSnapshot { Revision = state.Revision, Sections = sections };
+            }
         }
     }
 
-    public async Task<ServiceResult> SaveSectionsAsync(IReadOnlyList<WorkGuidelineSectionFormModel> formModels, CancellationToken cancellationToken)
+    public async Task<ServiceResult> SaveSectionsAsync(IReadOnlyList<WorkGuidelineSectionFormModel> formModels, int expectedRevision, CancellationToken cancellationToken)
     {
         ServiceResult validationResult = validateSections(formModels);
         if (validationResult.IsSuccess == false)
@@ -42,6 +47,12 @@ public sealed class WorkGuidelineService : IWorkGuidelineService
 
         await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
         {
+            WorkGuidelineState state = await dbContext.Set<WorkGuidelineState>().SingleAsync(cancellationToken);
+            if (state.Revision != expectedRevision)
+            {
+                return AdministrativeSaveUtility.CreateConflictResult();
+            }
+            state.Revision++;
             List<WorkGuidelineSection> existingSections = await dbContext.WorkGuidelineSections.ToListAsync(cancellationToken);
             Dictionary<int, WorkGuidelineSection> sectionsById = existingSections.ToDictionary(section => section.Id);
             ServiceResult sectionIdValidationResult = validateExistingSectionIds(formModels, sectionsById);
@@ -74,8 +85,7 @@ public sealed class WorkGuidelineService : IWorkGuidelineService
                 }
             }
 
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return ServiceResult.Succeed();
+            return await AdministrativeSaveUtility.SaveAsync(dbContext, cancellationToken);
         }
     }
 

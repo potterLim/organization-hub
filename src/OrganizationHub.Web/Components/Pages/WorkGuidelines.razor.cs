@@ -22,6 +22,7 @@ public partial class WorkGuidelines
     private bool mIsEditMode;
     private bool mShouldInitializeSortable;
     private int mSectionCount;
+    private int mRevision;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
 
@@ -90,7 +91,9 @@ public partial class WorkGuidelines
 
     private async Task loadSectionsAsync()
     {
-        IReadOnlyList<WorkGuidelineSection> sections = await WorkGuidelineService.GetSectionsAsync(CancellationToken.None);
+        WorkGuidelineSnapshot snapshot = await WorkGuidelineService.GetSnapshotAsync(CancellationToken.None);
+        mRevision = snapshot.Revision;
+        IReadOnlyList<WorkGuidelineSection> sections = snapshot.Sections;
         mSectionFormModels = sections.Select(createFormModel).ToList();
         mSectionCount = mSectionFormModels.Count;
     }
@@ -111,7 +114,7 @@ public partial class WorkGuidelines
     private async Task saveSectionsAsync()
     {
         setSortOrders();
-        ServiceResult saveResult = await WorkGuidelineService.SaveSectionsAsync(mSectionFormModels, CancellationToken.None);
+        ServiceResult saveResult = await WorkGuidelineService.SaveSectionsAsync(mSectionFormModels, mRevision, CancellationToken.None);
         showOperationResult(saveResult, "업무 기준이 저장되었습니다.");
         if (saveResult.IsSuccess == false)
         {

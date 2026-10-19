@@ -30,7 +30,7 @@ public sealed class WorkGuidelineServiceTests
             WorkGuidelineService workGuidelineService = new WorkGuidelineService(dbContextFactory);
             List<WorkGuidelineSectionFormModel> formModels = new List<WorkGuidelineSectionFormModel>();
 
-            ServiceResult result = await workGuidelineService.SaveSectionsAsync(formModels, CancellationToken.None);
+            ServiceResult result = await workGuidelineService.SaveSectionsAsync(formModels, 0, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
@@ -48,7 +48,7 @@ public sealed class WorkGuidelineServiceTests
             WorkGuidelineService workGuidelineService = new WorkGuidelineService(dbContextFactory);
             List<WorkGuidelineSectionFormModel> formModels = createSectionFormModels(WorkGuidelinePolicy.MAX_SECTION_COUNT);
 
-            ServiceResult result = await workGuidelineService.SaveSectionsAsync(formModels, CancellationToken.None);
+            ServiceResult result = await workGuidelineService.SaveSectionsAsync(formModels, 0, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
@@ -66,7 +66,7 @@ public sealed class WorkGuidelineServiceTests
             WorkGuidelineService workGuidelineService = new WorkGuidelineService(dbContextFactory);
             List<WorkGuidelineSectionFormModel> formModels = createSectionFormModels(WorkGuidelinePolicy.MAX_SECTION_COUNT + 1);
 
-            ServiceResult result = await workGuidelineService.SaveSectionsAsync(formModels, CancellationToken.None);
+            ServiceResult result = await workGuidelineService.SaveSectionsAsync(formModels, 0, CancellationToken.None);
 
             Assert.False(result.IsSuccess);
             Assert.Equal("업무 기준은 0개부터 9개까지 구성할 수 있습니다.", result.ErrorMessage);
@@ -91,8 +91,8 @@ public sealed class WorkGuidelineServiceTests
             };
             List<WorkGuidelineSectionFormModel> first = new List<WorkGuidelineSectionFormModel>(stale);
             first.Add(createSectionFormModel(0, "새 기준", "다른 관리자가 추가"));
-            Assert.True((await service.SaveSectionsAsync(first, CancellationToken.None)).IsSuccess);
-            ServiceResult result = await service.SaveSectionsAsync(stale, CancellationToken.None);
+            Assert.True((await service.SaveSectionsAsync(first, 0, CancellationToken.None)).IsSuccess);
+            ServiceResult result = await service.SaveSectionsAsync(stale, 0, CancellationToken.None);
             Assert.False(result.IsSuccess);
             using (OrganizationHubDbContext db = factory.CreateDbContext())
             {
@@ -139,7 +139,7 @@ public sealed class WorkGuidelineServiceTests
                 createSectionFormModel(UNKNOWN_SECTION_ID, "업무 원칙", "정확하게 기록합니다.")
             };
 
-            ServiceResult result = await workGuidelineService.SaveSectionsAsync(formModels, CancellationToken.None);
+            ServiceResult result = await workGuidelineService.SaveSectionsAsync(formModels, 0, CancellationToken.None);
 
             Assert.False(result.IsSuccess);
             Assert.Equal("저장할 업무 기준을 찾을 수 없습니다.", result.ErrorMessage);
@@ -163,7 +163,7 @@ public sealed class WorkGuidelineServiceTests
                 createSectionFormModel(FIRST_SECTION_ID, "업무 원칙", "다시 기록합니다.")
             };
 
-            ServiceResult result = await workGuidelineService.SaveSectionsAsync(formModels, CancellationToken.None);
+            ServiceResult result = await workGuidelineService.SaveSectionsAsync(formModels, 0, CancellationToken.None);
 
             Assert.False(result.IsSuccess);
             Assert.Equal("중복된 업무 기준이 포함되어 있습니다.", result.ErrorMessage);
