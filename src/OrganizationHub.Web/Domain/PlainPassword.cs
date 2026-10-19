@@ -44,11 +44,6 @@ public readonly record struct PlainPassword
         return new PlainPassword(passwordOrNull);
     }
 
-    private bool hasMinimumLength(int minimumLength)
-    {
-        return Value.Length >= minimumLength;
-    }
-
     public bool HasRequiredMinimumLength()
     {
         return hasMinimumLength(MINIMUM_LENGTH);
@@ -62,5 +57,10 @@ public readonly record struct PlainPassword
         }
 
         return Value;
+    }
+
+    private bool hasMinimumLength(int minimumLength)
+    {
+        return Value.Length >= minimumLength;
     }
 }

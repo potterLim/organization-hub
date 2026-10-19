@@ -46,17 +46,19 @@ public sealed partial class GoogleWorkspaceBrowserService : IGoogleWorkspaceBrow
             return cachedFoldersOrNull;
         }
 
-        DriveService driveService = await createDriveServiceAsync(cancellationToken);
-        FilesResource.ListRequest request = driveService.Files.List();
-        request.Q = "'" + escapeDriveQueryValue(effectiveParentFolderId.GetRequiredValue()) + "' in parents and mimeType = '" + GoogleMimeTypes.DRIVE_FOLDER + "' and trashed = false";
-        request.Fields = "files(id,name,modifiedTime)";
-        request.OrderBy = "name";
-        request.SupportsAllDrives = true;
-        request.IncludeItemsFromAllDrives = true;
-        DriveFileList fileList = await request.ExecuteAsync(cancellationToken);
-        IReadOnlyList<GoogleDriveFolderItem> folders = createFolderItems(fileList);
-        setDriveFolderCache(cacheKey, folders);
-        return cloneDriveFolders(folders);
+        using (DriveService driveService = await createDriveServiceAsync(cancellationToken))
+        {
+            FilesResource.ListRequest request = driveService.Files.List();
+            request.Q = "'" + escapeDriveQueryValue(effectiveParentFolderId.GetRequiredValue()) + "' in parents and mimeType = '" + GoogleMimeTypes.DRIVE_FOLDER + "' and trashed = false";
+            request.Fields = "files(id,name,modifiedTime)";
+            request.OrderBy = "name";
+            request.SupportsAllDrives = true;
+            request.IncludeItemsFromAllDrives = true;
+            DriveFileList fileList = await request.ExecuteAsync(cancellationToken);
+            IReadOnlyList<GoogleDriveFolderItem> folders = createFolderItems(fileList);
+            setDriveFolderCache(cacheKey, folders);
+            return cloneDriveFolders(folders);
+        }
     }
 
     public async Task<IReadOnlyList<GoogleCalendarListItem>> ListCalendarsAsync(CancellationToken cancellationToken)

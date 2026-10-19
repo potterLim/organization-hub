@@ -11,6 +11,21 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Todos
 {
+
+    [JSInvokable("MoveTaskBeforeFromScript")]
+    public async Task MoveTaskBeforeFromScriptAsync(string sourceTaskId, string targetTaskId)
+    {
+        await moveTaskBeforeAsync(SortableItemMoveRequest.CreateFromScript(sourceTaskId, targetTaskId, ESortableMoveDirection.Before));
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable("MoveTaskAfterFromScript")]
+    public async Task MoveTaskAfterFromScriptAsync(string sourceTaskId, string targetTaskId)
+    {
+        await moveTaskAfterAsync(SortableItemMoveRequest.CreateFromScript(sourceTaskId, targetTaskId, ESortableMoveDirection.After));
+        await InvokeAsync(StateHasChanged);
+    }
+
     private async Task moveTaskBeforeAsync(TodoTaskId sourceTaskId, TodoTaskId targetTaskId)
     {
         if (canSortTasks() == false)
@@ -128,20 +143,6 @@ public partial class Todos
         }
 
         mIsSaving = false;
-    }
-
-    [JSInvokable("MoveTaskBeforeFromScript")]
-    public async Task MoveTaskBeforeFromScriptAsync(string sourceTaskId, string targetTaskId)
-    {
-        await moveTaskBeforeAsync(SortableItemMoveRequest.CreateFromScript(sourceTaskId, targetTaskId, ESortableMoveDirection.Before));
-        await InvokeAsync(StateHasChanged);
-    }
-
-    [JSInvokable("MoveTaskAfterFromScript")]
-    public async Task MoveTaskAfterFromScriptAsync(string sourceTaskId, string targetTaskId)
-    {
-        await moveTaskAfterAsync(SortableItemMoveRequest.CreateFromScript(sourceTaskId, targetTaskId, ESortableMoveDirection.After));
-        await InvokeAsync(StateHasChanged);
     }
 
     private async Task moveTaskBeforeAsync(SortableItemMoveRequest moveRequest)

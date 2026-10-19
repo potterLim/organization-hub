@@ -66,6 +66,35 @@ public partial class Todos
         await InvokeAsync(StateHasChanged);
     }
 
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (mRefreshModuleOrNull != null)
+            {
+                await mRefreshModuleOrNull.InvokeVoidAsync("disposeChangeRefresh", mRefreshScopeElement);
+                await mRefreshModuleOrNull.DisposeAsync();
+            }
+
+            if (mTodoModuleOrNull != null)
+            {
+                await mTodoModuleOrNull.InvokeVoidAsync("disposeTodoSortable", mTodoBoardElement);
+                await mTodoModuleOrNull.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
+        if (mDotNetReferenceOrNull != null)
+        {
+            mDotNetReferenceOrNull.Dispose();
+        }
+    }
+
     private void recordLoadedChangeSnapshot(
         ChangeVersionSnapshot? loadedSnapshotOrNull = null,
         EChangeVersionStability stability = EChangeVersionStability.Stable
@@ -127,34 +156,5 @@ public partial class Todos
 
         mClientTimeZoneInfo = clientTimeZoneInfo;
         await InvokeAsync(StateHasChanged);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        try
-        {
-            if (mRefreshModuleOrNull != null)
-            {
-                await mRefreshModuleOrNull.InvokeVoidAsync("disposeChangeRefresh", mRefreshScopeElement);
-                await mRefreshModuleOrNull.DisposeAsync();
-            }
-
-            if (mTodoModuleOrNull != null)
-            {
-                await mTodoModuleOrNull.InvokeVoidAsync("disposeTodoSortable", mTodoBoardElement);
-                await mTodoModuleOrNull.DisposeAsync();
-            }
-        }
-        catch (JSDisconnectedException)
-        {
-        }
-        catch (ObjectDisposedException)
-        {
-        }
-
-        if (mDotNetReferenceOrNull != null)
-        {
-            mDotNetReferenceOrNull.Dispose();
-        }
     }
 }

@@ -46,6 +46,29 @@ public partial class Calendar
         await InvokeAsync(StateHasChanged);
     }
 
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (mRefreshModuleOrNull != null)
+            {
+                await mRefreshModuleOrNull.InvokeVoidAsync("disposeChangeRefresh", mRefreshScopeElement);
+                await mRefreshModuleOrNull.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
+        if (mRefreshDotNetReferenceOrNull != null)
+        {
+            mRefreshDotNetReferenceOrNull.Dispose();
+        }
+    }
+
     private void recordLoadedChangeSnapshot(
         ChangeVersionSnapshot? loadedSnapshotOrNull = null,
         EChangeVersionStability stability = EChangeVersionStability.Stable
@@ -73,28 +96,5 @@ public partial class Calendar
         }
 
         return changeVersionKeys;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        try
-        {
-            if (mRefreshModuleOrNull != null)
-            {
-                await mRefreshModuleOrNull.InvokeVoidAsync("disposeChangeRefresh", mRefreshScopeElement);
-                await mRefreshModuleOrNull.DisposeAsync();
-            }
-        }
-        catch (JSDisconnectedException)
-        {
-        }
-        catch (ObjectDisposedException)
-        {
-        }
-
-        if (mRefreshDotNetReferenceOrNull != null)
-        {
-            mRefreshDotNetReferenceOrNull.Dispose();
-        }
     }
 }

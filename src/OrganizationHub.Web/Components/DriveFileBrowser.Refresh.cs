@@ -39,24 +39,6 @@ public partial class DriveFileBrowser
         await InvokeAsync(StateHasChanged);
     }
 
-    private void recordLoadedChangeSnapshot(ChangeVersionSnapshot? loadedSnapshotOrNull = null)
-    {
-        if (loadedSnapshotOrNull == null)
-        {
-            mLoadedChangeSnapshot = ChangeVersionService.GetSnapshot(getChangeVersionKeys());
-            return;
-        }
-
-        mLoadedChangeSnapshot = loadedSnapshotOrNull;
-    }
-
-    private IReadOnlyList<ChangeVersionKey> getChangeVersionKeys()
-    {
-        List<ChangeVersionKey> changeVersionKeys = new List<ChangeVersionKey>();
-        changeVersionKeys.Add(ChangeVersionKeys.CreateDriveFolderKey(DriveFolderId.CreateOptional(getCurrentFolderId())));
-        return changeVersionKeys;
-    }
-
     public async ValueTask DisposeAsync()
     {
         try
@@ -78,5 +60,23 @@ public partial class DriveFileBrowser
         {
             mRefreshDotNetReferenceOrNull.Dispose();
         }
+    }
+
+    private void recordLoadedChangeSnapshot(ChangeVersionSnapshot? loadedSnapshotOrNull = null)
+    {
+        if (loadedSnapshotOrNull == null)
+        {
+            mLoadedChangeSnapshot = ChangeVersionService.GetSnapshot(getChangeVersionKeys());
+            return;
+        }
+
+        mLoadedChangeSnapshot = loadedSnapshotOrNull;
+    }
+
+    private IReadOnlyList<ChangeVersionKey> getChangeVersionKeys()
+    {
+        List<ChangeVersionKey> changeVersionKeys = new List<ChangeVersionKey>();
+        changeVersionKeys.Add(ChangeVersionKeys.CreateDriveFolderKey(DriveFolderId.CreateOptional(getCurrentFolderId())));
+        return changeVersionKeys;
     }
 }

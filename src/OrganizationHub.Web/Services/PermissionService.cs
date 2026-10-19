@@ -207,27 +207,6 @@ public sealed partial class PermissionService : IPermissionService
         return await decideDeleteInsideRootAsync(userSession, rootFolderOrNull, cancellationToken);
     }
 
-    private async Task<PermissionDecision> decideDeleteInsideRootAsync(
-        UserSession userSession,
-        DriveFolderReference rootFolder,
-        CancellationToken cancellationToken
-    )
-    {
-        PermissionDecision permissionDecision = await mOrganizationPermissionService.DecidePermissionAsync(
-            userSession,
-            new PermissionKey(PermissionKeys.FILES_DELETE),
-            rootFolder.TeamIdOrNull,
-            cancellationToken);
-        if (permissionDecision.IsAllowed)
-        {
-            return allowPermission(createPermissionScopeLabel(rootFolder.DisplayName));
-        }
-
-        return denyPermission(
-            createPermissionDecisionReason("이 위치의 파일을 삭제할 권한이 없습니다."),
-            createPermissionScopeLabel(rootFolder.DisplayName));
-    }
-
     public async Task<bool> CanStoreApprovedFileToFolderAsync(UserSession userSession, DriveFolderId folderId, CancellationToken cancellationToken)
     {
         PermissionDecision decision = await DecideStoreApprovedFileToFolderAsync(userSession, folderId, cancellationToken);
@@ -249,6 +228,27 @@ public sealed partial class PermissionService : IPermissionService
         }
 
         return allowPermission(createPermissionScopeLabel(folderOrNull.DisplayName));
+    }
+
+    private async Task<PermissionDecision> decideDeleteInsideRootAsync(
+        UserSession userSession,
+        DriveFolderReference rootFolder,
+        CancellationToken cancellationToken
+    )
+    {
+        PermissionDecision permissionDecision = await mOrganizationPermissionService.DecidePermissionAsync(
+            userSession,
+            new PermissionKey(PermissionKeys.FILES_DELETE),
+            rootFolder.TeamIdOrNull,
+            cancellationToken);
+        if (permissionDecision.IsAllowed)
+        {
+            return allowPermission(createPermissionScopeLabel(rootFolder.DisplayName));
+        }
+
+        return denyPermission(
+            createPermissionDecisionReason("이 위치의 파일을 삭제할 권한이 없습니다."),
+            createPermissionScopeLabel(rootFolder.DisplayName));
     }
 
     private static PermissionDecision allowPermission(PermissionScopeLabel scopeLabel)
@@ -280,5 +280,4 @@ public sealed partial class PermissionService : IPermissionService
 
         return textOrNull;
     }
-
 }

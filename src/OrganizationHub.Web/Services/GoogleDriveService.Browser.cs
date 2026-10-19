@@ -75,25 +75,27 @@ public sealed partial class GoogleDriveService
             return cachedMetadataOrNull;
         }
 
-        DriveService driveService = await createDriveServiceAsync(cancellationToken);
-        FilesResource.GetRequest request = driveService.Files.Get(requiredFileId);
-        request.Fields = "id,name,mimeType,parents";
-        request.SupportsAllDrives = true;
-        try
+        using (DriveService driveService = await createDriveServiceAsync(cancellationToken))
         {
-            DriveDataFile driveFile = await request.ExecuteAsync(cancellationToken);
-            DriveFileMetadata metadata = createDriveFileMetadata(driveFile);
-            setDriveFileMetadataCache(cacheKey, metadata, FILE_METADATA_CACHE_DURATION);
-            return cloneDriveFileMetadata(metadata);
-        }
-        catch (Google.GoogleApiException exception)
-        {
-            if (exception.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+            FilesResource.GetRequest request = driveService.Files.Get(requiredFileId);
+            request.Fields = "id,name,mimeType,parents";
+            request.SupportsAllDrives = true;
+            try
             {
-                return null;
+                DriveDataFile driveFile = await request.ExecuteAsync(cancellationToken);
+                DriveFileMetadata metadata = createDriveFileMetadata(driveFile);
+                setDriveFileMetadataCache(cacheKey, metadata, FILE_METADATA_CACHE_DURATION);
+                return cloneDriveFileMetadata(metadata);
             }
+            catch (Google.GoogleApiException exception)
+            {
+                if (exception.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
 
-            throw;
+                throw;
+            }
         }
     }
 
@@ -122,32 +124,34 @@ public sealed partial class GoogleDriveService
             }
         }
 
-        DriveService driveService = await createDriveServiceAsync(cancellationToken);
-        int inspectedFolderCount = 0;
-        while (pendingFolderIds.Count > 0 && inspectedFolderCount < MAX_ANCESTOR_FOLDER_INSPECTION_COUNT)
+        using (DriveService driveService = await createDriveServiceAsync(cancellationToken))
         {
-            inspectedFolderCount = inspectedFolderCount + 1;
-            string currentFolderId = pendingFolderIds.Dequeue();
-            FilesResource.GetRequest request = driveService.Files.Get(currentFolderId);
-            request.Fields = "id,parents";
-            request.SupportsAllDrives = true;
-            DriveDataFile folder = await request.ExecuteAsync(cancellationToken);
-            if (folder.Parents == null)
+            int inspectedFolderCount = 0;
+            while (pendingFolderIds.Count > 0 && inspectedFolderCount < MAX_ANCESTOR_FOLDER_INSPECTION_COUNT)
             {
-                continue;
-            }
-
-            foreach (string parentFolderId in folder.Parents)
-            {
-                if (ancestorFolderIds.Add(DriveFolderId.CreateOptional(parentFolderId)))
+                inspectedFolderCount = inspectedFolderCount + 1;
+                string currentFolderId = pendingFolderIds.Dequeue();
+                FilesResource.GetRequest request = driveService.Files.Get(currentFolderId);
+                request.Fields = "id,parents";
+                request.SupportsAllDrives = true;
+                DriveDataFile folder = await request.ExecuteAsync(cancellationToken);
+                if (folder.Parents == null)
                 {
-                    pendingFolderIds.Enqueue(parentFolderId);
+                    continue;
+                }
+
+                foreach (string parentFolderId in folder.Parents)
+                {
+                    if (ancestorFolderIds.Add(DriveFolderId.CreateOptional(parentFolderId)))
+                    {
+                        pendingFolderIds.Enqueue(parentFolderId);
+                    }
                 }
             }
-        }
 
-        setAncestorFolderIdsCache(cacheKey, ancestorFolderIds, ANCESTOR_CACHE_DURATION);
-        return ancestorFolderIds;
+            setAncestorFolderIdsCache(cacheKey, ancestorFolderIds, ANCESTOR_CACHE_DURATION);
+            return ancestorFolderIds;
+        }
     }
     private Task<IReadOnlyList<DriveFileItem>> listFilesFromDriveAsync(DriveFolderId folderId, CancellationToken cancellationToken)
     {
