@@ -92,6 +92,49 @@ public sealed class TodoDeadlineRecoveryTests
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LaterDeadlineEditSurvivesCompletionOrEarlierStorageFailureAsync(bool shouldFailEarlierSave)
+    {
+        StorageFailure failure = new StorageFailure();
+        using (TestDbContextFactory raw = new TestDbContextFactory(failure))
+        using (TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(PermissionKeys.TODOS_UPDATE, raw))
+        {
+            VersionedGoogleTransport transport = new VersionedGoogleTransport();
+            TodoTaskFormModel form = new TodoTaskFormModel();
+            form.TaskId = "item";
+            form.TaskListId = "tasks";
+            form.Title = "Updated";
+            form.ETag = transport.ETag;
+            form.DueAtUtc = new DateTime(2026, 10, 20, 12, 0, 0, DateTimeKind.Utc);
+            await createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None);
+            if (shouldFailEarlierSave)
+            {
+                failure.ShouldFail = true;
+                form.ETag = transport.ETag;
+                form.DueAtUtc = form.DueAtUtc.Value.AddHours(1);
+                await Assert.ThrowsAsync<ResourceSynchronizationException>(() => createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None));
+                failure.ShouldFail = false;
+            }
+            else
+            {
+                await createService(factory, transport).CompleteTaskAsync(OperationPermissionRegressionTests.createSession(), TodoTaskListId.CreateRequired("tasks"), TodoTaskId.CreateRequired("item"), CancellationToken.None);
+            }
+            form.ETag = transport.ETag;
+            form.DueAtUtc = new DateTime(2026, 10, 20, 19, 30, 0, DateTimeKind.Utc);
+            TodoTaskItem updated = await createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None);
+            Assert.Equal(form.DueAtUtc, updated.DueAt);
+            await createService(factory, transport).RecoverDeadlineChangesAsync(CancellationToken.None);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                Assert.Equal(form.DueAtUtc, db.TodoTaskMetadata.Single().DueAt);
+                Assert.Empty(db.TodoDeadlineChanges);
+            }
+            Assert.Equal("2026-10-20T00:00:00Z", transport.DueOrNull);
+        }
+    }
+
     [Fact]
     public async Task FailedIntentStorageDoesNotModifyGoogleAsync()
     {

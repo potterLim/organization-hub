@@ -67,6 +67,10 @@ public sealed class VersionedGoogleTransport : HttpMessageHandler, IGoogleApiCre
             if (json.ContainsKey("due"))
             {
                 DueOrNull = json["due"]?.GetValue<string>();
+                if (DueOrNull != null)
+                {
+                    DueOrNull = DueOrNull.Substring(0, 10) + "T00:00:00Z";
+                }
             }
             if (json.ContainsKey("status"))
             {
