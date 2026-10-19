@@ -10,6 +10,11 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class ApprovalRequest
 {
+    private string getDestinationSummaryPath()
+    {
+        return string.Join(" / ", mDestinationFolderPath.Select(item => item.Name));
+    }
+
     private string getFileCountText()
     {
         int folderCount = mFiles.Count(file => file.IsFolder);

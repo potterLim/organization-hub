@@ -19,6 +19,8 @@ public partial class ApprovalRequest
     private string mSelectedDestinationRootFolderId = string.Empty;
     private string mNewDestinationFolderName = string.Empty;
     private string mKeyword = string.Empty;
+    private string mSelectedFileName = string.Empty;
+    private string mSelectedSourcePath = string.Empty;
     private string mSuggestedRequestTitle = string.Empty;
     private string mMessage = string.Empty;
     private string mDestinationFolderMessage = string.Empty;

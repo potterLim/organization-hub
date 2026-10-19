@@ -36,6 +36,14 @@
             }
         </MudSelect>
     </div>
+    @if (string.IsNullOrWhiteSpace(FormModel.FileId) == false)
+    {
+        <dl class="hub-approval-submission-summary">
+            <div><dt>선택 문서</dt><dd>@SelectedFileName</dd></div>
+            <div><dt>원본 위치</dt><dd>@SourceFolderPath</dd></div>
+            <div><dt>승인본 저장 위치</dt><dd>@DestinationFolderPath</dd></div>
+        </dl>
+    }
     <div class="hub-submit-row">
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Approval" Disabled="@(IsSubmitting || string.IsNullOrWhiteSpace(FormModel.FileId))" OnClick="@(() => SubmitRequested.InvokeAsync())" Class="hub-primary-action-button hub-approval-submit-button">결재 요청 보내기</MudButton>
     </div>
@@ -81,6 +89,15 @@
     {
         get; set;
     } = string.Empty;
+
+    [Parameter]
+    public string SelectedFileName { get; set; } = string.Empty;
+
+    [Parameter]
+    public string SourceFolderPath { get; set; } = string.Empty;
+
+    [Parameter]
+    public string DestinationFolderPath { get; set; } = string.Empty;
 
     [Parameter]
     public string SuggestedTitle

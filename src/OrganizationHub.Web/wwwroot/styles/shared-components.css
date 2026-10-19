@@ -395,3 +395,24 @@
     .hub-file-conflict-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
     .hub-file-conflict-actions .mud-button-root { min-width: 0 !important; padding: 8px !important; white-space: normal; }
 }
+
+.hub-approval-submission-summary {
+    background: rgba(33, 107, 255, .04);
+    border-radius: var(--hub-radius-sm);
+    display: grid;
+    gap: 12px;
+    margin: 16px 0 0;
+    padding: 14px;
+}
+
+.hub-approval-submission-summary dt {
+    color: var(--hub-text-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.hub-approval-submission-summary dd {
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+    word-break: keep-all;
+}

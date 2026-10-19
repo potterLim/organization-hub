@@ -27,6 +27,8 @@ public partial class ApprovalRequest
             mMessage = "결재 요청이 등록되었습니다.";
             mMessageSeverity = Severity.Success;
             mFormModel = new ApprovalRequestFormModel();
+            mSelectedFileName = string.Empty;
+            mSelectedSourcePath = string.Empty;
             mSuggestedRequestTitle = string.Empty;
             mHasCustomTitle = false;
             initializeApprovalRequestDefaults();

@@ -13,6 +13,8 @@ public partial class ApprovalRequest
     {
         mFormModel.SourceFolderId = folderId;
         mFormModel.FileId = string.Empty;
+        mSelectedFileName = string.Empty;
+        mSelectedSourcePath = string.Empty;
         mSuggestedRequestTitle = string.Empty;
         if (mHasCustomTitle == false)
         {
@@ -103,6 +105,8 @@ public partial class ApprovalRequest
     private void selectFile(DriveFileItem file)
     {
         mFormModel.FileId = file.Id;
+        mSelectedFileName = file.Name;
+        mSelectedSourcePath = string.Join(" / ", mSourceFolderPath.Select(item => item.Name));
         mSuggestedRequestTitle = createDefaultRequestTitle(file);
     }
 
