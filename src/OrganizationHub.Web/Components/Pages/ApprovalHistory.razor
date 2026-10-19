@@ -11,7 +11,7 @@
 
 <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" Class="mb-4">
     <MudButton OnClick="@(() => showHistoryAsync(true))" Disabled="mIsLoading" Variant="@(mShowRequestedOnly ? Variant.Filled : Variant.Outlined)" Color="Color.Primary">내 진행 중 요청 (@mMyOngoingCount)</MudButton>
-    <MudButton OnClick="@(() => showHistoryAsync(false))" Disabled="mIsLoading" Variant="@(mShowRequestedOnly ? Variant.Outlined : Variant.Filled)" Color="Color.Primary">전체 기록</MudButton>
+    <MudButton OnClick="@(() => showHistoryAsync(false))" Disabled="mIsLoading" Variant="@(mHistoryFilter == EApprovalHistoryFilter.AllRelated ? Variant.Filled : Variant.Outlined)" Color="Color.Primary">전체 기록</MudButton>
     <MudButton OnClick="reloadAsync" Disabled="mIsLoading" StartIcon="@Icons.Material.Filled.Refresh">새로고침</MudButton>
 </MudStack>
 
@@ -24,7 +24,7 @@
     </MudItem>
 </MudGrid>
 <MudExpansionPanels Elevation="0" Class="mb-3">
-    <MudExpansionPanel Text="상태·기간 상세 검색">
+    <MudExpansionPanel Text="@getSearchSummary()">
         <MudGrid Spacing="2">
             <MudItem xs="12" md="4">
         <MudSelect T="EApprovalHistoryFilter" Label="상태" Value="mHistoryFilter" ValueChanged="handleFilterChangedAsync" Disabled="mIsLoading" Variant="Variant.Outlined" Margin="Margin.Dense">
@@ -40,6 +40,10 @@
         </MudGrid>
     </MudExpansionPanel>
 </MudExpansionPanels>
+@if (mHistoryFilter != EApprovalHistoryFilter.AllRelated || mRequestedDateRangeOrNull != null || string.IsNullOrWhiteSpace(mSearchKeyword) == false)
+{
+    <MudButton OnClick="resetSearchAsync" Disabled="mIsLoading" Size="Size.Small" Class="mb-2">검색 조건 초기화</MudButton>
+}
 <MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
     <MudText Typo="Typo.body2">총 @mTotalCount 건 · @mPageNumber / @mTotalPages 페이지</MudText>
     <MudButton OnClick="previousPageAsync" Disabled="@(mIsLoading || mPageNumber <= 1)" aria-label="이전 페이지">이전</MudButton>

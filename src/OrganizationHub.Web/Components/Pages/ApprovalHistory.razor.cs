@@ -17,6 +17,7 @@ public partial class ApprovalHistory
 {
     private List<ApprovalRequestItem> mApprovalHistory = new List<ApprovalRequestItem>();
     private bool mIsLoading = true;
+    private int mLoadVersion;
     private bool mShowRequestedOnly;
     private int mMyOngoingCount;
     private int mPageNumber = 1;
@@ -53,6 +54,7 @@ public partial class ApprovalHistory
             return;
         }
 
+        int loadVersion = ++mLoadVersion;
         mIsLoading = true;
         mErrorMessage = string.Empty;
         try
@@ -68,6 +70,10 @@ public partial class ApprovalHistory
                 RequestedToUtcExclusiveOrNull = toUtcOrNull
             };
             ApprovalHistoryPage page = await ApprovalService.GetHistoryPageAsync(CurrentUserSessionOrNull, query, CancellationToken.None);
+            if (loadVersion != mLoadVersion)
+            {
+                return;
+            }
             mApprovalHistory = page.Items.ToList();
             mPageNumber = page.PageNumber;
             mTotalPages = page.TotalPages;
@@ -77,11 +83,17 @@ public partial class ApprovalHistory
         catch (Exception exception)
         {
             Logger.LogWarning(exception, "Approval history load failed.");
-            mErrorMessage = "결재 기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+            if (loadVersion == mLoadVersion)
+            {
+                mErrorMessage = "결재 기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+            }
         }
         finally
         {
-            mIsLoading = false;
+            if (loadVersion == mLoadVersion)
+            {
+                mIsLoading = false;
+            }
         }
     }
 
