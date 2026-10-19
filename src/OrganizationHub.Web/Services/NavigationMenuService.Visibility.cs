@@ -126,7 +126,10 @@ internal sealed partial class NavigationMenuService
         OrganizationTeamId? targetTeamIdOrNull = getConfiguredPermissionTargetTeamIdOrNull(menuItem, userSession);
         foreach (PermissionKey permissionKey in permissionKeys)
         {
-            bool hasPermission = await mOrganizationPermissionService.HasPermissionAsync(userSession, permissionKey, targetTeamIdOrNull, cancellationToken);
+            string permissionValue = permissionKey.GetRequiredValue();
+            UserAccountId? ownerUserIdOrNull = permissionValue == PermissionKeys.CALENDAR_READ || permissionValue == PermissionKeys.TODOS_READ ? userSession.UserAccountId : null;
+            PermissionDecision decision = await mOrganizationPermissionService.DecidePermissionAsync(userSession, permissionKey, targetTeamIdOrNull, ownerUserIdOrNull, cancellationToken);
+            bool hasPermission = decision.IsAllowed;
             if (hasPermission)
             {
                 return true;
