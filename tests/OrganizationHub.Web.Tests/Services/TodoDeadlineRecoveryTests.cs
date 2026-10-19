@@ -154,6 +154,60 @@ public sealed class TodoDeadlineRecoveryTests
         }
     }
 
+    [Fact]
+    public async Task ConcurrentRecoveriesCannotOverwriteNewerOperationWithSameGoogleVersionAsync()
+    {
+        using (TestDbContextFactory factory = new TestDbContextFactory())
+        {
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                TodoTaskMetadata metadata = new TodoTaskMetadata();
+                metadata.TaskId = "item";
+                metadata.TaskListId = "tasks";
+                metadata.GoogleETag = "opaque-version";
+                db.TodoTaskMetadata.Add(metadata);
+                await db.SaveChangesAsync();
+            }
+            using (OrganizationHubDbContext older = factory.CreateDbContext())
+            using (OrganizationHubDbContext newer = factory.CreateDbContext())
+            {
+                TodoTaskMetadata olderMetadata = older.TodoTaskMetadata.Single();
+                TodoTaskMetadata newerMetadata = newer.TodoTaskMetadata.Single();
+                olderMetadata.LastDeadlineChangeId = 1;
+                olderMetadata.DueAt = new DateTime(2026, 10, 20, 12, 0, 0, DateTimeKind.Utc);
+                newerMetadata.LastDeadlineChangeId = 2;
+                newerMetadata.DueAt = new DateTime(2026, 10, 20, 19, 0, 0, DateTimeKind.Utc);
+                await newer.SaveChangesAsync();
+                await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => older.SaveChangesAsync());
+            }
+        }
+    }
+
+    [Fact]
+    public async Task RejectedSameDateEditCannotBeRecoveredAsSuccessfulTimeChangeAsync()
+    {
+        using (TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(PermissionKeys.TODOS_UPDATE))
+        {
+            VersionedGoogleTransport transport = new VersionedGoogleTransport();
+            TodoTaskFormModel form = new TodoTaskFormModel();
+            form.TaskId = "item";
+            form.TaskListId = "tasks";
+            form.Title = "Same title";
+            form.ETag = transport.ETag;
+            form.DueAtUtc = new DateTime(2026, 10, 20, 12, 0, 0, DateTimeKind.Utc);
+            await createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None);
+            form.DueAtUtc = form.DueAtUtc.Value.AddHours(5);
+            await Assert.ThrowsAsync<ResourceEditConflictException>(() => createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None));
+            await createService(factory, transport).RecoverDeadlineChangesAsync(CancellationToken.None);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                Assert.Empty(db.TodoDeadlineChanges);
+                Assert.Equal(12, db.TodoTaskMetadata.Single().DueAt!.Value.Hour);
+            }
+            Assert.Equal(1, transport.Writes);
+        }
+    }
+
     private static GoogleTasksTodoService createService(TestDbContextFactory factory, VersionedGoogleTransport transport)
     {
         return new GoogleTasksTodoService(factory, transport, NullLogger<GoogleTasksTodoService>.Instance, Options.Create(new GoogleApiOptions()), new ChangeVersionService(), new OrganizationPermissionService(factory));

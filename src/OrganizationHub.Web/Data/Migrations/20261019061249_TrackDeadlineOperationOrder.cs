@@ -1,29 +1,27 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace OrganizationHub.Web.Data.Migrations
+namespace OrganizationHub.Web.Data.Migrations;
+/// <inheritdoc />
+public partial class TrackDeadlineOperationOrder : Migration
 {
     /// <inheritdoc />
-    public partial class TrackDeadlineOperationOrder : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AddColumn<int>(
-                name: "LastDeadlineChangeId",
-                table: "TodoTaskMetadata",
-                type: "INTEGER",
-                nullable: false,
-                defaultValue: 0);
-        }
+        migrationBuilder.AddColumn<int>(
+            name: "LastDeadlineChangeId",
+            table: "TodoTaskMetadata",
+            type: "INTEGER",
+            nullable: false,
+            defaultValue: 0);
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropColumn(
-                name: "LastDeadlineChangeId",
-                table: "TodoTaskMetadata");
-        }
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropColumn(
+            name: "LastDeadlineChangeId",
+            table: "TodoTaskMetadata");
     }
 }

@@ -1027,6 +1027,7 @@ namespace OrganizationHub.Web.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int>("LastDeadlineChangeId")
+                        .IsConcurrencyToken()
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("TaskId")

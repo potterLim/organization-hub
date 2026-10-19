@@ -24,6 +24,7 @@ internal static partial class OrganizationHubModelConfiguration
         EntityTypeBuilder<TodoTaskMetadata> todoTaskMetadataBuilder = modelBuilder.Entity<TodoTaskMetadata>();
         todoTaskMetadataBuilder.HasKey(metadata => metadata.Id);
         todoTaskMetadataBuilder.Property(metadata => metadata.GoogleETag).IsConcurrencyToken();
+        todoTaskMetadataBuilder.Property(metadata => metadata.LastDeadlineChangeId).IsConcurrencyToken();
         todoTaskMetadataBuilder.HasIndex(metadata => new { metadata.TaskListId, metadata.TaskId }).IsUnique();
         todoTaskMetadataBuilder.HasIndex(metadata => metadata.CreatedByUserId);
         todoTaskMetadataBuilder.Property(metadata => metadata.TaskListId).HasMaxLength(256).IsRequired();
