@@ -121,8 +121,15 @@ public sealed partial class GoogleCalendarService
                 EventsResource.PatchRequest request = calendarService.Events.Patch(googleEvent, requiredCalendarId, requiredEventId);
                 request.Fields = EVENT_FIELDS;
                 request.ModifyRequest = message => ResourceEditVersion.Apply(message, formModel.ETag);
-                Event updatedEvent = await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
-                expireCalendarEventCache(calendarId);
+                Event updatedEvent;
+                try
+                {
+                    updatedEvent = await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
+                }
+                finally
+                {
+                    expireCalendarEventCache(calendarId);
+                }
                 CalendarEventItem updatedItem = createCalendarEventItem(updatedEvent, calendarId, calendarName);
                 Dictionary<string, CalendarEventMetadata> metadataById = await getMetadataByEventIdAsync(calendarId, new List<CalendarEventItem> { updatedItem }, cancellationToken);
                 CalendarEventMetadata? metadataOrNull;
@@ -147,9 +154,15 @@ public sealed partial class GoogleCalendarService
             {
                 EventsResource.DeleteRequest request = calendarService.Events.Delete(requiredCalendarId, requiredEventId);
                 request.ModifyRequest = message => ResourceEditVersion.Apply(message, expectedETag);
-                await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
+                try
+                {
+                    await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
+                }
+                finally
+                {
+                    expireCalendarEventCache(calendarId);
+                }
                 await deleteMetadataAsync(calendarId, eventId, cancellationToken);
-                expireCalendarEventCache(calendarId);
             }
         }
     }

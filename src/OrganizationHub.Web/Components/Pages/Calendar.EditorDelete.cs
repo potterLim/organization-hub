@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
@@ -9,6 +10,7 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Calendar
 {
+    private string mDeletionConflictMessage = string.Empty;
     private void requestDelete(CalendarEventItem calendarEvent)
     {
         mDeleteCandidateOrNull = calendarEvent;
@@ -59,7 +61,7 @@ public partial class Calendar
                 await markDeletionFailedAsync(auditLogId, CalendarEventDeletionFailureMessage.CreateOptional("삭제 전에 일정이 변경되었습니다."));
             }
             await loadEventsAsync();
-            mErrorMessage = "다른 사용자가 일정을 변경하여 삭제하지 않았습니다. 최신 내용을 확인한 뒤 다시 삭제해 주세요.";
+            mDeletionConflictMessage = "다른 사용자가 일정을 변경하여 삭제하지 않았습니다. 최신 내용을 확인한 뒤 다시 삭제해 주세요.";
             return;
         }
         catch (UnauthorizedAccessException)
@@ -77,6 +79,7 @@ public partial class Calendar
         }
         catch (Exception exception)
         {
+            Logger.LogWarning(exception, "Calendar event {EventId} deletion failed.", deleteCandidate.Id);
             if (auditLogId.HasValue)
             {
                 await markDeletionFailedAsync(auditLogId, CalendarEventDeletionFailureMessage.CreateOptional(exception.Message));
@@ -95,8 +98,9 @@ public partial class Calendar
             await CalendarEventDeletionAuditLogService.MarkDeletionSucceededAsync(auditLogId, CancellationToken.None);
             recordLoadedChangeSnapshot();
         }
-        catch
+        catch (Exception exception)
         {
+            Logger.LogWarning(exception, "Calendar deletion audit {AuditLogId} could not be marked successful.", auditLogId);
             completionWarning = "일정은 삭제됐지만 삭제 기록 상태를 갱신하지 못했습니다. 잠시 후 새로고침해 주세요.";
         }
 
@@ -112,8 +116,9 @@ public partial class Calendar
         {
             await CalendarEventDeletionAuditLogService.MarkDeletionFailedAsync(auditLogId, failureMessage, CancellationToken.None);
         }
-        catch
+        catch (Exception exception)
         {
+            Logger.LogWarning(exception, "Calendar deletion audit {AuditLogId} could not be marked failed.", auditLogId);
         }
     }
 }

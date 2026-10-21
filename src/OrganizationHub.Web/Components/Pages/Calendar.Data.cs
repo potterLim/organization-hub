@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 
@@ -19,6 +20,7 @@ public partial class Calendar
 
         mIsLoading = true;
         mErrorMessage = string.Empty;
+        mDeletionConflictMessage = string.Empty;
         try
         {
             DateTime monthStart = mCurrentMonth;
@@ -42,8 +44,9 @@ public partial class Calendar
             EChangeVersionStability stability = readResult.IsStable ? EChangeVersionStability.Stable : EChangeVersionStability.Unstable;
             recordLoadedChangeSnapshot(readResult.Snapshot, stability);
         }
-        catch
+        catch (Exception exception)
         {
+            Logger.LogWarning(exception, "Calendar events could not be loaded for {CalendarId}.", mSelectedCalendarId);
             mErrorMessage = "일정을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
         }
 

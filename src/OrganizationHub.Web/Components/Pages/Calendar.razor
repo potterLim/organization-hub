@@ -14,6 +14,11 @@
 
 <UnsavedChangesGuard HasChanges="@(mIsEditorOpen && hasEditorChanges())" />
 
+@if (string.IsNullOrWhiteSpace(mDeletionConflictMessage) == false)
+{
+    <MudAlert Severity="Severity.Warning" Class="mb-4" role="alert">@mDeletionConflictMessage</MudAlert>
+}
+
 @if (string.IsNullOrWhiteSpace(mPreviousDraft) == false)
 {
     <MudAlert Severity="Severity.Info" Class="mb-3">
