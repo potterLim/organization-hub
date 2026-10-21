@@ -18,6 +18,40 @@ namespace OrganizationHub.Web.Tests.Services;
 
 public sealed class ResourceEditConcurrencyTests
 {
+    [Fact]
+    public async Task ExternalCalendarConflictReloadsTheCurrentVersionInsteadOfCachedContentAsync()
+    {
+        using (TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(PermissionKeys.CALENDAR_READ))
+        using (MemoryCache cache = new MemoryCache(new MemoryCacheOptions()))
+        {
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                PositionPermissionGrant grant = new PositionPermissionGrant();
+                grant.PositionId = 1;
+                grant.PermissionKey = PermissionKeys.CALENDAR_DELETE;
+                grant.ScopeType = EPermissionScopeType.Global;
+                grant.IsAllowed = true;
+                db.PositionPermissionGrants.Add(grant);
+                await db.SaveChangesAsync();
+            }
+            VersionedGoogleTransport transport = new VersionedGoogleTransport();
+            OrganizationPermissionService permissions = new OrganizationPermissionService(factory);
+            GoogleCalendarService calendar = new GoogleCalendarService(transport, Options.Create(new GoogleApiOptions()), factory, cache, NullLogger<GoogleCalendarService>.Instance, new ChangeVersionService(), new PermissionService(factory, new FakeDriveService(), cache, permissions));
+            UserSession session = OperationPermissionRegressionTests.createSession();
+            CalendarId id = CalendarId.CreateRequired("calendar");
+            CalendarName name = CalendarName.CreateOptional("Calendar");
+            CalendarEventDateRange range = new CalendarEventDateRange(new DateTime(2026, 10, 1), new DateTime(2026, 11, 1));
+            CalendarEventItem original = Assert.Single(await calendar.GetEventsAsync(session, id, name, range, CancellationToken.None));
+            using (System.Net.Http.HttpClient client = new System.Net.Http.HttpClient(transport, false))
+            {
+                await client.PatchAsync("https://example.test/item", new System.Net.Http.StringContent("{\"summary\":\"External change\"}"));
+            }
+            await Assert.ThrowsAsync<ResourceEditConflictException>(() => calendar.DeleteEventAsync(session, id, CalendarEventId.CreateRequired("item"), original.ETag, CancellationToken.None));
+            Assert.Equal("External change", Assert.Single(await calendar.GetEventsAsync(session, id, name, range, CancellationToken.None)).Summary);
+            Assert.Equal(0, transport.Deletes);
+        }
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

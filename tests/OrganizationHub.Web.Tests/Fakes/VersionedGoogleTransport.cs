@@ -112,7 +112,7 @@ public sealed class VersionedGoogleTransport : HttpMessageHandler, IGoogleApiCre
         result["end"] = JsonNode.Parse("{\"dateTime\":\"2026-10-19T10:00:00Z\"}");
         HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
         string jsonResult = result.ToJsonString();
-        if (request.Method == HttpMethod.Get && request.RequestUri!.AbsolutePath.EndsWith("/tasks", System.StringComparison.Ordinal))
+        if (request.Method == HttpMethod.Get && (request.RequestUri!.AbsolutePath.EndsWith("/tasks", System.StringComparison.Ordinal) || request.RequestUri.AbsolutePath.EndsWith("/events", System.StringComparison.Ordinal)))
         {
             jsonResult = "{\"items\":[" + jsonResult + "]}";
         }
