@@ -34,7 +34,7 @@ async function proof(page, width, account, name, action) {
     await action();
     await expect(page.locator('#blazor-error-ui')).not.toBeVisible();
     await expect(page.locator('#components-reconnect-modal')).not.toBeVisible();
-    assert((await page.title()).includes('Organization Hub'));
+    await expect(page).toHaveTitle(/Organization Hub/);
     assert((await page.locator('body').innerText()).length > 40);
     const geometry = await page.evaluate(() => ({ clientWidth: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth }));
     assert(geometry.scrollWidth <= geometry.clientWidth + 1, JSON.stringify(geometry));

@@ -80,6 +80,9 @@
 }
 
 .hub-todo-drag-handle {
+    background: transparent;
+    border: 0;
+    padding: 0;
     align-items: center;
     color: rgba(78, 104, 145, .72);
     cursor: grab;
@@ -112,6 +115,7 @@
 
 .hub-todo-title {
     overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 .hub-todo-meta {

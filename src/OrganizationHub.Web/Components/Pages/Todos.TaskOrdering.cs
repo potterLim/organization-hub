@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
@@ -11,6 +12,28 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Todos
 {
+    private async Task moveTaskByKeyAsync(TodoTaskItem task, KeyboardEventArgs args)
+    {
+        if (args.Key != "ArrowUp" && args.Key != "ArrowDown")
+        {
+            return;
+        }
+        List<TodoTaskItem> tasks = getPendingTasks().Where(item => item.TaskListId == task.TaskListId).ToList();
+        int index = tasks.FindIndex(item => item.Id == task.Id);
+        int target = index + (args.Key == "ArrowUp" ? -1 : 1);
+        if (index < 0 || target < 0 || target >= tasks.Count)
+        {
+            return;
+        }
+        if (args.Key == "ArrowUp")
+        {
+            await moveTaskBeforeAsync(TodoTaskId.CreateRequired(task.Id), TodoTaskId.CreateRequired(tasks[target].Id));
+        }
+        else
+        {
+            await moveTaskAfterAsync(TodoTaskId.CreateRequired(task.Id), TodoTaskId.CreateRequired(tasks[target].Id));
+        }
+    }
 
     [JSInvokable("MoveTaskBeforeFromScript")]
     public async Task MoveTaskBeforeFromScriptAsync(string sourceTaskId, string targetTaskId)

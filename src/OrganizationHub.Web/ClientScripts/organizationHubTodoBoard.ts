@@ -285,6 +285,12 @@ export function initializeTodoSortable(containerElement: HTMLElement | null | un
     const state: TodoBoardState = { abortController: abortController, draggedRowHeight: 0, draggedTaskId: "", dropAfter: false, dropTargetTaskId: "", isPointerDragging: false, placeholderElement: null, pointerId: -1, previewElement: null, previewOffsetX: 0, previewOffsetY: 0, sourceColumnElement: null, sourceListElement: null, startX: 0, startY: 0 };
     const signal: AbortSignal = abortController.signal;
 
+    containerElement.addEventListener("keydown", (event: KeyboardEvent) => {
+        if ((event.key === "ArrowUp" || event.key === "ArrowDown") && (event.target as Element | null)?.closest(".hub-todo-drag-handle")) {
+            event.preventDefault();
+        }
+    }, { signal: signal });
+
     containerElement.addEventListener("pointerdown", (event: PointerEvent) => {
         if (event.button !== 0) {
             return;

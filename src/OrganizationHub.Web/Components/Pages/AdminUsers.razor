@@ -19,6 +19,59 @@
 }
 
 <MudGrid Spacing="6" Class="hub-management-grid hub-admin-page-grid hub-user-directory">
+    <MudItem xs="12" lg="12" xl="8">
+        <MudPaper Class="hub-card hub-list-card pa-4">
+            <div class="hub-admin-section-heading">
+                <MudText Typo="Typo.h6">사용자 목록 · @getFilteredUsers().Count 명</MudText>
+                <MudButton Href="/admin/users#user-editor" OnClick="clearForm" Variant="Variant.Outlined" Color="Color.Primary">새 사용자</MudButton>
+            </div>
+            <MudTextField @bind-Value="mUserSearchOrNull" Label="사용자 검색" Placeholder="아이디 또는 표시 이름" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <div class="hub-position-selection-grid">
+                <MudSelect T="int?" Label="소속 팀 필터" @bind-Value="mFilterTeamIdOrNull" Clearable="true" Placeholder="모든 팀" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (Team team in mTeams)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect T="EUserActivationFilter" Label="활성 상태 필터" @bind-Value="mFilterStatus" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <MudSelectItem T="EUserActivationFilter" Value="EUserActivationFilter.All">전체</MudSelectItem>
+                    <MudSelectItem T="EUserActivationFilter" Value="EUserActivationFilter.Active">활성</MudSelectItem>
+                    <MudSelectItem T="EUserActivationFilter" Value="EUserActivationFilter.Inactive">비활성</MudSelectItem>
+                </MudSelect>
+            </div>
+            <MudTable Items="getFilteredUsers()" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
+                <NoRecordsContent><MudText>조건에 맞는 사용자가 없습니다. 검색어나 필터를 변경해 주세요.</MudText></NoRecordsContent>
+                <HeaderContent>
+                    <MudTh>아이디</MudTh>
+                    <MudTh>표시 이름</MudTh>
+                    <MudTh>소속</MudTh>
+                    <MudTh>직책</MudTh>
+                    <MudTh>상태</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate Context="user">
+                    <MudTd DataLabel="아이디 (필수)">@user.Username</MudTd>
+                    <MudTd DataLabel="표시 이름 (필수)">@user.DisplayName</MudTd>
+                    <MudTd DataLabel="소속">@getAffiliationName(user)</MudTd>
+                    <MudTd DataLabel="직책 (필수)">@getPositionName(user)</MudTd>
+                    <MudTd DataLabel="상태"><span class="@(user.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(user.IsActive ? "활성" : "비활성")</span></MudTd>
+                    <MudTd DataLabel="작업" Class="hub-action-cell">
+                        <div class="hub-table-actions">
+                            @if (canManageUser(user))
+                            {
+                                <MudTooltip Text="사용자 수정">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" Href="/admin/users#user-editor" OnClick="@(() => editUser(user))" aria-label="@(user.DisplayName + " 사용자 수정")" />
+                                </MudTooltip>
+                                <MudTooltip Text="@(user.IsActive ? "사용자 비활성화" : "사용자 활성화")">
+                                    <MudIconButton Icon="@(user.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => toggleUserActiveAsync(user))" aria-label="@(user.DisplayName + (user.IsActive ? " 사용자 비활성화" : " 사용자 활성화"))" />
+                                </MudTooltip>
+                            }
+                        </div>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
     <MudItem xs="12" lg="12" xl="4" Class="hub-mobile-create-last" id="user-editor">
         <MudPaper Class="hub-card hub-form-card pa-4">
             <div class="hub-admin-form-heading">
@@ -74,59 +127,6 @@
                     <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="resetPasswordAsync" Class="hub-primary-action-button">비밀번호 초기화</MudButton>
                 </div>
             }
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" lg="12" xl="8">
-        <MudPaper Class="hub-card hub-list-card pa-4">
-            <div class="hub-admin-section-heading">
-                <MudText Typo="Typo.h6">사용자 목록 · @getFilteredUsers().Count 명</MudText>
-                <MudButton Href="/admin/users#user-editor" OnClick="clearForm" Variant="Variant.Outlined" Color="Color.Primary">새 사용자</MudButton>
-            </div>
-            <MudTextField @bind-Value="mUserSearchOrNull" Label="사용자 검색" Placeholder="아이디 또는 표시 이름" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
-            <div class="hub-position-selection-grid">
-                <MudSelect T="int?" Label="소속 팀 필터" @bind-Value="mFilterTeamIdOrNull" Clearable="true" Placeholder="모든 팀" Variant="Variant.Outlined" Margin="Margin.Dense">
-                    @foreach (Team team in mTeams)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)team.Id)">@team.DisplayName</MudSelectItem>
-                    }
-                </MudSelect>
-                <MudSelect T="EUserActivationFilter" Label="활성 상태 필터" @bind-Value="mFilterStatus" Variant="Variant.Outlined" Margin="Margin.Dense">
-                    <MudSelectItem T="EUserActivationFilter" Value="EUserActivationFilter.All">전체</MudSelectItem>
-                    <MudSelectItem T="EUserActivationFilter" Value="EUserActivationFilter.Active">활성</MudSelectItem>
-                    <MudSelectItem T="EUserActivationFilter" Value="EUserActivationFilter.Inactive">비활성</MudSelectItem>
-                </MudSelect>
-            </div>
-            <MudTable Items="getFilteredUsers()" Dense="true" Hover="true" Elevation="0" Class="hub-admin-table">
-                <NoRecordsContent><MudText>조건에 맞는 사용자가 없습니다. 검색어나 필터를 변경해 주세요.</MudText></NoRecordsContent>
-                <HeaderContent>
-                    <MudTh>아이디</MudTh>
-                    <MudTh>표시 이름</MudTh>
-                    <MudTh>소속</MudTh>
-                    <MudTh>직책</MudTh>
-                    <MudTh>상태</MudTh>
-                    <MudTh></MudTh>
-                </HeaderContent>
-                <RowTemplate Context="user">
-                    <MudTd DataLabel="아이디 (필수)">@user.Username</MudTd>
-                    <MudTd DataLabel="표시 이름 (필수)">@user.DisplayName</MudTd>
-                    <MudTd DataLabel="소속">@getAffiliationName(user)</MudTd>
-                    <MudTd DataLabel="직책 (필수)">@getPositionName(user)</MudTd>
-                    <MudTd DataLabel="상태"><span class="@(user.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(user.IsActive ? "활성" : "비활성")</span></MudTd>
-                    <MudTd DataLabel="작업" Class="hub-action-cell">
-                        <div class="hub-table-actions">
-                            @if (canManageUser(user))
-                            {
-                                <MudTooltip Text="사용자 수정">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" Href="/admin/users#user-editor" OnClick="@(() => editUser(user))" aria-label="@(user.DisplayName + " 사용자 수정")" />
-                                </MudTooltip>
-                                <MudTooltip Text="@(user.IsActive ? "사용자 비활성화" : "사용자 활성화")">
-                                    <MudIconButton Icon="@(user.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => toggleUserActiveAsync(user))" aria-label="@(user.DisplayName + (user.IsActive ? " 사용자 비활성화" : " 사용자 활성화"))" />
-                                </MudTooltip>
-                            }
-                        </div>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
         </MudPaper>
     </MudItem>
 </MudGrid>

@@ -8,6 +8,8 @@
 @inject IClientTimeZoneService ClientTimeZoneService
 @inject IJSRuntime JavaScriptRuntime
 
+<UnsavedChangesGuard HasChanges="@(string.IsNullOrWhiteSpace(mEditingTaskId) == false || string.IsNullOrWhiteSpace(mNewTaskTitle) == false || mNewTaskDueAt.HasValue)" />
+
 @if (string.IsNullOrWhiteSpace(mPreviousDraft) == false)
 {
     <MudAlert Severity="Severity.Info" Class="mb-3">
@@ -159,6 +161,7 @@ else
                                                      Task="task"
                                                      CompletionState="ETodoTaskCompletionState.NeedsAction"
                                                      CanDrag="canDragTask(task, ETodoTaskCompletionState.NeedsAction)"
+                                                     OrderKeyDown="@(args => moveTaskByKeyAsync(task, args))"
                                                      CanWrite="canWriteTask(task)"
                                                      CanDelete="canDeleteTask(task)"
                                                      IsEditing="@(mEditingTaskId == task.Id)"

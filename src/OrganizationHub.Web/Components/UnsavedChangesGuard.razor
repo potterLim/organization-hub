@@ -1,0 +1,62 @@
+@inject NavigationManager NavigationManager
+
+<NavigationLock ConfirmExternalNavigation="@HasChanges" OnBeforeInternalNavigation="beforeNavigationAsync" />
+@if (mPendingLocationOrNull != null)
+{
+    <section @ref="mNoticeElement" tabindex="-1" role="alert" class="mb-4">
+        <MudAlert Severity="Severity.Warning">
+            저장하지 않은 입력이 있습니다. 계속 작성하거나 입력을 버리고 이동해 주세요.
+            <div class="hub-form-actions">
+                <MudButton OnClick="keepEditing">계속 작성</MudButton>
+                <MudButton OnClick="discardAndNavigate" Color="Color.Warning">입력 버리고 이동</MudButton>
+            </div>
+        </MudAlert>
+    </section>
+}
+
+@code
+{
+    [Parameter]
+    public bool HasChanges { get; set; }
+
+    private string? mPendingLocationOrNull;
+    private bool mAllowNavigation;
+    private bool mShouldFocusNotice;
+    private ElementReference mNoticeElement;
+
+    private Task beforeNavigationAsync(LocationChangingContext context)
+    {
+        if (HasChanges && mAllowNavigation == false)
+        {
+            context.PreventNavigation();
+            mPendingLocationOrNull = context.TargetLocation;
+            mShouldFocusNotice = true;
+            return InvokeAsync(StateHasChanged);
+        }
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (mShouldFocusNotice)
+        {
+            mShouldFocusNotice = false;
+            await mNoticeElement.FocusAsync();
+        }
+    }
+
+    private void keepEditing()
+    {
+        mPendingLocationOrNull = null;
+    }
+
+    private void discardAndNavigate()
+    {
+        if (mPendingLocationOrNull == null)
+        {
+            return;
+        }
+        mAllowNavigation = true;
+        NavigationManager.NavigateTo(mPendingLocationOrNull);
+    }
+}

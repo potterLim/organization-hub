@@ -175,6 +175,6 @@
     }
 }
 
-@media (max-width: 1919.98px) {
-    .hub-user-directory > .hub-mobile-create-last { order: 1; }
+.hub-user-directory > .hub-mobile-create-last {
+    order: 1;
 }

@@ -10,6 +10,9 @@
 @inject IClientTimeZoneService ClientTimeZoneService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JavaScriptRuntime
+@inject Microsoft.Extensions.Logging.ILogger<Calendar> Logger
+
+<UnsavedChangesGuard HasChanges="@(mIsEditorOpen && hasEditorChanges())" />
 
 @if (string.IsNullOrWhiteSpace(mPreviousDraft) == false)
 {

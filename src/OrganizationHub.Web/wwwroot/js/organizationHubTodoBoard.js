@@ -212,6 +212,11 @@ export function initializeTodoSortable(containerElement, dotNetReference) {
     const abortController = new AbortController();
     const state = { abortController: abortController, draggedRowHeight: 0, draggedTaskId: "", dropAfter: false, dropTargetTaskId: "", isPointerDragging: false, placeholderElement: null, pointerId: -1, previewElement: null, previewOffsetX: 0, previewOffsetY: 0, sourceColumnElement: null, sourceListElement: null, startX: 0, startY: 0 };
     const signal = abortController.signal;
+    containerElement.addEventListener("keydown", (event) => {
+        if ((event.key === "ArrowUp" || event.key === "ArrowDown") && event.target?.closest(".hub-todo-drag-handle")) {
+            event.preventDefault();
+        }
+    }, { signal: signal });
     containerElement.addEventListener("pointerdown", (event) => {
         if (event.button !== 0) {
             return;
