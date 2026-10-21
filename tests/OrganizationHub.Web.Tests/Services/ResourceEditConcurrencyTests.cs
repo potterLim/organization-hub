@@ -37,12 +37,12 @@ public sealed class ResourceEditConcurrencyTests
             if (isCalendar)
             {
                 GoogleCalendarService calendar = new GoogleCalendarService(transport, Options.Create(new GoogleApiOptions()), factory, cache, NullLogger<GoogleCalendarService>.Instance, new ChangeVersionService(), new PermissionService(factory, new FakeDriveService(), cache, organization));
-                await Assert.ThrowsAsync<ResourceEditConflictException>(() => calendar.DeleteEventAsync(session, CalendarId.CreateRequired("calendar"), CalendarEventId.CreateRequired("item"), CancellationToken.None));
+                await Assert.ThrowsAsync<ResourceEditConflictException>(() => calendar.DeleteEventAsync(session, CalendarId.CreateRequired("calendar"), CalendarEventId.CreateRequired("item"), originalETag, CancellationToken.None));
             }
             else
             {
                 GoogleTasksTodoService todos = new GoogleTasksTodoService(factory, transport, NullLogger<GoogleTasksTodoService>.Instance, Options.Create(new GoogleApiOptions()), new ChangeVersionService(), organization);
-                await Assert.ThrowsAsync<ResourceEditConflictException>(() => todos.DeleteTaskAsync(session, TodoTaskListId.CreateRequired("tasks"), TodoTaskId.CreateRequired("item"), CancellationToken.None));
+                await Assert.ThrowsAsync<ResourceEditConflictException>(() => todos.DeleteTaskAsync(session, TodoTaskListId.CreateRequired("tasks"), TodoTaskId.CreateRequired("item"), originalETag, CancellationToken.None));
             }
             Assert.Equal(0, transport.Deletes);
             Assert.Equal("Another writer", transport.Title);

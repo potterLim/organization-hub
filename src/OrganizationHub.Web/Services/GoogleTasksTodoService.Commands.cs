@@ -120,7 +120,7 @@ public sealed partial class GoogleTasksTodoService
         return await setTaskCompletionStateAsync(userSession, taskListId, taskId, ETodoTaskCompletionState.NeedsAction, cancellationToken);
     }
 
-    public async Task DeleteTaskAsync(UserSession userSession, TodoTaskListId taskListId, TodoTaskId taskId, CancellationToken cancellationToken)
+    public async Task DeleteTaskAsync(UserSession userSession, TodoTaskListId taskListId, TodoTaskId taskId, string expectedETag, CancellationToken cancellationToken)
     {
         validateTaskId(taskId);
         await ensureCanModifyTaskAsync(userSession, taskListId, taskId, EResourceOperation.Delete, cancellationToken);
@@ -131,7 +131,8 @@ public sealed partial class GoogleTasksTodoService
             using (GoogleTasksApi tasksService = await createTasksServiceAsync(cancellationToken))
             {
                 Google.Apis.Tasks.v1.TasksResource.DeleteRequest request = tasksService.Tasks.Delete(requiredTaskListId, requiredTaskId);
-                await request.ExecuteAsync(cancellationToken);
+                request.ModifyRequest = message => ResourceEditVersion.Apply(message, expectedETag);
+                await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
                 await deleteMetadataAsync(taskListId, taskId, cancellationToken);
             }
         }

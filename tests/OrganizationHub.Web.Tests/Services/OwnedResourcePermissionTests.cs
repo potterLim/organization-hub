@@ -285,7 +285,7 @@ public sealed class OwnedResourcePermissionTests
         UserSession session = OperationPermissionRegressionTests.createSession();
         if (operation == "delete")
         {
-            return service.DeleteEventAsync(session, CalendarId.CreateOptional("calendar"), CalendarEventId.CreateOptional("event"), CancellationToken.None);
+            return service.DeleteEventAsync(session, CalendarId.CreateOptional("calendar"), CalendarEventId.CreateOptional("event"), "\"baseline\"", CancellationToken.None);
         }
 
         CalendarEventFormModel form = new CalendarEventFormModel();
@@ -306,7 +306,7 @@ public sealed class OwnedResourcePermissionTests
         switch (operation)
         {
             case "delete":
-                return service.DeleteTaskAsync(session, list, task, CancellationToken.None);
+                return service.DeleteTaskAsync(session, list, task, "\"baseline\"", CancellationToken.None);
             case "complete":
                 return service.CompleteTaskAsync(session, list, task, CancellationToken.None);
             case "reopen":

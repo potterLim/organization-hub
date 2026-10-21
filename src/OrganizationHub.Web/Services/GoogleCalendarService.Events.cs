@@ -136,7 +136,7 @@ public sealed partial class GoogleCalendarService
         }
     }
 
-    public async Task DeleteEventAsync(UserSession userSession, CalendarId calendarId, CalendarEventId eventId, CancellationToken cancellationToken)
+    public async Task DeleteEventAsync(UserSession userSession, CalendarId calendarId, CalendarEventId eventId, string expectedETag, CancellationToken cancellationToken)
     {
         await ensureCanModifyEventAsync(userSession, calendarId, eventId, EResourceOperation.Delete, cancellationToken);
         string requiredCalendarId = calendarId.GetRequiredValue();
@@ -146,7 +146,8 @@ public sealed partial class GoogleCalendarService
             using (CalendarService calendarService = await createCalendarServiceAsync(cancellationToken))
             {
                 EventsResource.DeleteRequest request = calendarService.Events.Delete(requiredCalendarId, requiredEventId);
-                await request.ExecuteAsync(cancellationToken);
+                request.ModifyRequest = message => ResourceEditVersion.Apply(message, expectedETag);
+                await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
                 await deleteMetadataAsync(calendarId, eventId, cancellationToken);
                 expireCalendarEventCache(calendarId);
             }

@@ -153,8 +153,13 @@ public partial class Todos
             mDeletingTaskId = string.Empty;
             mMessage = string.Empty;
             await InvokeAsync(StateHasChanged);
-            await TodoService.DeleteTaskAsync(CurrentUserSessionOrNull, TodoTaskListId.CreateOptional(task.TaskListId), TodoTaskId.CreateOptional(task.Id), CancellationToken.None);
+            await TodoService.DeleteTaskAsync(CurrentUserSessionOrNull, TodoTaskListId.CreateOptional(task.TaskListId), TodoTaskId.CreateOptional(task.Id), task.ETag, CancellationToken.None);
             recordLoadedChangeSnapshot();
+        }
+        catch (ResourceEditConflictException)
+        {
+            await loadTasksAsync();
+            showError("다른 사용자가 할 일을 변경하여 삭제하지 않았습니다. 최신 내용을 확인한 뒤 다시 삭제해 주세요.");
         }
         catch (Exception exception)
         {

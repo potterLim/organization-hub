@@ -176,7 +176,7 @@ public sealed class OperationPermissionRegressionTests
                 await service.UpdateTaskAsync(session, form, CancellationToken.None);
                 break;
             case "delete":
-                await service.DeleteTaskAsync(session, listId, taskId, CancellationToken.None);
+                await service.DeleteTaskAsync(session, listId, taskId, "\"baseline\"", CancellationToken.None);
                 break;
             case "complete":
                 await service.CompleteTaskAsync(session, listId, taskId, CancellationToken.None);
@@ -211,7 +211,7 @@ public sealed class OperationPermissionRegressionTests
                 await service.UpdateEventAsync(session, form, CalendarName.CreateOptional("검증"), CancellationToken.None);
                 break;
             case "delete":
-                await service.DeleteEventAsync(session, CalendarId.CreateOptional("calendar"), CalendarEventId.CreateOptional("event"), CancellationToken.None);
+                await service.DeleteEventAsync(session, CalendarId.CreateOptional("calendar"), CalendarEventId.CreateOptional("event"), "\"baseline\"", CancellationToken.None);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(operation));

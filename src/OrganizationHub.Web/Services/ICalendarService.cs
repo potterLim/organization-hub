@@ -12,5 +12,5 @@ public interface ICalendarService
     Task<IReadOnlyList<CalendarEventItem>> GetAggregateEventsAsync(UserSession userSession, CalendarEventDateRange dateRange, CancellationToken cancellationToken);
     Task<CalendarEventItem> CreateEventAsync(UserSession userSession, CalendarEventFormModel formModel, CalendarName calendarName, CancellationToken cancellationToken);
     Task<CalendarEventItem> UpdateEventAsync(UserSession userSession, CalendarEventFormModel formModel, CalendarName calendarName, CancellationToken cancellationToken);
-    Task DeleteEventAsync(UserSession userSession, CalendarId calendarId, CalendarEventId eventId, CancellationToken cancellationToken);
+    Task DeleteEventAsync(UserSession userSession, CalendarId calendarId, CalendarEventId eventId, string expectedETag, CancellationToken cancellationToken);
 }

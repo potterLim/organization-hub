@@ -16,6 +16,6 @@ public interface ITodoService
     Task<TodoTaskItem> UpdateTaskAsync(UserSession userSession, TodoTaskFormModel formModel, CancellationToken cancellationToken);
     Task<TodoTaskItem> CompleteTaskAsync(UserSession userSession, TodoTaskListId taskListId, TodoTaskId taskId, CancellationToken cancellationToken);
     Task<TodoTaskItem> ReopenTaskAsync(UserSession userSession, TodoTaskListId taskListId, TodoTaskId taskId, CancellationToken cancellationToken);
-    Task DeleteTaskAsync(UserSession userSession, TodoTaskListId taskListId, TodoTaskId taskId, CancellationToken cancellationToken);
+    Task DeleteTaskAsync(UserSession userSession, TodoTaskListId taskListId, TodoTaskId taskId, string expectedETag, CancellationToken cancellationToken);
     Task<TodoTaskItem> MoveTaskAsync(UserSession userSession, TodoTaskListId taskListId, TodoTaskId taskId, TodoTaskId previousTaskId, CancellationToken cancellationToken);
 }

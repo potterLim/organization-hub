@@ -50,7 +50,17 @@ public partial class Calendar
         try
         {
             auditLogId = await CalendarEventDeletionAuditLogService.RecordPendingDeletionAsync(currentUserSession, deleteCandidate, CancellationToken.None);
-            await CalendarService.DeleteEventAsync(currentUserSession, calendarId, CalendarEventId.CreateOptional(deleteCandidate.Id), CancellationToken.None);
+            await CalendarService.DeleteEventAsync(currentUserSession, calendarId, CalendarEventId.CreateOptional(deleteCandidate.Id), deleteCandidate.ETag, CancellationToken.None);
+        }
+        catch (Services.ResourceEditConflictException)
+        {
+            if (auditLogId.HasValue)
+            {
+                await markDeletionFailedAsync(auditLogId, CalendarEventDeletionFailureMessage.CreateOptional("삭제 전에 일정이 변경되었습니다."));
+            }
+            await loadEventsAsync();
+            mErrorMessage = "다른 사용자가 일정을 변경하여 삭제하지 않았습니다. 최신 내용을 확인한 뒤 다시 삭제해 주세요.";
+            return;
         }
         catch (UnauthorizedAccessException)
         {
