@@ -18,6 +18,7 @@
         }
         <form method="post" action="/account/login">
             <AntiforgeryToken />
+            <input type="hidden" name="returnUrl" value="@ReturnUrlOrNull" />
             <div class="hub-login-field">
                 <label for="username">아이디</label>
                 <input id="username" name="username" autocomplete="username" required />
@@ -33,6 +34,9 @@
 
 @code
 {
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    public string? ReturnUrlOrNull { get; set; }
+
     [SupplyParameterFromQuery(Name = "reason")]
     public string? ReasonOrNull { get; set; }
 

@@ -25,7 +25,8 @@ public sealed class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> LoginAsync(
         [FromForm(Name = "username")] string? usernameOrNull,
-        [FromForm(Name = "password")] string? passwordOrNull
+        [FromForm(Name = "password")] string? passwordOrNull,
+        [FromForm(Name = "returnUrl")] string? returnUrlOrNull = null
     )
     {
         Username username = Username.CreateOptional(usernameOrNull);
@@ -39,12 +40,17 @@ public sealed class AccountController : Controller
                 errorMessage = "로그인에 실패했습니다.";
             }
 
-            return Redirect("/login?error=" + Uri.EscapeDataString(errorMessage));
+            string returnQuery = returnUrlOrNull != null && Url.IsLocalUrl(returnUrlOrNull) ? "&returnUrl=" + Uri.EscapeDataString(returnUrlOrNull) : string.Empty;
+            return Redirect("/login?error=" + Uri.EscapeDataString(errorMessage) + returnQuery);
         }
 
         AuthenticationProperties authenticationProperties = new AuthenticationProperties();
         authenticationProperties.IsPersistent = true;
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, loginResult.PrincipalOrNull, authenticationProperties);
+        if (returnUrlOrNull != null && Url.IsLocalUrl(returnUrlOrNull))
+        {
+            return LocalRedirect(returnUrlOrNull);
+        }
         return Redirect("/dashboard");
     }
 

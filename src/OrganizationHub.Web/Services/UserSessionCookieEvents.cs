@@ -1,3 +1,4 @@
+using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -35,7 +36,8 @@ internal sealed class UserSessionCookieEvents : CookieAuthenticationEvents
 
     public override Task RedirectToLogin(RedirectContext<CookieAuthenticationOptions> context)
     {
-        context.Response.Redirect("/login");
+        string returnPath = context.Request.PathBase + context.Request.Path + context.Request.QueryString;
+        context.Response.Redirect("/login?returnUrl=" + Uri.EscapeDataString(returnPath));
         return Task.CompletedTask;
     }
 

@@ -12,6 +12,7 @@
             return;
         }
 
-        NavigationManager.NavigateTo("/login", true);
+        string returnPath = "/" + NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.NavigateTo("/login?returnUrl=" + Uri.EscapeDataString(returnPath), true);
     }
 }
