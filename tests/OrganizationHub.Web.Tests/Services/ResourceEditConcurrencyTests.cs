@@ -21,6 +21,38 @@ public sealed class ResourceEditConcurrencyTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task StaleDeleteCannotRemoveAnotherWritersSavedChangeAsync(bool isCalendar)
+    {
+        using (TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(isCalendar ? PermissionKeys.CALENDAR_DELETE : PermissionKeys.TODOS_DELETE))
+        using (MemoryCache cache = new MemoryCache(new MemoryCacheOptions()))
+        {
+            VersionedGoogleTransport transport = new VersionedGoogleTransport();
+            string originalETag = transport.ETag;
+            using (System.Net.Http.HttpClient client = new System.Net.Http.HttpClient(transport, false))
+            {
+                await client.PatchAsync("https://example.test/item", new System.Net.Http.StringContent("{\"title\":\"Another writer\"}"));
+            }
+            UserSession session = OperationPermissionRegressionTests.createSession();
+            OrganizationPermissionService organization = new OrganizationPermissionService(factory);
+            if (isCalendar)
+            {
+                GoogleCalendarService calendar = new GoogleCalendarService(transport, Options.Create(new GoogleApiOptions()), factory, cache, NullLogger<GoogleCalendarService>.Instance, new ChangeVersionService(), new PermissionService(factory, new FakeDriveService(), cache, organization));
+                await Assert.ThrowsAsync<ResourceEditConflictException>(() => calendar.DeleteEventAsync(session, CalendarId.CreateRequired("calendar"), CalendarEventId.CreateRequired("item"), CancellationToken.None));
+            }
+            else
+            {
+                GoogleTasksTodoService todos = new GoogleTasksTodoService(factory, transport, NullLogger<GoogleTasksTodoService>.Instance, Options.Create(new GoogleApiOptions()), new ChangeVersionService(), organization);
+                await Assert.ThrowsAsync<ResourceEditConflictException>(() => todos.DeleteTaskAsync(session, TodoTaskListId.CreateRequired("tasks"), TodoTaskId.CreateRequired("item"), CancellationToken.None));
+            }
+            Assert.Equal(0, transport.Deletes);
+            Assert.Equal("Another writer", transport.Title);
+            Assert.NotEqual(originalETag, transport.ETag);
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task StaleResourceEditsCannotOverwriteTheFirstWritersTitleAsync(bool isCalendar)
     {
         using (TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(isCalendar ? PermissionKeys.CALENDAR_UPDATE : PermissionKeys.TODOS_UPDATE))

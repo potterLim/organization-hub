@@ -15,6 +15,8 @@ public sealed class VersionedGoogleTransport : HttpMessageHandler, IGoogleApiCre
 {
     private int mVersion = 1;
     private string mStatus = "needsAction";
+    public HttpStatusCode? RejectedPatchStatusOrNull { get; set; }
+    public int Deletes { get; private set; }
     public int Writes
     {
         get; private set;
@@ -32,11 +34,25 @@ public sealed class VersionedGoogleTransport : HttpMessageHandler, IGoogleApiCre
     public void Initialize(ConfigurableHttpClient client)
     {
         client.MessageHandler.InnerHandler = this;
+        client.MessageHandler.NumTries = 1;
     }
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        if ((request.Method == HttpMethod.Patch || request.Method == HttpMethod.Delete) && request.Headers.IfMatch.Count > 0 && request.Headers.IfMatch.ToString() != ETag)
+        {
+            return new HttpResponseMessage(HttpStatusCode.PreconditionFailed);
+        }
+        if (request.Method == HttpMethod.Delete)
+        {
+            Deletes++;
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        }
         if (request.Method == HttpMethod.Patch)
         {
+            if (RejectedPatchStatusOrNull.HasValue)
+            {
+                return new HttpResponseMessage(RejectedPatchStatusOrNull.Value);
+            }
             if (request.Headers.IfMatch.Count > 0 && request.Headers.IfMatch.ToString() != ETag)
             {
                 return new HttpResponseMessage(HttpStatusCode.PreconditionFailed);

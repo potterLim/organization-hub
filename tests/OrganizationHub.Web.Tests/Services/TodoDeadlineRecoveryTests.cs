@@ -220,6 +220,38 @@ public sealed class TodoDeadlineRecoveryTests
         }
     }
 
+    [Theory]
+    [InlineData(System.Net.HttpStatusCode.BadRequest)]
+    [InlineData(System.Net.HttpStatusCode.Forbidden)]
+    [InlineData(System.Net.HttpStatusCode.TooManyRequests)]
+    [InlineData(System.Net.HttpStatusCode.ServiceUnavailable)]
+    public async Task RejectedDeadlineCannotBeAppliedAfterUnrelatedCompletionAsync(System.Net.HttpStatusCode status)
+    {
+        using (TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(PermissionKeys.TODOS_UPDATE))
+        {
+            VersionedGoogleTransport transport = new VersionedGoogleTransport();
+            TodoTaskFormModel form = new TodoTaskFormModel();
+            form.TaskId = "item";
+            form.TaskListId = "tasks";
+            form.Title = "Same title";
+            form.ETag = transport.ETag;
+            form.DueAtUtc = new DateTime(2026, 10, 20, 12, 0, 0, DateTimeKind.Utc);
+            await createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None);
+            form.ETag = transport.ETag;
+            form.DueAtUtc = form.DueAtUtc.Value.AddHours(5);
+            transport.RejectedPatchStatusOrNull = status;
+            await Assert.ThrowsAsync<Google.GoogleApiException>(() => createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None));
+            transport.RejectedPatchStatusOrNull = null;
+            await createService(factory, transport).CompleteTaskAsync(OperationPermissionRegressionTests.createSession(), TodoTaskListId.CreateRequired("tasks"), TodoTaskId.CreateRequired("item"), CancellationToken.None);
+            await createService(factory, transport).RecoverDeadlineChangesAsync(CancellationToken.None);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                Assert.Equal(12, db.TodoTaskMetadata.Single().DueAt!.Value.Hour);
+                Assert.Empty(db.TodoDeadlineChanges);
+            }
+        }
+    }
+
     private static GoogleTasksTodoService createService(TestDbContextFactory factory, VersionedGoogleTransport transport)
     {
         return new GoogleTasksTodoService(factory, transport, NullLogger<GoogleTasksTodoService>.Instance, Options.Create(new GoogleApiOptions()), new ChangeVersionService(), new OrganizationPermissionService(factory));
