@@ -91,7 +91,7 @@ public sealed partial class GoogleTasksTodoService
                 catch (Exception exception)
                 {
                     mLogger.LogWarning(exception, "Deadline change {ChangeId} will be recovered from Google.", deadlineChange.Id);
-                    throw new ResourceSynchronizationException(exception);
+                    throw new ResourceSynchronizationException(exception, string.IsNullOrEmpty(deadlineChange.ConfirmedGoogleETag) == false);
                 }
                 await applyMetadataAsync(updatedItem, cancellationToken);
                 await applyItemPermissionsAsync(userSession, new TodoTaskItem[] { updatedItem }, false, cancellationToken);
