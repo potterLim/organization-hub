@@ -19,7 +19,11 @@ async function go(page, route) {
 }
 async function menu(page, name) {
     const link = page.getByRole('link', { name, exact: true });
-    if (!await link.isVisible()) await page.getByRole('button', { name: '좌측 메뉴 열기', exact: true }).click();
+    const isOnScreen = await link.count() > 0 && await link.evaluate(element => {
+        const bounds = element.getBoundingClientRect();
+        return bounds.left >= 0 && bounds.right <= innerWidth && bounds.width > 0;
+    });
+    if (!isOnScreen) await page.getByRole('button', { name: '좌측 메뉴 열기', exact: true }).click();
     await link.click();
 }
 async function login(page, account, route = '/login') {
@@ -76,6 +80,7 @@ async function proof(page, width, account, name, action) {
                         await page.getByRole('button', { name: '계속 작성', exact: true }).click();
                         await expect(title).toHaveValue('보존해야 하는 일정 초안');
                         await menu(page, '할 일');
+                        await expect(page.getByRole('button', { name: '계속 작성', exact: true })).toBeVisible();
                     });
                     await page.getByRole('button', { name: '입력 버리고 이동', exact: true }).click();
                     await page.waitForURL('**/todos');
@@ -134,6 +139,7 @@ async function proof(page, width, account, name, action) {
                 });
                 await context.close();
             }
+            fs.writeFileSync(path.join(output, `${width}-results.json`), JSON.stringify({ results: results.filter(item => item.width === width), errors }, null, 2));
         }
     } catch (error) {
         results.push({ status: 'fail', error: error.stack });

@@ -97,6 +97,7 @@
     }
 
     .hub-todo-title-row {
+        display: grid;
         gap: 4px;
         grid-template-columns: minmax(0, 1fr);
     }

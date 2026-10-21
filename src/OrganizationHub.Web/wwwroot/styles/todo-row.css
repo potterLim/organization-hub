@@ -99,6 +99,12 @@
     cursor: grabbing;
 }
 
+.hub-todo-drag-handle:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid #216bff;
+    outline-offset: 3px;
+}
+
 .hub-todo-row-main {
     display: grid;
     gap: 4px;
@@ -107,13 +113,14 @@
 
 .hub-todo-title-row {
     align-items: baseline;
-    display: grid;
-    gap: 10px;
-    grid-template-columns: minmax(0, 1fr) max-content;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
     min-width: 0;
 }
 
 .hub-todo-title {
+    flex: 1 1 auto;
     overflow-wrap: anywhere;
     white-space: normal;
 }
