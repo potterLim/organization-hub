@@ -35,6 +35,15 @@ public sealed partial class GoogleTasksTodoService
         {
             foreach (TodoDeadlineChange change in changes)
             {
+                if (string.IsNullOrEmpty(change.ConfirmedGoogleETag))
+                {
+                    if (change.CreatedAt < DateTime.UtcNow.Subtract(ABANDONED_DEADLINE_CHANGE_AGE))
+                    {
+                        mLogger.LogWarning("Deadline change {ChangeId} has no confirmed Google response; the existing deadline is preserved. Reopen the task to retry the edit.", change.Id);
+                        await removeDeadlineChangeAsync(change.Id, cancellationToken);
+                    }
+                    continue;
+                }
                 try
                 {
                     Google.Apis.Tasks.v1.TasksResource.GetRequest request = service.Tasks.Get(change.TaskListId, change.TaskId);
@@ -109,6 +118,16 @@ public sealed partial class GoogleTasksTodoService
         mChangeVersionService.Bump(ChangeVersionKeys.TASKS);
     }
 
+    private async Task confirmDeadlineChangeAsync(TodoDeadlineChange change, string googleETag, CancellationToken cancellationToken)
+    {
+        await using (OrganizationHubDbContext db = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            await db.TodoDeadlineChanges.Where(item => item.Id == change.Id)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.ConfirmedGoogleETag, googleETag), cancellationToken);
+        }
+        change.ConfirmedGoogleETag = googleETag;
+    }
+
     private async Task applyPendingDeadlinesAsync(TodoTaskListId listId, List<TodoTaskItem> tasks, IReadOnlyDictionary<string, TodoTaskMetadata> metadataByTaskId, CancellationToken cancellationToken)
     {
         string requiredListId = listId.GetRequiredValue();
@@ -138,6 +157,8 @@ public sealed partial class GoogleTasksTodoService
 
     private static bool matchesDeadlineChange(TodoDeadlineChange change, TodoTaskItem task)
     {
-        return string.IsNullOrEmpty(task.ETag) == false && task.ETag != change.ExpectedETag && task.Title == change.Title && task.DueAt?.Date == change.DueAt?.Date;
+        // Only a successful write response proves this operation happened. Completion can also change an ETag.
+        return string.IsNullOrEmpty(change.ConfirmedGoogleETag) == false && string.IsNullOrEmpty(task.ETag) == false
+            && task.Title == change.Title && task.DueAt?.Date == change.DueAt?.Date;
     }
 }

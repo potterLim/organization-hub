@@ -243,6 +243,10 @@ public sealed class TodoDeadlineRecoveryTests
             await Assert.ThrowsAsync<Google.GoogleApiException>(() => createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None));
             transport.RejectedPatchStatusOrNull = null;
             await createService(factory, transport).CompleteTaskAsync(OperationPermissionRegressionTests.createSession(), TodoTaskListId.CreateRequired("tasks"), TodoTaskId.CreateRequired("item"), CancellationToken.None);
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                await db.TodoDeadlineChanges.ExecuteUpdateAsync(setters => setters.SetProperty(change => change.CreatedAt, DateTime.UtcNow.AddMinutes(-10)));
+            }
             await createService(factory, transport).RecoverDeadlineChangesAsync(CancellationToken.None);
             using (OrganizationHubDbContext db = factory.CreateDbContext())
             {

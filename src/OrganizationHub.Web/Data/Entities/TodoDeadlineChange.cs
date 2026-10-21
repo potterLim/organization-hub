@@ -11,6 +11,7 @@ public sealed class TodoDeadlineChange
     public string TaskListId { get; set; } = string.Empty;
     public string TaskId { get; set; } = string.Empty;
     public string ExpectedETag { get; set; } = string.Empty;
+    public string ConfirmedGoogleETag { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public DateTime? DueAt
     {

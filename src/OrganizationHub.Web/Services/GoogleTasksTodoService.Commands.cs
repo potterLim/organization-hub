@@ -77,9 +77,15 @@ public sealed partial class GoogleTasksTodoService
                     await removeDeadlineChangeAsync(deadlineChange.Id, CancellationToken.None);
                     throw;
                 }
+                catch (Google.GoogleApiException exception) when ((int)exception.HttpStatusCode >= 400 && (int)exception.HttpStatusCode < 500)
+                {
+                    await removeDeadlineChangeAsync(deadlineChange.Id, CancellationToken.None);
+                    throw;
+                }
                 TodoTaskItem updatedItem = createTaskItem(taskListId, updatedTask);
                 try
                 {
+                    await confirmDeadlineChangeAsync(deadlineChange, updatedItem.ETag, CancellationToken.None);
                     await finishDeadlineChangeAsync(deadlineChange, updatedItem.ETag, cancellationToken);
                 }
                 catch (Exception exception)
