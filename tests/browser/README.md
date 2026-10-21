@@ -25,3 +25,7 @@ Playwright가 프로젝트 외부에 설치되어 있으면 `PLAYWRIGHT_MODULE`�
 `HUB_TEST_URL`, `HUB_TEST_PASSWORD`, `HUB_SCREENSHOT_DIR` 및 필요한 외부 Playwright·Chromium 경로를 제공하고 `node tests/browser/workspace-ux.cjs`로 실행합니다. `/fixture/state/normal`·`empty`를 제공하는 테스트 호스트 전용 검사이며 운영 서버에는 실행하지 않습니다. 상태를 공유하므로 다른 fixture 상태 변경 검사와 순차 실행합니다. 파일 업로드나 결재 제출은 실행하지 않습니다.
 
 날짜 팝업 검사는 좌우 경계뿐 아니라 상하 화면 경계와 고정 헤더 가림도 검사합니다. 날짜 선택·완료·재열기·Escape 및 트리거 포커스 복원도 함께 확인합니다.
+
+`user-directory-layout.cjs`는 사용자 검색 결과가 없거나 팀·활성 상태 필터 조합이 빈 목록을 만들 때 안내 문구와 셀이 카드 및 실제 화면 폭 안에 들어오는지 검사합니다. 검색 해제 시 목록 복원, 아이디의 대소문자 구분 없는 검색, 표시 이름 검색, 필터 복원 및 기존 사용자 편집 폼도 확인하며 데이터를 저장하지 않습니다.
+
+PC 1440×1000·1920×1080과 모바일 480×1040·360×800 및 모바일 표 변환 경계인 720·721px을 검사합니다. `HUB_TEST_URL`, `HUB_TEST_USER`, `HUB_TEST_PASSWORD`, `HUB_SCREENSHOT_DIR`를 제공하고 `node tests/browser/user-directory-layout.cjs`로 실행합니다. `PLAYWRIGHT_MODULE_PATH`와 `HUB_BROWSER_EXECUTABLE`로 외부 런타임을 지정할 수 있습니다. `HUB_MANAGER_USER`를 지정하면 같은 검사를 조직 관리자 계정에서도 실행하며, `HUB_TEST_WIDTHS=480,360`처럼 실행할 폭을 제한할 수 있습니다. `ux-member`(표시 이름 `이민준`), `경영지원팀`, `서비스기획팀`을 포함한 격리된 테스트 fixture가 필요합니다. 결과 JSON과 화면 원본은 지정한 외부 폴더에 저장됩니다.
