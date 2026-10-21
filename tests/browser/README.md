@@ -29,3 +29,7 @@ Playwright가 프로젝트 외부에 설치되어 있으면 `PLAYWRIGHT_MODULE`�
 `user-directory-layout.cjs`는 사용자 검색 결과가 없거나 팀·활성 상태 필터 조합이 빈 목록을 만들 때 안내 문구와 셀이 카드 및 실제 화면 폭 안에 들어오는지 검사합니다. 검색 해제 시 목록 복원, 아이디의 대소문자 구분 없는 검색, 표시 이름 검색, 필터 복원 및 기존 사용자 편집 폼도 확인하며 데이터를 저장하지 않습니다.
 
 PC 1440×1000·1920×1080과 모바일 480×1040·360×800 및 모바일 표 변환 경계인 720·721px을 검사합니다. `HUB_TEST_URL`, `HUB_TEST_USER`, `HUB_TEST_PASSWORD`, `HUB_SCREENSHOT_DIR`를 제공하고 `node tests/browser/user-directory-layout.cjs`로 실행합니다. `PLAYWRIGHT_MODULE_PATH`와 `HUB_BROWSER_EXECUTABLE`로 외부 런타임을 지정할 수 있습니다. `HUB_MANAGER_USER`를 지정하면 같은 검사를 조직 관리자 계정에서도 실행하며, `HUB_TEST_WIDTHS=480,360`처럼 실행할 폭을 제한할 수 있습니다. `ux-member`(표시 이름 `이민준`), `경영지원팀`, `서비스기획팀`을 포함한 격리된 테스트 fixture가 필요합니다. 결과 JSON과 화면 원본은 지정한 외부 폴더에 저장됩니다.
+
+`collaboration-ux.cjs`는 세 화면 크기와 10개 역할 계정에서 홈·일정·할 일·자료실·결재함을 확인합니다. 미저장 일정·할 일의 메뉴 이동 차단과 명시적 폐기, 조회 전용 계정의 긴 제목 표시, 사용자 관리의 첫 Tab 이동, 방향키 정렬 및 초점 유지, 로그인 후 요청 주소 복원과 외부 주소 차단을 검증합니다. 격리 fixture의 첫 공용 할 일 제목을 수정하며 각 화면 크기를 시작할 때 Google 모의 리소스를 초기화합니다. 환경 변수는 위 검사와 같고 `HUB_TEST_WIDTHS=480`으로 특정 폭만 실행할 수 있습니다.
+
+`stale-delete.cjs`는 수정 전용 계정과 삭제 전용 계정의 독립 로그인으로 일정·할 일 삭제 경합을 세 화면 크기에서 재현합니다. 오래된 확인창에서는 삭제가 차단되고 최신 내용이 표시되어야 합니다. fixture는 DELETE의 If-Match 불일치를 HTTP 412로 반환하고, Tasks move 응답에 실제 작업 ID와 새 순서를 반환해야 합니다. 화면 원본·검사 결과는 `HUB_SCREENSHOT_DIR`에 저장합니다.
