@@ -101,6 +101,13 @@
         display: none;
     }
 
+    .hub-user-directory .hub-admin-table .mud-table-empty-row {
+        display: block;
+        overflow-wrap: anywhere;
+        white-space: normal;
+        width: 100%;
+    }
+
     .hub-admin-table tr {
         background: rgba(255, 255, 255, .54);
         border: 1px solid rgba(78, 104, 145, .12);

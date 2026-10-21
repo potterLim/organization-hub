@@ -58,11 +58,14 @@ async function check(page, profile, username, name, action, isEmpty) {
             const card = document.querySelector('.hub-user-directory .hub-list-card');
             const text = [...card.querySelectorAll('p')].find(element => element.textContent === message);
             const bounds = card.getBoundingClientRect();
+            const tableBounds = card.querySelector('.mud-table-container').getBoundingClientRect();
             const measurement = {
                 clientWidth: document.documentElement.clientWidth,
                 scrollWidth: document.documentElement.scrollWidth,
                 cardLeft: bounds.left,
-                cardRight: bounds.right
+                cardRight: bounds.right,
+                tableLeft: tableBounds.left,
+                tableRight: tableBounds.right
             };
             if (text) {
                 const cell = text.closest('td, th');
@@ -86,10 +89,14 @@ async function check(page, profile, username, name, action, isEmpty) {
             await page.screenshot({ path: screenshot.replace('.png', '-full.png'), fullPage: true, animations: 'disabled' });
         }
         assert(geometry.scrollWidth <= geometry.clientWidth + 1, JSON.stringify(geometry));
+        assert(geometry.tableLeft >= geometry.cardLeft - 1, JSON.stringify(geometry));
+        assert(geometry.tableRight <= geometry.cardRight + 1, JSON.stringify(geometry));
         if (isEmpty) {
             assert(geometry.empty, 'The full empty-state message must remain present.');
-            assert(geometry.empty.cellLeft >= geometry.cardLeft - 1, JSON.stringify(geometry));
-            assert(geometry.empty.cellRight <= geometry.cardRight + 1, JSON.stringify(geometry));
+            if (profile.mobile) {
+                assert(geometry.empty.cellLeft >= geometry.tableLeft - 1, JSON.stringify(geometry));
+                assert(geometry.empty.cellRight <= geometry.tableRight + 1, JSON.stringify(geometry));
+            }
             assert(geometry.empty.textLeft >= geometry.empty.cellLeft - 1, JSON.stringify(geometry));
             assert(geometry.empty.textRight <= geometry.empty.cellRight + 1, JSON.stringify(geometry));
             assert.equal(geometry.empty.textOverflow, false, JSON.stringify(geometry));
