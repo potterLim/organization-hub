@@ -15,8 +15,14 @@ public sealed class VersionedGoogleTransport : HttpMessageHandler, IGoogleApiCre
 {
     private int mVersion = 1;
     private string mStatus = "needsAction";
-    public HttpStatusCode? RejectedPatchStatusOrNull { get; set; }
-    public int Deletes { get; private set; }
+    public HttpStatusCode? RejectedPatchStatusOrNull
+    {
+        get; set;
+    }
+    public int Deletes
+    {
+        get; private set;
+    }
     public int Writes
     {
         get; private set;

@@ -46,9 +46,11 @@ public sealed class TodoDeadlineRecoveryTests
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task PartialDeadlineSaveRemainsRecoverableAfterServiceRestartWithoutRepeatingGoogleWriteAsync(bool shouldClear)
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    public async Task PartialDeadlineSaveRemainsRecoverableAfterServiceRestartWithoutRepeatingGoogleWriteAsync(bool shouldClear, bool shouldCompleteBeforeRecovery)
     {
         StorageFailure failure = new StorageFailure();
         using (TestDbContextFactory raw = new TestDbContextFactory(failure))
@@ -76,9 +78,13 @@ public sealed class TodoDeadlineRecoveryTests
             await Assert.ThrowsAsync<ResourceSynchronizationException>(() => createService(factory, transport).UpdateTaskAsync(OperationPermissionRegressionTests.createSession(), form, CancellationToken.None));
             using (OrganizationHubDbContext db = factory.CreateDbContext())
             {
-                Assert.Single(db.TodoDeadlineChanges);
+                Assert.Equal(transport.ETag, Assert.Single(db.TodoDeadlineChanges).ConfirmedGoogleETag);
             }
             failure.ShouldFail = false;
+            if (shouldCompleteBeforeRecovery)
+            {
+                await createService(factory, transport).CompleteTaskAsync(OperationPermissionRegressionTests.createSession(), TodoTaskListId.CreateRequired("tasks"), TodoTaskId.CreateRequired("item"), CancellationToken.None);
+            }
             await createService(factory, transport).RecoverDeadlineChangesAsync(CancellationToken.None);
             using (OrganizationHubDbContext db = factory.CreateDbContext())
             {
@@ -86,7 +92,7 @@ public sealed class TodoDeadlineRecoveryTests
                 Assert.Equal(form.DueAtUtc, db.TodoTaskMetadata.Single().DueAt);
                 Assert.Equal(transport.ETag, db.TodoTaskMetadata.Single().GoogleETag);
             }
-            Assert.Equal(1, transport.Writes);
+            Assert.Equal(shouldCompleteBeforeRecovery ? 2 : 1, transport.Writes);
             TodoTaskItem completed = await createService(factory, transport).CompleteTaskAsync(OperationPermissionRegressionTests.createSession(), TodoTaskListId.CreateRequired("tasks"), TodoTaskId.CreateRequired("item"), CancellationToken.None);
             Assert.Equal(form.DueAtUtc, completed.DueAt);
         }
