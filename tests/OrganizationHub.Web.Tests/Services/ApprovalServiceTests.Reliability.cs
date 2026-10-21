@@ -41,11 +41,16 @@ public sealed partial class ApprovalServiceTests
             DriveService.SetFileContent("planning-file", Encoding.UTF8.GetBytes("submitted version"));
         }
 
+        public ApprovalPublicationService CreatePublicationService()
+        {
+            return new ApprovalPublicationService(DbContextFactory, DriveService, new OrganizationPermissionService(DbContextFactory));
+        }
+
         public ApprovalService CreateService()
         {
             OrganizationPermissionService organizationPermissions = new OrganizationPermissionService(DbContextFactory);
             PermissionService permissions = new PermissionService(DbContextFactory, DriveService, mMemoryCache, organizationPermissions);
-            return new ApprovalService(DbContextFactory, permissions, DriveService, organizationPermissions);
+            return new ApprovalService(DbContextFactory, permissions, DriveService, organizationPermissions, new ApprovalPublicationService(DbContextFactory, DriveService, organizationPermissions));
         }
 
         public async Task<ApprovalRequestId> SubmitAsync()
@@ -86,7 +91,7 @@ public sealed partial class ApprovalServiceTests
             }
 
             Assert.Equal(1, DriveService.PublicationWriteCount);
-            ServiceResult duplicateRecovery = await CreateService().PublishApprovedFileAsync(requestId, CancellationToken.None);
+            ServiceResult duplicateRecovery = await CreatePublicationService().PublishApprovedFileAsync(requestId, CancellationToken.None);
             Assert.True(duplicateRecovery.IsSuccess);
             Assert.Equal(1, DriveService.PublicationWriteCount);
         }
@@ -216,7 +221,7 @@ public sealed partial class ApprovalServiceTests
             }
 
             fixture.DriveService.SetFileContent("planning-file", Encoding.UTF8.GetBytes("changed before retry"));
-            ServiceResult recovery = await fixture.CreateService().PublishApprovedFileAsync(requestId, CancellationToken.None);
+            ServiceResult recovery = await fixture.CreatePublicationService().PublishApprovedFileAsync(requestId, CancellationToken.None);
             Assert.True(recovery.IsSuccess, recovery.ErrorMessage);
             await fixture.AssertCompletedOnceAsync(requestId);
         }
@@ -240,7 +245,7 @@ public sealed partial class ApprovalServiceTests
                 Assert.False(dbContext.ApprovalPublications.Single().IsCompleted);
             }
 
-            ServiceResult recovery = await fixture.CreateService().PublishApprovedFileAsync(requestId, CancellationToken.None);
+            ServiceResult recovery = await fixture.CreatePublicationService().PublishApprovedFileAsync(requestId, CancellationToken.None);
             Assert.True(recovery.IsSuccess, recovery.ErrorMessage);
             await fixture.AssertCompletedOnceAsync(requestId);
         }
@@ -263,14 +268,14 @@ public sealed partial class ApprovalServiceTests
                 await dbContext.SaveChangesAsync();
             }
 
-            Assert.False((await fixture.CreateService().PublishApprovedFileAsync(requestId, CancellationToken.None)).IsSuccess);
+            Assert.False((await fixture.CreatePublicationService().PublishApprovedFileAsync(requestId, CancellationToken.None)).IsSuccess);
             using (OrganizationHubDbContext dbContext = fixture.DbContextFactory.CreateDbContext())
             {
                 dbContext.ApprovalPublications.Single().LeaseExpiresAt = DateTime.UtcNow.AddMinutes(-1);
                 await dbContext.SaveChangesAsync();
             }
 
-            Assert.True((await fixture.CreateService().PublishApprovedFileAsync(requestId, CancellationToken.None)).IsSuccess);
+            Assert.True((await fixture.CreatePublicationService().PublishApprovedFileAsync(requestId, CancellationToken.None)).IsSuccess);
             await fixture.AssertCompletedOnceAsync(requestId);
         }
     }
@@ -337,7 +342,7 @@ public sealed partial class ApprovalServiceTests
             }
 
             ServiceCollection services = new ServiceCollection();
-            services.AddScoped<IApprovalPublicationService>(serviceProvider => fixture.CreateService());
+            services.AddScoped<IApprovalPublicationService>(serviceProvider => fixture.CreatePublicationService());
             using (ServiceProvider serviceProvider = services.BuildServiceProvider())
             using (ApprovalPublicationWorker worker = new ApprovalPublicationWorker(fixture.DbContextFactory, serviceProvider.GetRequiredService<IServiceScopeFactory>(), NullLogger<ApprovalPublicationWorker>.Instance))
             {

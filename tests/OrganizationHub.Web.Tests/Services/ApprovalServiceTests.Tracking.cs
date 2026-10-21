@@ -25,7 +25,7 @@ public sealed partial class ApprovalServiceTests
         {
             FakeDriveService drive = createApprovalDriveService();
             OrganizationPermissionService permissions = new OrganizationPermissionService(factory);
-            ApprovalService service = new ApprovalService(factory, new PermissionService(factory, drive, cache, permissions), drive, permissions);
+            ApprovalService service = new ApprovalService(factory, new PermissionService(factory, drive, cache, permissions), drive, permissions, new ApprovalPublicationService(factory, drive, permissions));
             UserSession requester = createSession(1, "planning.member", "기획팀원", EStoredCompatibilityRole.TeamUser, 1);
             UserSession leader = createSession(2, "planning.lead", "기획 책임자", EStoredCompatibilityRole.TeamLeader, 1);
             UserSession finalApprover = createSession(3, "manager", "관리팀 매니저", EStoredCompatibilityRole.ManagementManager, 2);
@@ -75,7 +75,7 @@ public sealed partial class ApprovalServiceTests
 
             FakeDriveService drive = createApprovalDriveService();
             OrganizationPermissionService permissions = new OrganizationPermissionService(factory);
-            ApprovalService service = new ApprovalService(factory, new PermissionService(factory, drive, cache, permissions), drive, permissions);
+            ApprovalService service = new ApprovalService(factory, new PermissionService(factory, drive, cache, permissions), drive, permissions, new ApprovalPublicationService(factory, drive, permissions));
             UserSession requester = createSession(1, "planning.member", "기획팀원", EStoredCompatibilityRole.TeamUser, 1);
             ApprovalRequestItem item = Assert.Single(await service.GetRelatedHistoryAsync(requester, CancellationToken.None));
             Assert.Equal(1, item.RequesterUserId);

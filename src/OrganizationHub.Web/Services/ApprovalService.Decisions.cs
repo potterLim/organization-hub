@@ -54,7 +54,7 @@ public sealed partial class ApprovalService
 
             if (requestOrNull.Status == EApprovalRequestStatus.Publishing && requestOrNull.Steps.Exists(step => step.StepNumber == requestOrNull.StepCount && step.ApproverUserId == userSession.UserAccountId.GetRequiredValue()))
             {
-                return await PublishApprovedFileAsync(approvalRequestId, cancellationToken);
+                return await mPublicationService.PublishApprovedFileAsync(approvalRequestId, cancellationToken);
             }
 
             if (string.IsNullOrWhiteSpace(requestOrNull.DocumentHash))
@@ -119,7 +119,7 @@ public sealed partial class ApprovalService
             bumpApprovalVersion();
             if (isFinalStep)
             {
-                return await PublishApprovedFileAsync(approvalRequestId, cancellationToken);
+                return await mPublicationService.PublishApprovedFileAsync(approvalRequestId, cancellationToken);
             }
 
             return ServiceResult.Succeed();

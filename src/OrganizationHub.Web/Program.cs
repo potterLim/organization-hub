@@ -141,7 +141,7 @@ public class Program
         builder.Services.AddScoped<ICalendarEventDeletionAuditLogService, CalendarEventDeletionAuditLogService>();
         builder.Services.AddScoped<IApprovalService, ApprovalService>();
         builder.Services.AddScoped<DashboardAccessService>();
-        builder.Services.AddScoped<IApprovalPublicationService, ApprovalService>();
+        builder.Services.AddScoped<IApprovalPublicationService, ApprovalPublicationService>();
         builder.Services.AddHostedService<ApprovalPublicationWorker>();
         builder.Services.AddScoped<GoogleTasksTodoService>();
         builder.Services.AddHostedService<TodoDeadlineRecoveryWorker>();

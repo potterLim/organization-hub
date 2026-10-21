@@ -24,7 +24,7 @@ public sealed partial class ApprovalServiceTests
             fixture.DriveService.FailNextPublication(FakeDriveService.EPublicationFailure.AfterUpload);
             Assert.False((await executeRegressionDecisionAsync(fixture.CreateService(), fixture.Manager, requestId, EApprovalAuditAction.Approved)).IsSuccess);
             grantPublicationAdministration(fixture);
-            ApprovalPublicationPage pending = await fixture.CreateService().GetPendingPublicationsAsync(fixture.Manager, int.MaxValue, CancellationToken.None);
+            ApprovalPublicationPage pending = await fixture.CreatePublicationService().GetPendingPublicationsAsync(fixture.Manager, int.MaxValue, CancellationToken.None);
             ApprovalPublicationItem item = Assert.Single(pending.Items);
             Assert.Equal(1, pending.PageNumber);
             Assert.Equal(1, item.AttemptCount);
@@ -40,9 +40,9 @@ public sealed partial class ApprovalServiceTests
                 targetId = db.ApprovalPublications.Single().TargetFileId;
             }
 
-            ServiceResult retry = await fixture.CreateService().RetryPublicationAsAdministratorAsync(fixture.Manager, requestId, CancellationToken.None);
+            ServiceResult retry = await fixture.CreatePublicationService().RetryPublicationAsAdministratorAsync(fixture.Manager, requestId, CancellationToken.None);
             Assert.True(retry.IsSuccess, retry.ErrorMessage);
-            Assert.Empty((await fixture.CreateService().GetPendingPublicationsAsync(fixture.Manager, 1, CancellationToken.None)).Items);
+            Assert.Empty((await fixture.CreatePublicationService().GetPendingPublicationsAsync(fixture.Manager, 1, CancellationToken.None)).Items);
             using (OrganizationHubDbContext db = fixture.DbContextFactory.CreateDbContext())
             {
                 ApprovalPublication completed = db.ApprovalPublications.Single();
@@ -63,8 +63,8 @@ public sealed partial class ApprovalServiceTests
             await fixture.ApproveFirstStepAsync(requestId);
             fixture.DriveService.FailNextPublication(FakeDriveService.EPublicationFailure.BeforeUpload);
             Assert.False((await executeRegressionDecisionAsync(fixture.CreateService(), fixture.Manager, requestId, EApprovalAuditAction.Approved)).IsSuccess);
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.CreateService().GetPendingPublicationsAsync(fixture.Requester, 1, CancellationToken.None));
-            Assert.False((await fixture.CreateService().RetryPublicationAsAdministratorAsync(fixture.Requester, requestId, CancellationToken.None)).IsSuccess);
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => fixture.CreatePublicationService().GetPendingPublicationsAsync(fixture.Requester, 1, CancellationToken.None));
+            Assert.False((await fixture.CreatePublicationService().RetryPublicationAsAdministratorAsync(fixture.Requester, requestId, CancellationToken.None)).IsSuccess);
             grantPublicationAdministration(fixture);
             using (OrganizationHubDbContext db = fixture.DbContextFactory.CreateDbContext())
             {
@@ -74,11 +74,11 @@ public sealed partial class ApprovalServiceTests
                 await db.SaveChangesAsync();
             }
 
-            ApprovalPublicationItem item = Assert.Single((await fixture.CreateService().GetPendingPublicationsAsync(fixture.Manager, 1, CancellationToken.None)).Items);
+            ApprovalPublicationItem item = Assert.Single((await fixture.CreatePublicationService().GetPendingPublicationsAsync(fixture.Manager, 1, CancellationToken.None)).Items);
             Assert.True(item.IsProcessing);
             ApprovalRequestItem inboxItem = Assert.Single(await fixture.CreateService().GetPendingApprovalsAsync(fixture.Manager, CancellationToken.None));
             Assert.True(inboxItem.IsPublicationProcessing);
-            Assert.False((await fixture.CreateService().RetryPublicationAsAdministratorAsync(fixture.Manager, requestId, CancellationToken.None)).IsSuccess);
+            Assert.False((await fixture.CreatePublicationService().RetryPublicationAsAdministratorAsync(fixture.Manager, requestId, CancellationToken.None)).IsSuccess);
             Assert.Equal(0, fixture.DriveService.PublicationWriteCount);
             using (OrganizationHubDbContext db = fixture.DbContextFactory.CreateDbContext())
             {

@@ -47,7 +47,7 @@ public sealed partial class ApprovalServiceTests
             {
                 FakeDriveService driveService = createApprovalDriveService();
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache, new OrganizationPermissionService(dbContextFactory));
-                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory));
+                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory), new ApprovalPublicationService(dbContextFactory, driveService, new OrganizationPermissionService(dbContextFactory)));
                 UserSession requesterSession = createSession(1, "planning.member", "기획팀원", EStoredCompatibilityRole.TeamUser, 1);
 
                 ApprovalCreateContext createContext = await approvalService.GetCreateContextAsync(requesterSession, CancellationToken.None);
@@ -88,7 +88,7 @@ public sealed partial class ApprovalServiceTests
             {
                 FakeDriveService driveService = createApprovalDriveService();
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache, new OrganizationPermissionService(dbContextFactory));
-                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory));
+                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory), new ApprovalPublicationService(dbContextFactory, driveService, new OrganizationPermissionService(dbContextFactory)));
                 UserSession adminSession = createSession(8, "admin", "사이트 관리자", EStoredCompatibilityRole.Admin, null);
 
                 ApprovalCreateContext createContext = await approvalService.GetCreateContextAsync(adminSession, CancellationToken.None);

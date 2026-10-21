@@ -9,7 +9,7 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed partial class ApprovalService
+public sealed partial class ApprovalPublicationService
 {
     private const int PUBLICATION_PAGE_SIZE = 20;
 

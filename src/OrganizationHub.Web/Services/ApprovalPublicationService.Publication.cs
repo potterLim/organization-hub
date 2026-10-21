@@ -11,7 +11,7 @@ using OrganizationHub.Web.Models;
 
 namespace OrganizationHub.Web.Services;
 
-public sealed partial class ApprovalService
+public sealed partial class ApprovalPublicationService
 {
     private static readonly TimeSpan PUBLICATION_LEASE_DURATION = TimeSpan.FromMinutes(2);
     private static readonly TimeSpan PUBLICATION_RETRY_DELAY = TimeSpan.FromMinutes(1);
@@ -47,9 +47,9 @@ public sealed partial class ApprovalService
                 await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(publicationToken))
                 {
                     ApprovalPublication publication = await dbContext.ApprovalPublications.SingleAsync(item => item.ApprovalRequestId == requiredRequestId && item.LeaseToken == leaseToken, publicationToken);
-                    ApprovalRequest? requestOrNull = await loadApprovalRequestOrNullAsync(dbContext, requestId, publicationToken);
+                    ApprovalRequest? requestOrNull = await dbContext.ApprovalRequests.Include(item => item.RequesterUser).ThenInclude(user => user!.Team).Include(item => item.RequesterUser).ThenInclude(user => user!.Position).SingleOrDefaultAsync(item => item.Id == requiredRequestId, publicationToken);
                     ApprovalDocument document = await dbContext.ApprovalDocuments.SingleAsync(item => item.ApprovalRequestId == requiredRequestId, publicationToken);
-                    if (requestOrNull == null || requestOrNull.Status != EApprovalRequestStatus.Publishing || calculateDocumentHash(document.Content) != requestOrNull.DocumentHash)
+                    if (requestOrNull == null || requestOrNull.Status != EApprovalRequestStatus.Publishing || Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(document.Content)) != requestOrNull.DocumentHash)
                     {
                         throw new InvalidOperationException("Approval publication state or document hash is invalid.");
                     }
@@ -91,7 +91,7 @@ public sealed partial class ApprovalService
                         mDriveBrowserServiceOrNull.InvalidateRecentFiles(upload.TargetFolderId);
                     }
 
-                    bumpApprovalVersion();
+                    mChangeVersionServiceOrNull?.Bump(ChangeVersionKeys.APPROVAL);
                     return ServiceResult.Succeed();
                 }
             }
@@ -106,41 +106,6 @@ public sealed partial class ApprovalService
             mLogger.LogWarning(exception, "Approval publication {RequestId} will be retried.", requiredRequestId);
             await releasePublicationLeaseAsync(requiredRequestId, leaseToken, getPublicationFailureDescription(exception));
             return ServiceResult.Fail("결재는 접수되었으나 승인본 저장이 완료되지 않았습니다. 자동으로 다시 시도하며, 내 결재함에서도 저장을 다시 시도할 수 있습니다.");
-        }
-    }
-
-    private async Task<ServiceResult> preparePublicationAsync(OrganizationHubDbContext dbContext, ApprovalRequest request, EDriveFileNameConflictResolution conflictResolution, CancellationToken cancellationToken)
-    {
-        try
-        {
-            DriveFolderId folderId = DriveFolderId.CreateRequired(request.ApprovedFolderId);
-            DriveItemName fileName = DriveItemName.CreateRequired(request.FileName);
-            DriveFileNameConflictCheckResult conflict = await mDriveService.CheckFileNameConflictAsync(folderId, fileName, cancellationToken);
-            bool isReplacement = conflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile && conflict.HasConflict;
-            DriveItemId targetFileId = isReplacement ? conflict.GetSingleExistingFileId() : await mDriveService.GenerateFileIdAsync(cancellationToken);
-            if (isReplacement == false && conflict.HasConflict)
-            {
-                fileName = conflict.SuggestedNewFileName;
-            }
-
-            ApprovalPublication publication = new ApprovalPublication();
-            publication.ApprovalRequestId = request.Id;
-            publication.TargetFileId = targetFileId.GetRequiredValue();
-            publication.FileName = fileName.GetRequiredValue();
-            publication.OperationKey = Guid.NewGuid().ToString("N");
-            publication.IsReplacement = isReplacement;
-            publication.NextAttemptAt = DateTime.UtcNow;
-            dbContext.ApprovalPublications.Add(publication);
-            return ServiceResult.Succeed();
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception exception)
-        {
-            mLogger.LogWarning(exception, "Approval publication preparation failed.");
-            return ServiceResult.Fail("승인본 저장 작업을 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         }
     }
 

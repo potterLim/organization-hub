@@ -26,7 +26,7 @@ public sealed partial class ApprovalServiceTests
             {
                 FakeDriveService driveService = createApprovalDriveService();
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache, new OrganizationPermissionService(dbContextFactory));
-                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory));
+                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory), new ApprovalPublicationService(dbContextFactory, driveService, new OrganizationPermissionService(dbContextFactory)));
                 UserSession requesterSession = createSession(1, "planning.member", "기획팀원", EStoredCompatibilityRole.TeamUser, 1);
                 UserSession responsibleSession = createSession(2, "planning.lead", "기획 책임자", EStoredCompatibilityRole.TeamLeader, 1);
                 UserSession managerSession = createSession(3, "manager", "관리팀 매니저", EStoredCompatibilityRole.ManagementManager, null);
@@ -92,7 +92,7 @@ public sealed partial class ApprovalServiceTests
                 FakeDriveService driveService = createApprovalDriveService();
                 driveService.AddFolder("outside-approved-folder", "다른 결재 완료 자료", "official-root");
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache, new OrganizationPermissionService(dbContextFactory));
-                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory));
+                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory), new ApprovalPublicationService(dbContextFactory, driveService, new OrganizationPermissionService(dbContextFactory)));
                 UserSession requesterSession = createSession(1, "planning.member", "기획팀원", EStoredCompatibilityRole.TeamUser, 1);
                 using (OrganizationHubDbContext dbContext = dbContextFactory.CreateDbContext())
                 {
@@ -135,7 +135,7 @@ public sealed partial class ApprovalServiceTests
             {
                 FakeDriveService driveService = createApprovalDriveService();
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache, new OrganizationPermissionService(dbContextFactory));
-                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory));
+                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory), new ApprovalPublicationService(dbContextFactory, driveService, new OrganizationPermissionService(dbContextFactory)));
                 UserSession requesterSession = createSession(1, "planning.member", "기획팀원", EStoredCompatibilityRole.TeamUser, 1);
                 ApprovalRequestFormModel missingFinalApproverFormModel = new ApprovalRequestFormModel();
                 missingFinalApproverFormModel.Title = "부스 운영안";
@@ -173,7 +173,7 @@ public sealed partial class ApprovalServiceTests
             {
                 FakeDriveService driveService = createApprovalDriveService();
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache, new OrganizationPermissionService(dbContextFactory));
-                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory));
+                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory), new ApprovalPublicationService(dbContextFactory, driveService, new OrganizationPermissionService(dbContextFactory)));
                 UserSession requesterSession = createSession(1, "planning.member", "기획팀원", EStoredCompatibilityRole.TeamUser, 1);
                 UserSession responsibleSession = createSession(2, "planning.lead", "기획 책임자", EStoredCompatibilityRole.TeamLeader, 1);
                 ApprovalRequestFormModel formModel = new ApprovalRequestFormModel();
@@ -208,7 +208,7 @@ public sealed partial class ApprovalServiceTests
             {
                 FakeDriveService driveService = createApprovalDriveService();
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache, new OrganizationPermissionService(dbContextFactory));
-                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory));
+                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory), new ApprovalPublicationService(dbContextFactory, driveService, new OrganizationPermissionService(dbContextFactory)));
                 UserSession responsibleSession = createSession(2, "planning.lead", "기획 책임자", EStoredCompatibilityRole.TeamLeader, 1);
                 UserSession managerSession = createSession(3, "manager", "관리팀 매니저", EStoredCompatibilityRole.ManagementManager, null);
                 ApprovalRequestFormModel formModel = new ApprovalRequestFormModel();
@@ -239,7 +239,7 @@ public sealed partial class ApprovalServiceTests
             {
                 FakeDriveService driveService = createApprovalDriveService();
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache, new OrganizationPermissionService(dbContextFactory));
-                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory));
+                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory), new ApprovalPublicationService(dbContextFactory, driveService, new OrganizationPermissionService(dbContextFactory)));
                 UserSession requesterSession = createSession(1, "planning.member", "기획팀원", EStoredCompatibilityRole.TeamUser, 1);
 
                 ApprovalCreateContext createContext = await approvalService.GetCreateContextAsync(requesterSession, CancellationToken.None);
@@ -263,7 +263,7 @@ public sealed partial class ApprovalServiceTests
             {
                 FakeDriveService driveService = createApprovalDriveService();
                 PermissionService permissionService = new PermissionService(dbContextFactory, driveService, memoryCache, new OrganizationPermissionService(dbContextFactory));
-                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory));
+                ApprovalService approvalService = new ApprovalService(dbContextFactory, permissionService, driveService, new OrganizationPermissionService(dbContextFactory), new ApprovalPublicationService(dbContextFactory, driveService, new OrganizationPermissionService(dbContextFactory)));
                 UserSession teamMemberSession = createSession(1, "planning.member", "기획팀원", EStoredCompatibilityRole.TeamUser, 1);
                 UserSession teamLeaderSession = createSession(2, "planning.lead", "기획 책임자", EStoredCompatibilityRole.TeamLeader, 1);
 

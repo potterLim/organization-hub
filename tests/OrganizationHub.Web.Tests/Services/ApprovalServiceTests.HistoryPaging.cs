@@ -162,6 +162,6 @@ public sealed partial class ApprovalServiceTests
     {
         FakeDriveService drive = createApprovalDriveService();
         OrganizationPermissionService permissions = new OrganizationPermissionService(factory);
-        return new ApprovalService(factory, new PermissionService(factory, drive, cache, permissions), drive, permissions);
+        return new ApprovalService(factory, new PermissionService(factory, drive, cache, permissions), drive, permissions, new ApprovalPublicationService(factory, drive, permissions));
     }
 }
