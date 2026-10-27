@@ -1,4 +1,4 @@
-@page "/todos"
+﻿@page "/todos"
 @attribute [Authorize]
 @inherits OrganizationHubComponentBase
 @implements IAsyncDisposable
@@ -157,14 +157,14 @@ else
                                 <div class="hub-todo-list">
                                     @foreach (TodoTaskItem task in getPendingTasks())
                                     {
-                                        <TodoTaskRow @key="task.Id"
+                                        <TodoTaskRow @key="(task.TaskListId, task.Id)"
                                                      Task="task"
                                                      CompletionState="ETodoTaskCompletionState.NeedsAction"
                                                      CanDrag="canDragTask(task, ETodoTaskCompletionState.NeedsAction)"
                                                      OrderKeyDown="@(args => moveTaskByKeyAsync(task, args))"
                                                      CanWrite="canWriteTask(task)"
                                                      CanDelete="canDeleteTask(task)"
-                                                     IsEditing="@(mEditingTaskId == task.Id)"
+                                                     IsEditing="@(isEditingTask(task))"
                                                      EditingTitle="@mEditingTitle"
                                                      EditingTitleChanged="setEditingTitle"
                                                      EditingDueAt="@mEditingDueAt"
@@ -172,7 +172,7 @@ else
                                                      CurrentDateOrNull="@getClientToday()"
                                                      IsDuePickerOpen="@mIsEditingDuePickerOpen"
                                                      IsDuePickerOpenChanged="setEditingDuePickerOpenAsync"
-                                                     IsDeleting="@(mDeletingTaskId == task.Id)"
+                                                     IsDeleting="@(isDeletingTask(task))"
                                                      TaskMeta="@formatTaskMeta(task)"
                                                      TaskTrailingMeta="@formatTaskTrailingMeta(task)"
                                                      TaskTrailingMetaClass="@getTaskTrailingMetaClass(task)"
@@ -203,13 +203,13 @@ else
                                 <div class="hub-todo-list">
                                     @foreach (TodoTaskItem task in getCompletedTasks())
                                     {
-                                        <TodoTaskRow @key="task.Id"
+                                        <TodoTaskRow @key="(task.TaskListId, task.Id)"
                                                      Task="task"
                                                      CompletionState="ETodoTaskCompletionState.Completed"
                                                      CanDrag="canDragTask(task, ETodoTaskCompletionState.Completed)"
                                                      CanWrite="canWriteTask(task)"
                                                      CanDelete="canDeleteTask(task)"
-                                                     IsEditing="@(mEditingTaskId == task.Id)"
+                                                     IsEditing="@(isEditingTask(task))"
                                                      EditingTitle="@mEditingTitle"
                                                      EditingTitleChanged="setEditingTitle"
                                                      EditingDueAt="@mEditingDueAt"
@@ -217,7 +217,7 @@ else
                                                      CurrentDateOrNull="@getClientToday()"
                                                      IsDuePickerOpen="@mIsEditingDuePickerOpen"
                                                      IsDuePickerOpenChanged="setEditingDuePickerOpenAsync"
-                                                     IsDeleting="@(mDeletingTaskId == task.Id)"
+                                                     IsDeleting="@(isDeletingTask(task))"
                                                      TaskMeta="@formatTaskMeta(task)"
                                                      TaskTrailingMeta="@formatTaskTrailingMeta(task)"
                                                      TaskTrailingMetaClass="@getTaskTrailingMetaClass(task)"

@@ -11,6 +11,16 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Todos
 {
+    private bool isEditingTask(TodoTaskItem task)
+    {
+        return mEditingTaskId == task.Id && mEditingTaskListId == task.TaskListId;
+    }
+
+    private bool isDeletingTask(TodoTaskItem task)
+    {
+        return mDeletingTaskId == task.Id && mDeletingTaskListId == task.TaskListId;
+    }
+
     private void beginEdit(TodoTaskItem task)
     {
         if (canWriteTask(task) == false)
@@ -19,6 +29,7 @@ public partial class Todos
         }
 
         mEditingTaskId = task.Id;
+        mEditingTaskListId = task.TaskListId;
         mEditingTitle = task.Title;
         mEditingETag = task.ETag;
         mHasEditConflict = false;
@@ -50,6 +61,7 @@ public partial class Todos
         }
 
         mDeletingTaskId = task.Id;
+        mDeletingTaskListId = task.TaskListId;
         mEditingTaskId = string.Empty;
         mEditingTitle = string.Empty;
         mEditingDueAt = null;
@@ -106,6 +118,7 @@ public partial class Todos
         {
             mTasks = cloneTasks(previousTasks);
             mEditingTaskId = task.Id;
+            mEditingTaskListId = task.TaskListId;
             mEditingTitle = editedTitle;
             mEditingDueAt = createEditorDueAtOrNull(editedDueAtUtcOrNull);
             mHasEditConflict = exception is ResourceEditConflictException;
@@ -119,8 +132,7 @@ public partial class Todos
     {
         mPreviousDraft = mEditingTitle + " · 마감: " + (mEditingDueAt.HasValue ? mEditingDueAt.Value.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) : "없음");
         string taskId = mEditingTaskId;
-        TodoTaskItem? editingTaskOrNull = mTasks.FirstOrDefault(item => item.Id == taskId);
-        string taskListId = editingTaskOrNull == null ? string.Empty : editingTaskOrNull.TaskListId;
+        string taskListId = mEditingTaskListId;
         cancelEdit();
         await loadTasksAsync();
         TodoTaskItem? latestOrNull = mTasks.FirstOrDefault(item => item.Id == taskId && item.TaskListId == taskListId);

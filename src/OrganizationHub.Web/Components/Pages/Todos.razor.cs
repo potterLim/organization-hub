@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,11 +22,13 @@ public partial class Todos
     private string mSelectedTaskListId = string.Empty;
     private string mNewTaskTitle = string.Empty;
     private string mEditingTaskId = string.Empty;
+    private string mEditingTaskListId = string.Empty;
     private string mEditingETag = string.Empty;
     private string mEditingTitle = string.Empty;
     private DateTime? mNewTaskDueAt;
     private DateTime? mEditingDueAt;
     private string mDeletingTaskId = string.Empty;
+    private string mDeletingTaskListId = string.Empty;
     private string mMessage = string.Empty;
     private Severity mMessageSeverity = Severity.Info;
     private ElementReference mRefreshScopeElement;
