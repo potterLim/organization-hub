@@ -77,6 +77,13 @@ public partial class Calendar
             mSelectedEventOrNull = previousSelectedEventOrNull;
             return;
         }
+        catch (Services.ResourceDeletionUncertainException exception)
+        {
+            Logger.LogWarning(exception, "Calendar deletion {AuditId} awaits remote confirmation.", auditLogId);
+            await loadEventsAsync();
+            mDeletionConflictMessage = exception.Message;
+            return;
+        }
         catch (Exception exception)
         {
             Logger.LogWarning(exception, "Calendar event {EventId} deletion failed.", deleteCandidate.Id);
@@ -85,14 +92,13 @@ public partial class Calendar
                 await markDeletionFailedAsync(auditLogId, CalendarEventDeletionFailureMessage.CreateOptional(exception.Message));
             }
 
-            mErrorMessage = "일정을 삭제하지 못했습니다. 일정은 아직 남아 있습니다. 잠시 후 다시 시도해 주세요.";
+            mDeletionConflictMessage = "일정을 삭제하지 못했습니다. 다시 시도해 주세요.";
             mMonthEvents = cloneCalendarEvents(previousMonthEvents);
             refreshDerivedCalendarCollections();
             mSelectedEventOrNull = previousSelectedEventOrNull;
             return;
         }
 
-        string completionWarning = string.Empty;
         try
         {
             await CalendarEventDeletionAuditLogService.MarkDeletionSucceededAsync(auditLogId, CancellationToken.None);
@@ -101,12 +107,6 @@ public partial class Calendar
         catch (Exception exception)
         {
             Logger.LogWarning(exception, "Calendar deletion audit {AuditLogId} could not be marked successful.", auditLogId);
-            completionWarning = "일정은 삭제됐지만 삭제 기록 상태를 갱신하지 못했습니다. 잠시 후 새로고침해 주세요.";
-        }
-
-        if (string.IsNullOrWhiteSpace(completionWarning) == false)
-        {
-            mErrorMessage = completionWarning;
         }
     }
 

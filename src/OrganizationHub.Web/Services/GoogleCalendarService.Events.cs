@@ -156,7 +156,10 @@ public sealed partial class GoogleCalendarService
                 request.ModifyRequest = message => ResourceEditVersion.Apply(message, expectedETag);
                 try
                 {
-                    await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
+                    await ResourceDeletionConfirmation.ExecuteAsync(
+                        () => ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken)),
+                        () => ResourceDeletionConfirmation.IsDeletedAsync(async () => (await calendarService.Events.Get(requiredCalendarId, requiredEventId).ExecuteAsync(cancellationToken)).Status == "cancelled"),
+                        cancellationToken);
                 }
                 finally
                 {

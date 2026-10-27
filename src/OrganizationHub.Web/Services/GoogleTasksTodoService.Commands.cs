@@ -132,7 +132,10 @@ public sealed partial class GoogleTasksTodoService
             {
                 Google.Apis.Tasks.v1.TasksResource.DeleteRequest request = tasksService.Tasks.Delete(requiredTaskListId, requiredTaskId);
                 request.ModifyRequest = message => ResourceEditVersion.Apply(message, expectedETag);
-                await ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken));
+                await ResourceDeletionConfirmation.ExecuteAsync(
+                    () => ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken)),
+                    () => ResourceDeletionConfirmation.IsDeletedAsync(async () => (await tasksService.Tasks.Get(requiredTaskListId, requiredTaskId).ExecuteAsync(cancellationToken)).Deleted == true),
+                    cancellationToken);
                 await deleteMetadataAsync(taskListId, taskId, cancellationToken);
             }
         }
