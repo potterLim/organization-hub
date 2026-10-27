@@ -134,8 +134,38 @@ internal sealed partial class NavigationMenuService
             {
                 return true;
             }
+            if (await canReadDelegatedResourceAsync(menuItem, userSession, permissionKey, ownerUserIdOrNull, cancellationToken))
+            {
+                return true;
+            }
         }
 
+        return false;
+    }
+
+    private async Task<bool> canReadDelegatedResourceAsync(NavigationMenuItem menuItem, UserSession userSession, PermissionKey permissionKey, UserAccountId? ownerUserIdOrNull, CancellationToken cancellationToken)
+    {
+        string path = menuItem.Href;
+        string permission = permissionKey.GetRequiredValue();
+        bool isResourceBrowser = (path == "/calendar" && permission == PermissionKeys.CALENDAR_READ)
+            || (path == "/todos" && permission == PermissionKeys.TODOS_READ)
+            || (path == "/materials" && permission == PermissionKeys.FILES_READ);
+        if (isResourceBrowser == false)
+        {
+            return false;
+        }
+        await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            List<int> activeTeamIds = await dbContext.Teams.Where(team => team.IsActive).Select(team => team.Id).ToListAsync(cancellationToken);
+            foreach (int teamId in activeTeamIds)
+            {
+                PermissionDecision decision = await mOrganizationPermissionService.DecidePermissionAsync(userSession, permissionKey, OrganizationTeamId.CreateExisting(teamId), ownerUserIdOrNull, cancellationToken);
+                if (decision.IsAllowed)
+                {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
