@@ -127,7 +127,7 @@ public partial class Upload
                 }
                 else
                 {
-                    showMessage("파일은 저장되었습니다. 업로드 기록을 남기지 못했으므로 관리자에게 알려 주세요. 같은 파일을 다시 올릴 필요는 없습니다.", Severity.Warning);
+                    showMessage(getUploadSuccessMessage(conflictResolution, completion.File.Name), Severity.Success);
                 }
             }
         }

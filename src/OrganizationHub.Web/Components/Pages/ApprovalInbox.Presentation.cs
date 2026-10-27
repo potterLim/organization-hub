@@ -12,6 +12,12 @@ public partial class ApprovalInbox
 {
     private void showOperationResult(ServiceResult operationResult, string successMessage)
     {
+        if (operationResult.IsPending)
+        {
+            mMessage = string.Empty;
+            mMessageSeverity = Severity.Info;
+            return;
+        }
         if (operationResult.IsSuccess)
         {
             mMessage = successMessage;

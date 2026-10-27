@@ -97,6 +97,10 @@ public partial class Todos
         {
             await loadTasksAsync();
             showError(exception.Message);
+            if (exception.IsWriteConfirmed)
+            {
+                mMessageSeverity = MudBlazor.Severity.Info;
+            }
         }
         catch (Exception exception)
         {
@@ -160,6 +164,11 @@ public partial class Todos
         {
             await loadTasksAsync();
             showError("다른 사용자가 할 일을 변경하여 삭제하지 않았습니다. 최신 내용을 확인한 뒤 다시 삭제해 주세요.");
+        }
+        catch (ResourceDeletionUncertainException exception)
+        {
+            await loadTasksAsync();
+            showError(exception.Message);
         }
         catch (Exception exception)
         {

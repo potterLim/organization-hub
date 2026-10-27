@@ -46,7 +46,7 @@ public sealed partial class UploadAuditLogServiceTests
             {
                 Assert.Empty(db.PendingUploadAudits);
                 Assert.Single(db.UploadAuditLogs.Where(item => item.FileId == file.Id));
-                Assert.Equal("기획팀원", db.UploadAuditLogs.Single(item => item.FileId == file.Id).UploaderDisplayName);
+                Assert.Equal(createPlanningUserSession().DisplayName, db.UploadAuditLogs.Single(item => item.FileId == file.Id).UploaderDisplayName);
             }
         }
     }

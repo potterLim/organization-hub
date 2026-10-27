@@ -62,7 +62,7 @@ public partial class ApprovalPublicationDiagnostics
         try
         {
             ServiceResult result = await PublicationService.RetryPublicationAsAdministratorAsync(CurrentUserSessionOrNull, ApprovalRequestId.CreateExisting(requestId), CancellationToken.None);
-            mMessage = result.IsSuccess ? "승인본 저장이 완료되었습니다." : result.ErrorMessage;
+            mMessage = result.IsSuccess ? "승인본 저장이 완료되었습니다." : result.IsPending ? result.StatusMessage : result.ErrorMessage;
         }
         catch (Exception exception)
         {

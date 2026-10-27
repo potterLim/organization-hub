@@ -23,7 +23,7 @@ public static class GoogleApiExceptionMessageFormatter
             return "Google Cloud 프로젝트에서 Google Drive API가 꺼져 있습니다. Google Cloud Console에서 Google Drive API를 사용 설정한 뒤 다시 시도해 주세요.";
         }
 
-        return defaultPrefix + " " + message;
+        return defaultPrefix;
     }
 
     public static string CreateGoogleCalendarMessage(Exception exception, string defaultPrefix)
@@ -45,7 +45,7 @@ public static class GoogleApiExceptionMessageFormatter
             return "Google Cloud 프로젝트에서 Google Calendar API가 꺼져 있습니다. Google Cloud Console에서 Google Calendar API를 사용 설정한 뒤 다시 시도해 주세요.";
         }
 
-        return defaultPrefix + " " + message;
+        return defaultPrefix;
     }
 
     public static string CreateGoogleTasksMessage(Exception exception, string defaultPrefix)
@@ -67,7 +67,7 @@ public static class GoogleApiExceptionMessageFormatter
             return "Google Cloud 프로젝트에서 Google Tasks API가 꺼져 있습니다. Google Cloud Console에서 Google Tasks API를 사용 설정한 뒤 다시 시도해 주세요.";
         }
 
-        return defaultPrefix + " " + message;
+        return defaultPrefix;
     }
 
     private static string? createReconnectMessageOrNull(Exception exception)

@@ -194,7 +194,7 @@ public sealed partial class ApprovalService
         catch (DbUpdateException exception)
         {
             mLogger.LogWarning(exception, "Approval decision could not be saved.");
-            return ServiceResult.Fail("결재를 저장하지 못했습니다. 다른 승인본 저장 작업이 진행 중인지 확인한 뒤 다시 시도해 주세요.");
+            return ServiceResult.Fail("승인을 반영하지 못했습니다. 작성한 의견은 유지됩니다. 다시 시도해 주세요.");
         }
     }
 

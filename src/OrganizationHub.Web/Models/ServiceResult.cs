@@ -2,6 +2,14 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class ServiceResult
 {
+    public bool IsPending { get; private init; }
+    public string StatusMessage { get; private init; } = string.Empty;
+
+    public static ServiceResult Pending(string statusMessage)
+    {
+        return new ServiceResult { IsPending = true, StatusMessage = statusMessage };
+    }
+
     public bool IsConcurrencyConflict
     {
         get; private init;

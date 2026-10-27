@@ -34,7 +34,7 @@ public sealed partial class ApprovalPublicationService
             if (claimedCount == 0)
             {
                 bool isCompleted = await claimContext.ApprovalPublications.AnyAsync(publication => publication.ApprovalRequestId == requiredRequestId && publication.IsCompleted, cancellationToken);
-                return isCompleted ? ServiceResult.Succeed() : ServiceResult.Fail("승인본을 저장 중입니다. 잠시 후 목록을 확인해 주세요.");
+                return isCompleted ? ServiceResult.Succeed() : ServiceResult.Pending("승인은 반영되었습니다. 승인본을 준비하고 있습니다.");
             }
         }
 
@@ -74,7 +74,7 @@ public sealed partial class ApprovalPublicationService
                     bool hasLease = await dbContext.ApprovalPublications.AsNoTracking().AnyAsync(item => item.ApprovalRequestId == requiredRequestId && item.LeaseToken == leaseToken, publicationToken);
                     if (hasLease == false)
                     {
-                        return ServiceResult.Fail("승인본 저장 작업을 다시 확인 중입니다.");
+                        return ServiceResult.Pending("승인은 반영되었습니다. 승인본을 준비하고 있습니다.");
                     }
 
                     requestOrNull.ApprovedFileId = file.Id;
@@ -105,7 +105,7 @@ public sealed partial class ApprovalPublicationService
         {
             mLogger.LogWarning(exception, "Approval publication {RequestId} will be retried.", requiredRequestId);
             await releasePublicationLeaseAsync(requiredRequestId, leaseToken, getPublicationFailureDescription(exception));
-            return ServiceResult.Fail("결재는 접수되었으나 승인본 저장이 완료되지 않았습니다. 자동으로 다시 시도하며, 내 결재함에서도 저장을 다시 시도할 수 있습니다.");
+            return ServiceResult.Pending("승인은 반영되었습니다. 승인본을 준비하고 있습니다.");
         }
     }
 

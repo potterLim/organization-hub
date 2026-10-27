@@ -207,6 +207,8 @@ public sealed partial class ApprovalServiceTests
             fixture.DriveService.FailNextPublication(failure);
             ServiceResult finalApproval = await fixture.CreateService().ApproveRequestAsync(fixture.Manager, requestId, ApprovalUserId.Empty, ApprovalComment.CreateOptional("최종 확인"), conflictResolution, CancellationToken.None);
             Assert.False(finalApproval.IsSuccess);
+            Assert.True(finalApproval.IsPending);
+            Assert.Empty(finalApproval.ErrorMessage);
             using (OrganizationHubDbContext dbContext = fixture.DbContextFactory.CreateDbContext())
             {
                 ApprovalRequest request = dbContext.ApprovalRequests.Single();

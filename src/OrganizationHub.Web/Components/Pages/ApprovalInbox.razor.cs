@@ -28,6 +28,7 @@ public partial class ApprovalInbox
 
         await loadDataAsync();
         mIsLoading = false;
+        mRefreshTaskOrNull = refreshPublicationsAsync();
     }
 
     private async Task loadDataAsync()

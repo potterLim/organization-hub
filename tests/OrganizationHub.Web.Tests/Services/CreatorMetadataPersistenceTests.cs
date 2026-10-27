@@ -89,7 +89,7 @@ public sealed class CreatorMetadataPersistenceTests
             transport.ShouldFailRollback = shouldFailRollback;
             UserSession session = OperationPermissionRegressionTests.createSession();
             Exception error = await Assert.ThrowsAnyAsync<Exception>(createAsync);
-            Assert.Contains(shouldFailRollback ? "관리자" : "취소", error.Message);
+            Assert.Contains(shouldFailRollback ? "저장 여부" : "저장하지", error.Message);
             Assert.Equal(1, transport.Creates);
             Assert.Equal(1, transport.Deletes);
             using (OrganizationHub.Web.Data.OrganizationHubDbContext db = factory.CreateDbContext())
