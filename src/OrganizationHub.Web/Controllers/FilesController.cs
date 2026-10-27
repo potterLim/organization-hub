@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -11,12 +10,11 @@ using OrganizationHub.Web.Services;
 namespace OrganizationHub.Web.Controllers;
 
 [Authorize]
+[ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
 public sealed class FilesController : Controller
 {
-    private const int FILE_RESPONSE_CACHE_SECONDS = 120;
     private const int MINIMUM_SAFE_ASCII_CODE = 32;
     private const int MAXIMUM_SAFE_ASCII_CODE = 126;
-    private static readonly TimeSpan FILE_RESPONSE_CACHE_DURATION = TimeSpan.FromSeconds(FILE_RESPONSE_CACHE_SECONDS);
 
     private readonly IDriveService mDriveService;
     private readonly IPermissionService mPermissionService;
@@ -47,7 +45,6 @@ public sealed class FilesController : Controller
         }
 
         FileDownloadResult downloadResult = await mDriveService.DownloadFileAsync(requestedFileId, HttpContext.RequestAborted);
-        setShortPrivateCacheHeaders();
         return File(downloadResult.ContentStream, downloadResult.ContentType, downloadResult.FileName, true);
     }
 
@@ -82,15 +79,7 @@ public sealed class FilesController : Controller
 
         FileDownloadResult downloadResult = await mDriveService.DownloadFileAsync(requestedFileId, HttpContext.RequestAborted);
         Response.Headers.ContentDisposition = createInlineContentDisposition(fileMetadataOrNull.Name);
-        setShortPrivateCacheHeaders();
         return File(downloadResult.ContentStream, GoogleMimeTypes.PDF, true);
-    }
-
-    private void setShortPrivateCacheHeaders()
-    {
-        Response.Headers.CacheControl = "private, max-age=" + FILE_RESPONSE_CACHE_SECONDS.ToString(CultureInfo.InvariantCulture);
-        Response.Headers.Pragma = "cache";
-        Response.Headers.Expires = DateTimeOffset.UtcNow.Add(FILE_RESPONSE_CACHE_DURATION).ToString("R", CultureInfo.InvariantCulture);
     }
 
     private static string createInlineContentDisposition(string fileName)
