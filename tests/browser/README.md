@@ -33,3 +33,33 @@ PC 1440×1000·1920×1080과 모바일 480×1040·360×800 및 모바일 표 변
 `collaboration-ux.cjs`는 세 화면 크기와 10개 역할 계정에서 홈·일정·할 일·자료실·결재함을 확인합니다. 미저장 일정·할 일의 메뉴 이동 차단과 명시적 폐기, 조회 전용 계정의 긴 제목 표시, 사용자 관리의 첫 Tab 이동, 방향키 정렬 및 초점 유지, 로그인 후 요청 주소 복원과 외부 주소 차단을 검증합니다. 격리 fixture의 첫 공용 할 일 제목을 수정하며 각 화면 크기를 시작할 때 Google 모의 리소스를 초기화합니다. 환경 변수는 위 검사와 같고 `HUB_TEST_WIDTHS=480`으로 특정 폭만 실행할 수 있습니다.
 
 `stale-delete.cjs`는 수정 전용 계정과 삭제 전용 계정의 독립 로그인으로 일정·할 일 삭제 경합을 세 화면 크기에서 재현합니다. 오래된 확인창에서는 삭제가 차단되고 최신 내용이 표시되어야 합니다. fixture는 DELETE의 If-Match 불일치를 HTTP 412로 반환하고, Tasks move 응답에 실제 작업 ID와 새 순서를 반환해야 합니다. 화면 원본·검사 결과는 `HUB_SCREENSHOT_DIR`에 저장합니다.
+
+
+## 저장·권한·안내 문구 회귀 검사 (2026-10-27)
+
+`Fixture/Fixture.csproj`는 실제 앱의 서비스 등록, 마이그레이션, 인증, 화면과 Google Calendar/Tasks SDK를 실행하는 로컬 전용 호스트입니다. Google HTTP 전송과 Drive 저장소에만 합성 테스트 대역을 사용합니다. 운영 Google 계정에 연결하거나 실제 Google 서버의 가용성을 확인하는 검사는 아닙니다. `seed.sql`과 PDF도 저장소에 포함되어 외부 캡처 호스트 없이 재현할 수 있습니다.
+
+먼저 테스트 전용 `HUB_TEST_PASSWORD`를 환경 변수로 제공합니다. 첫 번째 PowerShell에서 저장소 루트를 기준으로 다음을 실행합니다. DB 경로는 매 실행마다 새 경로여야 하며 기존 파일이면 실행을 거부합니다. 호스트는 루프백 주소로만 열 수 있습니다.
+
+```powershell
+$fixtureRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('hub-fixture-' + [guid]::NewGuid())
+$env:HUB_FIXTURE_ACK = 'ISOLATED_ONLY'
+$env:HUB_APP_CONTENT_ROOT = Join-Path $fixtureRoot 'app'
+$env:HUB_FIXTURE_DATABASE = Join-Path $fixtureRoot 'fixture.db'
+dotnet publish src/OrganizationHub.Web -c Release -o $env:HUB_APP_CONTENT_ROOT
+dotnet run --project tests/browser/Fixture --no-launch-profile -- --urls http://127.0.0.1:5202
+```
+
+두 번째 PowerShell에서 같은 테스트 비밀번호와 아래 변수를 지정합니다.
+
+```powershell
+$env:HUB_TEST_URL = 'http://127.0.0.1:5202'
+$env:HUB_SCREENSHOT_DIR = Join-Path ([System.IO.Path]::GetTempPath()) ('hub-proof-' + [guid]::NewGuid())
+node tests/browser/user-outcomes.cjs
+```
+
+외부 Playwright는 `PLAYWRIGHT_MODULE_PATH`, Chromium은 `HUB_BROWSER_EXECUTABLE`로 지정합니다. `user-outcomes.cjs`는 PC 1440×1000·1920×1080과 모바일 480×1040 DPR 3에서 일정 저장 거절과 초안 유지, 저장 후 경고 해제, 사용자 관리의 초안과 초점 복귀, 마감 시간의 로컬 저장 실패·복구, 업로드 기록 실패·정확히 한 번 복구, 삭제 응답 유실과 삭제 기록 실패, 소속 팀·다른 팀 위임 조회 및 자료 다운로드 경계, 승인본 준비 상태를 검사합니다. 변경한 상태만 PNG로 저장하고 `results.json`에 결과를 남깁니다. 모바일은 터치 화면 에뮬레이션이며 실기기 검사가 아닙니다.
+
+기본 계정은 `ux-admin`, `ux-member`, `p1-create`, `p1-update`, `p1-delete`, `team-lead`, `final-approver`, `no-access`, `org-manager`, `new-member`, `operations-reader`, `planning-reader`, `delegated-reader`입니다. 모든 계정은 환경 변수로 받은 테스트 비밀번호를 사용합니다. `/fixture/*`는 합성 데이터의 상태·실패 주입·복구를 제어하는 전용 경로이며 운영 앱에는 등록되지 않습니다. 상태가 공유되므로 브라우저 시나리오는 순차 실행합니다.
+
+Google 동작 기준은 [Tasks 리소스의 날짜 전용 마감과 삭제 플래그](https://developers.google.com/workspace/tasks/reference/rest/v1/tasks), [Calendar 조건부 수정·삭제](https://developers.google.com/calendar/api/guides/version-resources), [Calendar 410·412 오류](https://developers.google.com/workspace/calendar/api/guides/errors)를 확인했습니다. 테스트는 실제 SDK의 HTTP 직렬화·ETag 헤더·날짜 절삭·오류 변환을 통과하도록 구성했습니다.

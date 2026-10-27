@@ -164,7 +164,7 @@ async function verifyAccount(browser, profile, username) {
             await selectFilter(page, '소속 팀 필터', '경영지원팀');
             await search.fill('이민준');
             await expect(rows).toHaveCount(1);
-            await rows.getByRole('link', { name: /사용자 수정$/ }).click();
+            await rows.getByRole('button', { name: /사용자 수정$/ }).click();
             await expect(page.getByRole('textbox', { name: '표시 이름 (필수)', exact: true })).toHaveValue('이민준');
             await expect(page.getByRole('textbox', { name: '새 비밀번호', exact: true })).toBeVisible();
         }, false);
