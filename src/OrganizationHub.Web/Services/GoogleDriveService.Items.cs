@@ -82,7 +82,7 @@ public sealed partial class GoogleDriveService
     {
         if (request.ConflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile)
         {
-            return await replaceFileContentAsync(request.ReplacementFileId, request.ContentStream, request.FileName, request.ContentType, cancellationToken);
+            return await replaceFileContentAsync(request.ReplacementFileId, request.ContentStream, request.FileName, request.ContentType, cancellationToken, request);
         }
 
         DriveFileNameConflictCheckResult conflictCheckResult = await CheckFileNameConflictAsync(request.TargetFolderId, request.FileName, cancellationToken);
@@ -92,7 +92,16 @@ public sealed partial class GoogleDriveService
             uploadFileName = conflictCheckResult.SuggestedNewFileName;
         }
 
-        return await createFileAsync(request.TargetFolderId, request.ContentStream, uploadFileName, request.ContentType, cancellationToken);
+        return await createFileAsync(request.TargetFolderId, request.ContentStream, uploadFileName, request.ContentType, cancellationToken, request);
+    }
+
+    public async Task<DriveFileItem?> GetUploadReceiptOrNullAsync(DriveItemId fileId, string operationKey, CancellationToken cancellationToken)
+    {
+        using (DriveService drive = await createDriveServiceAsync(cancellationToken))
+        {
+            DriveDataFile? fileOrNull = await DriveUploadReceipt.GetFileOrNullAsync(drive, fileId.GetRequiredValue(), operationKey, cancellationToken);
+            return fileOrNull == null ? null : createDriveFileItem(fileOrNull, string.Empty);
+        }
     }
 
     public async Task<DriveFileItem> CreateFolderAsync(DriveFolderId parentFolderId, DriveItemName folderName, CancellationToken cancellationToken)
@@ -148,7 +157,7 @@ public sealed partial class GoogleDriveService
 
     public async Task DeleteDriveItemAsync(DriveItemId itemId, CancellationToken cancellationToken)
     {
-        string requiredItemId = itemId.GetRequiredValue();
+        itemId.GetRequiredValue();
         DriveFileMetadata? previousMetadataOrNull = await GetFileOrNullAsync(itemId, cancellationToken);
         if (previousMetadataOrNull == null)
         {
@@ -159,12 +168,7 @@ public sealed partial class GoogleDriveService
         {
             using (DriveService driveService = await createDriveServiceAsync(cancellationToken))
             {
-                DriveDataFile updateMetadata = new DriveDataFile();
-                updateMetadata.Trashed = true;
-                FilesResource.UpdateRequest request = driveService.Files.Update(updateMetadata, requiredItemId);
-                request.Fields = "id,name,mimeType,parents";
-                request.SupportsAllDrives = true;
-                await request.ExecuteAsync(cancellationToken);
+                await DriveDeletionConfirmation.ExecuteAsync(driveService, previousMetadataOrNull, cancellationToken);
                 clearDeletedDriveItemCaches(itemId, previousMetadataOrNull);
             }
         }
@@ -222,7 +226,8 @@ public sealed partial class GoogleDriveService
         Stream fileStream,
         DriveItemName fileName,
         FileContentType contentType,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        DriveFileUploadRequest? uploadRequestOrNull = null
     )
     {
         string requiredTargetFolderId = targetFolderId.GetRequiredValue();
@@ -233,6 +238,14 @@ public sealed partial class GoogleDriveService
             using (DriveService driveService = await createDriveServiceAsync(cancellationToken))
             {
                 DriveDataFile metadata = new DriveDataFile();
+                if (uploadRequestOrNull != null)
+                {
+                    if (uploadRequestOrNull.ReservedFileId.HasValue)
+                    {
+                        metadata.Id = uploadRequestOrNull.ReservedFileId.GetRequiredValue();
+                    }
+                    DriveUploadReceipt.Apply(metadata, uploadRequestOrNull);
+                }
                 metadata.Name = requiredFileName;
                 metadata.Parents = new List<string> { requiredTargetFolderId };
                 FilesResource.CreateMediaUpload upload = driveService.Files.Create(metadata, fileStream, requiredContentType);
@@ -283,7 +296,8 @@ public sealed partial class GoogleDriveService
         Stream contentStream,
         DriveItemName fileName,
         FileContentType contentType,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        DriveFileUploadRequest? uploadRequestOrNull = null
     )
     {
         string requiredItemId = fileId.GetRequiredValue();
@@ -295,6 +309,10 @@ public sealed partial class GoogleDriveService
             using (DriveService driveService = await createDriveServiceAsync(cancellationToken))
             {
                 DriveDataFile updateMetadata = new DriveDataFile();
+                if (uploadRequestOrNull != null)
+                {
+                    DriveUploadReceipt.Apply(updateMetadata, uploadRequestOrNull);
+                }
                 updateMetadata.Name = requiredFileName;
                 FilesResource.UpdateMediaUpload upload = driveService.Files.Update(updateMetadata, requiredItemId, contentStream, requiredContentType);
                 upload.Fields = "id,name,mimeType,createdTime,modifiedTime,iconLink,thumbnailLink,size,parents";

@@ -17,6 +17,7 @@ public interface IDriveService
     Task<DriveFileMetadata> MoveDriveItemToFolderAsync(DriveItemId itemId, DriveFolderId targetFolderId, CancellationToken cancellationToken);
     Task<DriveFileItem> CreateFolderAsync(DriveFolderId parentFolderId, DriveItemName folderName, CancellationToken cancellationToken);
     Task<DriveFileItem> UploadFileAsync(DriveFileUploadRequest request, CancellationToken cancellationToken);
+    Task<DriveFileItem?> GetUploadReceiptOrNullAsync(DriveItemId fileId, string operationKey, CancellationToken cancellationToken);
     Task<DriveFileItem> CopyFileToFolderAsync(DriveFileCopyRequest request, CancellationToken cancellationToken);
     Task DeleteDriveItemAsync(DriveItemId itemId, CancellationToken cancellationToken);
     Task<FileDownloadResult> DownloadFileAsync(DriveItemId fileId, CancellationToken cancellationToken);

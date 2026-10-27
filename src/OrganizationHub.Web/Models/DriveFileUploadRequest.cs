@@ -6,6 +6,9 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class DriveFileUploadRequest
 {
+    public DriveItemId ReservedFileId { get; private init; }
+    public string OperationKey { get; private init; } = string.Empty;
+
     public DriveFolderId TargetFolderId
     {
         get;
@@ -65,6 +68,20 @@ public sealed class DriveFileUploadRequest
             contentType,
             EDriveFileNameConflictResolution.AddNewFile,
             DriveItemId.Empty);
+    }
+
+    public DriveFileUploadRequest WithUploadIdentity(DriveItemId reservedFileId, string operationKey)
+    {
+        reservedFileId.GetRequiredValue();
+        if (string.IsNullOrWhiteSpace(operationKey))
+        {
+            throw new ArgumentException("An upload operation key is required.", nameof(operationKey));
+        }
+        return new DriveFileUploadRequest(TargetFolderId, ContentStream, FileName, ContentType, ConflictResolution, ReplacementFileId)
+        {
+            ReservedFileId = reservedFileId,
+            OperationKey = operationKey
+        };
     }
 
     public static DriveFileUploadRequest CreateReplacementFile(

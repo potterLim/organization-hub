@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.BrowserFixture;
 
@@ -14,6 +15,12 @@ public class CaptureDriveProxy : DispatchProxy
 {
     protected override object? Invoke(MethodInfo? method, object?[]? args)
     {
+        if (method!.Name == "DeleteDriveItemAsync" && CaptureState.Mode == "drive-delete-uncertain")
+        {
+            Type uncertaintyType = typeof(IDriveService).Assembly.GetType("OrganizationHub.Web.Services.ResourceDeletionUncertainException")!;
+            Exception uncertainty = (Exception)Activator.CreateInstance(uncertaintyType, new IOException("Synthetic deletion state cannot be read."))!;
+            return Task.FromException(uncertainty);
+        }
         if (method!.Name == "ListFilesAsync" || method.Name == "SearchFilesAsync")
         {
             return listAsync(method.Name, args!);

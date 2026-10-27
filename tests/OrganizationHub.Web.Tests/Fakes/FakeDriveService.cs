@@ -14,6 +14,18 @@ public sealed partial class FakeDriveService : IDriveService
 {
     private readonly Dictionary<string, DriveFileMetadata> mMetadataByFileId = new Dictionary<string, DriveFileMetadata>();
     private readonly Dictionary<string, IReadOnlySet<string>> mAncestorFolderIdsByItemId = new Dictionary<string, IReadOnlySet<string>>();
+    private readonly Dictionary<string, string> mUploadOperationKeysByFileId = new Dictionary<string, string>();
+
+    public async Task<DriveFileItem?> GetUploadReceiptOrNullAsync(DriveItemId fileId, string operationKey, CancellationToken cancellationToken)
+    {
+        string? storedKeyOrNull;
+        DriveFileMetadata? metadataOrNull = await GetFileOrNullAsync(fileId, cancellationToken);
+        if (metadataOrNull == null || mUploadOperationKeysByFileId.TryGetValue(fileId.GetRequiredValue(), out storedKeyOrNull) == false || storedKeyOrNull != operationKey)
+        {
+            return null;
+        }
+        return createDriveFileItem(metadataOrNull);
+    }
 
     public void AddFolderAncestors(string folderId, params string[] ancestorFolderIds)
     {
@@ -125,6 +137,7 @@ public sealed partial class FakeDriveService : IDriveService
             string replacementFileId = request.ReplacementFileId.GetRequiredValue();
             DriveFileMetadata metadata = mMetadataByFileId[replacementFileId];
             metadata.Name = request.FileName.GetRequiredValue();
+            mUploadOperationKeysByFileId[replacementFileId] = request.OperationKey;
             DriveFileItem replacedFile = createDriveFileItem(metadata);
             return replacedFile;
         }
@@ -139,7 +152,8 @@ public sealed partial class FakeDriveService : IDriveService
         string requiredTargetFolderId = request.TargetFolderId.GetRequiredValue();
         string requiredFileName = uploadFileName.GetRequiredValue();
         string requiredContentType = request.ContentType.GetRequiredValue();
-        string fileId = createFileId(requiredTargetFolderId, requiredFileName);
+        string fileId = request.ReservedFileId.HasValue ? request.ReservedFileId.GetRequiredValue() : createFileId(requiredTargetFolderId, requiredFileName);
+        mUploadOperationKeysByFileId[fileId] = request.OperationKey;
         List<string> ancestorFolderIds = new List<string>();
         ancestorFolderIds.Add(requiredTargetFolderId);
         IReadOnlySet<string>? parentAncestorFolderIdsOrNull;

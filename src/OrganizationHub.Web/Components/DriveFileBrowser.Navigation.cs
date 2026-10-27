@@ -81,6 +81,7 @@ public partial class DriveFileBrowser
                 return;
             }
             mFiles = readResult.Value.ToList();
+            mDeleteErrorMessage = string.Empty;
             mCanUploadFiles = canUploadFiles;
             mCanDeleteFiles = canDeleteFiles;
             mDeleteCandidateOrNull = null;

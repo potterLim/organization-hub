@@ -1,12 +1,17 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 
 namespace OrganizationHub.Web.Components;
 
 public partial class DriveFileBrowser
 {
+    private string mDeleteErrorMessage = string.Empty;
+
     private void requestDelete(DriveFileItem file)
     {
         if (file.IsFolder || mCanDeleteFiles == false)
@@ -15,6 +20,7 @@ public partial class DriveFileBrowser
         }
 
         mDeleteCandidateOrNull = file;
+        mDeleteErrorMessage = string.Empty;
     }
 
     private void cancelDelete()
@@ -37,6 +43,7 @@ public partial class DriveFileBrowser
         DriveFileItem deleteCandidate = mDeleteCandidateOrNull;
         mIsDeleting = true;
         mFileErrorMessage = string.Empty;
+        mDeleteErrorMessage = string.Empty;
         try
         {
             DriveFolderId currentFolderId = DriveFolderId.CreateOptional(getCurrentFolderId());
@@ -53,9 +60,17 @@ public partial class DriveFileBrowser
             mDeleteCandidateOrNull = null;
             await loadCurrentFolderAsync();
         }
-        catch
+        catch (ResourceDeletionUncertainException exception)
         {
-            mFileErrorMessage = "파일을 삭제하지 못했습니다. 파일은 아직 남아 있습니다. 잠시 후 다시 시도해 주세요.";
+            Logger.LogWarning(exception, "Drive deletion could not be confirmed for {FileId}.", deleteCandidate.Id);
+            mDeleteCandidateOrNull = null;
+            mDeleteErrorMessage = "삭제 결과를 확인하지 못했습니다. 목록을 새로고침해 확인해 주세요.";
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "Drive deletion failed for {FileId}.", deleteCandidate.Id);
+            mDeleteCandidateOrNull = null;
+            mDeleteErrorMessage = "파일을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.";
         }
         finally
         {

@@ -5,6 +5,7 @@
 @inject IPermissionService PermissionService
 @inject IChangeVersionService ChangeVersionService
 @inject IJSRuntime JavaScriptRuntime
+@inject Microsoft.Extensions.Logging.ILogger<DriveFileBrowser> Logger
 
 <div @ref="mRefreshScopeElement">
     @if (mIsLoadingRoots)
@@ -78,6 +79,10 @@
                         }
                     </div>
                 </div>
+            }
+            @if (string.IsNullOrWhiteSpace(mDeleteErrorMessage) == false)
+            {
+                <MudAlert Severity="Severity.Warning" Class="mb-3">@mDeleteErrorMessage</MudAlert>
             }
             @if (mIsLoadingFiles)
             {
