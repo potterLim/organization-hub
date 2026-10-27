@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -82,7 +82,10 @@ public partial class Calendar
             mMonthEvents = cloneCalendarEvents(previousMonthEvents);
             refreshDerivedCalendarCollections();
             mSelectedEventOrNull = previousSelectedEventOrNull;
-            mErrorMessage = exception.Message;
+            if (exception.IsRemoteStateUncertain)
+            {
+                mDeletionConflictMessage = exception.Message;
+            }
             mIsEditorOpen = exception.IsRemoteStateUncertain == false;
             mEditorMessage = exception.Message;
         }
