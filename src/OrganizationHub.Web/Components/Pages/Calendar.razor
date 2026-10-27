@@ -12,7 +12,7 @@
 @inject IJSRuntime JavaScriptRuntime
 @inject Microsoft.Extensions.Logging.ILogger<Calendar> Logger
 
-<UnsavedChangesGuard HasChanges="@(mIsEditorOpen && hasEditorChanges())" />
+<UnsavedChangesGuard ReturnFocusSelector=".hub-calendar-title-input input" HasChanges="@(mIsEditorOpen && hasEditorChanges())" />
 
 @if (string.IsNullOrWhiteSpace(mDeletionConflictMessage) == false)
 {
@@ -155,7 +155,7 @@ else
                     <div class="hub-section-heading">
                         <MudText Typo="Typo.h6">@(mIsEditing ? "일정 수정" : "일정 추가")</MudText>
                     </div>
-                    <MudText Typo="Typo.caption" Class="hub-muted">저장하거나 취소하기 전까지 작성 중인 일정이 유지됩니다.</MudText>
+                    
                     @if (mIsDiscardConfirmationOpen)
                     {
                         <MudAlert Severity="Severity.Warning" Class="mb-3" role="group" aria-label="일정 초안 폐기 확인">
@@ -181,7 +181,7 @@ else
                                 <MudSelectItem T="string" Value="@calendar.CalendarId.GetRequiredValue()">@calendar.DisplayName</MudSelectItem>
                             }
                         </MudSelect>
-                        <MudTextField @bind-Value="mEditorSummary" Label="일정 제목 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                        <MudTextField @bind-Value="mEditorSummary" Class="hub-calendar-title-input" Label="일정 제목 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
                         <div class="hub-calendar-date-time-grid">
                             <CalendarDateTimeField Label="시작"
                                                    Value="mEditorStartLocalOrNull"
@@ -204,8 +204,8 @@ else
                         <MudTextField @bind-Value="mEditorDescription" Label="설명 (선택)" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" Immediate="true" />
                     </div>
                     <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveEventAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="requestCloseEditor">취소</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="mIsSavingEvent" OnClick="saveEventAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" Disabled="mIsSavingEvent" OnClick="requestCloseEditor">취소</MudButton>
                     </MudStack>
                 }
                 else if (mSelectedEventOrNull != null)

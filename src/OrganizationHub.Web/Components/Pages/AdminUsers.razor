@@ -1,9 +1,12 @@
 @page "/admin/users"
 @attribute [Authorize(Policy = OrganizationHubPolicies.USERS_MANAGE)]
 @inherits OrganizationHubComponentBase
+@inject NavigationManager NavigationManager
 @inject IUserManagementService UserManagementService
 @inject ITeamManagementService TeamManagementService
 @inject IPositionManagementService PositionManagementService
+
+<UnsavedChangesGuard @ref="mDraftGuardOrNull" HasChanges="hasFormChanges()" ReturnFocusSelector="#user-editor input" />
 
 <PageTitle>@OrganizationHubProduct.FormatPageTitle("사용자 관리")</PageTitle>
 
@@ -23,7 +26,7 @@
         <MudPaper Class="hub-card hub-list-card pa-4">
             <div class="hub-admin-section-heading">
                 <MudText Typo="Typo.h6">사용자 목록 · @getFilteredUsers().Count 명</MudText>
-                <MudButton Href="/admin/users#user-editor" OnClick="clearForm" Variant="Variant.Outlined" Color="Color.Primary">새 사용자</MudButton>
+                <MudButton OnClick="requestClearFormAsync" Variant="Variant.Outlined" Color="Color.Primary">새 사용자</MudButton>
             </div>
             <MudTextField @bind-Value="mUserSearchOrNull" Label="사용자 검색" Placeholder="아이디 또는 표시 이름" Immediate="true" Clearable="true" Variant="Variant.Outlined" Margin="Margin.Dense" />
             <div class="hub-position-selection-grid">
@@ -60,7 +63,7 @@
                             @if (canManageUser(user))
                             {
                                 <MudTooltip Text="사용자 수정">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" Href="/admin/users#user-editor" OnClick="@(() => editUser(user))" aria-label="@(user.DisplayName + " 사용자 수정")" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => requestFormChangeAsync(user))" aria-label="@(user.DisplayName + " 사용자 수정")" />
                                 </MudTooltip>
                                 <MudTooltip Text="@(user.IsActive ? "사용자 비활성화" : "사용자 활성화")">
                                     <MudIconButton Icon="@(user.IsActive ? Icons.Material.Filled.Block : Icons.Material.Filled.CheckCircle)" Color="Color.Warning" Size="Size.Small" OnClick="@(() => toggleUserActiveAsync(user))" aria-label="@(user.DisplayName + (user.IsActive ? " 사용자 비활성화" : " 사용자 활성화"))" />
@@ -116,7 +119,7 @@
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="saveUserAsync" Class="hub-primary-action-button">저장</MudButton>
                 @if (mFormModel.Id != 0)
                 {
-                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="clearForm">새 사용자</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="requestClearFormAsync">새 사용자</MudButton>
                 }
             </MudStack>
             @if (mFormModel.Id != 0)

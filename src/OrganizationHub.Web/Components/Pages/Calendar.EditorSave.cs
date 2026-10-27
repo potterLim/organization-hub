@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
 using OrganizationHub.Web.Services;
@@ -11,10 +12,12 @@ namespace OrganizationHub.Web.Components.Pages;
 
 public partial class Calendar
 {
+    private bool mIsSavingEvent;
+
     private async Task saveEventAsync()
     {
         UserSession? currentUserSessionOrNull = CurrentUserSessionOrNull;
-        if (currentUserSessionOrNull == null)
+        if (currentUserSessionOrNull == null || mIsSavingEvent)
         {
             return;
         }
@@ -41,12 +44,8 @@ public partial class Calendar
         try
         {
             CalendarName calendarName = CalendarName.CreateOptional(calendarOrNull.DisplayName);
-            CalendarEventItem optimisticEvent = createOptimisticCalendarEvent(formModelOrNull, calendarName, currentUserSession);
-            applyWritableState(optimisticEvent);
-            mErrorMessage = string.Empty;
-            closeEditor();
-            applySavedEvent(optimisticEvent);
-            await InvokeAsync(StateHasChanged);
+            mIsSavingEvent = true;
+            mEditorMessage = string.Empty;
             CalendarEventItem savedEvent;
             if (isEditing)
             {
@@ -58,11 +57,7 @@ public partial class Calendar
             }
 
             applyWritableState(savedEvent);
-            if (isEditing == false)
-            {
-                removeEventFromMonthList(CalendarId.CreateOptional(optimisticEvent.CalendarId), CalendarEventId.CreateOptional(optimisticEvent.Id));
-            }
-
+            closeEditor();
             applySavedEvent(savedEvent);
             recordLoadedChangeSnapshot();
         }
@@ -71,7 +66,7 @@ public partial class Calendar
             mMonthEvents = cloneCalendarEvents(previousMonthEvents);
             refreshDerivedCalendarCollections();
             mSelectedEventOrNull = previousSelectedEventOrNull;
-            mErrorMessage = "이 일정 위치를 수정할 권한이 없습니다.";
+            mEditorMessage = "이 일정을 수정할 권한이 없습니다.";
         }
         catch (ResourceEditConflictException exception)
         {
@@ -91,12 +86,17 @@ public partial class Calendar
             mIsEditorOpen = exception.IsRemoteStateUncertain == false;
             mEditorMessage = exception.Message;
         }
-        catch
+        catch (Exception exception)
         {
             mMonthEvents = cloneCalendarEvents(previousMonthEvents);
             refreshDerivedCalendarCollections();
             mSelectedEventOrNull = previousSelectedEventOrNull;
-            mErrorMessage = "일정의 저장 결과를 확인하지 못했습니다. 새로고침해 현재 상태를 확인한 뒤 다시 시도해 주세요.";
+            Logger.LogWarning(exception, "Calendar edit could not be confirmed for {EventId}.", formModelOrNull.Id);
+            mEditorMessage = "일정을 저장하지 못했습니다. 작성한 내용은 유지됩니다.";
+        }
+        finally
+        {
+            mIsSavingEvent = false;
         }
     }
 

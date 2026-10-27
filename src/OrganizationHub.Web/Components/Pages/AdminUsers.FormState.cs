@@ -30,6 +30,7 @@ public partial class AdminUsers
         ensureDefaultPositionSelection();
         mFormTitle = "사용자 수정";
         mResetPassword = string.Empty;
+        mSavedFormSnapshot = createFormSnapshot();
     }
 
     private void clearForm()
@@ -43,6 +44,7 @@ public partial class AdminUsers
         ensureDefaultPositionSelection();
         mFormTitle = "새 사용자";
         mResetPassword = string.Empty;
+        mSavedFormSnapshot = createFormSnapshot();
     }
 
     private Task handleTeamChangedAsync(int? teamIdOrNull)

@@ -8,7 +8,7 @@
 @inject IClientTimeZoneService ClientTimeZoneService
 @inject IJSRuntime JavaScriptRuntime
 
-<UnsavedChangesGuard HasChanges="@(string.IsNullOrWhiteSpace(mEditingTaskId) == false || string.IsNullOrWhiteSpace(mNewTaskTitle) == false || mNewTaskDueAt.HasValue)" />
+<UnsavedChangesGuard ReturnFocusSelector=".hub-todo-row input:not([type=checkbox]), .hub-todo-create-input input" HasChanges="@(string.IsNullOrWhiteSpace(mEditingTaskId) == false || string.IsNullOrWhiteSpace(mNewTaskTitle) == false || mNewTaskDueAt.HasValue)" />
 
 @if (string.IsNullOrWhiteSpace(mPreviousDraft) == false)
 {
@@ -99,7 +99,7 @@ else
             </div>
             @if (canShowTaskCreation() && isAggregateSelected())
             {
-                <MudAlert Severity="Severity.Info" Dense="true">새 할 일을 추가할 목록을 선택하세요.</MudAlert>
+                
                 <div class="hub-form-actions">
                     @foreach (TodoTaskListReference taskList in mTaskLists.Where(taskList => mCreatableTaskListIds.Contains(taskList.TaskListId.GetRequiredValue())))
                     {

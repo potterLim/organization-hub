@@ -1,4 +1,5 @@
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JavaScriptRuntime
 
 <NavigationLock ConfirmExternalNavigation="@HasChanges" OnBeforeInternalNavigation="beforeNavigationAsync" />
 @if (mPendingLocationOrNull != null)
@@ -19,10 +20,39 @@
     [Parameter]
     public bool HasChanges { get; set; }
 
+    [Parameter]
+    public string ReturnFocusSelector { get; set; } = string.Empty;
+
     private string? mPendingLocationOrNull;
     private bool mAllowNavigation;
     private bool mShouldFocusNotice;
     private ElementReference mNoticeElement;
+    private Func<Task>? mPendingActionOrNull;
+    private bool mShouldRestoreFocus;
+
+    protected override void OnParametersSet()
+    {
+        if (HasChanges == false)
+        {
+            mPendingLocationOrNull = null;
+            mPendingActionOrNull = null;
+            mShouldFocusNotice = false;
+            mAllowNavigation = false;
+        }
+    }
+
+    public async Task RequestChangeAsync(Func<Task> action)
+    {
+        if (HasChanges == false)
+        {
+            await action();
+            return;
+        }
+        mPendingActionOrNull = action;
+        mPendingLocationOrNull = NavigationManager.Uri;
+        mShouldFocusNotice = true;
+        await InvokeAsync(StateHasChanged);
+    }
 
     private Task beforeNavigationAsync(LocationChangingContext context)
     {
@@ -43,20 +73,38 @@
             mShouldFocusNotice = false;
             await mNoticeElement.FocusAsync();
         }
+        if (mShouldRestoreFocus)
+        {
+            mShouldRestoreFocus = false;
+            await using (IJSObjectReference module = await JavaScriptRuntime.InvokeAsync<IJSObjectReference>("import", "./js/organizationHubDraftFocus.js"))
+            {
+                await module.InvokeVoidAsync("focusEditor", ReturnFocusSelector);
+            }
+        }
     }
 
     private void keepEditing()
     {
         mPendingLocationOrNull = null;
+        mPendingActionOrNull = null;
+        mShouldRestoreFocus = true;
     }
 
-    private void discardAndNavigate()
+    private async Task discardAndNavigate()
     {
         if (mPendingLocationOrNull == null)
         {
             return;
         }
         mAllowNavigation = true;
+        if (mPendingActionOrNull != null)
+        {
+            Func<Task> action = mPendingActionOrNull;
+            mPendingActionOrNull = null;
+            mPendingLocationOrNull = null;
+            await action();
+            return;
+        }
         NavigationManager.NavigateTo(mPendingLocationOrNull);
     }
 }
