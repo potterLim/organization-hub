@@ -48,39 +48,55 @@ public sealed partial class UploadAuditLogService : IUploadAuditLogService
         mLogger = logger;
     }
 
-    public async Task RecordUploadAsync(
-        UserSession userSession,
-        DriveFolderReference targetFolder,
-        DriveFileItem uploadedFile,
-        CancellationToken cancellationToken
-    )
+    public async Task<DriveFileItem> UploadFileAsync(UserSession userSession, DriveFolderReference targetFolder, DriveFileUploadRequest request, CancellationToken cancellationToken)
     {
-        await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        if (targetFolder.FolderId != request.TargetFolderId)
         {
-            UserAccount? uploaderUserOrNull = await loadUserAccountWithAffiliationOrNullAsync(
-                dbContext,
-                userSession.UserAccountId,
-                cancellationToken);
-            UploadAuditLog auditLog = new UploadAuditLog();
-            auditLog.FileId = uploadedFile.Id;
-            auditLog.FileName = uploadedFile.Name;
-            auditLog.FolderId = targetFolder.FolderId.GetRequiredValue();
-            auditLog.FolderDisplayName = targetFolder.DisplayName;
-            auditLog.FolderKind = targetFolder.FolderKind;
-            auditLog.UploaderUserId = userSession.UserAccountId.GetRequiredValue();
-            auditLog.UploaderDisplayName = userSession.DisplayName;
-            auditLog.UploaderStoredCompatibilityRole = userSession.StoredCompatibilityRole;
-            assignUploaderAffiliationSnapshot(auditLog, uploaderUserOrNull);
-            auditLog.TeamId = targetFolder.TeamIdValueOrNull;
-            auditLog.TeamName = targetFolder.TeamName;
-            auditLog.UploadedAt = DateTime.UtcNow;
-            PendingUploadAudit pending = new PendingUploadAudit();
-            pending.Payload = JsonSerializer.Serialize(auditLog);
-            pending.CreatedAt = auditLog.UploadedAt;
-            dbContext.PendingUploadAudits.Add(pending);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await AuditRecoveryService.CompleteUploadAuditAsync(mDbContextFactory, pending.Id, cancellationToken);
+            throw new ArgumentException("The upload and audit folders must match.", nameof(targetFolder));
         }
+        PermissionDecision decision = await mPermissionService.DecideUploadToFolderAsync(userSession, request.TargetFolderId, cancellationToken);
+        if (decision.IsAllowed == false)
+        {
+            throw new UnauthorizedAccessException(decision.Reason);
+        }
+        DriveFileUploadRequest trackedRequest;
+        int pendingId;
+        string operationKey = Guid.NewGuid().ToString("N");
+        try
+        {
+            DriveItemId fileId = request.ConflictResolution == EDriveFileNameConflictResolution.ReplaceExistingFile
+                ? request.ReplacementFileId
+                : await mDriveService.GenerateFileIdAsync(cancellationToken);
+            trackedRequest = request.WithUploadIdentity(fileId, operationKey);
+            DriveFileItem expectedFile = new DriveFileItem();
+            expectedFile.Id = fileId.GetRequiredValue();
+            expectedFile.Name = request.FileName.GetRequiredValue();
+            UploadAuditLog audit = await createUploadAuditAsync(userSession, targetFolder, expectedFile, cancellationToken);
+            pendingId = await persistPendingUploadAsync(audit, operationKey, cancellationToken);
+        }
+        catch (Exception exception) when (cancellationToken.IsCancellationRequested == false)
+        {
+            throw new UploadPreparationException(exception);
+        }
+        DriveFileItem uploadedFile = await mDriveService.UploadFileAsync(trackedRequest, cancellationToken);
+        try
+        {
+            UploadAuditRecoveryService recovery = new UploadAuditRecoveryService(mDbContextFactory, mDriveService, mLogger);
+            await recovery.ConfirmAsync(pendingId, uploadedFile, cancellationToken);
+            await recovery.CompleteAsync(pendingId, cancellationToken);
+        }
+        catch (Exception exception) when (cancellationToken.IsCancellationRequested == false)
+        {
+            mLogger.LogWarning(exception, "Upload {OperationKey} is stored; its durable receipt will be recovered.", operationKey);
+        }
+        return uploadedFile;
+    }
+
+    public async Task RecordUploadAsync(UserSession userSession, DriveFolderReference targetFolder, DriveFileItem uploadedFile, CancellationToken cancellationToken)
+    {
+        UploadAuditLog audit = await createUploadAuditAsync(userSession, targetFolder, uploadedFile, cancellationToken);
+        int pendingId = await persistPendingUploadAsync(audit, string.Empty, cancellationToken);
+        await new UploadAuditRecoveryService(mDbContextFactory, mDriveService, mLogger).CompleteAsync(pendingId, cancellationToken);
     }
 
     public async Task AttachUploadMetadataAsync(IReadOnlyList<DriveFileItem> files, CancellationToken cancellationToken)
@@ -137,6 +153,45 @@ public sealed partial class UploadAuditLogService : IUploadAuditLogService
             List<UploadAuditLog> auditLogs = await dbContext.UploadAuditLogs.AsNoTracking().Where(auditLog => readableFolderIds.Contains(auditLog.FolderId)).OrderByDescending(auditLog => auditLog.UploadedAt).Take(maximumCount.GetRequiredValue()).ToListAsync(cancellationToken);
             Dictionary<int, UserAccount> uploaderUsersById = await loadUploaderUsersByIdAsync(dbContext, auditLogs, cancellationToken);
             return createItems(auditLogs, uploaderUsersById);
+        }
+    }
+
+    private async Task<int> persistPendingUploadAsync(UploadAuditLog audit, string operationKey, CancellationToken cancellationToken)
+    {
+        await using (OrganizationHubDbContext db = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            PendingUploadAudit pending = new PendingUploadAudit();
+            pending.Payload = JsonSerializer.Serialize(audit);
+            pending.OperationKey = operationKey;
+            pending.CreatedAt = audit.UploadedAt;
+            db.PendingUploadAudits.Add(pending);
+            await db.SaveChangesAsync(cancellationToken);
+            return pending.Id;
+        }
+    }
+
+    private async Task<UploadAuditLog> createUploadAuditAsync(UserSession userSession, DriveFolderReference targetFolder, DriveFileItem file, CancellationToken cancellationToken)
+    {
+        await using (OrganizationHubDbContext dbContext = await mDbContextFactory.CreateDbContextAsync(cancellationToken))
+        {
+            UserAccount? uploaderUserOrNull = await loadUserAccountWithAffiliationOrNullAsync(
+                dbContext,
+                userSession.UserAccountId,
+                cancellationToken);
+            UploadAuditLog auditLog = new UploadAuditLog();
+            auditLog.FileId = file.Id;
+            auditLog.FileName = file.Name;
+            auditLog.FolderId = targetFolder.FolderId.GetRequiredValue();
+            auditLog.FolderDisplayName = targetFolder.DisplayName;
+            auditLog.FolderKind = targetFolder.FolderKind;
+            auditLog.UploaderUserId = userSession.UserAccountId.GetRequiredValue();
+            auditLog.UploaderDisplayName = userSession.DisplayName;
+            auditLog.UploaderStoredCompatibilityRole = userSession.StoredCompatibilityRole;
+            assignUploaderAffiliationSnapshot(auditLog, uploaderUserOrNull);
+            auditLog.TeamId = targetFolder.TeamIdValueOrNull;
+            auditLog.TeamName = targetFolder.TeamName;
+            auditLog.UploadedAt = DateTime.UtcNow;
+            return auditLog;
         }
     }
 

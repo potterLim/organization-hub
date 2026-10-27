@@ -54,4 +54,8 @@ public class CalendarEventDeletionAuditLog
         get; set;
     }
     public string ErrorMessage { get; set; } = string.Empty;
+    public DateTime? LastRecoveryAttemptAt
+    {
+        get; set;
+    }
 }

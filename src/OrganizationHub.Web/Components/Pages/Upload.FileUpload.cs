@@ -110,10 +110,7 @@ public partial class Upload
                 DriveFolderOwnerContext ownerContext = new DriveFolderOwnerContext(rootFolderOrNull.TeamIdOrNull, rootFolderOrNull.TeamKey, rootFolderOrNull.TeamName);
                 DriveFolderReferenceCreationRequest referenceRequest = new DriveFolderReferenceCreationRequest(uploadFolderId, getCurrentFolderDisplayName(), rootFolderOrNull.FolderKind, EDriveFolderUploadAccess.UploadAllowed, ownerContext);
                 DriveFolderReference targetFolder = new DriveFolderReference(referenceRequest);
-                FileUploadCompletion completion = await FileUploadCompletion.ExecuteAsync(
-                    () => DriveService.UploadFileAsync(request, CancellationToken.None),
-                    file => UploadAuditLogService.RecordUploadAsync(CurrentUserSessionOrNull, targetFolder, file, CancellationToken.None),
-                    exception => Logger.LogWarning(exception, "Upload succeeded but its audit record could not be saved."));
+                DriveFileItem uploadedFile = await UploadAuditLogService.UploadFileAsync(CurrentUserSessionOrNull, targetFolder, request, CancellationToken.None);
                 isFileStored = true;
                 mSelectedFileOrNull = null;
                 mUploadConflictOrNull = null;
@@ -121,15 +118,13 @@ public partial class Upload
                 await loadFoldersAsync();
                 await loadRecentUploadsAsync();
                 mUploadConflictOrNull = null;
-                if (completion.IsAuditRecorded)
-                {
-                    showMessage(getUploadSuccessMessage(conflictResolution, completion.File.Name), Severity.Success);
-                }
-                else
-                {
-                    showMessage(getUploadSuccessMessage(conflictResolution, completion.File.Name), Severity.Success);
-                }
+                showMessage(getUploadSuccessMessage(conflictResolution, uploadedFile.Name), Severity.Success);
             }
+        }
+        catch (UploadPreparationException exception)
+        {
+            Logger.LogWarning(exception, "Upload preparation failed before sending file content.");
+            showMessage(exception.Message, Severity.Warning);
         }
         catch (Exception exception)
         {

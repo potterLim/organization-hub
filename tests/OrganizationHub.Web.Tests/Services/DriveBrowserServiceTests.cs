@@ -280,6 +280,10 @@ public sealed class DriveBrowserServiceTests
 
     private sealed class FakeUploadAuditLogService : IUploadAuditLogService
     {
+        public Task<DriveFileItem> UploadFileAsync(UserSession userSession, DriveFolderReference targetFolder, DriveFileUploadRequest request, CancellationToken cancellationToken)
+        {
+            throw new System.NotSupportedException();
+        }
         public List<UploadAuditLogItem> RecentUploadsForFolder { get; } = new List<UploadAuditLogItem>();
 
         public Task RecordUploadAsync(UserSession userSession, DriveFolderReference targetFolder, DriveFileItem uploadedFile, CancellationToken cancellationToken)

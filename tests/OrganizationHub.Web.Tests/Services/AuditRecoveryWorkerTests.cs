@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OrganizationHub.Web.Data;
@@ -17,10 +18,14 @@ namespace OrganizationHub.Web.Tests.Services;
 
 public sealed class AuditRecoveryWorkerTests
 {
+    private sealed class WorkerDatabaseInterceptor : SaveChangesInterceptor
+    {
+    }
+
     [Fact]
     public async Task HostedWorkerRestoresAQueuedReceiptWithoutAUserRequestAsync()
     {
-        using (TestDbContextFactory factory = new TestDbContextFactory())
+        using (TestDbContextFactory factory = new TestDbContextFactory(new WorkerDatabaseInterceptor()))
         {
             using (OrganizationHubDbContext db = factory.CreateDbContext())
             {
@@ -43,7 +48,7 @@ public sealed class AuditRecoveryWorkerTests
                 {
                     using (OrganizationHubDbContext db = factory.CreateDbContext())
                     {
-                        if (await db.PendingUploadAudits.AnyAsync(timeout.Token) == false)
+                        if (await db.UploadAuditLogs.AnyAsync(item => item.FileId == "automatic-recovery", timeout.Token))
                         {
                             break;
                         }

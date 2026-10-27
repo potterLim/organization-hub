@@ -9,6 +9,8 @@ namespace OrganizationHub.Web.Services;
 
 public interface IUploadAuditLogService
 {
+    Task<DriveFileItem> UploadFileAsync(UserSession userSession, DriveFolderReference targetFolder, DriveFileUploadRequest request, CancellationToken cancellationToken);
+
     Task RecordUploadAsync(
         UserSession userSession,
         DriveFolderReference targetFolder,

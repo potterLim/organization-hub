@@ -84,7 +84,7 @@ public static class Program
             {
                 GlobalSetting setting = await db.GlobalSettings.SingleAsync();
                 bool configured = mode != "unconfigured";
-                setting.OfficialRootFolderId = configured ? "qa-root" : null;
+                setting.OfficialRootFolderId = configured && mode != "root-unconfigured" ? "qa-root" : null;
                 setting.CommonFolderId = configured ? "qa-common" : null;
                 setting.PublicFolderId = configured ? "qa-public" : null;
                 setting.ResponsibleResourcesFolderId = configured ? "qa-responsible" : null;
@@ -117,6 +117,7 @@ public static class Program
                 return Results.Ok(new
                 {
                     pendingUploads = await db.PendingUploadAudits.CountAsync(),
+                    teamFiles = (await CaptureState.Drive.ListFilesAsync(DriveFolderId.CreateRequired("qa-team"), CancellationToken.None)).Select(item => new { fileId = item.Id, fileName = item.Name }).ToList(),
                     uploads = await db.UploadAuditLogs.Select(item => new { fileId = item.FileId, fileName = item.FileName }).ToListAsync(),
                     latestDeletionId = await db.CalendarEventDeletionAuditLogs.MaxAsync(item => item.Id),
                     latestDeletion = (await db.CalendarEventDeletionAuditLogs.OrderByDescending(item => item.Id).Select(item => item.Status).FirstOrDefaultAsync()).ToString()
@@ -130,7 +131,12 @@ public static class Program
         {
             using (OrganizationHubDbContext db = await factory.CreateDbContextAsync())
             {
-                await db.Database.ExecuteSqlRawAsync("DROP TRIGGER IF EXISTS audit_todo; DROP TRIGGER IF EXISTS audit_upload; DROP TRIGGER IF EXISTS audit_delete;");
+                await db.Database.ExecuteSqlRawAsync("DROP TRIGGER IF EXISTS audit_todo; DROP TRIGGER IF EXISTS audit_upload; DROP TRIGGER IF EXISTS audit_delete; DROP TRIGGER IF EXISTS audit_pending;");
+
+                if (mode == "upload-intent")
+                {
+                    await db.Database.ExecuteSqlRawAsync("CREATE TRIGGER audit_pending BEFORE INSERT ON PendingUploadAudits BEGIN SELECT RAISE(FAIL,'Audit initial journal unavailable'); END;");
+                }
 
                 if (mode == "deadline")
                 {
