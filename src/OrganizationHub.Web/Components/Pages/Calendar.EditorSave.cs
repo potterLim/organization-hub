@@ -45,6 +45,7 @@ public partial class Calendar
         {
             CalendarName calendarName = CalendarName.CreateOptional(calendarOrNull.DisplayName);
             mIsSavingEvent = true;
+            mOpenEditorDateTimeFieldOrNull = null;
             mEditorMessage = string.Empty;
             CalendarEventItem savedEvent;
             if (isEditing)

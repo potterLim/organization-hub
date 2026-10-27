@@ -10,6 +10,7 @@ public partial class ApprovalRequest
 {
     private ApprovalCreateContext mCreateContext = new ApprovalCreateContext();
     private ApprovalRequestFormModel mFormModel = new ApprovalRequestFormModel();
+    private ApprovalRequestDraftState? mDraftStateOrNull;
     private ApprovalApproverSelectionState? mApproverSelectionStateOrNull;
     private List<DriveFolderPathItem> mSourceFolderPath = new List<DriveFolderPathItem>();
     private List<DriveFolderPathItem> mDestinationFolderPath = new List<DriveFolderPathItem>();

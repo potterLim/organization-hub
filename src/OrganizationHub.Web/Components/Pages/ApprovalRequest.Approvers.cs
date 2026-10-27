@@ -29,6 +29,7 @@ public partial class ApprovalRequest
         }
 
         getApproverSelectionState().ApplyDefaultApproversForStepCount();
+        mDraftStateOrNull = new ApprovalRequestDraftState(mFormModel);
     }
 
     private Task handleStepCountChangedAsync(int stepCount)

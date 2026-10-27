@@ -175,15 +175,16 @@ else
                         </MudAlert>
                     }
                     <div class="hub-calendar-editor-stack">
-                        <MudSelect T="string" Label="저장 위치" Value="mEditorCalendarId" ValueChanged="handleEditorCalendarChangedAsync" Disabled="mIsEditing" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        <MudSelect T="string" Label="저장 위치" Value="mEditorCalendarId" ValueChanged="handleEditorCalendarChangedAsync" Disabled="@(mIsEditing || mIsSavingEvent)" Variant="Variant.Outlined" Margin="Margin.Dense">
                             @foreach (CalendarReference calendar in (mIsEditing ? mWritableCalendars : mCreatableCalendars))
                             {
                                 <MudSelectItem T="string" Value="@calendar.CalendarId.GetRequiredValue()">@calendar.DisplayName</MudSelectItem>
                             }
                         </MudSelect>
-                        <MudTextField @bind-Value="mEditorSummary" Class="hub-calendar-title-input" Label="일정 제목 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
+                        <MudTextField @bind-Value="mEditorSummary" Class="hub-calendar-title-input" Label="일정 제목 (필수)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Disabled="mIsSavingEvent" />
                         <div class="hub-calendar-date-time-grid">
                             <CalendarDateTimeField Label="시작"
+                                                   IsDisabled="mIsSavingEvent"
                                                    Value="mEditorStartLocalOrNull"
                                                    ValueChanged="handleEditorStartChangedAsync"
                                                    CurrentDateOrNull="@getClientToday()"
@@ -191,6 +192,7 @@ else
                                                    IsOpen="@(mOpenEditorDateTimeFieldOrNull == ECalendarEditorDateTimeField.Start)"
                                                    IsOpenChanged="@((bool isOpen) => handleEditorDateTimeFieldOpenChangedAsync(ECalendarEditorDateTimeField.Start, isOpen))" />
                             <CalendarDateTimeField Label="종료"
+                                                   IsDisabled="mIsSavingEvent"
                                                    Value="mEditorEndLocalOrNull"
                                                    ValueChanged="handleEditorEndChangedAsync"
                                                    MinimumValueOrNull="mEditorStartLocalOrNull"
@@ -199,9 +201,9 @@ else
                                                    IsOpen="@(mOpenEditorDateTimeFieldOrNull == ECalendarEditorDateTimeField.End)"
                                                    IsOpenChanged="@((bool isOpen) => handleEditorDateTimeFieldOpenChangedAsync(ECalendarEditorDateTimeField.End, isOpen))" />
                         </div>
-                        <MudSwitch T="bool" @bind-Value="mIsEditorAllDay" Label="종일 일정" Color="Color.Primary" />
-                        <MudTextField @bind-Value="mEditorLocation" Label="위치 (선택)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
-                        <MudTextField @bind-Value="mEditorDescription" Label="설명 (선택)" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" Immediate="true" />
+                        <MudSwitch T="bool" @bind-Value="mIsEditorAllDay" Label="종일 일정" Color="Color.Primary" Disabled="mIsSavingEvent" />
+                        <MudTextField @bind-Value="mEditorLocation" Label="위치 (선택)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Disabled="mIsSavingEvent" />
+                        <MudTextField @bind-Value="mEditorDescription" Label="설명 (선택)" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" Immediate="true" Disabled="mIsSavingEvent" />
                     </div>
                     <MudStack Row="true" Spacing="2" Class="hub-form-actions hub-form-actions-centered mt-3">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="mIsSavingEvent" OnClick="saveEventAsync" StartIcon="@Icons.Material.Filled.Save" Class="hub-primary-action-button">저장</MudButton>

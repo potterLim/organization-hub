@@ -10,6 +10,8 @@
 
 <h1 class="hub-sr-only">결재 요청</h1>
 
+<UnsavedChangesGuard ReturnFocusSelector=".hub-approval-line-card input" HasChanges="@(!mIsLoading && mDraftStateOrNull != null && (mDraftStateOrNull.HasChanges(mFormModel) || string.IsNullOrWhiteSpace(mNewDestinationFolderName) == false))" />
+
 <MudButton Href="/approvals/history?view=requested" StartIcon="@Icons.Material.Filled.TrackChanges" Color="Color.Primary" Class="mb-4">내 요청 진행 상황</MudButton>
 
 @if (string.IsNullOrWhiteSpace(mMessage) == false)

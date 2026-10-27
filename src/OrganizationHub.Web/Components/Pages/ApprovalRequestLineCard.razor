@@ -3,7 +3,7 @@
         <MudText Typo="Typo.h6">결재 정보</MudText>
         <MudText Typo="Typo.body2" Class="hub-muted">요청 제목과 결재 단계를 확인합니다.</MudText>
     </div>
-    <MudTextField T="string" Value="@FormModel.Title" ValueChanged="TitleChanged" Label="요청 제목 (선택 · 미입력 시 파일명)" Placeholder="@SuggestedTitle" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    <MudTextField T="string" Value="@FormModel.Title" ValueChanged="TitleChanged" Label="요청 제목 (선택 · 미입력 시 파일명)" Placeholder="@SuggestedTitle" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" />
     <MudSelect T="int" Label="결재 단계" Value="FormModel.StepCount" ValueChanged="StepCountChanged" Variant="Variant.Outlined" Margin="Margin.Dense" HelperText="@StepDescription">
         @foreach (ApprovalStepCount stepCount in CreateContext.AvailableStepCounts)
         {
