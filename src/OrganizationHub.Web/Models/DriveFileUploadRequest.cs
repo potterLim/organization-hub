@@ -6,7 +6,10 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class DriveFileUploadRequest
 {
-    public DriveItemId ReservedFileId { get; private init; }
+    public DriveItemId ReservedFileId
+    {
+        get; private init;
+    }
     public string OperationKey { get; private init; } = string.Empty;
 
     public DriveFolderId TargetFolderId

@@ -149,6 +149,73 @@ async function drive(browser, width, height) {
         await context.close();
     }
 }
+async function upload(browser, width, height) {
+    const { context, page } = await login(browser, width, height, 'p1-create');
+    try {
+        await context.request.post(base + '/fixture/state/normal');
+        await go(page, '/upload?root=qa-team');
+        const fileName = `초기-기록-검사-${width}.pdf`;
+        await page.locator('input[type=file]').setInputFiles({ name: fileName, mimeType: 'application/pdf', buffer: fs.readFileSync(path.join(__dirname, 'Fixture/sample.pdf')) });
+        await context.request.post(base + '/fixture/fault/upload-intent');
+        await page.getByRole('button', { name: '파일 올리기', exact: true }).click();
+        await expect(page.getByText('파일을 올리지 못했습니다. 잠시 후 다시 시도해 주세요.', { exact: true })).toBeVisible();
+        let records = await (await context.request.get(base + '/fixture/records')).json();
+        assert(!records.teamFiles.some(file => file.fileName === fileName));
+        assert(!records.uploads.some(file => file.fileName === fileName));
+        await proof(page, width, 'p1-create', 'upload-preparation-failure');
+        await context.request.post(base + '/fixture/fault/none');
+        await page.getByRole('button', { name: '파일 올리기', exact: true }).click();
+        await expect(page.getByText('파일 올리기 완료: ' + fileName, { exact: true })).toBeVisible();
+        records = await (await context.request.get(base + '/fixture/records')).json();
+        assert.equal(records.teamFiles.filter(file => file.fileName === fileName).length, 1);
+        assert.equal(records.uploads.filter(file => file.fileName === fileName).length, 1);
+        await proof(page, width, 'p1-create', 'upload-retry-saved-once');
+    } finally {
+        await context.request.post(base + '/fixture/fault/none');
+        await context.close();
+    }
+}
+async function copy(browser, width, height) {
+    for (const account of ['ux-member', 'new-member']) {
+        const { context, page } = await login(browser, width, height, account);
+        try {
+            await context.request.post(base + '/fixture/state/root-unconfigured');
+            await go(page, '/dashboard');
+            await expect(page.locator('.hub-setup-guide')).toHaveCount(0);
+            await expect(page.getByText('조직의 기본 연결을 준비하고 있습니다.', { exact: false })).toHaveCount(0);
+            await proof(page, width, account, 'home-contextual-guidance');
+        } finally {
+            await context.request.post(base + '/fixture/state/normal');
+            await context.close();
+        }
+    }
+    const { context, page } = await login(browser, width, height, 'ux-admin');
+    try {
+        await context.request.post(base + '/fixture/state/unconfigured');
+        await go(page, '/dashboard');
+        await expect(page.getByText('자료를 함께 보관하려면 Google 계정과 기본 폴더를 연결해 주세요.', { exact: true })).toBeVisible();
+        await proof(page, width, 'ux-admin', 'home-setup-actions');
+        await context.request.post(base + '/fixture/state/normal');
+        await go(page, '/admin/settings');
+        const help = page.getByText('자료를 보관할 기본 폴더를 선택해 주세요. 일정과 할 일은 사용하는 업무에 맞춰 따로 연결할 수 있습니다.', { exact: true });
+        await expect(help).not.toBeVisible();
+        await proof(page, width, 'ux-admin', 'settings-help-collapsed');
+        await page.locator('summary').filter({ hasText: '연결 설정 도움말' }).click();
+        await expect(help).toBeVisible();
+        await proof(page, width, 'ux-admin', 'settings-help-expanded');
+        await go(page, '/admin/users');
+        assert(await page.locator('td[data-label]').evaluateAll(cells => cells.every(cell => !cell.getAttribute('data-label').includes('필수'))));
+        await proof(page, width, 'ux-admin', 'user-list-labels');
+        await page.getByRole('button', { name: '로그아웃', exact: true }).click();
+        await page.waitForURL('**/login**');
+        await go(page, '/login?reason=session-ended');
+        await expect(page.getByText('로그인이 종료되었습니다. 다시 로그인해 주세요.', { exact: true })).toBeVisible();
+        await proof(page, width, 'login', 'session-ended');
+    } finally {
+        await context.request.post(base + '/fixture/state/normal');
+        await context.close();
+    }
+}
 (async () => {
     const browser = await chromium.launch({ executablePath: process.env.HUB_BROWSER_EXECUTABLE });
     try {
@@ -156,6 +223,8 @@ async function drive(browser, width, height) {
             if (area === 'all' || area === 'calendar') await calendar(browser, width, height);
             if (area === 'all' || area === 'settings') await settings(browser, width, height);
             if (area === 'all' || area === 'drive') await drive(browser, width, height);
+            if (area === 'all' || area === 'upload') await upload(browser, width, height);
+            if (area === 'all' || area === 'copy') await copy(browser, width, height);
             if (area === 'all' || area === 'approval') {
                 for (const account of ['ux-member', 'p1-create']) await approval(browser, width, height, account);
             }

@@ -1,19 +1,12 @@
-@if (IsConnected == false || HasRootFolder == false)
-{
-    <MudPaper Class="hub-card hub-setup-guide pa-4 mb-4">
-        <div class="hub-setup-guide-copy">
-            <MudText Typo="Typo.h6">업무 공간 시작하기</MudText>
-            <AuthorizeView Policy="@OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE">
-                <Authorized>
-                    <MudText Typo="Typo.body2" Class="hub-muted">Google 계정을 연결한 뒤 자료를 보관할 기본 폴더를 지정해 주세요. 일정과 할 일은 필요할 때 추가로 연결할 수 있습니다.</MudText>
-                </Authorized>
-                <NotAuthorized>
-                    <MudText Typo="Typo.body2" Class="hub-muted">조직의 기본 연결을 준비하고 있습니다. 자료나 일정이 보이지 않으면 조직 관리자에게 Google 연결과 내 팀 배정을 확인해 달라고 요청해 주세요.</MudText>
-                </NotAuthorized>
-            </AuthorizeView>
-        </div>
-        <AuthorizeView Policy="@OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE" Context="settingsAuthorization">
-            <Authorized>
+<AuthorizeView Policy="@OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE">
+    <Authorized Context="workspaceSetupAuthorization">
+        @if (IsConnected == false || HasRootFolder == false)
+        {
+            <MudPaper Class="hub-card hub-setup-guide pa-4 mb-4">
+                <div class="hub-setup-guide-copy">
+                    <MudText Typo="Typo.h6">업무 공간 시작하기</MudText>
+                    <MudText Typo="Typo.body2" Class="hub-muted">자료를 함께 보관하려면 Google 계정과 기본 폴더를 연결해 주세요.</MudText>
+                </div>
                 <ol class="hub-setup-steps" aria-label="기본 설정 순서">
                     <li>
                         <span class="@(IsConnected ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(IsConnected ? "연결됨" : "1단계")</span>
@@ -35,10 +28,10 @@
                         }
                     </li>
                 </ol>
-            </Authorized>
-        </AuthorizeView>
-    </MudPaper>
-}
+            </MudPaper>
+        }
+    </Authorized>
+</AuthorizeView>
 
 @code
 {

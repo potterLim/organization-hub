@@ -14,7 +14,7 @@
         }
         @if (ReasonOrNull == "session-ended")
         {
-            <div class="hub-login-error" role="status">로그인 세션이 종료되었습니다. 다른 탭의 로그아웃이나 계정 변경이 반영되었을 수 있습니다. 다시 로그인해 주세요.</div>
+            <div class="hub-login-error" role="status">로그인이 종료되었습니다. 다시 로그인해 주세요.</div>
         }
         <form method="post" action="/account/login">
             <AntiforgeryToken />

@@ -17,8 +17,15 @@ internal static class DriveDeletionConfirmation
         request.SupportsAllDrives = true;
         return ResourceDeletionConfirmation.ExecuteAsync(
             () => request.ExecuteAsync(cancellationToken),
-            () => ResourceDeletionConfirmation.IsDeletedAsync(() => isTrashedAsync(drive, metadata.Id, cancellationToken), () => ensureParentReadableAsync(drive, metadata, cancellationToken)),
+            () => isDeletedAsync(drive, metadata, cancellationToken),
             cancellationToken);
+    }
+
+    private static Task<bool> isDeletedAsync(DriveService drive, DriveFileMetadata metadata, CancellationToken cancellationToken)
+    {
+        return ResourceDeletionConfirmation.IsDeletedAsync(
+            () => isTrashedAsync(drive, metadata.Id, cancellationToken),
+            () => ensureParentReadableAsync(drive, metadata, cancellationToken));
     }
 
     private static async Task<bool> isTrashedAsync(DriveService drive, string fileId, CancellationToken cancellationToken)

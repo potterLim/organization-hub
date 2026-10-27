@@ -67,3 +67,13 @@ Google 동작 기준은 [Tasks 리소스의 날짜 전용 마감과 삭제 플�
 `HUB_TEST_AREA=admin`으로 `user-outcomes.cjs`의 저장·입력 보호 동선만 세 규격에서 재검사할 수 있습니다. 사용자 편집 진입 시 기본값 때문에 미저장 경고가 뜨지 않는지도 확인합니다.
 
 안내 문구의 회귀 기준은 사용자의 처리 결과와 필요한 다음 행동을 설명하는 것입니다. 원본 예외와 복구 절차는 운영 로그·관리자 진단에 남기고, 이미 성공한 작업을 내부 기록 실패 때문에 사용자 오류로 표시하지 않습니다. 업로드 기록의 백그라운드 복구는 실제 hosted worker 시작·종료 검사로도 검증합니다.
+
+## 계정 경계·입력 보호·결과 안내 회귀 검사
+
+`file-cache-boundary.cjs`는 같은 브라우저에서 팀 자료 PDF의 보기·다운로드 캐시를 먼저 채우고, 로그아웃 및 다른 팀 계정 로그인 후 같은 주소가 거부되는지 세 화면 규격에서 검사합니다. 권한을 우회하는 `cache: no-store` 요청으로 테스트를 통과시키지 않습니다.
+
+`editing-boundaries.cjs`는 저장 중 일정 입력 잠금, 일반 사용자·작성 권한 사용자의 결재 초안 이탈 확인 및 초점 복원, 설정 새로고침 실패와 미저장 표시 옵션 보존, 파일 삭제 결과 불확실 시 목록 유지, 업로드 전 기록 저장 실패와 재시도, 계정에 필요한 안내만 표시하는지 검사합니다. PC 1440×1000·1920×1080과 모바일 480×1040 DPR 3 화면을 저장합니다. `HUB_TEST_AREA=calendar|approval|settings|drive|upload|copy`로 영역별 실행할 수 있으며, 생략하면 모두 실행합니다. 상태를 공유하는 fixture이므로 다른 브라우저 검사와 순차 실행합니다.
+
+실행 변수와 런타임 지정은 `user-outcomes.cjs`와 같습니다. `/fixture/fault/upload-intent`는 최초 작업 기록 저장을 거절하고, `/fixture/state/drive-delete-uncertain`은 삭제 결과 재조회 실패를 표현합니다. 이 경로는 격리된 테스트 호스트에만 존재합니다. 실제 SDK의 PATCH·재개 가능한 업로드·응답 유실·작업 식별자 검사는 `DriveMutationContractTests`와 `UploadAuditLogServiceTests`가 별도로 수행합니다.
+
+Google API 동작 기준: [신규·교체 파일 업로드와 재개 가능한 업로드](https://developers.google.com/workspace/drive/api/guides/manage-uploads), [앱 전용 파일 속성](https://developers.google.com/workspace/drive/api/guides/properties). 테스트에서 Google 서버의 실제 가용성을 확인하는 것은 아닙니다.

@@ -53,10 +53,10 @@
                     <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate Context="user">
-                    <MudTd DataLabel="아이디 (필수)">@user.Username</MudTd>
-                    <MudTd DataLabel="표시 이름 (필수)">@user.DisplayName</MudTd>
+                    <MudTd DataLabel="아이디">@user.Username</MudTd>
+                    <MudTd DataLabel="표시 이름">@user.DisplayName</MudTd>
                     <MudTd DataLabel="소속">@getAffiliationName(user)</MudTd>
-                    <MudTd DataLabel="직책 (필수)">@getPositionName(user)</MudTd>
+                    <MudTd DataLabel="직책">@getPositionName(user)</MudTd>
                     <MudTd DataLabel="상태"><span class="@(user.IsActive ? "hub-status-pill hub-status-active" : "hub-status-pill hub-status-inactive")">@(user.IsActive ? "활성" : "비활성")</span></MudTd>
                     <MudTd DataLabel="작업" Class="hub-action-cell">
                         <div class="hub-table-actions">

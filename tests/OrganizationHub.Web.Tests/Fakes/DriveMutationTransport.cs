@@ -16,18 +16,40 @@ public sealed class DriveMutationTransport : HttpMessageHandler, IGoogleApiCrede
 {
     private JsonObject mFile = new JsonObject
     {
-        ["id"] = "file", ["name"] = "report.pdf", ["mimeType"] = "application/pdf", ["parents"] = new JsonArray("folder"), ["trashed"] = false
+        ["id"] = "file",
+        ["name"] = "report.pdf",
+        ["mimeType"] = "application/pdf",
+        ["parents"] = new JsonArray("folder"),
+        ["trashed"] = false
     };
     private JsonObject mPendingMetadata = new JsonObject();
     public bool HasFile { get; set; } = true;
     public bool ShouldCommit { get; set; } = true;
     public bool ShouldLoseResponse { get; set; } = true;
-    public bool ShouldFailRead { get; set; }
-    public bool ShouldHideParent { get; set; }
-    public bool ShouldReturnMissingAfterWrite { get; set; }
-    public HttpStatusCode? RejectedStatusOrNull { get; set; }
-    public int Writes { get; private set; }
-    public bool IsTrashed { get; private set; }
+    public bool ShouldFailRead
+    {
+        get; set;
+    }
+    public bool ShouldHideParent
+    {
+        get; set;
+    }
+    public bool ShouldReturnMissingAfterWrite
+    {
+        get; set;
+    }
+    public HttpStatusCode? RejectedStatusOrNull
+    {
+        get; set;
+    }
+    public int Writes
+    {
+        get; private set;
+    }
+    public bool IsTrashed
+    {
+        get; private set;
+    }
     public string OperationKey { get; private set; } = string.Empty;
     public string UploadedFileId { get; private set; } = string.Empty;
 
