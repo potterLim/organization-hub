@@ -18,7 +18,7 @@ public partial class AdminSettings
         showOperationResult(folderAssignmentResult, folderAssignmentResult.IsSuccess ? folder.Name + " 폴더를 연결했습니다." : string.Empty);
         if (folderAssignmentResult.IsSuccess)
         {
-            await loadConfigurationAsync();
+            await reloadResourceConfigurationAsync();
             await loadAssignmentOptionsAsync();
             await loadDriveResourceNamesAsync();
         }
@@ -46,7 +46,7 @@ public partial class AdminSettings
         showOperationResult(fileAssignmentResult, fileAssignmentResult.IsSuccess ? file.Name + " 파일을 연결했습니다." : string.Empty);
         if (fileAssignmentResult.IsSuccess)
         {
-            await loadConfigurationAsync();
+            await reloadResourceConfigurationAsync();
             await loadDriveResourceNamesAsync();
         }
     }
@@ -57,7 +57,7 @@ public partial class AdminSettings
         showOperationResult(calendarAssignmentResult, calendarAssignmentResult.IsSuccess ? calendar.Summary + " Calendar를 연결했습니다." : string.Empty);
         if (calendarAssignmentResult.IsSuccess)
         {
-            await loadConfigurationAsync();
+            await reloadResourceConfigurationAsync();
             await loadAssignmentOptionsAsync();
         }
     }
@@ -68,7 +68,7 @@ public partial class AdminSettings
         showOperationResult(taskListAssignmentResult, taskListAssignmentResult.IsSuccess ? taskList.Title + " Google Tasks 목록을 연결했습니다." : string.Empty);
         if (taskListAssignmentResult.IsSuccess)
         {
-            await loadConfigurationAsync();
+            await reloadResourceConfigurationAsync();
             await loadAssignmentOptionsAsync();
         }
     }

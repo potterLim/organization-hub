@@ -112,6 +112,14 @@ async function settings(browser, width, height) {
         await page.getByRole('button', { name: '새로고침', exact: true }).click();
         await expect(page.getByText('연결된 자료 목록을 새로고침했습니다.', { exact: true })).toBeVisible();
         assert.equal(await toggle.isChecked(), !initial);
+        await page.getByRole('tab', { name: 'Calendar', exact: true }).click();
+        await page.getByRole('button', { name: 'Calendar 선택', exact: true }).click();
+        const calendar = page.locator('.hub-resource-choice-card').first();
+        const calendarName = await calendar.locator('.hub-resource-choice-title').innerText();
+        await calendar.getByRole('button', { name: '연결', exact: true }).click();
+        await expect(page.getByText(calendarName + ' Calendar를 연결했습니다.', { exact: true })).toBeVisible();
+        assert.equal(await toggle.isChecked(), !initial, 'Calendar assignment discarded an unrelated display draft');
+        await proof(page, width, 'ux-admin', 'settings-assignment-retains-draft');
         await page.getByRole('button', { name: '표시 옵션 저장', exact: true }).click();
         await go(page, '/admin/settings');
         assert.equal(await toggle.isChecked(), !initial);

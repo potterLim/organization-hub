@@ -26,6 +26,15 @@ public partial class AdminSettings
         mStatus = await GoogleConnectionService.GetStatusAsync(CancellationToken.None);
     }
 
+    private async Task reloadResourceConfigurationAsync()
+    {
+        GlobalSettingFormModel displayDraft = mFormModel;
+        await loadConfigurationAsync();
+        mFormModel.ShouldShowTodoAuthor = displayDraft.ShouldShowTodoAuthor;
+        mFormModel.ShouldShowCalendarAuthor = displayDraft.ShouldShowCalendarAuthor;
+        mFormModel.DisplayOptionsRevision = displayDraft.DisplayOptionsRevision;
+    }
+
     private async Task loadAssignmentOptionsAsync()
     {
         IReadOnlyList<GoogleFolderAssignmentOption> folderOptions = await GoogleWorkspaceSetupService.GetFolderAssignmentOptionsAsync(CancellationToken.None);
@@ -55,11 +64,7 @@ public partial class AdminSettings
         mIsRefreshing = true;
         try
         {
-            GlobalSettingFormModel displayDraft = mFormModel;
-            await loadConfigurationAsync();
-            mFormModel.ShouldShowTodoAuthor = displayDraft.ShouldShowTodoAuthor;
-            mFormModel.ShouldShowCalendarAuthor = displayDraft.ShouldShowCalendarAuthor;
-            mFormModel.DisplayOptionsRevision = displayDraft.DisplayOptionsRevision;
+            await reloadResourceConfigurationAsync();
             await loadConnectionStatusAsync();
             await loadAssignmentOptionsAsync();
             if (mStatus.IsConnected)
