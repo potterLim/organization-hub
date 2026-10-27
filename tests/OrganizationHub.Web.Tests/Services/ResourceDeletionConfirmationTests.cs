@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using OrganizationHub.Web.Services;
@@ -8,6 +9,16 @@ namespace OrganizationHub.Web.Tests.Services;
 
 public sealed class ResourceDeletionConfirmationTests
 {
+    [Fact]
+    public async Task NotFoundDuringDeleteDoesNotProveTheItemWasDeletedAsync()
+    {
+        Google.GoogleApiException notFound = new Google.GoogleApiException("calendar", "Resource or calendar unavailable");
+        notFound.HttpStatusCode = HttpStatusCode.NotFound;
+        await Assert.ThrowsAsync<ResourceDeletionUncertainException>(() => ResourceDeletionConfirmation.ExecuteAsync(
+            () => throw notFound,
+            () => throw new IOException("Calendar access unavailable"), CancellationToken.None));
+    }
+
     [Fact]
     public async Task FailedConfirmationLeavesOutcomeUncertainAsync()
     {
