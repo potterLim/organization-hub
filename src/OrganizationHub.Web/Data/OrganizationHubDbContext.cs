@@ -8,6 +8,7 @@ namespace OrganizationHub.Web.Data;
 
 public sealed partial class OrganizationHubDbContext : DbContext
 {
+    public DbSet<PendingUploadAudit> PendingUploadAudits => Set<PendingUploadAudit>();
     public DbSet<TodoDeadlineChange> TodoDeadlineChanges
     {
         get

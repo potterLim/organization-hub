@@ -858,6 +858,24 @@ namespace OrganizationHub.Web.Data.Migrations
                     b.ToTable("Positions");
                 });
 
+            modelBuilder.Entity("OrganizationHub.Web.Data.Entities.PendingUploadAudit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PendingUploadAudits");
+                });
+
             modelBuilder.Entity("OrganizationHub.Web.Data.Entities.PositionPermissionGrant", b =>
                 {
                     b.Property<int>("Id")

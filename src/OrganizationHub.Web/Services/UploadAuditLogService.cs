@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -73,8 +74,12 @@ public sealed partial class UploadAuditLogService : IUploadAuditLogService
             auditLog.TeamId = targetFolder.TeamIdValueOrNull;
             auditLog.TeamName = targetFolder.TeamName;
             auditLog.UploadedAt = DateTime.UtcNow;
-            dbContext.UploadAuditLogs.Add(auditLog);
+            PendingUploadAudit pending = new PendingUploadAudit();
+            pending.Payload = JsonSerializer.Serialize(auditLog);
+            pending.CreatedAt = auditLog.UploadedAt;
+            dbContext.PendingUploadAudits.Add(pending);
             await dbContext.SaveChangesAsync(cancellationToken);
+            await AuditRecoveryService.CompleteUploadAuditAsync(mDbContextFactory, pending.Id, cancellationToken);
         }
     }
 
