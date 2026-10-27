@@ -11,7 +11,11 @@ public partial class AdminUsers
 
     private string createFormSnapshot()
     {
-        return JsonSerializer.Serialize(new { mFormModel, mIsSystemAdministratorSelected });
+        return JsonSerializer.Serialize(new
+        {
+            Form = mFormModel,
+            IsSystemAdministratorSelected = mIsSystemAdministratorSelected
+        });
     }
 
     private bool hasFormChanges()

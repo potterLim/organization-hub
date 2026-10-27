@@ -2,7 +2,10 @@ namespace OrganizationHub.Web.Models;
 
 public sealed class ServiceResult
 {
-    public bool IsPending { get; private init; }
+    public bool IsPending
+    {
+        get; private init;
+    }
     public string StatusMessage { get; private init; } = string.Empty;
 
     public static ServiceResult Pending(string statusMessage)

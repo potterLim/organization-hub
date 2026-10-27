@@ -7,12 +7,13 @@ namespace OrganizationHub.Web.Tests.Services;
 
 public sealed class TodoIdentityTests
 {
+    private const BindingFlags FLAGS = BindingFlags.Instance | BindingFlags.NonPublic;
+
     [Theory]
     [InlineData("isEditingTask", "mEditing")]
     [InlineData("isDeletingTask", "mDeleting")]
     public void TaskStateBelongsToItsList(string method, string prefix)
     {
-        const BindingFlags FLAGS = BindingFlags.Instance | BindingFlags.NonPublic;
         Todos page = new Todos();
         typeof(Todos).GetField(prefix + "TaskId", FLAGS)!.SetValue(page, "same-id");
         FieldInfo? listFieldOrNull = typeof(Todos).GetField(prefix + "TaskListId", FLAGS);

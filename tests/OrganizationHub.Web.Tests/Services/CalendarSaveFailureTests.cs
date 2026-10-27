@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
@@ -19,7 +19,10 @@ public sealed class CalendarSaveFailureTests
 
     public class RejectedCalendarProxy : DispatchProxy
     {
-        public bool IsCreationFailure { get; set; }
+        public bool IsCreationFailure
+        {
+            get; set;
+        }
 
         protected override object? Invoke(MethodInfo? targetMethodOrNull, object?[]? argsOrNull)
         {
