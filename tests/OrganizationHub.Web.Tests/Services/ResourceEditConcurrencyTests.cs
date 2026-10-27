@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
@@ -18,6 +19,43 @@ namespace OrganizationHub.Web.Tests.Services;
 
 public sealed class ResourceEditConcurrencyTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GoogleSdkHiddenContainerResponseDoesNotEraseOwnershipAsync(bool isCalendar)
+    {
+        using (TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(isCalendar ? PermissionKeys.CALENDAR_DELETE : PermissionKeys.TODOS_DELETE))
+        using (MemoryCache cache = new MemoryCache(new MemoryCacheOptions()))
+        {
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                db.CalendarEventMetadata.Add(new CalendarEventMetadata { CalendarId = "calendar", EventId = "item", CreatedByUserId = 1 });
+                db.TodoTaskMetadata.Add(new TodoTaskMetadata { TaskListId = "tasks", TaskId = "item", CreatedByUserId = 1 });
+                await db.SaveChangesAsync();
+            }
+            VersionedGoogleTransport transport = new VersionedGoogleTransport();
+            transport.ShouldHideContainer = true;
+            OrganizationPermissionService permissions = new OrganizationPermissionService(factory);
+            UserSession session = OperationPermissionRegressionTests.createSession();
+            if (isCalendar)
+            {
+                GoogleCalendarService calendar = new GoogleCalendarService(transport, Options.Create(new GoogleApiOptions()), factory, cache, NullLogger<GoogleCalendarService>.Instance, new ChangeVersionService(), new PermissionService(factory, new FakeDriveService(), cache, permissions));
+                await Assert.ThrowsAsync<ResourceDeletionUncertainException>(() => calendar.DeleteEventAsync(session, CalendarId.CreateRequired("calendar"), CalendarEventId.CreateRequired("item"), transport.ETag, CancellationToken.None));
+            }
+            else
+            {
+                GoogleTasksTodoService todos = new GoogleTasksTodoService(factory, transport, NullLogger<GoogleTasksTodoService>.Instance, Options.Create(new GoogleApiOptions()), new ChangeVersionService(), permissions);
+                await Assert.ThrowsAsync<ResourceDeletionUncertainException>(() => todos.DeleteTaskAsync(session, TodoTaskListId.CreateRequired("tasks"), TodoTaskId.CreateRequired("item"), transport.ETag, CancellationToken.None));
+            }
+            using (OrganizationHubDbContext db = factory.CreateDbContext())
+            {
+                Assert.True(db.CalendarEventMetadata.Any(item => item.EventId == "item"));
+                Assert.True(db.TodoTaskMetadata.Any(item => item.TaskId == "item"));
+            }
+            Assert.Equal(0, transport.Deletes);
+        }
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

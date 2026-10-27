@@ -17,11 +17,11 @@ internal static class ResourceDeletionConfirmation
         {
             throw;
         }
-        catch (Google.GoogleApiException exception) when (exception.HttpStatusCode == HttpStatusCode.NotFound || exception.HttpStatusCode == HttpStatusCode.Gone)
+        catch (Google.GoogleApiException exception) when (exception.HttpStatusCode == HttpStatusCode.Gone)
         {
             // DELETE is idempotent: an item already absent has the requested outcome.
         }
-        catch (Google.GoogleApiException exception) when ((int)exception.HttpStatusCode >= 400 && (int)exception.HttpStatusCode < 500 && exception.HttpStatusCode != HttpStatusCode.RequestTimeout)
+        catch (Google.GoogleApiException exception) when ((int)exception.HttpStatusCode >= 400 && (int)exception.HttpStatusCode < 500 && exception.HttpStatusCode != HttpStatusCode.RequestTimeout && exception.HttpStatusCode != HttpStatusCode.NotFound)
         {
             throw;
         }
@@ -43,7 +43,7 @@ internal static class ResourceDeletionConfirmation
         }
     }
 
-    public static async Task<bool> IsDeletedAsync(Func<Task<bool>> readDeletedStateAsync)
+    public static async Task<bool> IsDeletedAsync(Func<Task<bool>> readDeletedStateAsync, Func<Task> ensureContainerReadableAsync)
     {
         try
         {
@@ -51,6 +51,11 @@ internal static class ResourceDeletionConfirmation
         }
         catch (Google.GoogleApiException exception) when (exception.HttpStatusCode == HttpStatusCode.NotFound || exception.HttpStatusCode == HttpStatusCode.Gone)
         {
+            if (exception.HttpStatusCode == HttpStatusCode.NotFound)
+            {
+                // A hidden calendar or task list can also return 404. Verify read access first.
+                await ensureContainerReadableAsync();
+            }
             return true;
         }
     }

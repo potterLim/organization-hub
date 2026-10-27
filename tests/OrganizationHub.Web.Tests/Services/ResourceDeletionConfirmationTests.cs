@@ -9,6 +9,34 @@ namespace OrganizationHub.Web.Tests.Services;
 
 public sealed class ResourceDeletionConfirmationTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task MissingItemRequiresAReadableContainerBeforeConfirmingDeletionAsync(bool canReadContainer)
+    {
+        Google.GoogleApiException notFound = new Google.GoogleApiException("calendar", "Not Found");
+        notFound.HttpStatusCode = HttpStatusCode.NotFound;
+        bool checkedContainer = false;
+        Task confirmContainerAsync()
+        {
+            checkedContainer = true;
+            if (canReadContainer == false)
+            {
+                throw notFound;
+            }
+            return Task.CompletedTask;
+        }
+        if (canReadContainer)
+        {
+            Assert.True(await ResourceDeletionConfirmation.IsDeletedAsync(() => throw notFound, confirmContainerAsync));
+        }
+        else
+        {
+            await Assert.ThrowsAsync<Google.GoogleApiException>(() => ResourceDeletionConfirmation.IsDeletedAsync(() => throw notFound, confirmContainerAsync));
+        }
+        Assert.True(checkedContainer);
+    }
+
     [Fact]
     public async Task NotFoundDuringDeleteDoesNotProveTheItemWasDeletedAsync()
     {

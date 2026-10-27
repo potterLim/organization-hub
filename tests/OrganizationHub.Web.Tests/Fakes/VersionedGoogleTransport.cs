@@ -24,6 +24,10 @@ public sealed class VersionedGoogleTransport : HttpMessageHandler, IGoogleApiCre
     {
         get; set;
     }
+    public bool ShouldHideContainer
+    {
+        get; set;
+    }
     public HttpStatusCode? RejectedPatchStatusOrNull
     {
         get; set;
@@ -53,6 +57,10 @@ public sealed class VersionedGoogleTransport : HttpMessageHandler, IGoogleApiCre
     }
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        if (ShouldHideContainer)
+        {
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        }
         if ((request.Method == HttpMethod.Patch || request.Method == HttpMethod.Delete) && request.Headers.IfMatch.Count > 0 && request.Headers.IfMatch.ToString() != ETag)
         {
             return new HttpResponseMessage(HttpStatusCode.PreconditionFailed);

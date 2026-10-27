@@ -78,7 +78,15 @@ internal sealed class AuditRecoveryService
             {
                 try
                 {
-                    bool isDeleted = await ResourceDeletionConfirmation.IsDeletedAsync(async () => (await calendar.Events.Get(deletion.CalendarId, deletion.EventId).ExecuteAsync(cancellationToken)).Status == "cancelled");
+                    bool isDeleted = await ResourceDeletionConfirmation.IsDeletedAsync(
+                        async () => (await calendar.Events.Get(deletion.CalendarId, deletion.EventId).ExecuteAsync(cancellationToken)).Status == "cancelled",
+                        async () =>
+                        {
+                            EventsResource.ListRequest confirmation = calendar.Events.List(deletion.CalendarId);
+                            confirmation.MaxResults = 1;
+                            confirmation.Fields = "kind";
+                            await confirmation.ExecuteAsync(cancellationToken);
+                        });
                     ECalendarEventDeletionAuditStatus status = isDeleted ? ECalendarEventDeletionAuditStatus.Succeeded : ECalendarEventDeletionAuditStatus.Failed;
                     await using (OrganizationHubDbContext db = await mFactory.CreateDbContextAsync(cancellationToken))
                     {

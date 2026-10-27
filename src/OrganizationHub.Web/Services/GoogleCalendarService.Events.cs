@@ -158,7 +158,15 @@ public sealed partial class GoogleCalendarService
                 {
                     await ResourceDeletionConfirmation.ExecuteAsync(
                         () => ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken)),
-                        () => ResourceDeletionConfirmation.IsDeletedAsync(async () => (await calendarService.Events.Get(requiredCalendarId, requiredEventId).ExecuteAsync(cancellationToken)).Status == "cancelled"),
+                        () => ResourceDeletionConfirmation.IsDeletedAsync(
+                            async () => (await calendarService.Events.Get(requiredCalendarId, requiredEventId).ExecuteAsync(cancellationToken)).Status == "cancelled",
+                            async () =>
+                            {
+                                EventsResource.ListRequest confirmation = calendarService.Events.List(requiredCalendarId);
+                                confirmation.MaxResults = 1;
+                                confirmation.Fields = "kind";
+                                await confirmation.ExecuteAsync(cancellationToken);
+                            }),
                         cancellationToken);
                 }
                 finally

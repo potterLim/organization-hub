@@ -134,7 +134,9 @@ public sealed partial class GoogleTasksTodoService
                 request.ModifyRequest = message => ResourceEditVersion.Apply(message, expectedETag);
                 await ResourceDeletionConfirmation.ExecuteAsync(
                     () => ResourceEditVersion.ExecuteAsync(() => request.ExecuteAsync(cancellationToken)),
-                    () => ResourceDeletionConfirmation.IsDeletedAsync(async () => (await tasksService.Tasks.Get(requiredTaskListId, requiredTaskId).ExecuteAsync(cancellationToken)).Deleted == true),
+                    () => ResourceDeletionConfirmation.IsDeletedAsync(
+                        async () => (await tasksService.Tasks.Get(requiredTaskListId, requiredTaskId).ExecuteAsync(cancellationToken)).Deleted == true,
+                        async () => { await tasksService.Tasklists.Get(requiredTaskListId).ExecuteAsync(cancellationToken); }),
                     cancellationToken);
                 await deleteMetadataAsync(taskListId, taskId, cancellationToken);
             }
