@@ -43,6 +43,7 @@ public partial class Todos
         await mTodoModuleOrNull.InvokeVoidAsync("initializeTodoSortable", mTodoBoardElement, mDotNetReferenceOrNull);
     }
 
+    [JSInvokable("CheckForExternalChanges")]
     public async Task CheckForExternalChangesAsync()
     {
         if (mIsLoadingLists || mIsLoadingTasks || CurrentUserSessionOrNull == null || string.IsNullOrWhiteSpace(mSelectedTaskListId))

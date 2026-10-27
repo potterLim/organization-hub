@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.JSInterop;
 using OrganizationHub.Web.Components;
 using OrganizationHub.Web.Components.Pages;
 using OrganizationHub.Web.Models;
@@ -9,6 +10,13 @@ namespace OrganizationHub.Web.Tests.Services;
 public sealed class DraftProtectionTests
 {
     private const BindingFlags FLAGS = BindingFlags.Instance | BindingFlags.NonPublic;
+
+    [Fact]
+    public void TodoRefreshIsCallableByTheBrowserRefreshTimer()
+    {
+        MethodInfo method = typeof(Todos).GetMethod("CheckForExternalChangesAsync")!;
+        Assert.Equal("CheckForExternalChanges", method.GetCustomAttribute<JSInvokableAttribute>()?.Identifier);
+    }
 
     [Fact]
     public void SavedDraftClearsPendingNavigationWarning()
