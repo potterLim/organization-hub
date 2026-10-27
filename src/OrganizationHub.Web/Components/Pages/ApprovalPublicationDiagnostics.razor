@@ -7,7 +7,7 @@
         <MudText Typo="Typo.h6">승인본 저장 관리</MudText>
         <MudButton OnClick="reloadAsync" Disabled="mIsLoading">저장 상태 새로고침</MudButton>
     </MudStack>
-    <MudText Typo="Typo.body2" Class="mb-3">연결이나 폴더 권한 문제를 해결한 뒤 다시 시도할 수 있습니다. 자동 재시도와 동일한 저장 작업을 사용합니다.</MudText>
+    <MudText Typo="Typo.body2" Class="mb-3">Google 연결과 저장 폴더의 권한을 확인한 뒤 다시 시도해 주세요.</MudText>
     @if (string.IsNullOrEmpty(mMessage) == false)
     {
         <MudAlert Severity="Severity.Info" Class="mb-3">@mMessage</MudAlert>
