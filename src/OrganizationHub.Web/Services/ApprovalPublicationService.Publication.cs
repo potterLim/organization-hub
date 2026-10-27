@@ -120,16 +120,16 @@ public sealed partial class ApprovalPublicationService
 
             if (googleException.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                return "승인본 폴더 또는 대상 파일을 찾을 수 없습니다. Drive 연결값을 확인해 주세요.";
+                return "승인본 저장에 필요한 파일이나 폴더를 찾을 수 없습니다. 자료 위치 설정을 확인해 주세요.";
             }
         }
 
         if (exception is OperationCanceledException)
         {
-            return "Google 저장 응답 시간이 초과되었습니다. 연결 상태를 확인해 주세요.";
+            return "승인본 저장 응답이 지연되고 있습니다. 잠시 후 저장 상태를 새로고침해 주세요.";
         }
 
-        return "승인본 저장 또는 저장 결과 확인에 실패했습니다. 연결 상태와 서버 로그를 확인해 주세요.";
+        return ApprovalPublicationMessages.RESULT_UNCONFIRMED;
     }
 
     private async Task releasePublicationLeaseAsync(int requestId, string leaseToken, string errorDescription)

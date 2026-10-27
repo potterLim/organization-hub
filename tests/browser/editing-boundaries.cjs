@@ -224,6 +224,28 @@ async function copy(browser, width, height) {
         await context.close();
     }
 }
+async function publication(browser, width, height) {
+    const { context, page } = await login(browser, width, height, 'ux-admin');
+    try {
+        for (const state of ['empty', 'mixed']) {
+            await context.request.post(base + '/fixture/publication-state/' + state);
+            await go(page, '/admin/settings');
+            await page.getByRole('tab', { name: '고급', exact: true }).click();
+            await expect(page.getByText('Google 연결과 저장 폴더의 권한을 확인한 뒤 다시 시도해 주세요.', { exact: true })).toHaveCount(0);
+            await expect(page.getByText('서버 로그', { exact: false })).toHaveCount(0);
+            if (state === 'empty') {
+                await expect(page.getByText('저장 대기 중인 승인본이 없습니다.', { exact: true })).toBeVisible();
+                await expect(page.getByText('저장 대기 중인 승인본은 자동으로 다시 시도합니다.', { exact: false })).toHaveCount(0);
+            } else {
+                await expect(page.getByText('승인본 저장 결과를 확인하지 못했습니다. 잠시 후 저장 상태를 새로고침해 주세요.', { exact: true })).toBeVisible();
+            }
+            await page.getByText('승인본 저장 관리', { exact: true }).scrollIntoViewIfNeeded();
+            await proof(page, width, 'ux-admin', 'publication-guidance-' + state);
+        }
+    } finally {
+        await context.close();
+    }
+}
 (async () => {
     const browser = await chromium.launch({ executablePath: process.env.HUB_BROWSER_EXECUTABLE });
     try {
@@ -233,6 +255,7 @@ async function copy(browser, width, height) {
             if (area === 'all' || area === 'drive') await drive(browser, width, height);
             if (area === 'all' || area === 'upload') await upload(browser, width, height);
             if (area === 'all' || area === 'copy') await copy(browser, width, height);
+            if (area === 'all' || area === 'publication') await publication(browser, width, height);
             if (area === 'all' || area === 'approval') {
                 for (const account of ['ux-member', 'p1-create']) await approval(browser, width, height, account);
             }

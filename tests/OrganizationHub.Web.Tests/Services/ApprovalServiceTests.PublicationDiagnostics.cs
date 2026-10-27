@@ -7,6 +7,7 @@ using OrganizationHub.Web.Data;
 using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
+using OrganizationHub.Web.Services;
 using OrganizationHub.Web.Tests.Fakes;
 using Xunit;
 
@@ -30,7 +31,8 @@ public sealed partial class ApprovalServiceTests
             Assert.Equal(1, item.AttemptCount);
             Assert.NotNull(item.LastAttemptAt);
             Assert.False(item.IsProcessing);
-            Assert.Contains("연결 상태", item.LastError);
+            Assert.Contains("저장 상태를 새로고침", item.LastError);
+            Assert.DoesNotContain("서버 로그", item.LastError);
             ApprovalRequestItem inboxItem = Assert.Single(await fixture.CreateService().GetPendingApprovalsAsync(fixture.Manager, CancellationToken.None));
             Assert.True(inboxItem.HasPublicationFailure);
             Assert.False(inboxItem.IsPublicationProcessing);
@@ -51,6 +53,27 @@ public sealed partial class ApprovalServiceTests
                 Assert.Empty(completed.LastError);
             }
             await fixture.AssertCompletedOnceAsync(requestId);
+        }
+    }
+
+    [Fact]
+    public async Task OlderStoredDiagnosticsArePresentedAsUserActionsAsync()
+    {
+        using (ApprovalReliabilityFixture fixture = new ApprovalReliabilityFixture())
+        {
+            ApprovalRequestId requestId = await fixture.SubmitAsync();
+            await fixture.ApproveFirstStepAsync(requestId);
+            fixture.DriveService.FailNextPublication(FakeDriveService.EPublicationFailure.AfterUpload);
+            await executeRegressionDecisionAsync(fixture.CreateService(), fixture.Manager, requestId, EApprovalAuditAction.Approved);
+            grantPublicationAdministration(fixture);
+            using (OrganizationHubDbContext db = fixture.DbContextFactory.CreateDbContext())
+            {
+                db.ApprovalPublications.Single().LastError = "승인본 저장 또는 저장 결과 확인에 실패했습니다. 연결 상태와 서버 로그를 확인해 주세요.";
+                await db.SaveChangesAsync();
+            }
+            ApprovalPublicationItem item = Assert.Single((await fixture.CreatePublicationService().GetPendingPublicationsAsync(fixture.Manager, 1, CancellationToken.None)).Items);
+            Assert.Equal(ApprovalPublicationMessages.RESULT_UNCONFIRMED, item.LastError);
+            Assert.DoesNotContain("서버 로그", item.LastError);
         }
     }
 

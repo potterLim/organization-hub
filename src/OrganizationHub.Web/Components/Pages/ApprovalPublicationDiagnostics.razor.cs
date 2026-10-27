@@ -44,7 +44,7 @@ public partial class ApprovalPublicationDiagnostics
         {
             Logger.LogWarning(exception, "Approval publication diagnostics failed.");
             mPageOrNull = null;
-            mMessage = "저장 상태를 불러오지 못했습니다. 권한과 연결 상태를 확인한 후 다시 시도해 주세요.";
+            mMessage = "저장 상태를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
         }
         finally
         {

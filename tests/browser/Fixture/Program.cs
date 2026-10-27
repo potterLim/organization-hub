@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -126,6 +127,7 @@ public static class Program
         });
         app.MapPost("/fixture/publish/{id:int}", async (int id, IApprovalPublicationService publication) =>
             Results.Ok(await publication.PublishApprovedFileAsync(ApprovalRequestId.CreateExisting(id), CancellationToken.None)));
+        app.MapPost("/fixture/publication-state/{state}", setPublicationStateAsync);
 
         app.MapPost("/fixture/fault/{mode}", async (string mode, IDbContextFactory<OrganizationHubDbContext> factory) =>
         {
@@ -169,5 +171,40 @@ public static class Program
         app.Run();
 
 
+    }
+
+    private static async Task<IResult> setPublicationStateAsync(string state, IDbContextFactory<OrganizationHubDbContext> factory)
+    {
+        if (state != "empty" && state != "mixed")
+        {
+            return Results.BadRequest();
+        }
+        using (OrganizationHubDbContext db = await factory.CreateDbContextAsync())
+        {
+            List<ApprovalPublication> publications = await db.ApprovalPublications.OrderBy(item => item.ApprovalRequestId).ToListAsync();
+            foreach (ApprovalPublication publication in publications)
+            {
+                publication.IsCompleted = true;
+            }
+            if (state == "mixed" && publications.Count > 0)
+            {
+                ApprovalPublication failed = publications[0];
+                failed.IsCompleted = false;
+                failed.LeaseExpiresAt = null;
+                failed.AttemptCount = 1;
+                failed.LastError = "승인본 저장 또는 저장 결과 확인에 실패했습니다. 연결 상태와 서버 로그를 확인해 주세요.";
+                failed.NextAttemptAt = DateTime.UtcNow.AddMinutes(1);
+                if (publications.Count > 1)
+                {
+                    ApprovalPublication processing = publications[1];
+                    processing.IsCompleted = false;
+                    processing.LeaseExpiresAt = DateTime.UtcNow.AddMinutes(10);
+                    processing.LeaseToken = "fixture-processing";
+                    processing.LastError = string.Empty;
+                }
+            }
+            await db.SaveChangesAsync();
+        }
+        return Results.Ok();
     }
 }

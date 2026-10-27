@@ -37,7 +37,7 @@ public sealed partial class ApprovalPublicationService
                     LastAttemptAt = item.LastAttemptAt,
                     NextAttemptAt = item.NextAttemptAt,
                     IsProcessing = item.LeaseExpiresAt != null && item.LeaseExpiresAt > now,
-                    LastError = item.LastError
+                    LastError = ApprovalPublicationMessages.GetUserMessage(item.LastError)
                 }).ToArrayAsync(cancellationToken);
             return new ApprovalPublicationPage { Items = items, TotalCount = totalCount, PageNumber = selectedPage, TotalPages = totalPages };
         }
