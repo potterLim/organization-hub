@@ -15,6 +15,9 @@ public sealed class VersionedGoogleTransport : HttpMessageHandler, IGoogleApiCre
 {
     private int mVersion = 1;
     private string mStatus = "needsAction";
+    private bool mIsDeleted;
+    public bool ShouldLoseDeleteResponse { get; set; }
+    public bool ShouldFailDeletionRead { get; set; }
     public HttpStatusCode? RejectedPatchStatusOrNull
     {
         get; set;
@@ -51,7 +54,20 @@ public sealed class VersionedGoogleTransport : HttpMessageHandler, IGoogleApiCre
         if (request.Method == HttpMethod.Delete)
         {
             Deletes++;
+            mIsDeleted = true;
+            if (ShouldLoseDeleteResponse)
+            {
+                throw new HttpRequestException("Response lost after deletion.");
+            }
             return new HttpResponseMessage(HttpStatusCode.NoContent);
+        }
+        if (request.Method == HttpMethod.Get && mIsDeleted)
+        {
+            if (ShouldFailDeletionRead)
+            {
+                throw new HttpRequestException("Read unavailable.");
+            }
+            return new HttpResponseMessage(HttpStatusCode.Gone);
         }
         if (request.Method == HttpMethod.Patch)
         {

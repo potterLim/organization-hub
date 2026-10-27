@@ -18,6 +18,32 @@ namespace OrganizationHub.Web.Tests.Services;
 
 public sealed class ResourceEditConcurrencyTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LostDeleteResponseIsConfirmedWithoutDeletingAgainAsync(bool isCalendar)
+    {
+        using (TestDbContextFactory factory = OperationPermissionRegressionTests.createFactory(isCalendar ? PermissionKeys.CALENDAR_DELETE : PermissionKeys.TODOS_DELETE))
+        using (MemoryCache cache = new MemoryCache(new MemoryCacheOptions()))
+        {
+            VersionedGoogleTransport transport = new VersionedGoogleTransport();
+            transport.ShouldLoseDeleteResponse = true;
+            OrganizationPermissionService permissions = new OrganizationPermissionService(factory);
+            UserSession session = OperationPermissionRegressionTests.createSession();
+            if (isCalendar)
+            {
+                GoogleCalendarService calendar = new GoogleCalendarService(transport, Options.Create(new GoogleApiOptions()), factory, cache, NullLogger<GoogleCalendarService>.Instance, new ChangeVersionService(), new PermissionService(factory, new FakeDriveService(), cache, permissions));
+                await calendar.DeleteEventAsync(session, CalendarId.CreateRequired("calendar"), CalendarEventId.CreateRequired("item"), transport.ETag, CancellationToken.None);
+            }
+            else
+            {
+                GoogleTasksTodoService todos = new GoogleTasksTodoService(factory, transport, NullLogger<GoogleTasksTodoService>.Instance, Options.Create(new GoogleApiOptions()), new ChangeVersionService(), permissions);
+                await todos.DeleteTaskAsync(session, TodoTaskListId.CreateRequired("tasks"), TodoTaskId.CreateRequired("item"), transport.ETag, CancellationToken.None);
+            }
+            Assert.Equal(1, transport.Deletes);
+        }
+    }
+
     [Fact]
     public async Task ExternalCalendarConflictReloadsTheCurrentVersionInsteadOfCachedContentAsync()
     {
