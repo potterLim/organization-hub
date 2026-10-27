@@ -28,7 +28,7 @@ async function login(browser, width, height, account) {
 }
 async function menu(page, name) {
     const link = page.getByRole('link', { name, exact: true });
-    if (!await link.evaluate(element => element.getBoundingClientRect().left >= 0)) {
+    if (!await link.count() || !await link.evaluate(element => element.getBoundingClientRect().left >= 0)) {
         await page.getByRole('button', { name: '좌측 메뉴 열기', exact: true }).click();
     }
     await link.click();
@@ -94,11 +94,68 @@ async function approval(browser, width, height, account) {
         await context.close();
     }
 }
+async function settings(browser, width, height) {
+    const { context, page } = await login(browser, width, height, 'ux-admin');
+    try {
+        await context.request.post(base + '/fixture/state/normal');
+        await go(page, '/admin/settings');
+        const toggle = page.getByLabel('일정 작성자 표시', { exact: true });
+        const initial = await toggle.isChecked();
+        await toggle.click();
+        await context.request.post(base + '/fixture/state/error');
+        await page.getByRole('button', { name: '새로고침', exact: true }).click();
+        await expect(page.getByText('일부 목록을 불러오지 못했습니다. 다시 시도해 주세요.', { exact: true })).toBeVisible();
+        assert.equal(await toggle.isChecked(), !initial);
+        await expect(page.getByText('설정을 다시 불러왔습니다.', { exact: true })).toHaveCount(0);
+        await proof(page, width, 'ux-admin', 'settings-failure-retains-draft');
+        await context.request.post(base + '/fixture/state/normal');
+        await page.getByRole('button', { name: '새로고침', exact: true }).click();
+        await expect(page.getByText('연결된 자료 목록을 새로고침했습니다.', { exact: true })).toBeVisible();
+        assert.equal(await toggle.isChecked(), !initial);
+        await page.getByRole('button', { name: '표시 옵션 저장', exact: true }).click();
+        await go(page, '/admin/settings');
+        assert.equal(await toggle.isChecked(), !initial);
+        await proof(page, width, 'ux-admin', 'settings-display-saved');
+        await toggle.click();
+        await page.getByRole('button', { name: '표시 옵션 저장', exact: true }).click();
+    } finally {
+        await context.request.post(base + '/fixture/state/normal');
+        await context.close();
+    }
+}
+
+async function drive(browser, width, height) {
+    const { context, page } = await login(browser, width, height, 'ux-admin');
+    try {
+        await context.request.post(base + '/fixture/state/normal');
+        await context.request.post(base + '/fixture/reset-resources');
+        await go(page, '/materials');
+        const file = page.locator('tr,.hub-file-compact-row').filter({ has: page.locator('a[href="/files/qa-team-file1/download"]') }).filter({ visible: true }).first();
+        await file.getByRole('button', { name: '삭제', exact: true }).click();
+        await context.request.post(base + '/fixture/state/drive-delete-uncertain');
+        await page.locator('.hub-delete-confirm').getByRole('button', { name: '삭제', exact: true }).click();
+        await expect(page.getByText('삭제 결과를 확인하지 못했습니다. 목록을 새로고침해 확인해 주세요.', { exact: true })).toBeVisible();
+        await expect(file).toBeVisible();
+        await proof(page, width, 'ux-admin', 'drive-uncertain-list-retained');
+        await context.request.post(base + '/fixture/state/normal');
+        await page.getByRole('button', { name: '새로고침', exact: true }).click();
+        await expect(page.getByText('삭제 결과를 확인하지 못했습니다.', { exact: false })).toHaveCount(0);
+        await file.getByRole('button', { name: '삭제', exact: true }).click();
+        await page.locator('.hub-delete-confirm').getByRole('button', { name: '삭제', exact: true }).click();
+        await expect(page.locator('a[href="/files/qa-team-file1/download"]')).toHaveCount(0);
+        await proof(page, width, 'ux-admin', 'drive-deleted');
+    } finally {
+        await context.request.post(base + '/fixture/state/normal');
+        await context.close();
+    }
+}
 (async () => {
     const browser = await chromium.launch({ executablePath: process.env.HUB_BROWSER_EXECUTABLE });
     try {
         for (const [width, height] of [[1440, 1000], [1920, 1080], [480, 1040]]) {
             if (area === 'all' || area === 'calendar') await calendar(browser, width, height);
+            if (area === 'all' || area === 'settings') await settings(browser, width, height);
+            if (area === 'all' || area === 'drive') await drive(browser, width, height);
             if (area === 'all' || area === 'approval') {
                 for (const account of ['ux-member', 'p1-create']) await approval(browser, width, height, account);
             }

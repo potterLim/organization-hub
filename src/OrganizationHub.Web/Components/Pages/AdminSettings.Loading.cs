@@ -15,8 +15,9 @@ public partial class AdminSettings
 {
     private async Task loadConfigurationAsync()
     {
-        mFormModel = await GlobalSettingService.GetGlobalSettingAsync(CancellationToken.None);
+        GlobalSettingFormModel form = await GlobalSettingService.GetGlobalSettingAsync(CancellationToken.None);
         IReadOnlyList<Team> teams = await TeamManagementService.GetTeamsAsync(CancellationToken.None);
+        mFormModel = form;
         mTeams = teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName).ToList();
     }
 
@@ -54,20 +55,32 @@ public partial class AdminSettings
         mIsRefreshing = true;
         try
         {
+            GlobalSettingFormModel displayDraft = mFormModel;
             await loadConfigurationAsync();
+            mFormModel.ShouldShowTodoAuthor = displayDraft.ShouldShowTodoAuthor;
+            mFormModel.ShouldShowCalendarAuthor = displayDraft.ShouldShowCalendarAuthor;
+            mFormModel.DisplayOptionsRevision = displayDraft.DisplayOptionsRevision;
             await loadConnectionStatusAsync();
             await loadAssignmentOptionsAsync();
             if (mStatus.IsConnected)
             {
-                Task driveItemsTask = loadDriveItemsAsync();
-                Task calendarsTask = loadCalendarsAsync();
-                Task taskListsTask = loadTaskListsAsync();
-                Task driveResourceNamesTask = loadDriveResourceNamesAsync();
-                await Task.WhenAll(driveItemsTask, calendarsTask, taskListsTask, driveResourceNamesTask);
+                ServiceResult[] results = await Task.WhenAll(loadDriveItemsAsync(), loadCalendarsAsync(), loadTaskListsAsync(), loadDriveResourceNamesAsync());
+                if (results.Any(result => result.IsSuccess == false))
+                {
+                    mMessage = "일부 목록을 불러오지 못했습니다. 다시 시도해 주세요.";
+                    mMessageSeverity = Severity.Warning;
+                    return;
+                }
             }
 
-            mMessage = "설정을 다시 불러왔습니다.";
+            mMessage = "연결된 자료 목록을 새로고침했습니다.";
             mMessageSeverity = Severity.Success;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "Resource configuration refresh failed.");
+            mMessage = "설정 정보를 불러오지 못했습니다. 다시 시도해 주세요.";
+            mMessageSeverity = Severity.Warning;
         }
         finally
         {
@@ -75,11 +88,11 @@ public partial class AdminSettings
         }
     }
 
-    private async Task loadDriveItemsAsync()
+    private async Task<ServiceResult> loadDriveItemsAsync()
     {
         if (mStatus.IsConnected == false)
         {
-            return;
+            return ServiceResult.Succeed();
         }
 
         mIsLoadingDriveItems = true;
@@ -87,12 +100,14 @@ public partial class AdminSettings
         {
             IReadOnlyList<DriveFileItem> driveItems = await DriveService.ListFilesAsync(DriveFolderId.CreateOptional(getCurrentFolderId()), CancellationToken.None);
             mDriveItems = driveItems.ToList();
+            return ServiceResult.Succeed();
         }
         catch (Exception exception)
         {
             Logger.LogWarning(exception, "Could not load Google configuration or connection status.");
             mMessage = "폴더 목록을 불러오지 못했습니다. 다시 불러와 주세요.";
             mMessageSeverity = Severity.Error;
+            return ServiceResult.Fail(mMessage);
         }
         finally
         {
@@ -100,54 +115,59 @@ public partial class AdminSettings
         }
     }
 
-    private async Task loadCalendarsAsync()
+    private async Task<ServiceResult> loadCalendarsAsync()
     {
         if (mStatus.IsConnected == false)
         {
-            return;
+            return ServiceResult.Succeed();
         }
 
         try
         {
             IReadOnlyList<GoogleCalendarListItem> calendars = await GoogleWorkspaceBrowserService.ListCalendarsAsync(CancellationToken.None);
             mCalendars = calendars.ToList();
+            return ServiceResult.Succeed();
         }
         catch (Exception exception)
         {
             Logger.LogWarning(exception, "Could not load Google configuration or connection status.");
             mMessage = "캘린더 목록을 불러오지 못했습니다. 다시 불러와 주세요.";
             mMessageSeverity = Severity.Error;
+            return ServiceResult.Fail(mMessage);
         }
     }
 
-    private async Task loadTaskListsAsync()
+    private async Task<ServiceResult> loadTaskListsAsync()
     {
         if (mStatus.IsConnected == false)
         {
-            return;
+            return ServiceResult.Succeed();
         }
 
         try
         {
             IReadOnlyList<GoogleTaskListItem> taskLists = await GoogleWorkspaceBrowserService.ListTaskListsAsync(CancellationToken.None);
             mTaskLists = taskLists.ToList();
+            return ServiceResult.Succeed();
         }
         catch (Exception exception)
         {
             Logger.LogWarning(exception, "Could not load Google configuration or connection status.");
             mMessage = "할 일 목록을 불러오지 못했습니다. 다시 불러와 주세요.";
             mMessageSeverity = Severity.Error;
+            return ServiceResult.Fail(mMessage);
         }
     }
 
-    private async Task loadDriveResourceNamesAsync()
+    private async Task<ServiceResult> loadDriveResourceNamesAsync()
     {
         if (mStatus.IsConnected == false)
         {
-            return;
+            return ServiceResult.Succeed();
         }
 
         Dictionary<string, string> namesById = new Dictionary<string, string>();
+        bool hasFailure = false;
         foreach (string driveResourceId in getConfiguredDriveResourceIds())
         {
             if (namesById.ContainsKey(driveResourceId))
@@ -166,13 +186,16 @@ public partial class AdminSettings
 
                 namesById[driveResourceId] = metadataOrNull.Name;
             }
-            catch
+            catch (Exception exception)
             {
+                Logger.LogWarning(exception, "Configured Drive resource name could not be loaded.");
+                hasFailure = true;
                 namesById[driveResourceId] = "이름을 확인하지 못함";
             }
         }
 
         mDriveResourceNameById = namesById;
+        return hasFailure ? ServiceResult.Fail("일부 자료 이름을 확인하지 못했습니다.") : ServiceResult.Succeed();
     }
 
     private async Task saveSettingAsync()
