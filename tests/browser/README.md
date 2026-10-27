@@ -63,3 +63,7 @@ node tests/browser/user-outcomes.cjs
 기본 계정은 `ux-admin`, `ux-member`, `p1-create`, `p1-update`, `p1-delete`, `team-lead`, `final-approver`, `no-access`, `org-manager`, `new-member`, `operations-reader`, `planning-reader`, `delegated-reader`입니다. 모든 계정은 환경 변수로 받은 테스트 비밀번호를 사용합니다. `/fixture/*`는 합성 데이터의 상태·실패 주입·복구를 제어하는 전용 경로이며 운영 앱에는 등록되지 않습니다. 상태가 공유되므로 브라우저 시나리오는 순차 실행합니다.
 
 Google 동작 기준은 [Tasks 리소스의 날짜 전용 마감과 삭제 플래그](https://developers.google.com/workspace/tasks/reference/rest/v1/tasks), [Calendar 조건부 수정·삭제](https://developers.google.com/calendar/api/guides/version-resources), [Calendar 410·412 오류](https://developers.google.com/workspace/calendar/api/guides/errors)를 확인했습니다. 테스트는 실제 SDK의 HTTP 직렬화·ETag 헤더·날짜 절삭·오류 변환을 통과하도록 구성했습니다.
+
+`HUB_TEST_AREA=admin`으로 `user-outcomes.cjs`의 저장·입력 보호 동선만 세 규격에서 재검사할 수 있습니다. 사용자 편집 진입 시 기본값 때문에 미저장 경고가 뜨지 않는지도 확인합니다.
+
+안내 문구의 회귀 기준은 사용자의 처리 결과와 필요한 다음 행동을 설명하는 것입니다. 원본 예외와 복구 절차는 운영 로그·관리자 진단에 남기고, 이미 성공한 작업을 내부 기록 실패 때문에 사용자 오류로 표시하지 않습니다. 업로드 기록의 백그라운드 복구는 실제 hosted worker 시작·종료 검사로도 검증합니다.
