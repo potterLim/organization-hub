@@ -103,6 +103,8 @@ async function check(page, profile, username, name, action, isEmpty) {
         }
         results.push({ width: profile.width, username, name, status: 'pass', geometry, screenshot });
     } catch (error) {
+        await page.screenshot({ path: path.join(outputDirectory, `${profile.width}-${username}-${name}-failure.png`), fullPage: true });
+        fs.writeFileSync(path.join(outputDirectory, `${profile.width}-${username}-${name}-failure.txt`), await page.locator('body').innerText());
         results.push({ width: profile.width, username, name, status: 'fail', error: error.message });
     }
 }

@@ -21,6 +21,11 @@ public partial class AdminUsers
         mUsers = users.ToList();
         mTeams = teams.Where(team => team.IsActive).OrderBy(team => team.SortOrder).ThenBy(team => team.DisplayName).ToList();
         mPositions = positions.Where(position => position.IsActive).OrderBy(position => position.Team == null ? 0 : position.Team.SortOrder).ThenBy(position => position.SortOrder).ThenBy(position => position.Name).ToList();
+        bool hasUnsavedInput = hasFormChanges();
         ensureDefaultTeamSelection();
+        if (hasUnsavedInput == false)
+        {
+            mSavedFormSnapshot = createFormSnapshot();
+        }
     }
 }

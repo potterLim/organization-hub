@@ -86,6 +86,8 @@ async function event(page) {
             await go(page, '/admin/users');
             await page.getByRole('button', { name: '이민준 사용자 수정', exact: true }).click();
             const name = page.getByRole('textbox', { name: '표시 이름 (필수)', exact: true });
+            await expect(name).toHaveValue('이민준');
+            await expect(page.getByRole('button', { name: '계속 작성', exact: true })).not.toBeVisible();
             await name.fill('보호할 관리자 입력');
             await page.getByRole('button', { name: '새 사용자', exact: true }).first().click();
             await page.getByRole('button', { name: '계속 작성', exact: true }).click();
@@ -101,6 +103,7 @@ async function event(page) {
             await expect(name).toHaveValue('');
             await context.close();
 
+            if (process.env.HUB_TEST_AREA === 'admin') continue;
             ({ context, page } = await open(browser, width, height, 'p1-create'));
             await context.request.post(base + '/fixture/reset-resources');
             await go(page, '/todos');
