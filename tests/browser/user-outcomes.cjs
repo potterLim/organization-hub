@@ -186,6 +186,14 @@ async function event(page) {
             await expect(page.getByText('승인은 반영되었습니다. 승인본을 준비하고 있습니다.', { exact: true }).first()).toBeVisible();
             await page.getByText('승인은 반영되었습니다. 승인본을 준비하고 있습니다.', { exact: true }).first().scrollIntoViewIfNeeded();
             await proof(page, width, 'final-approver', 'publication-status');
+            if (width === 480) {
+                const publishing = page.getByText('승인은 반영되었습니다. 승인본을 준비하고 있습니다.', { exact: true });
+                const before = await publishing.count();
+                const publication = await (await context.request.post(base + '/fixture/publish/34')).json();
+                assert(publication.isSuccess, JSON.stringify(publication));
+                await expect(publishing).toHaveCount(before - 1, { timeout: 12000 });
+                results.push({ width, account: 'final-approver', name: 'publication-auto-refresh', status: 'pass' });
+            }
             await context.close();
         }
     } catch (error) {
