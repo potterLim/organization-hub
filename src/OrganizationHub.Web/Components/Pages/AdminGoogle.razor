@@ -1,3 +1,4 @@
+﻿@inject Microsoft.Extensions.Logging.ILogger<AdminGoogle> Logger
 @page "/admin/google"
 @attribute [Authorize(Policy = OrganizationHubPolicies.GOOGLE_CONNECTION_MANAGE)]
 @inherits TimeZoneAwareOrganizationHubComponentBase

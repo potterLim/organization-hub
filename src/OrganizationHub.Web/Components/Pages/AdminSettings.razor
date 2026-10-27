@@ -1,3 +1,4 @@
+﻿@inject Microsoft.Extensions.Logging.ILogger<AdminSettings> Logger
 @page "/admin/settings"
 @attribute [Authorize(Policy = OrganizationHubPolicies.SYSTEM_SETTINGS_MANAGE)]
 @inherits TimeZoneAwareOrganizationHubComponentBase

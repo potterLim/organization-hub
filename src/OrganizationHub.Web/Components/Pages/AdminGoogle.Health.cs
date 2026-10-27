@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using OrganizationHub.Web.Domain;
 using OrganizationHub.Web.Models;
@@ -30,14 +31,15 @@ public partial class AdminGoogle
         }
         catch (Exception exception)
         {
+            Logger.LogWarning(exception, "Could not load Google configuration or connection status.");
             mHealthItems = new List<GoogleHealthCheckItem>();
             GoogleHealthCheckItem healthCheckItem = new GoogleHealthCheckItem();
             healthCheckItem.Area = "진단";
             healthCheckItem.Name = "실행 오류";
             healthCheckItem.Status = EGoogleHealthStatus.Error;
-            healthCheckItem.Message = "Google 연결 진단을 실행하지 못했습니다. " + exception.Message;
+            healthCheckItem.Message = "Google 연결 상태를 확인하지 못했습니다. 다시 확인해 주세요.";
             mHealthItems.Add(healthCheckItem);
-            mMessage = "Google 연결 진단을 실행하지 못했습니다. " + exception.Message;
+            mMessage = "Google 연결 상태를 확인하지 못했습니다. 다시 확인해 주세요.";
             mMessageSeverity = Severity.Error;
         }
     }

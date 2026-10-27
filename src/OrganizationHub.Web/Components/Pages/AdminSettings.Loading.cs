@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using OrganizationHub.Web.Data.Entities;
 using OrganizationHub.Web.Domain;
@@ -89,7 +90,8 @@ public partial class AdminSettings
         }
         catch (Exception exception)
         {
-            mMessage = "Drive 목록을 불러오지 못했습니다. " + exception.Message;
+            Logger.LogWarning(exception, "Could not load Google configuration or connection status.");
+            mMessage = "폴더 목록을 불러오지 못했습니다. 다시 불러와 주세요.";
             mMessageSeverity = Severity.Error;
         }
         finally
@@ -112,7 +114,8 @@ public partial class AdminSettings
         }
         catch (Exception exception)
         {
-            mMessage = "Calendar 목록을 불러오지 못했습니다. " + exception.Message;
+            Logger.LogWarning(exception, "Could not load Google configuration or connection status.");
+            mMessage = "캘린더 목록을 불러오지 못했습니다. 다시 불러와 주세요.";
             mMessageSeverity = Severity.Error;
         }
     }
@@ -131,7 +134,8 @@ public partial class AdminSettings
         }
         catch (Exception exception)
         {
-            mMessage = "Google Tasks 목록을 불러오지 못했습니다. " + exception.Message;
+            Logger.LogWarning(exception, "Could not load Google configuration or connection status.");
+            mMessage = "할 일 목록을 불러오지 못했습니다. 다시 불러와 주세요.";
             mMessageSeverity = Severity.Error;
         }
     }
